@@ -931,7 +931,7 @@
                 <h3>Your Configuration</h3>
                 <div class="quote-config-row"><span>Stone</span><span id="qsColour">—</span></div>
                 <div class="quote-config-row"><span>Size</span><span id="qsSize">—</span></div>
-                <div class="quote-config-row" id="qsAddonsRow" style="display:none"><span>Extras</span><span id="qsAddons">—</span></div>
+                <div id="qsExtrasContainer"></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
             </div>
             <div class="quote-form-body">
@@ -1317,28 +1317,44 @@
         }
 
         // ==================== SELECTED ADDONS LIST ====================
-        function getSelectedAddons() {
-            const list = [];
+        const PHOTO_SIZE_LABEL = { small: 'Small Oval', medium: 'Medium Oval', large: 'Large Rectangle' };
+
+        function getAddonLineItems() {
+            const items = [];
             document.querySelectorAll('.addon-card.selected input[name="addon"]').forEach(function(inp) {
-                if (inp.value === 'extra-lettering') return;
+                const val = inp.value;
+                if (val === 'photo' || val === 'kerb' || val === 'extra-lettering') return;
                 const nameEl = inp.closest('.addon-card').querySelector('.addon-name');
-                if (nameEl) list.push(nameEl.textContent.trim());
+                const price  = parseInt(inp.dataset.price) || 0;
+                if (nameEl && price > 0) items.push({ name: nameEl.textContent.trim(), price });
             });
-            if (state.photoActive) list.push('Ceramic Photo Plaque (' + state.photoSize + ')');
-            if (state.kerbActive)  list.push('Garden Kerb Surround');
-            return list;
+            if (state.photoActive) {
+                items.push({ name: 'Ceramic Photo Plaque — ' + PHOTO_SIZE_LABEL[state.photoSize], price: state.photoPrice });
+            }
+            if (state.kerbActive) {
+                items.push({ name: 'Garden Kerb Surround', price: 350 });
+            }
+            if (state.inscriptionPrice > 0) {
+                items.push({ name: 'Extra Lettering', price: state.inscriptionPrice });
+            }
+            return items;
+        }
+
+        function getSelectedAddons() {
+            return getAddonLineItems().map(function(item) { return item.name; });
         }
 
         // ==================== QUOTE MODAL ====================
         function openQuoteModal() {
             document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
             document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
-            if (state.addonsPrice > 0) {
-                document.getElementById('qsAddonsRow').style.display = 'flex';
-                document.getElementById('qsAddons').textContent      = '+£' + state.addonsPrice;
-            } else {
-                document.getElementById('qsAddonsRow').style.display = 'none';
-            }
+
+            const addonItems = getAddonLineItems();
+            document.getElementById('qsExtrasContainer').innerHTML = addonItems.map(function(item) {
+                return '<div class="quote-config-row"><span>' + item.name + '</span>'
+                     + '<span>+£' + item.price.toLocaleString() + '</span></div>';
+            }).join('');
+
             const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
             document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
 
