@@ -48,6 +48,12 @@ export async function onRequestOptions() {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  // 0. Guard: ensure required env vars are present
+  if (!env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is not set in environment variables");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
+
   // 1. Parse body
   let data;
   try {
@@ -398,7 +404,11 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from, to, subject, html }),
   });
-  if (!res.ok) throw new Error(`Resend error: ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`Resend error ${res.status} sending to ${to}: ${body}`);
+    throw new Error(`Resend ${res.status}: ${body}`);
+  }
 }
 
 
