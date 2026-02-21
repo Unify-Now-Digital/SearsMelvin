@@ -709,6 +709,7 @@
             const phone       = document.getElementById('phone').value.trim();
             const message     = document.getElementById('message').value.trim();
             const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
+            const cemetery    = document.getElementById('cemetery').value.trim();
 
             try {
                 const res = await fetch(WORKER_URL, {
@@ -719,7 +720,8 @@
                         email,
                         phone,
                         message,
-                        enquiry_type: enquiryType
+                        enquiry_type: enquiryType,
+                        location: cemetery || null
                     })
                 });
 

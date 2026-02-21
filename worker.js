@@ -144,7 +144,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
 //  REGULAR ENQUIRY HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleEnquiry(env, data, submittedAt, corsHeaders) {
-  const { name, email, phone, message, enquiry_type } = data;
+  const { name, email, phone, message, enquiry_type, location } = data;
 
   if (!message) {
     return json({ ok: false, error: "Missing required fields" }, 400, corsHeaders);
@@ -245,7 +245,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, enquiry_type });
+    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, enquiry_type, location });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -480,7 +480,7 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
  *   orders       — order details (sku, color, value, order_type, customer contact)
  *   inscriptions — inscription text (only if quote has inscription)
  */
-async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, product }) {
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
 
   const headers = {
@@ -517,7 +517,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
       sku:            product?.name   || null,
       color:          product?.colour || null,
       value:          product?.price  ? parseFloat(product.price) : null,
-      location:       null,
+      location:       location || null,
     }),
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
