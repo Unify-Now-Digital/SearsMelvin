@@ -422,8 +422,8 @@
 
                         <!-- Message -->
                         <div class="form-group">
-                            <label for="message">Your Message</label>
-                            <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..."></textarea>
+                            <label for="message">Your Message <span class="required">*</span></label>
+                            <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
                         </div>
 
                         <!-- Preferred Contact Method -->
@@ -706,11 +706,12 @@
             const existingError = document.getElementById('formSubmitError');
             if (existingError) existingError.style.display = 'none';
 
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName  = document.getElementById('lastName').value.trim();
-            const email     = document.getElementById('email').value.trim();
-            const phone     = document.getElementById('phone').value.trim();
-            const message   = document.getElementById('message').value.trim();
+            const firstName   = document.getElementById('firstName').value.trim();
+            const lastName    = document.getElementById('lastName').value.trim();
+            const email       = document.getElementById('email').value.trim();
+            const phone       = document.getElementById('phone').value.trim();
+            const message     = document.getElementById('message').value.trim();
+            const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
 
             try {
                 const res = await fetch(WORKER_URL, {
@@ -720,7 +721,8 @@
                         name: `${firstName} ${lastName}`.trim(),
                         email,
                         phone,
-                        message
+                        message,
+                        enquiry_type: enquiryType
                     })
                 });
 

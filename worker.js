@@ -21,9 +21,11 @@ const BUSINESS_NAME   = "Sears Melvin Memorials";
 export default {
   async fetch(request, env) {
 
-    // Allow the form on searsmelvin.co.uk to call this worker
+    // Allow the form on searsmelvin.co.uk (and www) to call this worker
+    const allowedOrigins = ["https://searsmelvin.co.uk", "https://www.searsmelvin.co.uk"];
+    const requestOrigin  = request.headers.get("Origin") || "";
     const corsHeaders = {
-      "Access-Control-Allow-Origin":  "https://searsmelvin.co.uk",
+      "Access-Control-Allow-Origin":  allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0],
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
@@ -45,7 +47,7 @@ export default {
       return json({ ok: false, error: "Invalid request" }, 400, corsHeaders);
     }
 
-    const { name, email, phone, message } = data;
+    const { name, email, phone, message, enquiry_type } = data;
 
     // Basic validation
     if (!name || !email || !message) {
@@ -74,6 +76,8 @@ export default {
                   <td style="padding:8px 0;"><a href="mailto:${email}">${email}</a></td></tr>
               <tr><td style="padding:8px 0; color:#666;">Phone</td>
                   <td style="padding:8px 0;">${phone || "Not provided"}</td></tr>
+              ${enquiry_type ? `<tr><td style="padding:8px 0; color:#666;">Enquiry Type</td>
+                  <td style="padding:8px 0;">${enquiry_type.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td></tr>` : ""}
               <tr><td style="padding:8px 0; color:#666; vertical-align:top;">Message</td>
                   <td style="padding:8px 0;">${message.replace(/\n/g, "<br>")}</td></tr>
               <tr><td style="padding:8px 0; color:#666;">Submitted</td>
@@ -125,7 +129,7 @@ export default {
     try {
       await createClickUpTask(env.CLICKUP_API_KEY, {
         name:        `New Enquiry — ${name}`,
-        description: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\n\nMessage:\n${message}\n\nSubmitted: ${submittedAt}`,
+        description: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nEnquiry Type: ${enquiry_type || "Not specified"}\n\nMessage:\n${message}\n\nSubmitted: ${submittedAt}`,
         listId:      CLICKUP_LIST_ID,
       });
     } catch (err) {
