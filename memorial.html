@@ -1312,6 +1312,19 @@
             document.body.classList.toggle('calm-mode');
         }
 
+        // ==================== SELECTED ADDONS LIST ====================
+        function getSelectedAddons() {
+            const list = [];
+            document.querySelectorAll('.addon-card.selected input[name="addon"]').forEach(function(inp) {
+                if (inp.value === 'extra-lettering') return;
+                const nameEl = inp.closest('.addon-card').querySelector('.addon-name');
+                if (nameEl) list.push(nameEl.textContent.trim());
+            });
+            if (state.photoActive) list.push('Ceramic Photo Plaque (' + state.photoSize + ')');
+            if (state.kerbActive)  list.push('Garden Kerb Surround');
+            return list;
+        }
+
         // ==================== QUOTE MODAL ====================
         function openQuoteModal() {
             document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
@@ -1357,15 +1370,10 @@
                 const lastName  = document.getElementById('qLastName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
-                const message   = document.getElementById('qMessage').value.trim();
+                const message   = document.getElementById('qMessage').value.trim(); // customer notes only
 
                 const colour = document.getElementById('selectedColourName').textContent;
-                const size   = document.getElementById('selectedSizeName').textContent;
                 const total  = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
-                const insc   = state.inscription ? '\nInscription: ' + state.inscription.substring(0, 100) : '';
-                const configNote = 'Stone: ' + colour + ' | Size: ' + size + insc +
-                                   '\nGuide total: £' + total.toLocaleString() +
-                                   (message ? '\n\n' + message : '');
 
                 try {
                     const res = await fetch('/api/submit', {
@@ -1376,12 +1384,15 @@
                             name:    (firstName + ' ' + lastName).trim(),
                             email,
                             phone,
-                            message: configNote,
+                            message, // customer's optional notes (cemetery name etc.)
                             product: {
-                                name:   'Classic Ogee Top Lawn Memorial',
-                                type:   'Lawn Headstone',
-                                colour: colour,
-                                price:  String(total),
+                                name:        'Classic Ogee Top Lawn Memorial',
+                                type:        'Lawn Headstone',
+                                colour:      colour,
+                                size:        document.getElementById('selectedSizeName').textContent,
+                                addons:      getSelectedAddons(),
+                                inscription: state.inscription ? state.inscription.substring(0, 120) : '',
+                                price:       String(total),
                             }
                         })
                     });
