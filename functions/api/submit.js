@@ -18,7 +18,7 @@
 
 const CLICKUP_LIST_ID = "901207633256"; // Your Orders list ID
 const BUSINESS_EMAIL  = "info@searsmelvin.co.uk";
-const FROM_EMAIL      = "enquiries@searsmelvin.co.uk"; // Must be verified in Resend
+const FROM_EMAIL      = "info@searsmelvin.co.uk"; // Must be verified in Resend
 const BUSINESS_NAME   = "Sears Melvin Memorials";
 
 // Stone colour name → hex (for the coloured swatch sidebar in emails)
