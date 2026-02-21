@@ -314,13 +314,108 @@
             .mobile-menu-btn { display: flex; }
             .shortlist-panel { width: 100%; right: -100%; }
         }
-        @media (max-width: 600px) { 
+        @media (max-width: 600px) {
             .products-grid { grid-template-columns: 1fr; }
             .footer-container { flex-direction: column; text-align: center; }
             .wizard-options { grid-template-columns: 1fr; }
             .compare-items { flex-direction: column; }
             .compare-item { max-width: none; }
             .colour-swatches { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ==================== REQUEST A QUOTE BUTTON ==================== */
+        .product-quote-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+            width: 100%; margin-top: 0.75rem; padding: 0.6rem 1rem;
+            background: transparent; border: 1.5px solid var(--color-accent);
+            color: var(--color-accent); border-radius: 4px; font-family: var(--font-body);
+            font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .product-quote-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+        .product-quote-btn:hover { background: var(--color-accent); color: white; }
+
+        /* ==================== QUOTE MODAL ==================== */
+        .quote-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300;
+            display: none; align-items: center; justify-content: center;
+            padding: 1.5rem; backdrop-filter: blur(4px);
+        }
+        .quote-overlay.active { display: flex; }
+        .quote-modal {
+            background: white; border-radius: 12px; max-width: 600px; width: 100%;
+            max-height: 92vh; overflow-y: auto; animation: scaleIn 0.3s ease;
+        }
+        .quote-modal-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 1.5rem 1.75rem 1.25rem;
+            background: linear-gradient(135deg, var(--color-warm), var(--color-cream));
+            border-bottom: 1px solid var(--color-border); border-radius: 12px 12px 0 0;
+        }
+        .quote-modal-header h2 { font-size: 1.35rem; color: var(--color-stone); margin-bottom: 0.2rem; }
+        .quote-modal-subtitle { font-size: 0.83rem; color: var(--color-text-muted); margin: 0; }
+        .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+        .quote-modal-close svg { width: 22px; height: 22px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+
+        .quote-product-card {
+            display: flex; gap: 1.25rem; margin: 1.25rem 1.75rem;
+            padding: 1.125rem; background: var(--color-cream);
+            border-radius: 8px; border: 1px solid var(--color-border); align-items: flex-start;
+        }
+        .quote-product-image { width: 90px; height: 72px; background: var(--color-warm); border-radius: 6px; flex-shrink: 0; overflow: hidden; }
+        .quote-product-image svg { width: 100%; height: 100%; }
+        .quote-product-details { flex: 1; min-width: 0; }
+        .quote-product-category { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); font-weight: 600; display: block; margin-bottom: 0.2rem; }
+        .quote-product-name { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); margin-bottom: 0.55rem; line-height: 1.3; }
+        .quote-product-colour-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+        .quote-product-colour-label { font-size: 0.75rem; color: var(--color-text-muted); }
+        .quote-colour-options { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .quote-colour-btn {
+            width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent;
+            cursor: pointer; transition: all 0.15s; padding: 0;
+        }
+        .quote-colour-btn:hover { transform: scale(1.2); }
+        .quote-colour-btn.selected { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-accent); }
+        .quote-selected-colour-name { font-size: 0.75rem; color: var(--color-stone); font-weight: 500; }
+        .quote-product-price { font-size: 0.88rem; color: var(--color-text-muted); margin: 0; }
+        .quote-product-price strong { color: var(--color-stone); font-weight: 600; }
+
+        .quote-form-body { padding: 0 1.75rem 1.5rem; }
+        .quote-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 0; }
+        .quote-form-group { margin-bottom: 0.875rem; }
+        .quote-form-group label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--color-stone); margin-bottom: 0.3rem; }
+        .quote-form-group input, .quote-form-group textarea {
+            width: 100%; padding: 0.65rem 0.875rem; border: 1.5px solid var(--color-border);
+            border-radius: 6px; font-family: var(--font-body); font-size: 0.875rem;
+            color: var(--color-text); background: white; transition: border-color 0.2s; outline: none;
+        }
+        .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
+        .quote-form-group textarea { resize: vertical; min-height: 78px; }
+        .quote-required { color: var(--color-accent); }
+        .quote-submit-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            width: 100%; padding: 0.95rem; background: var(--color-stone); color: white;
+            border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem;
+            font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.5rem;
+        }
+        .quote-submit-btn:hover { background: var(--color-stone-light); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .quote-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .quote-submit-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .quote-form-note { margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
+        .quote-form-note a { color: var(--color-accent); }
+        .quote-success { display: none; text-align: center; padding: 2.5rem 2rem; }
+        .quote-success-icon { width: 56px; height: 56px; background: var(--color-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+        .quote-success-icon svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
+        .quote-success h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .quote-success p { color: var(--color-text-muted); margin-bottom: 1.5rem; max-width: 380px; margin-left: auto; margin-right: auto; }
+        .quote-success-close { padding: 0.7rem 2rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+        .quote-error { color: var(--color-error); font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
+
+        @media (max-width: 600px) {
+            .quote-form-row { grid-template-columns: 1fr; }
+            .quote-product-card { flex-direction: column; }
+            .quote-product-image { width: 100%; height: 110px; }
+            .quote-modal-header, .quote-product-card, .quote-form-body { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .quote-product-card { margin-left: 1.25rem; margin-right: 1.25rem; }
         }
     </style>
 </head>
@@ -660,6 +755,89 @@
         <button class="floating-btn scroll-top" id="scrollTopBtn" onclick="scrollToTop()">
             <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
+    </div>
+
+    <!-- ==================== QUOTE REQUEST MODAL ==================== -->
+    <div class="quote-overlay" id="quoteOverlay" onclick="if(event.target===this)closeQuoteModal()">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <div>
+                    <h2>Request a Quote</h2>
+                    <p class="quote-modal-subtitle">We'll be in touch within 24 hours</p>
+                </div>
+                <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Selected Product Summary -->
+            <div class="quote-product-card">
+                <div class="quote-product-image" id="quoteProductImage"></div>
+                <div class="quote-product-details">
+                    <span class="quote-product-category" id="quoteProductCategory"></span>
+                    <h3 class="quote-product-name" id="quoteProductName"></h3>
+                    <div class="quote-product-colour-row">
+                        <span class="quote-product-colour-label">Stone colour:</span>
+                        <div class="quote-colour-options" id="quoteColourOptions"></div>
+                        <span class="quote-selected-colour-name" id="quoteSelectedColourName"></span>
+                    </div>
+                    <p class="quote-product-price" id="quoteProductPrice"></p>
+                </div>
+            </div>
+
+            <!-- Quote Form -->
+            <div class="quote-form-body">
+                <form id="quoteForm" novalidate>
+                    <input type="hidden" id="quoteProductId">
+                    <input type="hidden" id="quoteProductNameField">
+                    <input type="hidden" id="quoteProductTypeField">
+                    <input type="hidden" id="quoteSelectedColour">
+                    <input type="hidden" id="quoteProductPriceField">
+
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>First Name <span class="quote-required">*</span></label>
+                            <input type="text" id="quoteFirstName" placeholder="Your first name" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Last Name <span class="quote-required">*</span></label>
+                            <input type="text" id="quoteLastName" placeholder="Your last name" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>Email Address <span class="quote-required">*</span></label>
+                            <input type="email" id="quoteEmail" placeholder="your@email.com" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="quotePhone" placeholder="07123 456 789">
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Cemetery name &amp; any other details</label>
+                        <textarea id="quoteMessage" placeholder="Cemetery name, grave section/plot number, inscription ideas, or any questions..."></textarea>
+                    </div>
+
+                    <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
+
+                    <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
+                        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>Send Quote Request</span>
+                    </button>
+                    <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
+                </form>
+
+                <div class="quote-success" id="quoteSuccess">
+                    <div class="quote-success-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h3>Quote request sent</h3>
+                    <p>We've sent a confirmation to your email and will be in touch within 24 hours to discuss your requirements.</p>
+                    <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Wizard Modal -->
@@ -1186,8 +1364,124 @@
             document.getElementById('filtersOverlay').classList.remove('active');
         }
 
+        // ==================== QUOTE MODAL ====================
+        const QUOTE_WORKER_URL = 'https://sears-melvin-form.winter-bush-89d1.workers.dev';
+
+        const QUOTE_COLOUR_MAP = {
+            black: { name: 'Black Galaxy',    bg: '#1a1a1a' },
+            grey:  { name: 'Rustenberg Grey', bg: '#6b6b6b' },
+            blue:  { name: 'Vizag Blue',      bg: '#2c3e50' },
+            brown: { name: 'Indian Aurora',   bg: '#8B5A2B' },
+            green: { name: 'Emerald Pearl',   bg: '#2d4a3e' },
+            red:   { name: 'Ruby Red',        bg: '#722F37' },
+        };
+
+        function openQuoteModal(card) {
+            const name    = card.dataset.name;
+            const type    = card.dataset.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const colours = card.dataset.colours.split(',');
+            const price   = card.querySelector('.product-price strong').textContent;
+            const imgSvg  = card.querySelector('.product-image svg')?.outerHTML || '';
+
+            document.getElementById('quoteProductName').textContent     = name;
+            document.getElementById('quoteProductCategory').textContent = type;
+            document.getElementById('quoteProductPrice').innerHTML      = 'From <strong>' + price + '</strong>';
+            document.getElementById('quoteProductImage').innerHTML      = imgSvg;
+            document.getElementById('quoteProductId').value             = card.dataset.id;
+            document.getElementById('quoteProductNameField').value      = name;
+            document.getElementById('quoteProductTypeField').value      = type;
+            document.getElementById('quoteProductPriceField').value     = price;
+
+            // Build colour swatches
+            const colourContainer = document.getElementById('quoteColourOptions');
+            colourContainer.innerHTML = colours.map((c, i) => {
+                const col = QUOTE_COLOUR_MAP[c] || { name: c, bg: '#888' };
+                return `<button type="button" class="quote-colour-btn${i === 0 ? ' selected' : ''}"
+                    data-colour="${col.name}" style="background:${col.bg};"
+                    onclick="selectQuoteColour(this)" title="${col.name}"></button>`;
+            }).join('');
+
+            const defaultColour = (QUOTE_COLOUR_MAP[colours[0]] || { name: colours[0] }).name;
+            document.getElementById('quoteSelectedColour').value        = defaultColour;
+            document.getElementById('quoteSelectedColourName').textContent = defaultColour;
+
+            // Reset form and show
+            document.getElementById('quoteForm').reset();
+            document.getElementById('quoteForm').style.display    = '';
+            document.getElementById('quoteSuccess').style.display = 'none';
+            document.getElementById('quoteError').style.display   = 'none';
+            document.getElementById('quoteOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function selectQuoteColour(btn) {
+            document.querySelectorAll('.quote-colour-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('quoteSelectedColour').value          = btn.dataset.colour;
+            document.getElementById('quoteSelectedColourName').textContent = btn.dataset.colour;
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
+            // Inject "Request a Quote" button into every product card
+            document.querySelectorAll('.product-card[data-id]').forEach(card => {
+                const info = card.querySelector('.product-info');
+                const btn  = document.createElement('button');
+                btn.className = 'product-quote-btn';
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Request a Quote';
+                btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openQuoteModal(card); });
+                info.appendChild(btn);
+            });
+
+            // Quote form submission
+            document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = document.getElementById('quoteSubmitBtn');
+                submitBtn.disabled = true;
+                submitBtn.querySelector('span').textContent = 'Sending…';
+                document.getElementById('quoteError').style.display = 'none';
+
+                const firstName = document.getElementById('quoteFirstName').value.trim();
+                const lastName  = document.getElementById('quoteLastName').value.trim();
+                const email     = document.getElementById('quoteEmail').value.trim();
+                const phone     = document.getElementById('quotePhone').value.trim();
+                const message   = document.getElementById('quoteMessage').value.trim();
+                const product   = {
+                    name:   document.getElementById('quoteProductNameField').value,
+                    type:   document.getElementById('quoteProductTypeField').value,
+                    colour: document.getElementById('quoteSelectedColour').value,
+                    price:  document.getElementById('quoteProductPriceField').value,
+                };
+
+                try {
+                    const res = await fetch(QUOTE_WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'quote',
+                            name: `${firstName} ${lastName}`.trim(),
+                            email, phone, message, product
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.ok) {
+                        document.getElementById('quoteForm').style.display    = 'none';
+                        document.getElementById('quoteSuccess').style.display = 'block';
+                    } else {
+                        throw new Error(result.error || 'Submission failed');
+                    }
+                } catch {
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('span').textContent = 'Send Quote Request';
+                    document.getElementById('quoteError').style.display = 'block';
+                }
+            });
+
             initScrollAnimations();
             applyFilters();
             loadShortlistFromStorage();

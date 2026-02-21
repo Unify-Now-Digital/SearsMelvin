@@ -114,9 +114,9 @@
         .enquiry-type-label { font-weight: 600; font-size: 0.95rem; color: var(--color-stone); }
         .enquiry-type-desc { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem; }
 
-        /* Form Fields */
-        .form-fields { display: none; }
-        .form-fields.active { display: block; animation: fadeInUp 0.4s ease; }
+        /* Form Fields — always visible; enquiry type adds context but doesn't gate the form */
+        .form-fields { display: block; }
+        .form-fields.active { display: block; }
 
         .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
         .form-row.full { grid-template-columns: 1fr; }
@@ -516,11 +516,8 @@
         function selectEnquiryType(el, type) {
             document.querySelectorAll('.enquiry-type').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
-            
-            // Show form fields
-            document.getElementById('formFields').classList.add('active');
-            
-            // Progressive disclosure based on type
+
+            // Show/hide context-specific fields based on type
             const cemeteryField = document.getElementById('cemeteryField');
             const graveField = document.getElementById('graveField');
             const photoField = document.getElementById('photoField');
