@@ -280,6 +280,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
     ? product.addons.join(", ") : "";
   const inscription = product.inscription ? product.inscription.trim() : "";
   const priceFormatted = formatPrice(product.price);
+  const imageUrl    = product.image && product.image.trim() ? product.image.trim() : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -311,7 +312,8 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
           <td width="8" style="background:${stoneHex};">&nbsp;</td>
           <td style="padding:18px 20px;">
             <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:6px;">Memorial Configuration</div>
-            <div style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;margin-bottom:14px;">${esc(product.name || "—")}</div>
+            <div style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;margin-bottom:${imageUrl ? "12px" : "14px"};">${esc(product.name || "—")}</div>
+            ${imageUrl ? `<div style="margin-bottom:14px;"><img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="260" style="display:block;width:260px;max-width:100%;height:auto;border-radius:6px;border:1px solid #E0DCD5;"></div>` : ""}
             <table cellpadding="0" cellspacing="0" style="font-size:13px;width:100%;">
               <tr>
                 <td style="color:#999;padding:4px 0;width:110px;">Type</td>
@@ -382,6 +384,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
   const priceFormatted = formatPrice(product.price);
   const addons = Array.isArray(product.addons) && product.addons.length > 0
     ? product.addons.join(", ") : "";
+  const imageUrl = product.image && product.image.trim() ? product.image.trim() : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -411,7 +414,8 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
           <td width="6" style="background:${stoneHex};">&nbsp;</td>
           <td style="padding:16px 18px;">
             <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:4px;">Your Quote Summary</div>
-            <div style="font-family:Georgia,serif;font-size:18px;color:#2C2C2C;margin-bottom:12px;">${esc(product.name || "—")}</div>
+            <div style="font-family:Georgia,serif;font-size:18px;color:#2C2C2C;margin-bottom:${imageUrl ? "10px" : "12px"};">${esc(product.name || "—")}</div>
+            ${imageUrl ? `<div style="margin-bottom:12px;"><img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="220" style="display:block;width:220px;max-width:100%;height:auto;border-radius:5px;border:1px solid #E0DCD5;"></div>` : ""}
             <table cellpadding="0" cellspacing="4" style="font-size:13px;">
               <tr><td style="color:#999;width:100px;padding:3px 0;">Type</td><td style="color:#2C2C2C;">${esc(product.type || "—")}</td></tr>
               <tr>
