@@ -1026,6 +1026,14 @@
                         <span>50% deposit</span>
                         <span id="qDepositAmount">—</span>
                     </div>
+                    <div class="quote-deposit-row">
+                        <span>Balance due later</span>
+                        <span id="qBalanceDue">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Order total</span>
+                        <span id="qOrderTotal">—</span>
+                    </div>
                     <div class="quote-deposit-row quote-deposit-total">
                         <span>Total today</span>
                         <span id="qDepositTotal">—</span>
@@ -1453,14 +1461,17 @@
             });
         };
 
-        async function showPaymentStep(deposit, name, email, cemetery, product) {
+        async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId) {
             _quoteName     = name;
             _quoteEmail    = email;
             _quoteCemetery = cemetery;
             _quoteProduct  = product;
 
-            const fmt = v => '£' + Math.round(v).toLocaleString('en-GB');
+            const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
+            const balance = _quoteTotal - deposit;
             document.getElementById('qDepositAmount').textContent = fmt(deposit);
+            document.getElementById('qBalanceDue').textContent    = fmt(balance);
+            document.getElementById('qOrderTotal').textContent    = fmt(_quoteTotal);
             document.getElementById('qDepositTotal').textContent  = fmt(deposit);
             document.getElementById('quotePayStep').style.display = 'block';
 
@@ -1473,7 +1484,7 @@
                 const piRes = await fetch('/api/stripe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product }),
+                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product, invoiceId }),
                 });
                 const { clientSecret, error } = await piRes.json();
                 if (error || !clientSecret) throw new Error(error || 'No client secret');
@@ -1541,7 +1552,7 @@
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
                         _quoteTotal = total;
-                        await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial');
+                        await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }

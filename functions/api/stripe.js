@@ -6,16 +6,17 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  const { amount, name, email, cemetery, product } = await request.json();
+  const { amount, name, email, cemetery, product, invoiceId } = await request.json();
 
   const body = new URLSearchParams({
     amount:                               String(Math.round(Number(amount) * 100)),
     currency:                             'gbp',
     'automatic_payment_methods[enabled]': 'true',
-    'metadata[customer_name]':            name      || '',
-    'metadata[customer_email]':           email     || '',
-    'metadata[cemetery]':                 cemetery  || '',
-    'metadata[product]':                  product   || '',
+    'metadata[customer_name]':            name       || '',
+    'metadata[customer_email]':           email      || '',
+    'metadata[cemetery]':                 cemetery   || '',
+    'metadata[product]':                  product    || '',
+    'metadata[invoice_id]':               invoiceId  || '',
     description:                          `50% deposit — ${product || 'Memorial'} — ${name || ''}`,
   });
 

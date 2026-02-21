@@ -126,9 +126,11 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("Failed to create ClickUp quote task:", err);
   }
 
-  // 4. Supabase record (non-critical)
+  // 4. Supabase record (non-critical) — returns { invoiceId } for quotes
+  let invoiceId = null;
   try {
-    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
+    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
+    invoiceId = sbResult?.invoiceId || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -140,7 +142,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
 
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true, invoiceId });
 }
 
 
@@ -481,10 +483,14 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
 //  SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
 /**
- * Writes to three Supabase tables:
- *   customers   — contact info (first_name, last_name, email, phone)
- *   orders      — order details (sku, color, value, order_type, customer contact)
+ * Writes to Supabase tables:
+ *   customers    — contact info (first_name, last_name, email, phone)
+ *   orders       — order details (sku, color, value, order_type, customer contact)
+ *   invoices     — quote invoices with full order value and "pending" status (quotes only)
  *   inscriptions — inscription text (only if quote has inscription)
+ *
+ * Returns { invoiceId } for quotes so the deposit payment can be linked back to the
+ * invoice and the outstanding balance (invoice.amount − Σ payments) can be derived.
  */
 async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
@@ -497,6 +503,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   };
 
   const parts = name.trim().split(" ");
+  const today = new Date().toISOString().split("T")[0];
 
   // 1. customers table
   const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
@@ -511,10 +518,10 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   });
   if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
 
-  // 2. orders table
+  // 2. orders table — return=representation so we get the new row's id
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST",
-    headers,
+    headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
       customer_name:  name,
       customer_email: email,
@@ -527,8 +534,36 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     }),
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
+  const orderRows = await orderRes.json();
+  const orderId   = orderRows[0]?.id || null;
 
-  // 3. inscriptions table (only for quotes with inscription text)
+  // 3. invoices table — created at quote time with the FULL order value so that
+  //    outstanding balance = invoice.amount − SUM(payments.amount) at any point.
+  //    status "pending" → deposit paid → "partial" → fully paid → "paid"
+  let invoiceId = null;
+  if (type === "quote" && product?.price) {
+    const fullAmount = parseFloat(product.price);
+    const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
+      method: "POST",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({
+        order_id:      orderId,
+        customer_name: name,
+        amount:        fullAmount,
+        status:        "pending",
+        issue_date:    today,
+        due_date:      today,
+      }),
+    });
+    if (!invRes.ok) {
+      console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+    } else {
+      const invRows = await invRes.json();
+      invoiceId = invRows[0]?.id || null;
+    }
+  }
+
+  // 4. inscriptions table (only for quotes with inscription text)
   if (product?.inscription) {
     const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
       method: "POST",
@@ -539,6 +574,8 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     });
     if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
+
+  return invoiceId ? { invoiceId } : undefined;
 }
 
 
