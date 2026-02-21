@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classic Ogee Top | Sears Melvin Memorials</title>
     <meta name="description" content="Classic Ogee Top Lawn Memorial - A timeless design featuring the elegant ogee curved top, hand-finished in premium granite.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232C2C2C' rx='6'/%3E%3Ctext x='16' y='23' text-anchor='middle' fill='%23D4AF37' font-size='15' font-family='Georgia%2Cserif' font-weight='bold'%3ESM%3C/text%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -334,37 +335,55 @@
                                 <stop offset="50%" stop-color="#d4af37"/>
                                 <stop offset="100%" stop-color="#b8943f"/>
                             </linearGradient>
+                            <!-- Clip path keeps inscription text inside stone body -->
+                            <clipPath id="stoneClip">
+                                <path d="M-68 174 L-68 -54 Q-68 -93 -44 -113 Q0 -148 44 -113 Q68 -93 68 -54 L68 174 Z"/>
+                            </clipPath>
                         </defs>
                         <!-- Background -->
                         <rect width="400" height="500" fill="url(#sky)"/>
                         <rect x="0" y="420" width="400" height="80" fill="#9ab094"/>
                         
                         <!-- Memorial Stone - Size changes based on selection -->
-                        <g id="memorialStone" transform="translate(200,220)">
+                        <g id="memorialStone" transform="translate(200,230)">
                             <path id="headstoneShape" d="M-70 175 L-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55 L70 175 Z" fill="url(#stoneGradient)"/>
-                            <path d="M-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+                            <path d="M-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
                             <rect id="baseRect1" x="-82" y="175" width="164" height="26" fill="var(--stone-secondary)" rx="3"/>
                             <rect id="baseRect2" x="-90" y="201" width="180" height="18" fill="var(--stone-primary)" rx="2"/>
                             
-                            <!-- Dynamic Inscription Text -->
-                            <g id="inscriptionGroup" font-family="Times New Roman, serif">
-                                <text id="inscLine1" x="0" y="-30" text-anchor="middle" fill="url(#goldLettering)" font-size="18"></text>
-                                <text id="inscLine2" x="0" y="0" text-anchor="middle" fill="url(#goldLettering)" font-size="16"></text>
-                                <text id="inscLine3" x="0" y="30" text-anchor="middle" fill="url(#goldLettering)" font-size="14"></text>
-                                <text id="inscLine4" x="0" y="70" text-anchor="middle" fill="#666" font-size="12"></text>
-                                <text id="inscLine5" x="0" y="95" text-anchor="middle" fill="#666" font-size="11"></text>
-                                <text id="inscLine6" x="0" y="120" text-anchor="middle" fill="#666" font-size="11"></text>
-                                <text id="inscLine7" x="0" y="145" text-anchor="middle" fill="#666" font-size="11"></text>
+                            <!-- Photo Plaque overlay -->
+                            <g id="photoPlaceholder" clip-path="url(#stoneClip)">
+                                <g id="plaqueSmall" style="display:none">
+                                    <ellipse cx="0" cy="-68" rx="24" ry="19" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <ellipse cx="0" cy="-68" rx="21" ry="16" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-64" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="4.5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
+                                <g id="plaqueMedium" style="display:none">
+                                    <ellipse cx="0" cy="-64" rx="31" ry="24" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <ellipse cx="0" cy="-64" rx="28" ry="21" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-60" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
+                                <g id="plaqueLarge" style="display:none">
+                                    <rect x="-34" y="-98" width="68" height="54" rx="3" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <rect x="-31" y="-95" width="62" height="48" rx="2" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-68" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
                             </g>
                             
-                            <!-- Placeholder lines (shown when no inscription) -->
-                            <g id="placeholderLines">
-                                <line x1="-42" y1="-35" x2="42" y2="-35" stroke="url(#goldLettering)" stroke-width="3" opacity="0.4"/>
-                                <line x1="-36" y1="-5" x2="36" y2="-5" stroke="url(#goldLettering)" stroke-width="2.5" opacity="0.4"/>
-                                <line x1="-40" y1="25" x2="40" y2="25" stroke="url(#goldLettering)" stroke-width="2.5" opacity="0.4"/>
-                                <line x1="-32" y1="70" x2="32" y2="70" stroke="#666" stroke-width="2" opacity="0.3"/>
-                                <line x1="-45" y1="115" x2="45" y2="115" stroke="#666" stroke-width="1.5" opacity="0.3"/>
-                                <line x1="-40" y1="140" x2="40" y2="140" stroke="#666" stroke-width="1.5" opacity="0.3"/>
+                            <!-- Hidden text element for word-wrap measurement only -->
+                            <text id="textMeasure" x="-9999" y="-9999" opacity="0" pointer-events="none"></text>
+
+                            <!-- Inscription lines rendered dynamically by JS -->
+                            <g id="inscriptionGroup" clip-path="url(#stoneClip)" style="display:none"></g>
+                            
+                            <!-- Placeholder guide lines (visible when no text) -->
+                            <g id="placeholderLines" clip-path="url(#stoneClip)">
+                                <line x1="-40" y1="-42" x2="40" y2="-42" stroke="url(#goldLettering)" stroke-width="2" opacity="0.35"/>
+                                <line x1="-32" y1="-26" x2="32" y2="-26" stroke="url(#goldLettering)" stroke-width="1.5" opacity="0.35"/>
+                                <line x1="-36" y1="-10" x2="36" y2="-10" stroke="url(#goldLettering)" stroke-width="1.5" opacity="0.35"/>
+                                <line x1="-28" y1="16"  x2="28" y2="16"  stroke="rgba(200,200,200,0.4)" stroke-width="1.2"/>
+                                <line x1="-38" y1="52"  x2="38" y2="52"  stroke="rgba(200,200,200,0.28)" stroke-width="1"/>
+                                <line x1="-34" y1="70"  x2="34" y2="70"  stroke="rgba(200,200,200,0.28)" stroke-width="1"/>
                             </g>
                         </g>
                         
@@ -576,15 +595,15 @@
                 <div class="option-group">
                     <div class="option-header">
                         <span class="option-label">Inscription</span>
-                        <span class="option-value"><span id="charCount">0</span> / 80 included</span>
+                        <span class="option-value"><span id="charCount">0</span> / 100 included</span>
                     </div>
                     <div class="inscription-container">
-                        <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="300"></textarea>
+                        <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="400"></textarea>
                         <div class="inscription-meta">
                             <div class="char-bar">
                                 <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
                             </div>
-                            <span class="char-counter" id="charCounter">80 characters included, then £2.40 each</span>
+                            <span class="char-counter" id="charCounter">100 characters included, then £2.40 each</span>
                         </div>
                         <div class="font-selector">
                             <button type="button" class="font-option font-traditional active" onclick="setFont('traditional', this)">Traditional</button>
@@ -597,20 +616,69 @@
                 <!-- Add-ons -->
                 <div class="option-group">
                     <div class="option-header">
+                        <span class="option-label">Lettering Colour</span>
+                        <span class="option-value" id="selectedLetterColourName">Gold (included)</span>
+                    </div>
+                    <div class="colour-options">
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="gold" data-name="Gold" data-price="0" checked onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #b8943f 0%, #d4af37 50%, #b8943f 100%);"></span>
+                                <span class="colour-name">Gold</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="goldleaf" data-name="Gold Leaf" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #c8a535 0%, #f0cd50 50%, #c8a535 100%); box-shadow: 0 2px 8px rgba(200,165,53,0.35);"></span>
+                                <span class="colour-name">Gold Leaf</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="white" data-name="White" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #e8e4dc 0%, #ffffff 50%, #ddd9d0 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.08);"></span>
+                                <span class="colour-name">White</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="silver" data-name="Silver" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #9a9a9a 0%, #c8c8c8 50%, #9a9a9a 100%);"></span>
+                                <span class="colour-name">Silver</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="black" data-name="Black" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #3a3a3a 50%, #1a1a1a 100%);"></span>
+                                <span class="colour-name">Black</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Add-ons -->
+                <div class="option-group">
+                    <div class="option-header">
                         <span class="option-label">Optional Extras</span>
                     </div>
+
+                    <!-- Fixed 2-column card grid — never reflows -->
                     <div class="addons-grid">
-                        <label class="addon-card" onclick="toggleAddon(this)">
-                            <input type="checkbox" name="addon" value="photo" data-price="160">
+                        <!-- Photo Plaque — compact card, no internal expansion -->
+                        <div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">
+                            <input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="160">
                             <div class="addon-header">
                                 <div>
                                     <div class="addon-name">Ceramic Photo Plaque</div>
-                                    <div class="addon-price">+£160</div>
+                                    <div class="addon-price" id="photoPriceLabel">+£160</div>
                                 </div>
                                 <span class="addon-check"></span>
                             </div>
-                            <p class="addon-desc">Waterproof ceramic photo, 3" oval or rectangle. Lasts 25+ years.</p>
-                        </label>
+                            <p class="addon-desc">Weather-resistant ceramic photo, professionally reproduced. Lasts 25+ years. Tap to choose size.</p>
+                        </div>
+
                         <label class="addon-card" onclick="toggleAddon(this)">
                             <input type="checkbox" name="addon" value="vase" data-price="85">
                             <div class="addon-header">
@@ -622,28 +690,83 @@
                             </div>
                             <p class="addon-desc">Removable granite vase in matching stone colour.</p>
                         </label>
+
                         <label class="addon-card" onclick="toggleAddon(this)">
                             <input type="checkbox" name="addon" value="design" data-price="120">
                             <div class="addon-header">
                                 <div>
-                                    <div class="addon-name">Custom Design/Motif</div>
+                                    <div class="addon-name">Custom Design / Motif</div>
                                     <div class="addon-price">+£120</div>
                                 </div>
                                 <span class="addon-check"></span>
                             </div>
                             <p class="addon-desc">Carved rose, cross, dove, or custom design of your choice.</p>
                         </label>
+
                         <label class="addon-card" onclick="toggleAddon(this)">
-                            <input type="checkbox" name="addon" value="gold" data-price="95">
+                            <input type="checkbox" name="addon" value="extra-lettering" data-price="0">
                             <div class="addon-header">
                                 <div>
-                                    <div class="addon-name">Gold Leaf Lettering</div>
-                                    <div class="addon-price">+£95</div>
+                                    <div class="addon-name">Extra Lettering</div>
+                                    <div class="addon-price">£2.40 / letter</div>
                                 </div>
                                 <span class="addon-check"></span>
                             </div>
-                            <p class="addon-desc">Upgrade to genuine gold leaf lettering for a premium finish.</p>
+                            <p class="addon-desc">Automatically calculated above 100 characters included.</p>
                         </label>
+                    </div>
+
+                    <!-- Photo size panel — sits BELOW the grid, never disrupts card positions -->
+                    <div id="photoSubPanel" style="display:none; margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose photo plaque size</p>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem;">
+                            <!-- Small oval -->
+                            <div class="photo-size-tile" id="psTileSmall" onclick="selectPhotoSize(this, 160, 'small')" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; background:rgba(139,115,85,0.05); text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="46" height="36" viewBox="-23 -18 46 36">
+                                        <ellipse cx="0" cy="0" rx="20" ry="14" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <ellipse cx="0" cy="0" rx="17" ry="11" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Small Oval</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">3" · +£160</div>
+                            </div>
+                            <!-- Medium oval -->
+                            <div class="photo-size-tile" id="psTileMedium" onclick="selectPhotoSize(this, 200, 'medium')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="60" height="46" viewBox="-30 -23 60 46">
+                                        <ellipse cx="0" cy="0" rx="27" ry="19" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <ellipse cx="0" cy="0" rx="24" ry="16" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Medium Oval</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">4" · +£200</div>
+                            </div>
+                            <!-- Large rectangle -->
+                            <div class="photo-size-tile" id="psTileLarge" onclick="selectPhotoSize(this, 240, 'large')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="64" height="48" viewBox="-32 -24 64 48">
+                                        <rect x="-30" y="-20" width="60" height="40" rx="3" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <rect x="-27" y="-17" width="54" height="34" rx="2" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Large Rectangle</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">6" · +£240</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Garden Kerb Surround — lawn memorial option, simple toggle -->
+                    <div class="addon-card" id="kerbAddonCard" style="grid-column:1/-1; margin-top:1rem;" onclick="toggleKerbAddon(this)">
+                        <input type="checkbox" name="addon" value="kerb" id="kerbCheck" data-price="350">
+                        <div class="addon-header">
+                            <div>
+                                <div class="addon-name">Garden Kerb Surround</div>
+                                <div class="addon-price">+£350</div>
+                            </div>
+                            <span class="addon-check"></span>
+                        </div>
+                        <p class="addon-desc">Granite kerb border enclosing the full grave, filled with white chippings. Tidy, lasting, and low maintenance. Matching stone colour.</p>
                     </div>
                 </div>
 
@@ -678,7 +801,7 @@
                     <div class="features-grid">
                         <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Premium granite headstone</div>
                         <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Matching granite base</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 80 characters inscription</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 100 characters inscription</div>
                         <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Cemetery permit application</div>
                         <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Professional installation</div>
                         <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Photo on completion</div>
@@ -762,44 +885,68 @@
             sizePrice: 0,
             inscriptionPrice: 0,
             addonsPrice: 0,
-            selectedColour: 'black',
-            selectedSize: 'standard',
-            inscription: '',
+            photoActive: false,
+            photoSize: 'small',
+            photoPrice: 0,
+            kerbActive: false,
+            kerbPrice: 350,
+            letterColour: 'gold',
             font: 'traditional',
-            addons: []
+            inscription: '',
+            colour: 'black',
+            selectedSize: 'standard'
         };
 
-        // ==================== COLOUR - Live SVG Update ====================
+        const letterColourMap = {
+            gold:     { fill: 'url(#goldLettering)', lowerFill: 'rgba(212,175,55,0.65)' },
+            goldleaf: { fill: 'url(#goldLettering)', lowerFill: 'rgba(212,175,55,0.85)' },
+            white:    { fill: '#f0ece6',             lowerFill: 'rgba(240,236,230,0.7)'  },
+            silver:   { fill: '#c8c8c8',             lowerFill: 'rgba(200,200,200,0.7)'  },
+            black:    { fill: '#1a1a1a',             lowerFill: 'rgba(30,30,30,0.75)'    }
+        };
+
+        // ==================== COLOUR SELECTION ====================
         function updateColour(input) {
             const name = input.dataset.name;
             const primary = input.dataset.primary;
             const secondary = input.dataset.secondary;
-            
+            const highlight = input.dataset.highlight;
+            state.colour = input.value;
             document.getElementById('selectedColourName').textContent = name;
-            state.selectedColour = input.value;
-            
-            // Update CSS custom properties (affects entire page)
             document.documentElement.style.setProperty('--stone-primary', primary);
             document.documentElement.style.setProperty('--stone-secondary', secondary);
+            document.documentElement.style.setProperty('--stone-highlight', highlight);
         }
 
-        // ==================== SIZE - Visual Scale ====================
+        // ==================== LETTERING COLOUR ====================
+        function updateLetterColour(input) {
+            state.letterColour = input.value;
+            document.getElementById('selectedLetterColourName').textContent = input.dataset.name;
+            renderInscriptionSVG(state.inscription);
+            updatePlaceholderColour();
+        }
+
+        function updatePlaceholderColour() {
+            const colours = letterColourMap[state.letterColour];
+            const stroke = colours.fill === 'url(#goldLettering)' ? 'url(#goldLettering)' : colours.fill;
+            const lines = document.querySelectorAll('#placeholderLines line');
+            lines.forEach((line, i) => {
+                if (i < 3) line.setAttribute('stroke', stroke);
+            });
+        }
+
+        // ==================== SIZE ====================
         function updateSize(input) {
             const name = input.dataset.name;
             const dimensions = input.dataset.dimensions;
             const price = parseInt(input.dataset.price);
             const scale = parseFloat(input.dataset.scale);
-            
-            document.getElementById('selectedSizeName').textContent = `${name} (${dimensions})`;
             state.sizePrice = price;
             state.selectedSize = input.value;
-            
-            // Scale the main memorial SVG
+            document.getElementById('selectedSizeName').textContent = `${name} (${dimensions})`;
             const memorial = document.getElementById('memorialStone');
-            memorial.style.transform = `translate(200px, ${220 - (scale - 1) * 30}px) scale(${scale})`;
+            memorial.style.transform = `translate(200px, ${230 - (scale - 1) * 30}px) scale(${scale})`;
             memorial.style.transition = 'transform 0.4s ease';
-            
-            // Update price row
             const sizeRow = document.getElementById('priceSizeRow');
             if (price > 0) {
                 sizeRow.style.display = 'flex';
@@ -808,127 +955,255 @@
             } else {
                 sizeRow.style.display = 'none';
             }
-            
             updateTotalPrice();
         }
 
-        // ==================== INSCRIPTION - Live Preview ====================
+        // ==================== INSCRIPTION — word-wrap + dynamic SVG lines ====================
         function updateInscription(textarea) {
             const text = textarea.value;
-            const charCount = text.length;
             state.inscription = text;
-            
-            // Update counter display
+            const charCount = text.length;
             document.getElementById('charCount').textContent = charCount;
             const charBar = document.getElementById('charBarFill');
             const charCounter = document.getElementById('charCounter');
-            const percentage = Math.min((charCount / 80) * 100, 100);
-            charBar.style.width = percentage + '%';
-            
-            // Style based on character count
-            charBar.classList.remove('warning', 'over');
-            charCounter.classList.remove('warning', 'over');
-            
-            if (charCount > 80) {
-                const extraChars = charCount - 80;
-                const extraCost = Math.ceil(extraChars * 2.40);
-                charCounter.textContent = `${extraChars} extra = +£${extraCost.toFixed(2)}`;
+            const pct = Math.min((charCount / 100) * 100, 100);
+            charBar.style.width = pct + '%';
+            charBar.classList.remove('warning','over');
+            charCounter.classList.remove('warning','over');
+            if (charCount > 100) {
+                const extra = charCount - 100;
+                const cost  = parseFloat((extra * 2.40).toFixed(2));
+                charCounter.textContent = `${extra} extra chars = +£${cost.toFixed(2)}`;
                 charBar.classList.add('over');
                 charCounter.classList.add('over');
-                state.inscriptionPrice = extraCost;
-                
+                state.inscriptionPrice = cost;
                 document.getElementById('priceInscriptionRow').style.display = 'flex';
-                document.getElementById('extraCharsCount').textContent = extraChars;
-                document.getElementById('priceInscription').textContent = `+£${extraCost.toFixed(2)}`;
-            } else if (charCount > 60) {
-                charCounter.textContent = `${80 - charCount} characters remaining`;
+                document.getElementById('extraCharsCount').textContent = extra;
+                document.getElementById('priceInscription').textContent = `+£${cost.toFixed(2)}`;
+            } else if (charCount > 80) {
+                charCounter.textContent = `${100 - charCount} characters remaining`;
                 charBar.classList.add('warning');
                 state.inscriptionPrice = 0;
                 document.getElementById('priceInscriptionRow').style.display = 'none';
             } else {
-                charCounter.textContent = '80 characters included, then £2.40 each';
+                charCounter.textContent = '100 characters included, then £2.40 each';
                 state.inscriptionPrice = 0;
                 document.getElementById('priceInscriptionRow').style.display = 'none';
             }
-            
-            // Live update on SVG
-            updateInscriptionSVG(text);
+            renderInscriptionSVG(text);
             updateTotalPrice();
         }
 
-        function updateInscriptionSVG(text) {
-            const lines = text.split('\n').slice(0, 7);
+        /**
+         * renderInscriptionSVG — word-wraps each typed line to fit within the stone,
+         * then creates SVG <text> elements dynamically. Uses #textMeasure for width testing.
+         */
+        function renderInscriptionSVG(text) {
             const placeholders = document.getElementById('placeholderLines');
-            const inscGroup = document.getElementById('inscriptionGroup');
-            
-            if (text.trim().length > 0) {
-                placeholders.style.display = 'none';
-                inscGroup.style.display = 'block';
-                
-                for (let i = 1; i <= 7; i++) {
-                    const lineEl = document.getElementById(`inscLine${i}`);
-                    if (lineEl) lineEl.textContent = lines[i-1] || '';
-                }
-            } else {
+            const inscGroup    = document.getElementById('inscriptionGroup');
+            const measureEl    = document.getElementById('textMeasure');
+
+            if (!text || !text.trim()) {
                 placeholders.style.display = 'block';
                 inscGroup.style.display = 'none';
+                return;
             }
+
+            placeholders.style.display = 'none';
+            inscGroup.style.display = 'block';
+
+            // Clear old lines
+            while (inscGroup.firstChild) inscGroup.removeChild(inscGroup.firstChild);
+
+            const colours = letterColourMap[state.letterColour];
+            const fontFamily = { traditional:'Times New Roman,serif', modern:'DM Sans,sans-serif', script:'Georgia,serif' }[state.font] || 'Times New Roman,serif';
+            const FONT_SIZE   = 9;   // SVG units
+            const LINE_HEIGHT = 13.5;
+            const MAX_WIDTH   = 112; // safe zone — stone is ~140 wide, inset a little
+
+            // Photo shifts first line down
+            const photoStartDelta = state.photoActive
+                ? { small: 40, medium: 52, large: 68 }[state.photoSize]
+                : 0;
+            let y = -42 + photoStartDelta;
+
+            // Measure helper — uses the hidden SVG text element
+            function measureStr(str) {
+                measureEl.setAttribute('font-size', FONT_SIZE);
+                measureEl.setAttribute('font-family', fontFamily);
+                measureEl.textContent = str;
+                try { return measureEl.getComputedTextLength(); }
+                catch(e) { return str.length * FONT_SIZE * 0.55; }
+            }
+
+            // Word-wrap a single raw line into one or more display lines
+            function wrapLine(raw) {
+                if (!raw.trim()) return [''];        // blank line kept as spacer
+                const words = raw.split(/\s+/);
+                const result = [];
+                let cur = '';
+                for (const w of words) {
+                    const candidate = cur ? cur + ' ' + w : w;
+                    if (measureStr(candidate) <= MAX_WIDTH) {
+                        cur = candidate;
+                    } else {
+                        if (cur) result.push(cur);
+                        // If a single word is too wide, just let it through (clip-path handles it)
+                        cur = w;
+                    }
+                }
+                if (cur) result.push(cur);
+                return result.length ? result : [''];
+            }
+
+            // Build flat list of SVG lines
+            const svgLines = [];
+            for (const rawLine of text.split('\n')) {
+                for (const wl of wrapLine(rawLine)) {
+                    svgLines.push(wl);
+                    if (svgLines.length >= 14) break;
+                }
+                if (svgLines.length >= 14) break;
+            }
+
+            // Create <text> nodes
+            svgLines.forEach((line, i) => {
+                const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                el.setAttribute('x', '0');
+                el.setAttribute('y', y);
+                el.setAttribute('text-anchor', 'middle');
+                el.setAttribute('font-size', FONT_SIZE);
+                el.setAttribute('font-family', fontFamily);
+                el.setAttribute('fill', i < 4 ? colours.fill : colours.lowerFill);
+                el.textContent = line;
+                inscGroup.appendChild(el);
+                y += LINE_HEIGHT;
+            });
         }
 
+        // ==================== FONT ====================
         function setFont(fontType, btn) {
             state.font = fontType;
             document.querySelectorAll('.font-option').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            const fontFamily = {
-                'traditional': 'Times New Roman, serif',
-                'modern': 'DM Sans, sans-serif',
-                'script': 'Brush Script MT, cursive'
-            }[fontType];
-            
-            const inscGroup = document.getElementById('inscriptionGroup');
-            if (inscGroup) inscGroup.setAttribute('font-family', fontFamily);
+            renderInscriptionSVG(state.inscription);
         }
 
-        // ==================== ADD-ONS ====================
-        function toggleAddon(card) {
-            card.classList.toggle('selected');
-            
-            let total = 0;
-            let addonsText = [];
-            document.querySelectorAll('.addon-card.selected input').forEach(inp => {
-                total += parseInt(inp.dataset.price);
-                addonsText.push(inp.value);
-            });
-            
-            state.addonsPrice = total;
-            state.addons = addonsText;
-            
-            const addonsRow = document.getElementById('priceAddonsRow');
-            if (total > 0) {
-                addonsRow.style.display = 'flex';
-                document.getElementById('priceAddons').textContent = `+£${total}`;
+        // ==================== PHOTO PLAQUE ====================
+        function togglePhotoAddon(card) {
+            const isSelected = card.classList.toggle('selected');
+            state.photoActive = isSelected;
+            document.getElementById('photoSubPanel').style.display = isSelected ? 'block' : 'none';
+
+            if (isSelected) {
+                showPlaque(state.photoSize);
+                state.photoPrice = { small:160, medium:200, large:240 }[state.photoSize];
             } else {
-                addonsRow.style.display = 'none';
+                hidePlaques();
+                state.photoPrice = 0;
             }
-            
+            renderInscriptionSVG(state.inscription);
+            updateAddonsTotal();
             updateTotalPrice();
         }
 
-        // ==================== PRICING ====================
+        function selectPhotoSize(tile, price, sizeName) {
+            // Update tile borders
+            document.querySelectorAll('.photo-size-tile').forEach(t => {
+                t.style.border = '1.5px solid var(--color-border)';
+                t.style.background = 'transparent';
+            });
+            tile.style.border = '1.5px solid var(--color-accent)';
+            tile.style.background = 'rgba(139,115,85,0.05)';
+
+            state.photoSize = sizeName;
+            state.photoPrice = price;
+            document.getElementById('photoPriceLabel').textContent = `+£${price}`;
+
+            showPlaque(sizeName);
+            renderInscriptionSVG(state.inscription);
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function showPlaque(size) {
+            ['plaqueSmall','plaqueMedium','plaqueLarge'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+            const map = { small:'plaqueSmall', medium:'plaqueMedium', large:'plaqueLarge' };
+            document.getElementById(map[size]).style.display = 'block';
+        }
+
+        function hidePlaques() {
+            ['plaqueSmall','plaqueMedium','plaqueLarge'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        // ==================== KERB / GARDEN SURROUND ====================
+        function toggleKerbAddon(card) {
+            const isSelected = card.classList.toggle('selected');
+            state.kerbActive = isSelected;
+            state.kerbPrice  = isSelected ? 350 : 0;
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        // ==================== STANDARD ADD-ONS ====================
+        function toggleAddon(card) {
+            card.classList.toggle('selected');
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function updateAddonsTotal() {
+            let total = 0;
+            const labels = [];
+
+            // Standard cards (vase, design, etc.)
+            document.querySelectorAll('.addon-card.selected input[name="addon"]').forEach(inp => {
+                const val = inp.value;
+                if (val === 'photo' || val === 'kerb' || val === 'extra-lettering') return;
+                const p = parseInt(inp.dataset.price) || 0;
+                total += p;
+                if (p > 0) labels.push(val);
+            });
+
+            // Photo
+            if (state.photoActive) {
+                total += state.photoPrice;
+                labels.push(`photo-${state.photoSize}`);
+            }
+
+            // Garden kerb
+            if (state.kerbActive) {
+                total += state.kerbPrice;
+                labels.push('garden-kerb');
+            }
+
+            state.addonsPrice = total;
+            const row = document.getElementById('priceAddonsRow');
+            if (total > 0) {
+                row.style.display = 'flex';
+                document.getElementById('priceAddons').textContent = `+£${total}`;
+                document.getElementById('addonsLabel').textContent = 'Optional extras';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        // ==================== TOTAL PRICE ====================
         function updateTotalPrice() {
             const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
-            const formatted = `£${total.toLocaleString()}`;
-            
-            document.getElementById('priceTotal').textContent = formatted;
-            document.getElementById('mobilePriceTotal').textContent = formatted;
+            const fmt   = `£${total.toLocaleString()}`;
+            document.getElementById('priceTotal').textContent = fmt;
+            document.getElementById('mobilePriceTotal').textContent = fmt;
         }
 
         // ==================== GALLERY VIEWS ====================
         function setView(view, thumb) {
             document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
             thumb.classList.add('active');
-            // Could swap main SVG content here for different angles
         }
 
         // ==================== CALM MODE ====================
@@ -940,9 +1215,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             const initialColour = document.querySelector('input[name="colour"]:checked');
             if (initialColour) updateColour(initialColour);
-            
             const initialSize = document.querySelector('input[name="size"]:checked');
             if (initialSize) updateSize(initialSize);
+            updatePlaceholderColour();
         });
     </script>
 </body>
