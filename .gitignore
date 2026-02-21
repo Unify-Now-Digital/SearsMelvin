@@ -1,0 +1,10 @@
+# Wrangler local dev cache
+.wrangler/
+
+# Environment variables
+.env
+.env.local
+.dev.vars
+
+# OS
+.DS_Store

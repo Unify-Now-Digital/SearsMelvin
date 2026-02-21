@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | Sears Melvin Memorials</title>
+    <meta name="description" content="Get in touch with Sears Melvin Memorials. Request a quote, book a consultation, or ask a question. We're here when you're ready.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --color-error: #b44;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes checkmark { 0% { stroke-dashoffset: 50; } 100% { stroke-dashoffset: 0; } }
+        .animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        
+        .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; transition: all 0.3s; }
+
+        /* Calm Mode Toggle */
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+
+        /* Page Header */
+        .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .page-header h1 { font-size: 2.75rem; margin-bottom: 1rem; }
+        .page-header p { font-size: 1.15rem; max-width: 600px; margin: 0 auto; line-height: 1.8; }
+
+        /* Contact Layout */
+        .contact-section { padding: 4rem 2rem; }
+        .contact-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem; }
+
+        /* Contact Info */
+        .contact-info { padding: 2rem 0; }
+        .contact-intro { margin-bottom: 2.5rem; }
+        .contact-intro h2 { font-size: 1.75rem; margin-bottom: 1rem; }
+        .contact-intro p { line-height: 1.8; }
+
+        .contact-methods { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem; }
+        .contact-method { display: flex; gap: 1rem; padding: 1.25rem; background: white; border-radius: 8px; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+        .contact-method:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .contact-method-icon { width: 48px; height: 48px; background: var(--color-warm); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .contact-method-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .contact-method-content h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .contact-method-content p { font-size: 0.9rem; margin-bottom: 0.25rem; }
+        .contact-method-content a { color: var(--color-accent); font-weight: 500; }
+        .contact-method-content small { font-size: 0.8rem; color: var(--color-text-muted); }
+
+        /* Reassurance */
+        .reassurance { padding: 1.5rem; background: rgba(74, 124, 89, 0.08); border-radius: 8px; border-left: 4px solid var(--color-success); }
+        .reassurance h4 { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; color: var(--color-success); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .reassurance h4 svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; }
+        .reassurance p { font-size: 0.9rem; line-height: 1.6; }
+
+        /* Smart Form */
+        .contact-form-wrapper { background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        .form-header { margin-bottom: 2rem; }
+        .form-header h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .form-header p { font-size: 0.95rem; }
+
+        /* Enquiry Type Selector */
+        .enquiry-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .enquiry-type { padding: 1.25rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .enquiry-type:hover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.03); }
+        .enquiry-type.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
+        .enquiry-type input { display: none; }
+        .enquiry-type-icon { width: 48px; height: 48px; margin: 0 auto 0.75rem; background: var(--color-warm); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .enquiry-type.selected .enquiry-type-icon { background: var(--color-accent); }
+        .enquiry-type-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; transition: stroke 0.3s; }
+        .enquiry-type.selected .enquiry-type-icon svg { stroke: white; }
+        .enquiry-type-label { font-weight: 600; font-size: 0.95rem; color: var(--color-stone); }
+        .enquiry-type-desc { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem; }
+
+        /* Form Fields — always visible; enquiry type adds context but doesn't gate the form */
+        .form-fields { display: block; }
+        .form-fields.active { display: block; }
+
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+        .form-row.full { grid-template-columns: 1fr; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.5rem; }
+        .form-group label .required { color: var(--color-error); }
+
+        .form-input, .form-select, .form-textarea { 
+            width: 100%; padding: 0.875rem 1rem; 
+            border: 2px solid var(--color-border); border-radius: 6px; 
+            font-family: var(--font-body); font-size: 1rem; 
+            background: white;
+            transition: border-color 0.3s, box-shadow 0.3s; 
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { 
+            outline: none; 
+            border-color: var(--color-accent); 
+            box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.1);
+        }
+        .form-input::placeholder, .form-textarea::placeholder { color: #bbb; }
+        .form-textarea { min-height: 140px; resize: vertical; }
+        .form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
+
+        /* Cemetery Autocomplete */
+        .cemetery-autocomplete { position: relative; }
+        .cemetery-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--color-border); border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+        .cemetery-suggestions.active { display: block; }
+        .cemetery-suggestion { padding: 0.75rem 1rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.75rem; }
+        .cemetery-suggestion:hover { background: var(--color-warm); }
+        .cemetery-suggestion svg { width: 18px; height: 18px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; flex-shrink: 0; }
+        .cemetery-suggestion-text { flex: 1; }
+        .cemetery-suggestion-name { font-weight: 500; color: var(--color-stone); }
+        .cemetery-suggestion-area { font-size: 0.8rem; color: var(--color-text-muted); }
+        .cemetery-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
+        .cemetery-badge.kerb { background: rgba(74, 124, 89, 0.15); color: var(--color-success); }
+        .cemetery-badge.lawn { background: rgba(139, 115, 85, 0.15); color: var(--color-accent); }
+
+        /* File Upload */
+        .file-upload-zone { border: 2px dashed var(--color-border); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .file-upload-zone:hover, .file-upload-zone.dragover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.03); }
+        .file-upload-zone input { display: none; }
+        .file-upload-zone svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.75rem; }
+        .file-upload-zone p { font-size: 0.9rem; color: var(--color-text-muted); }
+        .file-upload-zone strong { color: var(--color-accent); }
+        .file-preview { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+        .file-preview-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--color-warm); border-radius: 4px; font-size: 0.85rem; }
+        .file-preview-item button { background: none; border: none; cursor: pointer; padding: 0; }
+        .file-preview-item button svg { width: 16px; height: 16px; stroke: var(--color-text-muted); }
+
+        /* Preferred Contact Method */
+        .contact-preference { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .contact-pref-option { flex: 1; min-width: 120px; padding: 0.875rem; border: 2px solid var(--color-border); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .contact-pref-option:hover { border-color: var(--color-stone); }
+        .contact-pref-option.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
+        .contact-pref-option input { display: none; }
+        .contact-pref-option svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.35rem; }
+        .contact-pref-option span { display: block; font-size: 0.85rem; font-weight: 500; }
+
+        /* Appointment Picker */
+        .appointment-picker { margin-top: 1rem; padding: 1.25rem; background: var(--color-warm); border-radius: 8px; display: none; }
+        .appointment-picker.active { display: block; animation: fadeInUp 0.3s ease; }
+        .appointment-picker h4 { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+        .appointment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+        .appointment-slot { padding: 0.75rem 0.5rem; border: 1px solid var(--color-border); border-radius: 4px; background: white; cursor: pointer; text-align: center; font-size: 0.8rem; transition: all 0.2s; }
+        .appointment-slot:hover { border-color: var(--color-accent); }
+        .appointment-slot.selected { border-color: var(--color-accent); background: var(--color-accent); color: white; }
+        .appointment-slot .date { font-weight: 600; }
+        .appointment-slot .time { color: var(--color-text-muted); }
+        .appointment-slot.selected .time { color: rgba(255,255,255,0.8); }
+
+        /* Submit Button */
+        .form-submit { 
+            width: 100%; padding: 1.125rem; margin-top: 1rem;
+            background: var(--color-stone); color: white; 
+            border: none; border-radius: 6px; 
+            font-family: var(--font-body); font-size: 1rem; font-weight: 500;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .form-submit:hover { background: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .form-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .form-submit svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .form-footer { margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
+        .form-footer a { color: var(--color-accent); text-decoration: underline; }
+
+        /* Success State */
+        .form-success { display: none; text-align: center; padding: 3rem 2rem; }
+        .form-success.active { display: block; animation: fadeInUp 0.5s ease; }
+        .success-icon { width: 80px; height: 80px; margin: 0 auto 1.5rem; background: rgba(74, 124, 89, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .success-icon svg { width: 40px; height: 40px; stroke: var(--color-success); fill: none; stroke-width: 2; stroke-dasharray: 50; animation: checkmark 0.5s ease 0.3s forwards; stroke-dashoffset: 50; }
+        .form-success h3 { font-size: 1.75rem; margin-bottom: 0.75rem; }
+        .form-success p { font-size: 1rem; line-height: 1.7; max-width: 400px; margin: 0 auto 1.5rem; }
+        .form-success .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.5rem; background: var(--color-accent); color: white; border-radius: 6px; font-weight: 500; transition: all 0.3s; }
+        .form-success .btn:hover { transform: translateY(-2px); }
+
+        /* Mobile */
+        @media (max-width: 1024px) {
+            .contact-container { grid-template-columns: 1fr; gap: 2rem; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .enquiry-type-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .appointment-grid { grid-template-columns: repeat(2, 1fr); }
+            .contact-method { flex-direction: column; text-align: center; }
+        }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <header class="page-header">
+        <h1 class="animate-in">We're here when you're ready</h1>
+        <p class="animate-in animate-delay-1">No pressure, no obligation—just honest guidance from people who understand. Reach out however feels most comfortable for you.</p>
+    </header>
+
+    <section class="contact-section">
+        <div class="contact-container">
+            <!-- Contact Info Side -->
+            <div class="contact-info animate-in animate-delay-2">
+                <div class="contact-intro">
+                    <h2>Get in touch</h2>
+                    <p>Whether you're ready to start planning or just have questions, we're here to help. There's no rush—we'll guide you through everything at your own pace.</p>
+                </div>
+
+                <div class="contact-methods">
+                    <a href="tel:01268208559" class="contact-method">
+                        <div class="contact-method-icon">
+                            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </div>
+                        <div class="contact-method-content">
+                            <h4>Call us</h4>
+                            <p><a href="tel:01268208559">01268 208 559</a></p>
+                            <small>Mon-Fri 9am-5pm, Sat 10am-2pm</small>
+                        </div>
+                    </a>
+
+                    <a href="/cdn-cgi/l/email-protection#ee87808881ae9d8b8f9c9d838b82988780c08d81c09b85" class="contact-method">
+                        <div class="contact-method-icon">
+                            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                        <div class="contact-method-content">
+                            <h4>Email us</h4>
+                            <p><a href="/cdn-cgi/l/email-protection#4b22252d240b382e2a3938262e273d2225652824653e20"><span class="__cf_email__" data-cfemail="86efe8e0e9c6f5e3e7f4f5ebe3eaf0efe8a8e5e9a8f3ed">[email&#160;protected]</span></a></p>
+                            <small>We reply within 24 hours</small>
+                        </div>
+                    </a>
+
+                    <div class="contact-method">
+                        <div class="contact-method-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <div class="contact-method-content">
+                            <h4>Visit our showroom</h4>
+                            <p>South London</p>
+                            <small>By appointment only</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reassurance">
+                    <h4>
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Your conversation is private
+                    </h4>
+                    <p>We treat every enquiry with the utmost discretion and sensitivity. Your information is never shared and you'll never receive unwanted follow-ups.</p>
+                </div>
+            </div>
+
+            <!-- Smart Form -->
+            <div class="contact-form-wrapper animate-in animate-delay-3">
+                <form id="contactForm">
+                    <div class="form-header">
+                        <h3>Send us a message</h3>
+                        <p>What can we help you with today?</p>
+                    </div>
+
+                    <!-- Enquiry Type Selection -->
+                    <div class="enquiry-type-grid">
+                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'new-memorial')">
+                            <input type="radio" name="enquiry_type" value="new-memorial">
+                            <div class="enquiry-type-icon">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18"/><path d="M12 6V3"/></svg>
+                            </div>
+                            <div class="enquiry-type-label">New Memorial</div>
+                            <div class="enquiry-type-desc">Headstone or kerb set</div>
+                        </label>
+                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'renovation')">
+                            <input type="radio" name="enquiry_type" value="renovation">
+                            <div class="enquiry-type-icon">
+                                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            </div>
+                            <div class="enquiry-type-label">Renovation</div>
+                            <div class="enquiry-type-desc">Clean, repair, restore</div>
+                        </label>
+                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'additional')">
+                            <input type="radio" name="enquiry_type" value="additional">
+                            <div class="enquiry-type-icon">
+                                <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            </div>
+                            <div class="enquiry-type-label">Additional Work</div>
+                            <div class="enquiry-type-desc">Inscription, letters</div>
+                        </label>
+                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'question')">
+                            <input type="radio" name="enquiry_type" value="question">
+                            <div class="enquiry-type-icon">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                            <div class="enquiry-type-label">Question</div>
+                            <div class="enquiry-type-desc">General enquiry</div>
+                        </label>
+                    </div>
+
+                    <!-- Form Fields (Progressive Disclosure) -->
+                    <div class="form-fields" id="formFields">
+                        <!-- Basic Info (Always shown) -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name <span class="required">*</span></label>
+                                <input type="text" id="firstName" name="first_name" class="form-input" placeholder="Your first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name <span class="required">*</span></label>
+                                <input type="text" id="lastName" name="last_name" class="form-input" placeholder="Your last name" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email <span class="required">*</span></label>
+                                <input type="email" id="email" name="email" class="form-input" placeholder="your@email.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" id="phone" name="phone" class="form-input" placeholder="07123 456 789">
+                            </div>
+                        </div>
+
+                        <!-- Cemetery Field (for new memorial / additional work) -->
+                        <div class="form-group cemetery-field" id="cemeteryField" style="display: none;">
+                            <label for="cemetery">Cemetery Name</label>
+                            <div class="cemetery-autocomplete">
+                                <input type="text" id="cemetery" name="cemetery" class="form-input" placeholder="Start typing to search..." autocomplete="off" oninput="searchCemetery(this.value)">
+                                <div class="cemetery-suggestions" id="cemeterySuggestions"></div>
+                            </div>
+                        </div>
+
+                        <!-- Grave Number (for new memorial / additional work) -->
+                        <div class="form-group grave-field" id="graveField" style="display: none;">
+                            <label for="graveNumber">Grave Number (if known)</label>
+                            <input type="text" id="graveNumber" name="grave_number" class="form-input" placeholder="e.g. Section B, Plot 123">
+                        </div>
+
+                        <!-- Photo Upload (for renovation) -->
+                        <div class="form-group photo-field" id="photoField" style="display: none;">
+                            <label>Photos of the memorial</label>
+                            <div class="file-upload-zone" id="fileUploadZone" onclick="document.getElementById('fileInput').click()">
+                                <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFileSelect(this.files)">
+                                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                <p>Photos help us provide accurate quotes</p>
+                            </div>
+                            <div class="file-preview" id="filePreview"></div>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="form-group">
+                            <label for="message">Your Message <span class="required">*</span></label>
+                            <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
+                        </div>
+
+                        <!-- Preferred Contact Method -->
+                        <div class="form-group">
+                            <label>How would you like us to respond?</label>
+                            <div class="contact-preference">
+                                <label class="contact-pref-option selected" onclick="selectContactPref(this, 'email')">
+                                    <input type="radio" name="contact_pref" value="email" checked>
+                                    <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    <span>Email</span>
+                                </label>
+                                <label class="contact-pref-option" onclick="selectContactPref(this, 'phone')">
+                                    <input type="radio" name="contact_pref" value="phone">
+                                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    <span>Phone</span>
+                                </label>
+                                <label class="contact-pref-option" onclick="selectContactPref(this, 'appointment')">
+                                    <input type="radio" name="contact_pref" value="appointment">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <span>Book Visit</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Appointment Picker (shown when "Book Visit" selected) -->
+                        <div class="appointment-picker" id="appointmentPicker">
+                            <h4>Choose a time that suits you</h4>
+                            <div class="appointment-grid" id="appointmentGrid"></div>
+                        </div>
+
+                        <button type="submit" class="form-submit">
+                            <span>Send Message</span>
+                            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+
+                        <p class="form-footer">
+                            By submitting, you agree to our <a href="privacy.html">Privacy Policy</a>. We'll never share your information.
+                        </p>
+                    </div>
+                </form>
+
+                <!-- Success State -->
+                <div class="form-success" id="formSuccess">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h3>Thank you for reaching out</h3>
+                    <p>We've received your message and will be in touch within 24 hours. If your enquiry is urgent, please call us directly.</p>
+                    <a href="memorials.html" class="btn">Browse Memorials</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="care-guide.html">Memorial Care</a></li>
+                <li><a href="resources.html">Support Resources</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // Cemetery database (would be from API in production)
+        const cemeteries = [
+            { name: 'Lambeth Cemetery', area: 'Tooting, SW17', type: 'kerb' },
+            { name: 'Streatham Cemetery', area: 'Streatham, SW16', type: 'lawn' },
+            { name: 'West Norwood Cemetery', area: 'West Norwood, SE27', type: 'kerb' },
+            { name: 'Camberwell Old Cemetery', area: 'Honor Oak, SE23', type: 'kerb' },
+            { name: 'Camberwell New Cemetery', area: 'Honor Oak, SE23', type: 'lawn' },
+            { name: 'Nunhead Cemetery', area: 'Nunhead, SE15', type: 'kerb' },
+            { name: 'Lewisham & Grove Park Cemetery', area: 'Grove Park, SE12', type: 'kerb' },
+            { name: 'Hither Green Cemetery', area: 'Hither Green, SE13', type: 'kerb' },
+            { name: 'Brockley Cemetery', area: 'Brockley, SE4', type: 'kerb' },
+            { name: 'Greenwich Cemetery', area: 'Charlton, SE7', type: 'lawn' },
+            { name: 'Woolwich Cemetery', area: 'Woolwich, SE18', type: 'kerb' },
+            { name: 'Plumstead Cemetery', area: 'Plumstead, SE18', type: 'kerb' },
+            { name: 'Eltham Cemetery', area: 'Eltham, SE9', type: 'lawn' },
+            { name: 'Edmonton Cemetery', area: 'Edmonton, N9', type: 'kerb' },
+            { name: 'Tottenham Park Cemetery', area: 'Edmonton, N18', type: 'kerb' },
+        ];
+
+        // Enquiry type selection
+        function selectEnquiryType(el, type) {
+            document.querySelectorAll('.enquiry-type').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
+
+            // Show/hide context-specific fields based on type
+            const cemeteryField = document.getElementById('cemeteryField');
+            const graveField = document.getElementById('graveField');
+            const photoField = document.getElementById('photoField');
+            
+            cemeteryField.style.display = (type === 'new-memorial' || type === 'additional') ? 'block' : 'none';
+            graveField.style.display = (type === 'new-memorial' || type === 'additional') ? 'block' : 'none';
+            photoField.style.display = (type === 'renovation') ? 'block' : 'none';
+            
+            // Update message placeholder
+            const placeholders = {
+                'new-memorial': 'Tell us about the memorial you\'re looking for - style, size, any specific requirements...',
+                'renovation': 'Describe the current condition and what work you\'d like done...',
+                'additional': 'What inscription or changes would you like to add?',
+                'question': 'What would you like to know?'
+            };
+            document.getElementById('message').placeholder = placeholders[type];
+        }
+
+        // Cemetery autocomplete
+        function searchCemetery(query) {
+            const suggestions = document.getElementById('cemeterySuggestions');
+            if (query.length < 2) {
+                suggestions.classList.remove('active');
+                return;
+            }
+            
+            const matches = cemeteries.filter(c => 
+                c.name.toLowerCase().includes(query.toLowerCase()) ||
+                c.area.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (matches.length === 0) {
+                suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
+            } else {
+                suggestions.innerHTML = matches.map(c => `
+                    <div class="cemetery-suggestion" onclick="selectCemetery('${c.name}', '${c.type}')">
+                        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span class="cemetery-suggestion-text">
+                            <span class="cemetery-suggestion-name">${c.name}</span>
+                            <span class="cemetery-suggestion-area">${c.area}</span>
+                        </span>
+                        <span class="cemetery-badge ${c.type}">${c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only'}</span>
+                    </div>
+                `).join('');
+            }
+            suggestions.classList.add('active');
+        }
+
+        function selectCemetery(name, type) {
+            document.getElementById('cemetery').value = name;
+            document.getElementById('cemeterySuggestions').classList.remove('active');
+        }
+
+        // Close suggestions on click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.cemetery-autocomplete')) {
+                document.getElementById('cemeterySuggestions').classList.remove('active');
+            }
+        });
+
+        // Contact preference
+        function selectContactPref(el, pref) {
+            document.querySelectorAll('.contact-pref-option').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            // Show appointment picker if "Book Visit" selected
+            const appointmentPicker = document.getElementById('appointmentPicker');
+            if (pref === 'appointment') {
+                appointmentPicker.classList.add('active');
+                generateAppointmentSlots();
+            } else {
+                appointmentPicker.classList.remove('active');
+            }
+        }
+
+        // Generate appointment slots
+        function generateAppointmentSlots() {
+            const grid = document.getElementById('appointmentGrid');
+            const slots = [];
+            const today = new Date();
+            
+            // Generate next 8 available slots (weekdays)
+            let current = new Date(today);
+            current.setDate(current.getDate() + 1); // Start from tomorrow
+            
+            while (slots.length < 8) {
+                const day = current.getDay();
+                if (day !== 0 && day !== 6) { // Skip weekends
+                    const times = ['10:00', '14:00'];
+                    times.forEach(time => {
+                        if (slots.length < 8) {
+                            slots.push({
+                                date: new Date(current),
+                                time: time
+                            });
+                        }
+                    });
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            grid.innerHTML = slots.map((slot, i) => `
+                <div class="appointment-slot" onclick="selectAppointment(this, '${slot.date.toISOString()}', '${slot.time}')">
+                    <div class="date">${days[slot.date.getDay()]} ${slot.date.getDate()} ${months[slot.date.getMonth()]}</div>
+                    <div class="time">${slot.time}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectAppointment(el, date, time) {
+            document.querySelectorAll('.appointment-slot').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        // File upload
+        const fileUploadZone = document.getElementById('fileUploadZone');
+        let uploadedFiles = [];
+
+        fileUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadZone.classList.add('dragover');
+        });
+
+        fileUploadZone.addEventListener('dragleave', () => {
+            fileUploadZone.classList.remove('dragover');
+        });
+
+        fileUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadZone.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files);
+        });
+
+        function handleFileSelect(files) {
+            const preview = document.getElementById('filePreview');
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/') && uploadedFiles.length < 5) {
+                    uploadedFiles.push(file);
+                    preview.innerHTML += `
+                        <div class="file-preview-item">
+                            <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
+                            <button type="button" onclick="removeFile('${file.name}')">
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function removeFile(name) {
+            uploadedFiles = uploadedFiles.filter(f => f.name !== name);
+            const preview = document.getElementById('filePreview');
+            preview.innerHTML = '';
+            uploadedFiles.forEach(file => {
+                preview.innerHTML += `
+                    <div class="file-preview-item">
+                        <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
+                        <button type="button" onclick="removeFile('${file.name}')">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // Form submission
+        const WORKER_URL = '/api/submit';
+
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.querySelector('.form-submit');
+            const originalBtnHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Sending...</span>';
+
+            // Hide any previous error
+            const existingError = document.getElementById('formSubmitError');
+            if (existingError) existingError.style.display = 'none';
+
+            const firstName   = document.getElementById('firstName').value.trim();
+            const lastName    = document.getElementById('lastName').value.trim();
+            const email       = document.getElementById('email').value.trim();
+            const phone       = document.getElementById('phone').value.trim();
+            const message     = document.getElementById('message').value.trim();
+            const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
+            const cemetery    = document.getElementById('cemetery').value.trim();
+
+            try {
+                const res = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: `${firstName} ${lastName}`.trim(),
+                        email,
+                        phone,
+                        message,
+                        enquiry_type: enquiryType,
+                        location: cemetery || null
+                    })
+                });
+
+                const result = await res.json();
+
+                if (result.ok) {
+                    document.getElementById('contactForm').style.display = 'none';
+                    document.getElementById('formSuccess').classList.add('active');
+                } else {
+                    throw new Error(result.error || 'Submission failed');
+                }
+            } catch (err) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+
+                let errorDiv = document.getElementById('formSubmitError');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('p');
+                    errorDiv.id = 'formSubmitError';
+                    errorDiv.style.cssText = 'color:#b44; margin-top:0.75rem; font-size:0.9rem;';
+                    submitBtn.insertAdjacentElement('afterend', errorDiv);
+                }
+                errorDiv.textContent = 'Sorry, something went wrong sending your message. Please try calling us on 01268 208 559 or email info@searsmelvin.co.uk.';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        // Calm mode toggle
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            // Toggle mobile nav
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('calmMode') === 'true') document.body.classList.add('calm-mode');
+        });
+    </script>
+</body>
+</html>

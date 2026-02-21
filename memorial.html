@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Ogee Top | Sears Melvin Memorials</title>
+    <meta name="description" content="Classic Ogee Top Lawn Memorial - A timeless design featuring the elegant ogee curved top, hand-finished in premium granite.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+            --stone-primary: #1a1a1a;
+            --stone-secondary: #252525;
+            --stone-highlight: #2d2d2d;
+        }
+
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.15s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+
+        /* Calm Mode Toggle */
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+
+        /* Breadcrumb */
+        .breadcrumb-bar { padding: 5.5rem 2rem 1rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
+        .breadcrumb { display: flex; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text-muted); max-width: 1400px; margin: 0 auto; }
+        .breadcrumb a { color: var(--color-accent); transition: color 0.2s; }
+        .breadcrumb a:hover { color: var(--color-stone); }
+
+        /* Product Layout */
+        .product-detail { padding: 2rem; background-color: var(--color-cream); }
+        .product-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+
+        /* Gallery */
+        .product-gallery { position: sticky; top: 80px; height: fit-content; }
+        .gallery-main { aspect-ratio: 4/5; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.1); background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .gallery-main svg { width: 100%; height: 100%; }
+        .gallery-badge { position: absolute; top: 1.5rem; left: 1.5rem; padding: 0.5rem 1rem; background: var(--color-accent); color: white; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 3px; }
+        
+        /* Live Preview Indicator */
+        .live-indicator { position: absolute; top: 1.5rem; right: 1.5rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; border-radius: 20px; }
+        .live-dot { width: 8px; height: 8px; background: #4ADE80; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Thumbnails */
+        .gallery-thumbs { display: flex; gap: 0.75rem; }
+        .gallery-thumb { width: 72px; height: 72px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; background: var(--color-warm); }
+        .gallery-thumb:hover { opacity: 0.9; transform: translateY(-2px); }
+        .gallery-thumb.active { border-color: var(--color-accent); opacity: 1; }
+        .gallery-thumb svg { width: 100%; height: 100%; }
+
+        /* Product Info */
+        .product-info { padding-top: 0.5rem; }
+        .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
+        .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
+        
+        .product-rating { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .stars { display: flex; gap: 0.15rem; }
+        .stars svg { width: 18px; height: 18px; fill: var(--color-accent); }
+        .rating-text { font-size: 0.9rem; color: var(--color-text-muted); }
+        .rating-text a { color: var(--color-accent); text-decoration: underline; }
+
+        .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+
+        /* Option Groups */
+        .option-group { margin-bottom: 2rem; }
+        .option-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .option-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); }
+        .option-value { font-size: 0.9rem; color: var(--color-stone); font-weight: 500; }
+
+        /* Stone Colour Swatches */
+        .colour-options { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .colour-option { cursor: pointer; text-align: center; transition: transform 0.2s; }
+        .colour-option:hover { transform: scale(1.05); }
+        .colour-option input { display: none; }
+        .colour-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .colour-swatch { 
+            width: 52px; height: 52px; border-radius: 50%; 
+            border: 3px solid transparent; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+            transition: all 0.3s;
+            position: relative;
+        }
+        .colour-swatch::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
+        }
+        .colour-option input:checked + .colour-wrapper .colour-swatch { 
+            border-color: var(--color-accent); 
+            box-shadow: 0 0 0 3px white, 0 0 0 6px var(--color-accent);
+            transform: scale(1.1);
+        }
+        .colour-name { font-size: 0.7rem; color: var(--color-text-muted); max-width: 65px; line-height: 1.3; }
+        .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
+
+        /* Visual Size Selector */
+        .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
+        .size-preview { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.3s; }
+        .size-preview:hover { transform: translateY(-5px); }
+        .size-preview input { display: none; }
+        .size-memorial { transition: all 0.3s; opacity: 0.4; }
+        .size-preview input:checked ~ .size-memorial { opacity: 1; }
+        .size-preview input:checked ~ .size-label { color: var(--color-stone); font-weight: 600; }
+        .size-preview input:checked ~ .size-memorial svg { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+        .size-label { margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
+        .size-label strong { display: block; font-size: 0.9rem; color: var(--color-stone); margin-bottom: 0.25rem; }
+        .size-dimensions { font-size: 0.7rem; color: var(--color-text-muted); }
+        
+        /* Human Scale Reference */
+        .human-reference { display: flex; flex-direction: column; align-items: center; opacity: 0.3; margin-right: 1rem; }
+        .human-reference svg { height: 120px; width: auto; }
+        .human-label { font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.5rem; }
+
+        /* Inscription Input */
+        .inscription-container { position: relative; }
+        .inscription-input { 
+            width: 100%; min-height: 140px; padding: 1rem; 
+            border: 2px solid var(--color-border); border-radius: 8px; 
+            font-family: var(--font-display); font-size: 1.1rem; 
+            resize: vertical; background: white;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            line-height: 1.6;
+        }
+        .inscription-input:focus { 
+            outline: none; 
+            border-color: var(--color-accent); 
+            box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.1);
+        }
+        .inscription-input::placeholder { color: #bbb; font-style: italic; }
+        
+        .inscription-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
+        .char-counter { font-size: 0.8rem; color: var(--color-text-muted); }
+        .char-counter.warning { color: #c9a227; }
+        .char-counter.over { color: #b44; }
+        .char-bar { width: 150px; height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+        .char-bar-fill { height: 100%; background: var(--color-success); transition: width 0.3s, background 0.3s; border-radius: 3px; }
+        .char-bar-fill.warning { background: #c9a227; }
+        .char-bar-fill.over { background: #b44; }
+
+        .font-selector { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .font-option { padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; background: white; }
+        .font-option:hover { border-color: var(--color-stone); }
+        .font-option.active { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
+        .font-traditional { font-family: 'Times New Roman', serif; }
+        .font-modern { font-family: var(--font-body); }
+        .font-script { font-family: 'Brush Script MT', cursive; font-size: 1rem; }
+
+        /* Add-ons */
+        .addons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .addon-card { padding: 1rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white; }
+        .addon-card:hover { border-color: var(--color-stone); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .addon-card.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.05); }
+        .addon-card input { display: none; }
+        .addon-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem; }
+        .addon-name { font-weight: 600; color: var(--color-stone); font-size: 0.95rem; }
+        .addon-price { color: var(--color-accent); font-weight: 600; }
+        .addon-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
+        .addon-check { width: 22px; height: 22px; border: 2px solid var(--color-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; margin-left: 0.5rem; }
+        .addon-card.selected .addon-check { background: var(--color-accent); border-color: var(--color-accent); }
+        .addon-card.selected .addon-check::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
+
+        /* Price Summary - Sticky */
+        .price-summary { 
+            position: sticky; bottom: 0; left: 0; right: 0;
+            background: white; 
+            border-top: 1px solid var(--color-border);
+            padding: 1.5rem 2rem;
+            margin: 2rem -2rem -2rem;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            z-index: 50;
+        }
+        .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
+        
+        .price-breakdown { flex: 1; }
+        .price-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.35rem; }
+        .price-row.total { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; }
+        .price-total-display { font-family: var(--font-display); font-size: 2rem; color: var(--color-stone); }
+
+        .price-actions { display: flex; gap: 1rem; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 1.75rem; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.03em; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .btn-primary { background: var(--color-stone); color: white; }
+        .btn-primary:hover { background: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-secondary { background: transparent; color: var(--color-stone); border: 2px solid var(--color-stone); }
+        .btn-secondary:hover { background: var(--color-stone); color: white; }
+        .btn-accent { background: var(--color-accent); color: white; }
+        .btn-accent:hover { background: var(--color-accent-light); transform: translateY(-2px); }
+
+        /* Trust Badges */
+        .trust-badges { display: flex; gap: 2rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+        .trust-badge { display: flex; align-items: center; gap: 0.75rem; }
+        .trust-badge svg { width: 32px; height: 32px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .trust-badge-text { font-size: 0.8rem; }
+        .trust-badge-text strong { display: block; color: var(--color-stone); }
+        .trust-badge-text span { color: var(--color-text-muted); }
+
+        /* Features List */
+        .features-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+        .features-title { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 1rem; }
+        .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .feature-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--color-stone); }
+        .feature-item svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+        /* Mobile Bottom Bar */
+        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); padding: 1rem; z-index: 90; }
+        .mobile-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-stone); margin-bottom: 0.5rem; }
+        .mobile-actions { display: flex; gap: 0.75rem; }
+        .mobile-actions .btn { flex: 1; padding: 0.875rem; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .product-container { grid-template-columns: 1fr; gap: 2rem; }
+            .product-gallery { position: relative; top: 0; }
+            .price-summary { position: relative; margin: 2rem 0 0; }
+            .price-summary-inner { flex-direction: column; align-items: stretch; }
+            .price-actions { justify-content: stretch; }
+            .price-actions .btn { flex: 1; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .size-visual { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
+            .human-reference { display: none; }
+            .addons-grid { grid-template-columns: 1fr; }
+            .trust-badges { flex-direction: column; gap: 1rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .price-summary { display: none; }
+            .mobile-bottom-bar { display: block; }
+            .colour-options { gap: 0.75rem; }
+            .colour-swatch { width: 44px; height: 44px; }
+        }
+
+        /* Quote Modal */
+        .quote-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
+        .quote-overlay.active { display: flex; }
+        .quote-modal { background: white; border-radius: 12px; max-width: 580px; width: 100%; max-height: 92vh; overflow-y: auto; }
+        .quote-modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 1.75rem 1.25rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); border-radius: 12px 12px 0 0; }
+        .quote-modal-header h2 { font-size: 1.35rem; color: var(--color-stone); margin-bottom: 0.2rem; }
+        .quote-modal-subtitle { font-size: 0.83rem; color: var(--color-text-muted); margin: 0; }
+        .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+        .quote-modal-close svg { width: 22px; height: 22px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .quote-config-summary { margin: 1.25rem 1.75rem; padding: 1rem 1.125rem; background: var(--color-cream); border-radius: 8px; border: 1px solid var(--color-border); font-size: 0.85rem; }
+        .quote-config-summary h3 { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); font-weight: 700; margin-bottom: 0.6rem; }
+        .quote-config-row { display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--color-text-muted); }
+        .quote-config-row span:last-child { color: var(--color-stone); font-weight: 500; }
+        .quote-config-total { display: flex; justify-content: space-between; padding: 0.5rem 0 0; margin-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 0.85rem; }
+        .quote-config-total span:last-child { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); font-weight: 600; }
+        .quote-form-body { padding: 0 1.75rem 1.5rem; }
+        .quote-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+        .quote-form-group { margin-bottom: 0.875rem; }
+        .quote-form-group label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--color-stone); margin-bottom: 0.3rem; }
+        .quote-form-group input, .quote-form-group textarea { width: 100%; padding: 0.65rem 0.875rem; border: 1.5px solid var(--color-border); border-radius: 6px; font-family: var(--font-body); font-size: 0.875rem; color: var(--color-text); background: white; transition: border-color 0.2s; outline: none; }
+        .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
+        .quote-form-group textarea { resize: vertical; min-height: 80px; }
+        .quote-required { color: var(--color-accent); }
+        .quote-submit-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.25rem; }
+        .quote-submit-btn:hover { background: var(--color-stone-light); }
+        .quote-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .quote-form-note { margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
+        .quote-form-note a { color: var(--color-accent); }
+        .quote-success { display: none; text-align: center; padding: 2.5rem 2rem; }
+        .quote-success-icon { width: 56px; height: 56px; background: var(--color-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+        .quote-success-icon svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
+        .quote-success h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .quote-success p { color: var(--color-text-muted); margin-bottom: 1.5rem; }
+        .quote-success-close { padding: 0.7rem 2rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+        .quote-error { color: #b44; font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
+        @media (max-width: 600px) { .quote-form-row { grid-template-columns: 1fr; } }
+
+        /* Cemetery autocomplete */
+        .cemetery-search-wrap { position: relative; }
+        .cemetery-search-wrap svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--color-stone); fill: none; stroke-width: 2; pointer-events: none; }
+        .cemetery-search-wrap input { padding-left: 2.1rem !important; }
+        .pac-container { border-radius: 6px; border: 1.5px solid var(--color-border); box-shadow: 0 6px 20px rgba(0,0,0,0.1); font-family: var(--font-body); font-size: 0.85rem; margin-top: 2px; }
+        .pac-item { padding: 0.45rem 0.75rem; cursor: pointer; }
+        .pac-item:hover { background: #f5f3f0; }
+        .pac-item-query { font-size: 0.85rem; color: var(--color-stone); }
+
+        /* Payment step */
+        .quote-pay-step { padding: 0 1.75rem 1.5rem; }
+        .quote-deposit-header { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1.25rem; }
+        .quote-deposit-icon { width: 40px; height: 40px; background: var(--color-stone); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .quote-deposit-icon svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+        .quote-deposit-header h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+        .quote-deposit-header p { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); }
+        .quote-deposit-card { background: #f5f3f0; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem; }
+        .quote-deposit-row { display: flex; justify-content: space-between; font-size: 0.875rem; padding: 0.2rem 0; }
+        .quote-deposit-row span:first-child { color: var(--color-text-muted); }
+        .quote-deposit-total { border-top: 1px solid var(--color-border); margin-top: 0.4rem; padding-top: 0.5rem; font-weight: 600; color: var(--color-stone); }
+        #payment-element { margin-bottom: 1rem; }
+        .quote-pay-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; }
+        .quote-pay-btn:hover { background: var(--color-stone-light); }
+        .quote-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .quote-skip-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; font-family: var(--font-body); }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+    </nav>
+
+    <div class="breadcrumb-bar">
+        <div class="breadcrumb">
+            <a href="index.html">Home</a><span>/</span>
+            <a href="memorials.html">Memorials</a><span>/</span>
+            <a href="memorials.html?type=lawn-headstone">Lawn Headstones</a><span>/</span>
+            <span>Classic Ogee Top</span>
+        </div>
+    </div>
+
+    <section class="product-detail">
+        <div class="product-container">
+            <!-- Gallery with Live Preview -->
+            <div class="product-gallery animate-in">
+                <div class="gallery-main" id="galleryMain">
+                    <svg viewBox="0 0 400 500" id="mainMemorialSvg">
+                        <defs>
+                            <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#d4cfc6"/>
+                                <stop offset="100%" stop-color="#e0dcd4"/>
+                            </linearGradient>
+                            <linearGradient id="stoneGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="var(--stone-primary)"/>
+                                <stop offset="40%" stop-color="var(--stone-secondary)"/>
+                                <stop offset="60%" stop-color="var(--stone-secondary)"/>
+                                <stop offset="100%" stop-color="var(--stone-primary)"/>
+                            </linearGradient>
+                            <linearGradient id="goldLettering" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#b8943f"/>
+                                <stop offset="50%" stop-color="#d4af37"/>
+                                <stop offset="100%" stop-color="#b8943f"/>
+                            </linearGradient>
+                            <!-- Clip path keeps inscription text inside stone body -->
+                            <clipPath id="stoneClip">
+                                <path d="M-68 174 L-68 -54 Q-68 -93 -44 -113 Q0 -148 44 -113 Q68 -93 68 -54 L68 174 Z"/>
+                            </clipPath>
+                        </defs>
+                        <!-- Background -->
+                        <rect width="400" height="500" fill="url(#sky)"/>
+                        <rect x="0" y="420" width="400" height="80" fill="#9ab094"/>
+                        
+                        <!-- Memorial Stone - Size changes based on selection -->
+                        <g id="memorialStone" transform="translate(200,230)">
+                            <path id="headstoneShape" d="M-70 175 L-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55 L70 175 Z" fill="url(#stoneGradient)"/>
+                            <path d="M-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                            <rect id="baseRect1" x="-82" y="175" width="164" height="26" fill="var(--stone-secondary)" rx="3"/>
+                            <rect id="baseRect2" x="-90" y="201" width="180" height="18" fill="var(--stone-primary)" rx="2"/>
+                            
+                            <!-- Photo Plaque overlay -->
+                            <g id="photoPlaceholder" clip-path="url(#stoneClip)">
+                                <g id="plaqueSmall" style="display:none">
+                                    <ellipse cx="0" cy="-68" rx="24" ry="19" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <ellipse cx="0" cy="-68" rx="21" ry="16" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-64" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="4.5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
+                                <g id="plaqueMedium" style="display:none">
+                                    <ellipse cx="0" cy="-64" rx="31" ry="24" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <ellipse cx="0" cy="-64" rx="28" ry="21" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-60" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
+                                <g id="plaqueLarge" style="display:none">
+                                    <rect x="-34" y="-98" width="68" height="54" rx="3" fill="#777" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                                    <rect x="-31" y="-95" width="62" height="48" rx="2" fill="#444" opacity="0.9"/>
+                                    <text x="0" y="-68" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="5" font-family="DM Sans,sans-serif">photo</text>
+                                </g>
+                            </g>
+                            
+                            <!-- Hidden text element for word-wrap measurement only -->
+                            <text id="textMeasure" x="-9999" y="-9999" opacity="0" pointer-events="none"></text>
+
+                            <!-- Inscription lines rendered dynamically by JS -->
+                            <g id="inscriptionGroup" clip-path="url(#stoneClip)" style="display:none"></g>
+                            
+                            <!-- Placeholder guide lines (visible when no text) -->
+                            <g id="placeholderLines" clip-path="url(#stoneClip)">
+                                <line x1="-40" y1="-42" x2="40" y2="-42" stroke="url(#goldLettering)" stroke-width="2" opacity="0.35"/>
+                                <line x1="-32" y1="-26" x2="32" y2="-26" stroke="url(#goldLettering)" stroke-width="1.5" opacity="0.35"/>
+                                <line x1="-36" y1="-10" x2="36" y2="-10" stroke="url(#goldLettering)" stroke-width="1.5" opacity="0.35"/>
+                                <line x1="-28" y1="16"  x2="28" y2="16"  stroke="rgba(200,200,200,0.4)" stroke-width="1.2"/>
+                                <line x1="-38" y1="52"  x2="38" y2="52"  stroke="rgba(200,200,200,0.28)" stroke-width="1"/>
+                                <line x1="-34" y1="70"  x2="34" y2="70"  stroke="rgba(200,200,200,0.28)" stroke-width="1"/>
+                            </g>
+                        </g>
+                        
+                        <!-- Flowers at base -->
+                        <g transform="translate(305, 405)">
+                            <ellipse cx="0" cy="8" rx="18" ry="6" fill="#3a3a3a"/>
+                            <line x1="-8" y1="8" x2="-12" y2="-25" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="0" y1="8" x2="2" y2="-30" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="8" y1="8" x2="12" y2="-22" stroke="#5a8a5a" stroke-width="2"/>
+                            <circle cx="-12" cy="-28" r="6" fill="#c77"/>
+                            <circle cx="2" cy="-33" r="7" fill="#fff" opacity="0.9"/>
+                            <circle cx="12" cy="-25" r="5" fill="#e9d"/>
+                        </g>
+                    </svg>
+                    <span class="gallery-badge">Popular Choice</span>
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        Live Preview
+                    </div>
+                </div>
+                
+                <div class="gallery-thumbs">
+                    <div class="gallery-thumb active" onclick="setView('front', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#d4cfc6"/>
+                            <rect x="0" y="60" width="72" height="12" fill="#9ab094"/>
+                            <g transform="translate(36,34)">
+                                <path d="M-16 26 L-16 -12 Q-16 -20 -10 -24 Q0 -32 10 -24 Q16 -20 16 -12 L16 26 Z" fill="var(--stone-primary)"/>
+                                <rect x="-18" y="26" width="36" height="5" fill="var(--stone-secondary)"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('angle', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#d4cfc6"/>
+                            <rect x="0" y="60" width="72" height="12" fill="#9ab094"/>
+                            <g transform="translate(36,34) rotate(-8)">
+                                <path d="M-14 24 L-14 -10 Q-14 -18 -9 -22 Q0 -28 9 -22 Q14 -18 14 -10 L14 24 Z" fill="var(--stone-primary)"/>
+                                <rect x="-16" y="24" width="32" height="4" fill="var(--stone-secondary)"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('detail', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="var(--stone-primary)"/>
+                            <g transform="translate(36,36)">
+                                <line x1="-20" y1="-10" x2="20" y2="-10" stroke="#d4af37" stroke-width="3"/>
+                                <line x1="-16" y1="2" x2="16" y2="2" stroke="#d4af37" stroke-width="2"/>
+                                <line x1="-18" y1="14" x2="18" y2="14" stroke="#555" stroke-width="1.5"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('installed', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#a8c4a0"/>
+                            <g transform="translate(36,38)">
+                                <path d="M-12 22 L-12 -8 Q-12 -14 -7 -17 Q0 -22 7 -17 Q12 -14 12 -8 L12 22 Z" fill="var(--stone-primary)"/>
+                                <rect x="-14" y="22" width="28" height="4" fill="var(--stone-secondary)"/>
+                                <circle cx="22" cy="15" r="5" fill="#c77"/>
+                                <circle cx="26" cy="8" r="4" fill="#ffd"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Info & Configurator -->
+            <div class="product-info">
+                <span class="product-category animate-in">Lawn Headstone</span>
+                <h1 class="animate-in animate-delay-1">Classic Ogee Top Lawn Memorial</h1>
+                
+                <div class="product-rating animate-in animate-delay-2">
+                    <div class="stars">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <span class="rating-text">4.9 average · <a href="#reviews">23 reviews</a></span>
+                </div>
+
+                <p class="product-description animate-in animate-delay-3">
+                    A timeless design featuring the elegant ogee curved top, hand-finished in premium granite. 
+                    This classic memorial combines traditional craftsmanship with enduring quality, creating 
+                    a dignified tribute that will stand the test of time. Price includes nationwide installation 
+                    and our 30-year guarantee.
+                </p>
+
+                <!-- Stone Colour - Live Updates SVG -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Stone Colour</span>
+                        <span class="option-value" id="selectedColourName">Black Galaxy</span>
+                    </div>
+                    <div class="colour-options">
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="black" data-name="Black Galaxy" data-primary="#1a1a1a" data-secondary="#252525" checked onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);"></span>
+                                <span class="colour-name">Black Galaxy</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="grey" data-name="Rustenberg Grey" data-primary="#5a5a5a" data-secondary="#6b6b6b" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a5a5a 0%, #7a7a7a 50%, #6b6b6b 100%);"></span>
+                                <span class="colour-name">Rustenberg Grey</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="blue" data-name="Vizag Blue" data-primary="#1a2a3a" data-secondary="#243444" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a2a3a 0%, #2c3e50 50%, #1a2a3a 100%);"></span>
+                                <span class="colour-name">Vizag Blue</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="brown" data-name="Indian Aurora" data-primary="#6B4423" data-secondary="#7a5030" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #6B4423 0%, #8B5A2B 50%, #A0522D 100%);"></span>
+                                <span class="colour-name">Indian Aurora</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="green" data-name="Emerald Pearl" data-primary="#1d3a2e" data-secondary="#254438" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1d3a2e 0%, #2d4a3e 50%, #1d3a2e 100%);"></span>
+                                <span class="colour-name">Emerald Pearl</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="red" data-name="Ruby Red" data-primary="#5a2028" data-secondary="#6a2830" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a2028 0%, #722F37 50%, #5a2028 100%);"></span>
+                                <span class="colour-name">Ruby Red</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Visual Size Selector with Human Reference -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Memorial Size</span>
+                        <span class="option-value" id="selectedSizeName">Standard (24" × 18" × 3")</span>
+                    </div>
+                    <div class="size-visual">
+                        <!-- Human reference for scale -->
+                        <div class="human-reference">
+                            <svg viewBox="0 0 40 120" stroke="#999" stroke-width="2" fill="none" stroke-linecap="round">
+                                <circle cx="20" cy="10" r="8"/>
+                                <line x1="20" y1="18" x2="20" y2="60"/>
+                                <line x1="8" y1="35" x2="32" y2="35"/>
+                                <line x1="20" y1="60" x2="10" y2="100"/>
+                                <line x1="20" y1="60" x2="30" y2="100"/>
+                            </svg>
+                            <span class="human-label">5'6" / 168cm</span>
+                        </div>
+                        
+                        <!-- Standard -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="standard" data-name="Standard" data-dimensions="24&quot; × 18&quot; × 3&quot;" data-price="0" data-scale="1" checked onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 75px;">
+                                <svg viewBox="0 0 60 80" width="60" height="75">
+                                    <path d="M5 72 L5 22 Q5 10 15 4 Q30 -6 45 4 Q55 10 55 22 L55 72 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="72" width="56" height="6" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Standard</strong>
+                                <span class="size-dimensions">24" × 18" × 3"</span>
+                            </div>
+                        </label>
+                        
+                        <!-- Medium -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="medium" data-name="Medium" data-dimensions="27&quot; × 21&quot; × 3&quot;" data-price="150" data-scale="1.15" onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 88px;">
+                                <svg viewBox="0 0 70 95" width="70" height="88">
+                                    <path d="M5 87 L5 27 Q5 12 17 5 Q35 -8 53 5 Q65 12 65 27 L65 87 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="87" width="66" height="7" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Medium +£150</strong>
+                                <span class="size-dimensions">27" × 21" × 3"</span>
+                            </div>
+                        </label>
+                        
+                        <!-- Large -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="large" data-name="Large" data-dimensions="30&quot; × 24&quot; × 4&quot;" data-price="300" data-scale="1.3" onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 100px;">
+                                <svg viewBox="0 0 80 110" width="80" height="100">
+                                    <path d="M5 100 L5 32 Q5 14 19 6 Q40 -10 61 6 Q75 14 75 32 L75 100 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="100" width="76" height="8" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Large +£300</strong>
+                                <span class="size-dimensions">30" × 24" × 4"</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Live Inscription Preview -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Inscription</span>
+                        <span class="option-value"><span id="charCount">0</span> / 100 included</span>
+                    </div>
+                    <div class="inscription-container">
+                        <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="400"></textarea>
+                        <div class="inscription-meta">
+                            <div class="char-bar">
+                                <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
+                            </div>
+                            <span class="char-counter" id="charCounter">100 characters included, then £2.40 each</span>
+                        </div>
+                        <div class="font-selector">
+                            <button type="button" class="font-option font-traditional active" onclick="setFont('traditional', this)">Traditional</button>
+                            <button type="button" class="font-option font-modern" onclick="setFont('modern', this)">Modern</button>
+                            <button type="button" class="font-option font-script" onclick="setFont('script', this)">Script</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add-ons -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Lettering Colour</span>
+                        <span class="option-value" id="selectedLetterColourName">Gold (included)</span>
+                    </div>
+                    <div class="colour-options">
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="gold" data-name="Gold" data-price="0" checked onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #b8943f 0%, #d4af37 50%, #b8943f 100%);"></span>
+                                <span class="colour-name">Gold</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="goldleaf" data-name="Gold Leaf" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #c8a535 0%, #f0cd50 50%, #c8a535 100%); box-shadow: 0 2px 8px rgba(200,165,53,0.35);"></span>
+                                <span class="colour-name">Gold Leaf</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="white" data-name="White" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #e8e4dc 0%, #ffffff 50%, #ddd9d0 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.08);"></span>
+                                <span class="colour-name">White</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="silver" data-name="Silver" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #9a9a9a 0%, #c8c8c8 50%, #9a9a9a 100%);"></span>
+                                <span class="colour-name">Silver</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="letterColour" value="black" data-name="Black" data-price="0" onchange="updateLetterColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #3a3a3a 50%, #1a1a1a 100%);"></span>
+                                <span class="colour-name">Black</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Add-ons -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Optional Extras</span>
+                    </div>
+
+                    <!-- Fixed 2-column card grid — never reflows -->
+                    <div class="addons-grid">
+                        <!-- Photo Plaque — compact card, no internal expansion -->
+                        <div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">
+                            <input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="160">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Ceramic Photo Plaque</div>
+                                    <div class="addon-price" id="photoPriceLabel">+£160</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Weather-resistant ceramic photo, professionally reproduced. Lasts 25+ years. Tap to choose size.</p>
+                        </div>
+
+                        <div class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="vase" data-price="85">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Matching Flower Vase</div>
+                                    <div class="addon-price">+£85</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Removable granite vase in matching stone colour.</p>
+                        </div>
+
+                        <div class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="design" data-price="120">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Custom Design / Motif</div>
+                                    <div class="addon-price">+£120</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Carved rose, cross, dove, or custom design of your choice.</p>
+                        </div>
+
+                        <label class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="extra-lettering" data-price="0">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Extra Lettering</div>
+                                    <div class="addon-price">£2.40 / letter</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Automatically calculated above 100 characters included.</p>
+                        </label>
+                    </div>
+
+                    <!-- Photo size panel — sits BELOW the grid, never disrupts card positions -->
+                    <div id="photoSubPanel" style="display:none; margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose photo plaque size</p>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem;">
+                            <!-- Small oval -->
+                            <div class="photo-size-tile" id="psTileSmall" onclick="selectPhotoSize(this, 160, 'small')" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; background:rgba(139,115,85,0.05); text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="46" height="36" viewBox="-23 -18 46 36">
+                                        <ellipse cx="0" cy="0" rx="20" ry="14" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <ellipse cx="0" cy="0" rx="17" ry="11" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Small Oval</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">3" · +£160</div>
+                            </div>
+                            <!-- Medium oval -->
+                            <div class="photo-size-tile" id="psTileMedium" onclick="selectPhotoSize(this, 200, 'medium')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="60" height="46" viewBox="-30 -23 60 46">
+                                        <ellipse cx="0" cy="0" rx="27" ry="19" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <ellipse cx="0" cy="0" rx="24" ry="16" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Medium Oval</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">4" · +£200</div>
+                            </div>
+                            <!-- Large rectangle -->
+                            <div class="photo-size-tile" id="psTileLarge" onclick="selectPhotoSize(this, 240, 'large')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                                <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                    <svg width="64" height="48" viewBox="-32 -24 64 48">
+                                        <rect x="-30" y="-20" width="60" height="40" rx="3" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <rect x="-27" y="-17" width="54" height="34" rx="2" fill="#555"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Large Rectangle</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">6" · +£240</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Garden Kerb Surround — lawn memorial option, simple toggle -->
+                    <div class="addon-card" id="kerbAddonCard" style="grid-column:1/-1; margin-top:1rem;" onclick="toggleKerbAddon(this)">
+                        <input type="checkbox" name="addon" value="kerb" id="kerbCheck" data-price="350">
+                        <div class="addon-header">
+                            <div>
+                                <div class="addon-name">Garden Kerb Surround</div>
+                                <div class="addon-price">+£350</div>
+                            </div>
+                            <span class="addon-check"></span>
+                        </div>
+                        <p class="addon-desc">Granite kerb border enclosing the full grave, filled with white chippings. Tidy, lasting, and low maintenance. Matching stone colour.</p>
+                    </div>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>30 Year Guarantee</strong>
+                            <span>Against manufacturing defects</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>Free Installation</strong>
+                            <span>Anywhere in England & Wales</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>We Handle Permits</strong>
+                            <span>Cemetery applications included</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="features-section">
+                    <h4 class="features-title">What's Included</h4>
+                    <div class="features-grid">
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Premium granite headstone</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Matching granite base</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 100 characters inscription</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Cemetery permit application</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Professional installation</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Photo on completion</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>30 year guarantee</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Aftercare guide</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Price Summary -->
+        <div class="price-summary" id="priceSummary">
+            <div class="price-summary-inner">
+                <div class="price-breakdown">
+                    <div class="price-row">
+                        <span>Classic Ogee Top Memorial</span>
+                        <span id="priceBase">£1,450</span>
+                    </div>
+                    <div class="price-row" id="priceSizeRow" style="display: none;">
+                        <span id="priceSizeLabel">Size upgrade</span>
+                        <span id="priceSizeAmount">+£0</span>
+                    </div>
+                    <div class="price-row" id="priceInscriptionRow" style="display: none;">
+                        <span>Extra inscription (<span id="extraCharsCount">0</span> chars)</span>
+                        <span id="priceInscription">+£0</span>
+                    </div>
+                    <div class="price-row" id="priceAddonsRow" style="display: none;">
+                        <span id="addonsLabel">Optional extras</span>
+                        <span id="priceAddons">+£0</span>
+                    </div>
+                    <div class="price-row total">
+                        <span>Total (fully installed)</span>
+                        <span class="price-total-display" id="priceTotal">£1,450</span>
+                    </div>
+                </div>
+                <div class="price-actions">
+                    <button class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                        Save
+                    </button>
+                    <button class="btn btn-primary" onclick="openQuoteModal()">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Request Quote
+                    </button>
+                    <button class="btn btn-accent">
+                        Pay 50% Deposit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bottom-bar">
+        <div class="mobile-price">
+            <span id="mobilePriceTotal">£1,450</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
+        </div>
+        <div class="mobile-actions">
+            <button class="btn btn-secondary" onclick="openQuoteModal()">Quote</button>
+            <button class="btn btn-accent">Pay Deposit</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="index.html#process">Process</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Quote Request Modal -->
+    <div class="quote-overlay" id="quoteOverlay" onclick="if(event.target===this)closeQuoteModal()">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <div>
+                    <h2>Request a Quote</h2>
+                    <p class="quote-modal-subtitle">We'll be in touch within 24 hours</p>
+                </div>
+                <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="quote-config-summary">
+                <h3>Your Configuration</h3>
+                <div class="quote-config-row"><span>Stone</span><span id="qsColour">—</span></div>
+                <div class="quote-config-row"><span>Size</span><span id="qsSize">—</span></div>
+                <div class="quote-config-row" id="qsAddonsRow" style="display:none"><span>Extras</span><span id="qsAddons">—</span></div>
+                <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
+            </div>
+            <div class="quote-form-body">
+                <form id="quoteForm" novalidate>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>First Name <span class="quote-required">*</span></label>
+                            <input type="text" id="qFirstName" placeholder="Your first name" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Last Name <span class="quote-required">*</span></label>
+                            <input type="text" id="qLastName" placeholder="Your last name" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>Email Address <span class="quote-required">*</span></label>
+                            <input type="email" id="qEmail" placeholder="your@email.com" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="qPhone" placeholder="07123 456 789">
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Cemetery <span class="quote-required">*</span></label>
+                        <div class="cemetery-search-wrap">
+                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <input type="text" id="qCemetery" placeholder="Search for cemetery…" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Additional details</label>
+                        <textarea id="qMessage" placeholder="Grave section / plot number, inscription ideas, or any questions…"></textarea>
+                    </div>
+                    <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
+                    <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
+                        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>Send Quote Request</span>
+                    </button>
+                    <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
+                </form>
+                <div class="quote-success" id="quoteSuccess">
+                    <div class="quote-success-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h3>Quote request sent</h3>
+                    <p id="quoteSuccessMsg">We've sent a confirmation to your email and will be in touch within 24 hours.</p>
+                    <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Deposit payment -->
+            <div class="quote-pay-step" id="quotePayStep" style="display:none">
+                <div class="quote-deposit-header">
+                    <div class="quote-deposit-icon">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="11" width="22" height="11" rx="2" ry="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div>
+                        <h3>Secure your order</h3>
+                        <p>A 50% deposit confirms your order and reserves your slot</p>
+                    </div>
+                </div>
+                <div class="quote-deposit-card">
+                    <div class="quote-deposit-row">
+                        <span>50% deposit</span>
+                        <span id="qDepositAmount">—</span>
+                    </div>
+                    <div class="quote-deposit-row">
+                        <span>Balance due later</span>
+                        <span id="qBalanceDue">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Order total</span>
+                        <span id="qOrderTotal">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Total today</span>
+                        <span id="qDepositTotal">—</span>
+                    </div>
+                </div>
+                <div id="payment-element"></div>
+                <p class="quote-error" id="quotePayError" style="display:none"></p>
+                <button class="quote-pay-btn" id="quotePayBtn" type="button">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="11" width="22" height="11" rx="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Pay deposit</span>
+                </button>
+                <button class="quote-skip-link" id="quoteSkipBtn" type="button">Skip for now — pay later by invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE ====================
+        const state = {
+            basePrice: 1450,
+            sizePrice: 0,
+            inscriptionPrice: 0,
+            addonsPrice: 0,
+            photoActive: false,
+            photoSize: 'small',
+            photoPrice: 0,
+            kerbActive: false,
+            kerbPrice: 350,
+            letterColour: 'gold',
+            font: 'traditional',
+            inscription: '',
+            colour: 'black',
+            selectedSize: 'standard'
+        };
+
+        const letterColourMap = {
+            gold:     { fill: 'url(#goldLettering)', lowerFill: 'rgba(212,175,55,0.65)' },
+            goldleaf: { fill: 'url(#goldLettering)', lowerFill: 'rgba(212,175,55,0.85)' },
+            white:    { fill: '#f0ece6',             lowerFill: 'rgba(240,236,230,0.7)'  },
+            silver:   { fill: '#c8c8c8',             lowerFill: 'rgba(200,200,200,0.7)'  },
+            black:    { fill: '#1a1a1a',             lowerFill: 'rgba(30,30,30,0.75)'    }
+        };
+
+        // ==================== COLOUR SELECTION ====================
+        function updateColour(input) {
+            const name = input.dataset.name;
+            const primary = input.dataset.primary;
+            const secondary = input.dataset.secondary;
+            const highlight = input.dataset.highlight;
+            state.colour = input.value;
+            document.getElementById('selectedColourName').textContent = name;
+            document.documentElement.style.setProperty('--stone-primary', primary);
+            document.documentElement.style.setProperty('--stone-secondary', secondary);
+            document.documentElement.style.setProperty('--stone-highlight', highlight);
+        }
+
+        // ==================== LETTERING COLOUR ====================
+        function updateLetterColour(input) {
+            state.letterColour = input.value;
+            document.getElementById('selectedLetterColourName').textContent = input.dataset.name;
+            renderInscriptionSVG(state.inscription);
+            updatePlaceholderColour();
+        }
+
+        function updatePlaceholderColour() {
+            const colours = letterColourMap[state.letterColour];
+            const stroke = colours.fill === 'url(#goldLettering)' ? 'url(#goldLettering)' : colours.fill;
+            const lines = document.querySelectorAll('#placeholderLines line');
+            lines.forEach((line, i) => {
+                if (i < 3) line.setAttribute('stroke', stroke);
+            });
+        }
+
+        // ==================== SIZE ====================
+        function updateSize(input) {
+            const name = input.dataset.name;
+            const dimensions = input.dataset.dimensions;
+            const price = parseInt(input.dataset.price);
+            const scale = parseFloat(input.dataset.scale);
+            state.sizePrice = price;
+            state.selectedSize = input.value;
+            document.getElementById('selectedSizeName').textContent = `${name} (${dimensions})`;
+            const memorial = document.getElementById('memorialStone');
+            memorial.style.transform = `translate(200px, ${230 - (scale - 1) * 30}px) scale(${scale})`;
+            memorial.style.transition = 'transform 0.4s ease';
+            const sizeRow = document.getElementById('priceSizeRow');
+            if (price > 0) {
+                sizeRow.style.display = 'flex';
+                document.getElementById('priceSizeLabel').textContent = `Size upgrade (${name})`;
+                document.getElementById('priceSizeAmount').textContent = `+£${price}`;
+            } else {
+                sizeRow.style.display = 'none';
+            }
+            updateTotalPrice();
+        }
+
+        // ==================== INSCRIPTION — word-wrap + dynamic SVG lines ====================
+        function updateInscription(textarea) {
+            const text = textarea.value;
+            state.inscription = text;
+            const charCount = text.length;
+            document.getElementById('charCount').textContent = charCount;
+            const charBar = document.getElementById('charBarFill');
+            const charCounter = document.getElementById('charCounter');
+            const pct = Math.min((charCount / 100) * 100, 100);
+            charBar.style.width = pct + '%';
+            charBar.classList.remove('warning','over');
+            charCounter.classList.remove('warning','over');
+            if (charCount > 100) {
+                const extra = charCount - 100;
+                const cost  = parseFloat((extra * 2.40).toFixed(2));
+                charCounter.textContent = `${extra} extra chars = +£${cost.toFixed(2)}`;
+                charBar.classList.add('over');
+                charCounter.classList.add('over');
+                state.inscriptionPrice = cost;
+                document.getElementById('priceInscriptionRow').style.display = 'flex';
+                document.getElementById('extraCharsCount').textContent = extra;
+                document.getElementById('priceInscription').textContent = `+£${cost.toFixed(2)}`;
+            } else if (charCount > 80) {
+                charCounter.textContent = `${100 - charCount} characters remaining`;
+                charBar.classList.add('warning');
+                state.inscriptionPrice = 0;
+                document.getElementById('priceInscriptionRow').style.display = 'none';
+            } else {
+                charCounter.textContent = '100 characters included, then £2.40 each';
+                state.inscriptionPrice = 0;
+                document.getElementById('priceInscriptionRow').style.display = 'none';
+            }
+            renderInscriptionSVG(text);
+            updateTotalPrice();
+        }
+
+        /**
+         * renderInscriptionSVG — word-wraps each typed line to fit within the stone,
+         * then creates SVG <text> elements dynamically. Uses #textMeasure for width testing.
+         */
+        function renderInscriptionSVG(text) {
+            const placeholders = document.getElementById('placeholderLines');
+            const inscGroup    = document.getElementById('inscriptionGroup');
+            const measureEl    = document.getElementById('textMeasure');
+
+            if (!text || !text.trim()) {
+                placeholders.style.display = 'block';
+                inscGroup.style.display = 'none';
+                return;
+            }
+
+            placeholders.style.display = 'none';
+            inscGroup.style.display = 'block';
+
+            // Clear old lines
+            while (inscGroup.firstChild) inscGroup.removeChild(inscGroup.firstChild);
+
+            const colours = letterColourMap[state.letterColour];
+            const fontFamily = { traditional:'Times New Roman,serif', modern:'DM Sans,sans-serif', script:'Georgia,serif' }[state.font] || 'Times New Roman,serif';
+            const FONT_SIZE   = 9;   // SVG units
+            const LINE_HEIGHT = 13.5;
+            const MAX_WIDTH   = 112; // safe zone — stone is ~140 wide, inset a little
+
+            // Photo shifts first line down
+            const photoStartDelta = state.photoActive
+                ? { small: 40, medium: 52, large: 68 }[state.photoSize]
+                : 0;
+            let y = -42 + photoStartDelta;
+
+            // Measure helper — uses the hidden SVG text element
+            function measureStr(str) {
+                measureEl.setAttribute('font-size', FONT_SIZE);
+                measureEl.setAttribute('font-family', fontFamily);
+                measureEl.textContent = str;
+                try { return measureEl.getComputedTextLength(); }
+                catch(e) { return str.length * FONT_SIZE * 0.55; }
+            }
+
+            // Word-wrap a single raw line into one or more display lines
+            function wrapLine(raw) {
+                if (!raw.trim()) return [''];        // blank line kept as spacer
+                const words = raw.split(/\s+/);
+                const result = [];
+                let cur = '';
+                for (const w of words) {
+                    const candidate = cur ? cur + ' ' + w : w;
+                    if (measureStr(candidate) <= MAX_WIDTH) {
+                        cur = candidate;
+                    } else {
+                        if (cur) result.push(cur);
+                        // If a single word is too wide, just let it through (clip-path handles it)
+                        cur = w;
+                    }
+                }
+                if (cur) result.push(cur);
+                return result.length ? result : [''];
+            }
+
+            // Build flat list of SVG lines
+            const svgLines = [];
+            for (const rawLine of text.split('\n')) {
+                for (const wl of wrapLine(rawLine)) {
+                    svgLines.push(wl);
+                    if (svgLines.length >= 14) break;
+                }
+                if (svgLines.length >= 14) break;
+            }
+
+            // Create <text> nodes
+            svgLines.forEach((line, i) => {
+                const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                el.setAttribute('x', '0');
+                el.setAttribute('y', y);
+                el.setAttribute('text-anchor', 'middle');
+                el.setAttribute('font-size', FONT_SIZE);
+                el.setAttribute('font-family', fontFamily);
+                el.setAttribute('fill', i < 4 ? colours.fill : colours.lowerFill);
+                el.textContent = line;
+                inscGroup.appendChild(el);
+                y += LINE_HEIGHT;
+            });
+        }
+
+        // ==================== FONT ====================
+        function setFont(fontType, btn) {
+            state.font = fontType;
+            document.querySelectorAll('.font-option').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderInscriptionSVG(state.inscription);
+        }
+
+        // ==================== PHOTO PLAQUE ====================
+        function togglePhotoAddon(card) {
+            const isSelected = card.classList.toggle('selected');
+            state.photoActive = isSelected;
+            document.getElementById('photoSubPanel').style.display = isSelected ? 'block' : 'none';
+
+            if (isSelected) {
+                showPlaque(state.photoSize);
+                state.photoPrice = { small:160, medium:200, large:240 }[state.photoSize];
+            } else {
+                hidePlaques();
+                state.photoPrice = 0;
+            }
+            renderInscriptionSVG(state.inscription);
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function selectPhotoSize(tile, price, sizeName) {
+            // Update tile borders
+            document.querySelectorAll('.photo-size-tile').forEach(t => {
+                t.style.border = '1.5px solid var(--color-border)';
+                t.style.background = 'transparent';
+            });
+            tile.style.border = '1.5px solid var(--color-accent)';
+            tile.style.background = 'rgba(139,115,85,0.05)';
+
+            state.photoSize = sizeName;
+            state.photoPrice = price;
+            document.getElementById('photoPriceLabel').textContent = `+£${price}`;
+
+            showPlaque(sizeName);
+            renderInscriptionSVG(state.inscription);
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function showPlaque(size) {
+            ['plaqueSmall','plaqueMedium','plaqueLarge'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+            const map = { small:'plaqueSmall', medium:'plaqueMedium', large:'plaqueLarge' };
+            document.getElementById(map[size]).style.display = 'block';
+        }
+
+        function hidePlaques() {
+            ['plaqueSmall','plaqueMedium','plaqueLarge'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        // ==================== KERB / GARDEN SURROUND ====================
+        function toggleKerbAddon(card) {
+            const isSelected = card.classList.toggle('selected');
+            state.kerbActive = isSelected;
+            state.kerbPrice  = isSelected ? 350 : 0;
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        // ==================== STANDARD ADD-ONS ====================
+        function toggleAddon(card) {
+            card.classList.toggle('selected');
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function updateAddonsTotal() {
+            let total = 0;
+            const labels = [];
+
+            // Standard cards (vase, design, etc.)
+            document.querySelectorAll('.addon-card.selected input[name="addon"]').forEach(inp => {
+                const val = inp.value;
+                if (val === 'photo' || val === 'kerb' || val === 'extra-lettering') return;
+                const p = parseInt(inp.dataset.price) || 0;
+                total += p;
+                if (p > 0) labels.push(val);
+            });
+
+            // Photo
+            if (state.photoActive) {
+                total += state.photoPrice;
+                labels.push(`photo-${state.photoSize}`);
+            }
+
+            // Garden kerb
+            if (state.kerbActive) {
+                total += state.kerbPrice;
+                labels.push('garden-kerb');
+            }
+
+            state.addonsPrice = total;
+            const row = document.getElementById('priceAddonsRow');
+            if (total > 0) {
+                row.style.display = 'flex';
+                document.getElementById('priceAddons').textContent = `+£${total}`;
+                document.getElementById('addonsLabel').textContent = 'Optional extras';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        // ==================== TOTAL PRICE ====================
+        function updateTotalPrice() {
+            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            const fmt   = `£${total.toLocaleString()}`;
+            document.getElementById('priceTotal').textContent = fmt;
+            document.getElementById('mobilePriceTotal').textContent = fmt;
+        }
+
+        // ==================== GALLERY VIEWS ====================
+        function setView(view, thumb) {
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+        }
+
+        // ==================== CALM MODE ====================
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+        }
+
+        // ==================== SELECTED ADDONS LIST ====================
+        function getSelectedAddons() {
+            const list = [];
+            document.querySelectorAll('.addon-card.selected input[name="addon"]').forEach(function(inp) {
+                if (inp.value === 'extra-lettering') return;
+                const nameEl = inp.closest('.addon-card').querySelector('.addon-name');
+                if (nameEl) list.push(nameEl.textContent.trim());
+            });
+            if (state.photoActive) list.push('Ceramic Photo Plaque (' + state.photoSize + ')');
+            if (state.kerbActive)  list.push('Garden Kerb Surround');
+            return list;
+        }
+
+        // ==================== QUOTE MODAL ====================
+        function openQuoteModal() {
+            document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
+            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
+            if (state.addonsPrice > 0) {
+                document.getElementById('qsAddonsRow').style.display = 'flex';
+                document.getElementById('qsAddons').textContent      = '+£' + state.addonsPrice;
+            } else {
+                document.getElementById('qsAddonsRow').style.display = 'none';
+            }
+            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
+
+            document.getElementById('quoteForm').reset();
+            document.getElementById('quoteForm').style.display    = '';
+            document.getElementById('quoteSuccess').style.display = 'none';
+            document.getElementById('quoteError').style.display   = 'none';
+            document.getElementById('quoteOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ==================== INIT ====================
+        // ==================== CONFIG + STRIPE + MAPS ====================
+        let _stripePK = '';
+        let _stripeInst = null;
+        let _stripeElements = null;
+        let _quoteTotal = 0;
+        let _quoteName  = '';
+        let _quoteEmail = '';
+        let _quoteCemetery = '';
+        let _quoteProduct = '';
+
+        async function loadConfig() {
+            try {
+                const cfg = await fetch('/api/config').then(r => r.json());
+                _stripePK = cfg.stripePublishableKey || '';
+                if (cfg.googleMapsKey) initGoogleMaps(cfg.googleMapsKey);
+            } catch (e) { console.warn('Config load failed', e); }
+        }
+
+        function initGoogleMaps(key) {
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        window._onMapsReady = function() {
+            const input = document.getElementById('qCemetery');
+            if (!input) return;
+            const ac = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'gb' },
+                fields: ['name', 'formatted_address'],
+            });
+            ac.addListener('place_changed', () => {
+                const place = ac.getPlace();
+                input.value = place.name || input.value;
+            });
+        };
+
+        async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId) {
+            _quoteName     = name;
+            _quoteEmail    = email;
+            _quoteCemetery = cemetery;
+            _quoteProduct  = product;
+
+            const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
+            const balance = _quoteTotal - deposit;
+            document.getElementById('qDepositAmount').textContent = fmt(deposit);
+            document.getElementById('qBalanceDue').textContent    = fmt(balance);
+            document.getElementById('qOrderTotal').textContent    = fmt(_quoteTotal);
+            document.getElementById('qDepositTotal').textContent  = fmt(deposit);
+            document.getElementById('quotePayStep').style.display = 'block';
+
+            if (!_stripePK) {
+                document.getElementById('quoteSkipBtn').click();
+                return;
+            }
+
+            try {
+                const piRes = await fetch('/api/stripe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product, invoiceId }),
+                });
+                const { clientSecret, error } = await piRes.json();
+                if (error || !clientSecret) throw new Error(error || 'No client secret');
+
+                _stripeInst     = Stripe(_stripePK);
+                _stripeElements = _stripeInst.elements({ clientSecret, appearance: { theme: 'stripe' } });
+                const el = _stripeElements.create('payment');
+                el.mount('#payment-element');
+            } catch (e) {
+                console.warn('Stripe init failed', e);
+                document.getElementById('quoteSkipBtn').click();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+
+            const initialColour = document.querySelector('input[name="colour"]:checked');
+            if (initialColour) updateColour(initialColour);
+            const initialSize = document.querySelector('input[name="size"]:checked');
+            if (initialSize) updateSize(initialSize);
+            updatePlaceholderColour();
+
+            document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('quoteSubmitBtn');
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Sending…';
+                document.getElementById('quoteError').style.display = 'none';
+
+                const firstName = document.getElementById('qFirstName').value.trim();
+                const lastName  = document.getElementById('qLastName').value.trim();
+                const email     = document.getElementById('qEmail').value.trim();
+                const phone     = document.getElementById('qPhone').value.trim();
+                const cemetery  = document.getElementById('qCemetery').value.trim();
+                const message   = document.getElementById('qMessage').value.trim();
+
+                const colour = document.getElementById('selectedColourName').textContent;
+                const total  = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+                const name   = (firstName + ' ' + lastName).trim();
+
+                try {
+                    const res = await fetch('/api/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type:     'quote',
+                            name,
+                            email,
+                            phone,
+                            message,
+                            location: cemetery || null,
+                            product: {
+                                name:        'Classic Ogee Top Lawn Memorial',
+                                type:        'Lawn Headstone',
+                                colour:      colour,
+                                size:        document.getElementById('selectedSizeName').textContent,
+                                addons:      getSelectedAddons(),
+                                inscription: state.inscription ? state.inscription.substring(0, 120) : '',
+                                price:       String(total),
+                            }
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.ok) {
+                        document.getElementById('quoteForm').style.display = 'none';
+                        _quoteTotal = total;
+                        await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
+                    } else {
+                        throw new Error(result.error || 'Submission failed');
+                    }
+                } catch {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Send Quote Request';
+                    document.getElementById('quoteError').style.display = 'block';
+                }
+            });
+
+            document.getElementById('quotePayBtn').addEventListener('click', async function() {
+                const btn = document.getElementById('quotePayBtn');
+                const errEl = document.getElementById('quotePayError');
+                errEl.style.display = 'none';
+                if (!_stripeElements) { showQuoteSuccess(false); return; }
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Processing…';
+                const { error } = await _stripeInst.confirmPayment({
+                    elements: _stripeElements,
+                    confirmParams: { return_url: window.location.href },
+                    redirect: 'if_required',
+                });
+                if (error) {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Pay deposit';
+                    errEl.textContent = error.message;
+                    errEl.style.display = 'block';
+                } else {
+                    showQuoteSuccess(true);
+                }
+            });
+
+            document.getElementById('quoteSkipBtn').addEventListener('click', function() {
+                showQuoteSuccess(false);
+            });
+        });
+
+        function showQuoteSuccess(depositPaid) {
+            document.getElementById('quotePayStep').style.display = 'none';
+            document.getElementById('quoteSuccess').style.display = 'block';
+            document.getElementById('quoteSuccessMsg').textContent = depositPaid
+                ? 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.'
+                : 'We\'ve sent a confirmation to your email and will be in touch within 24 hours.';
+        }
+    </script>
+    <script src="https://js.stripe.com/v3/"></script>
+</body>
+</html>

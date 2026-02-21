@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial Range | Sears Melvin Memorials</title>
+    <meta name="description" content="Browse our collection of beautifully crafted memorials. Lawn headstones, kerb sets, cremation memorials, and more.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --color-error: #b44;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Scroll Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }
+        .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.05s; }
+        .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.1s; }
+        .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.15s; }
+        .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
+        .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
+        .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
+
+        /* Nav */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta:hover { background-color: var(--color-stone-light); }
+        
+        .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); }
+
+        /* Page Header */
+        .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .breadcrumb { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--color-text-muted); }
+        .breadcrumb a { color: var(--color-accent); }
+        .page-header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .page-header p { font-size: 1.1rem; max-width: 600px; margin: 0 auto 1.5rem; }
+        
+        /* Help Me Choose Button */
+        .wizard-trigger { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; background: white; border: 2px solid var(--color-accent); color: var(--color-accent); border-radius: 30px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+        .wizard-trigger:hover { background: var(--color-accent); color: white; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(139,115,85,0.3); }
+        .wizard-trigger svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* Floating Actions */
+        .floating-actions { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
+        .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
+        .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
+        .floating-btn.compare { background: var(--color-accent); }
+        .floating-btn.compare svg { stroke: white; }
+        .floating-btn.compare:hover { transform: scale(1.1); }
+        .floating-btn.compare .badge { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; background: var(--color-stone); color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+        .floating-btn.shortlist { background: white; border: 2px solid var(--color-border); }
+        .floating-btn.shortlist svg { stroke: var(--color-accent); }
+        .floating-btn.shortlist:hover { border-color: var(--color-accent); }
+        .floating-btn.scroll-top { background: var(--color-stone); opacity: 0; pointer-events: none; transform: translateY(20px); }
+        .floating-btn.scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .floating-btn.scroll-top svg { stroke: white; }
+
+        /* Catalogue Layout */
+        .catalogue { padding: 3rem 2rem; }
+        .catalogue-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; gap: 3rem; }
+
+        /* Sidebar Filters */
+        .filters-sidebar { position: sticky; top: 80px; height: fit-content; }
+        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
+        .filters-header h3 { font-family: var(--font-display); font-size: 1.5rem; }
+        .filters-clear { background: none; border: none; color: var(--color-accent); font-size: 0.875rem; cursor: pointer; }
+        .filters-clear:hover { text-decoration: underline; }
+        
+        .filter-group { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+        .filter-group:last-child { border-bottom: none; }
+        .filter-title { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-stone); margin-bottom: 1rem; }
+        
+        .filter-options { display: flex; flex-direction: column; gap: 0.75rem; }
+        .filter-option { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 0.9rem; transition: color 0.2s; }
+        .filter-option:hover { color: var(--color-stone); }
+        .filter-option input { display: none; }
+        .checkmark { width: 20px; height: 20px; border: 2px solid var(--color-border); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .filter-option:hover .checkmark { border-color: var(--color-accent); }
+        .filter-option input:checked + .checkmark { background-color: var(--color-accent); border-color: var(--color-accent); }
+        .filter-option input:checked + .checkmark::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
+        .filter-count { font-size: 0.8rem; color: var(--color-text-muted); margin-left: auto; }
+
+        /* Colour Swatches */
+        .colour-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .colour-swatch { cursor: pointer; text-align: center; }
+        .colour-swatch input { display: none; }
+        .swatch-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+        .swatch { width: 48px; height: 48px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s; position: relative; }
+        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 50%, rgba(0,0,0,0.1)); }
+        .colour-swatch:hover .swatch { transform: scale(1.1); }
+        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 5px var(--color-accent); transform: scale(1.05); }
+        .swatch-name { font-size: 0.65rem; color: var(--color-text-muted); line-height: 1.2; max-width: 60px; }
+        .colour-swatch input:checked + .swatch-wrapper .swatch-name { color: var(--color-stone); font-weight: 600; }
+
+        /* Active Filters Bar */
+        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: 6px; margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
+        .active-filters.has-filters { display: flex; }
+        .active-filters-label { font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem; }
+        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: 20px; font-size: 0.8rem; color: var(--color-stone); }
+        .filter-tag button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; color: var(--color-text-muted); padding: 0; }
+        .filter-tag button:hover { color: var(--color-stone); }
+
+        /* Results Header */
+        .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .results-left { display: flex; align-items: center; gap: 1rem; }
+        .results-count { font-size: 0.95rem; color: var(--color-text-muted); }
+        .results-count span { font-weight: 600; color: var(--color-stone); }
+        
+        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.875rem; cursor: pointer; }
+        .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
+        
+        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
+
+        /* Products Grid */
+        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+        .product-card.hidden { display: none; }
+        
+        /* Product Actions (Compare/Save) */
+        .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
+        .product-card:hover .product-actions { opacity: 1; transform: translateX(0); }
+        .product-action { width: 36px; height: 36px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; }
+        .product-action svg { width: 18px; height: 18px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; transition: all 0.2s; }
+        .product-action:hover { transform: scale(1.1); }
+        .product-action:hover svg { stroke: var(--color-accent); }
+        .product-action.active { background: var(--color-accent); }
+        .product-action.active svg { stroke: white; fill: white; }
+        
+        .product-image { position: relative; aspect-ratio: 4/3; overflow: hidden; background: linear-gradient(145deg, #e8e4dd, #d4cfc6); }
+        .product-image svg { width: 100%; height: 100%; }
+        .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
+        .product-badge.premium { background: var(--color-stone); }
+        .product-badge.new { background: var(--color-success); }
+        
+        .product-info { padding: 1.25rem; }
+        .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.3rem; display: block; }
+        .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
+        .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
+        .product-rating { display: flex; align-items: center; gap: 0.2rem; }
+        .product-rating svg { width: 14px; height: 14px; fill: var(--color-accent); }
+        .product-rating span { font-size: 0.8rem; color: var(--color-text-muted); }
+        .product-colours { display: flex; gap: 0.25rem; }
+        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
+        .product-price strong { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); }
+
+        /* No Results */
+        .no-results { display: none; grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 2px dashed var(--color-border); }
+        .no-results.visible { display: block; }
+        .no-results svg { width: 64px; height: 64px; stroke: var(--color-border); margin-bottom: 1rem; }
+        .no-results h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .no-results p { margin-bottom: 1.5rem; }
+        .no-results button { padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-body); }
+
+        /* ==================== WIZARD MODAL ==================== */
+        .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(4px); }
+        .wizard-overlay.active { display: flex; }
+        .wizard-modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow: hidden; animation: scaleIn 0.3s ease; }
+        .wizard-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+        .wizard-header h2 { font-size: 1.5rem; }
+        .wizard-close { background: none; border: none; cursor: pointer; padding: 0.5rem; }
+        .wizard-close svg { width: 24px; height: 24px; stroke: var(--color-text-muted); }
+        
+        .wizard-progress { display: flex; padding: 1rem 2rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
+        .wizard-step-dot { flex: 1; height: 4px; background: var(--color-border); border-radius: 2px; transition: background 0.3s; }
+        .wizard-step-dot.active { background: var(--color-accent); }
+        .wizard-step-dot.complete { background: var(--color-success); }
+        
+        .wizard-content { padding: 2rem; min-height: 350px; }
+        .wizard-step { display: none; animation: fadeIn 0.3s ease; }
+        .wizard-step.active { display: block; }
+        .wizard-step h3 { font-size: 1.3rem; margin-bottom: 0.5rem; text-align: center; }
+        .wizard-step > p { text-align: center; color: var(--color-text-muted); margin-bottom: 2rem; }
+        
+        .wizard-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .wizard-option { padding: 1.25rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .wizard-option:hover { border-color: var(--color-accent); background: rgba(139,115,85,0.05); }
+        .wizard-option.selected { border-color: var(--color-accent); background: rgba(139,115,85,0.1); }
+        .wizard-option svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.75rem; }
+        .wizard-option h4 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .wizard-option p { font-size: 0.8rem; color: var(--color-text-muted); }
+        
+        .wizard-footer { padding: 1rem 2rem; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; }
+        .wizard-btn { padding: 0.75rem 1.5rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+        .wizard-btn-back { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); }
+        .wizard-btn-back:hover { border-color: var(--color-stone); color: var(--color-stone); }
+        .wizard-btn-next { background: var(--color-accent); border: none; color: white; }
+        .wizard-btn-next:hover { background: var(--color-stone); }
+        .wizard-btn-next:disabled { background: var(--color-border); cursor: not-allowed; }
+
+        /* Wizard Results */
+        .wizard-results { text-align: left; }
+        .wizard-results h3 { text-align: center; margin-bottom: 1.5rem; }
+        .wizard-result-card { display: flex; gap: 1.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 1rem; transition: all 0.2s; }
+        .wizard-result-card:hover { border-color: var(--color-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .wizard-result-image { width: 120px; height: 100px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
+        .wizard-result-image svg { width: 100%; height: 100%; }
+        .wizard-result-info h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
+        .wizard-result-match svg { width: 14px; height: 14px; stroke: currentColor; }
+
+        /* ==================== COMPARISON PANEL ==================== */
+        .compare-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--color-accent); padding: 1.5rem 2rem; z-index: 90; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
+        .compare-panel.active { transform: translateY(0); }
+        .compare-panel-inner { max-width: 1200px; margin: 0 auto; }
+        .compare-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .compare-panel-header h3 { font-size: 1.25rem; }
+        .compare-items { display: flex; gap: 1.5rem; }
+        .compare-item { flex: 1; max-width: 250px; display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--color-warm); border-radius: 6px; position: relative; }
+        .compare-item-empty { border: 2px dashed var(--color-border); background: transparent; justify-content: center; color: var(--color-text-muted); font-size: 0.9rem; min-height: 70px; }
+        .compare-item-image { width: 50px; height: 50px; background: var(--color-cream); border-radius: 4px; }
+        .compare-item-image svg { width: 100%; height: 100%; }
+        .compare-item-info h4 { font-size: 0.9rem; line-height: 1.2; }
+        .compare-item-info p { font-size: 0.8rem; color: var(--color-text-muted); }
+        .compare-item-remove { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .compare-item-remove svg { width: 12px; height: 12px; stroke: white; }
+        .compare-actions { display: flex; gap: 1rem; margin-left: auto; }
+        .compare-actions button { padding: 0.75rem 1.25rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; }
+        .compare-btn-clear { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); }
+        .compare-btn-view { background: var(--color-accent); border: none; color: white; }
+
+        /* ==================== SHORTLIST PANEL ==================== */
+        .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px rgba(0,0,0,0.15); transition: right 0.4s ease; display: flex; flex-direction: column; }
+        .shortlist-panel.active { right: 0; }
+        .shortlist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
+        .shortlist-overlay.active { display: block; }
+        .shortlist-header { padding: 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+        .shortlist-header h3 { font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .shortlist-header h3 span { background: var(--color-accent); color: white; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-family: var(--font-body); }
+        .shortlist-close { background: none; border: none; cursor: pointer; }
+        .shortlist-close svg { width: 24px; height: 24px; stroke: var(--color-text-muted); }
+        .shortlist-content { flex: 1; overflow-y: auto; padding: 1rem; }
+        .shortlist-empty { text-align: center; padding: 3rem 1rem; color: var(--color-text-muted); }
+        .shortlist-empty svg { width: 48px; height: 48px; stroke: var(--color-border); margin-bottom: 1rem; }
+        .shortlist-item { display: flex; gap: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 0.75rem; position: relative; }
+        .shortlist-item-image { width: 70px; height: 60px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
+        .shortlist-item-image svg { width: 100%; height: 100%; }
+        .shortlist-item-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .shortlist-item-info p { font-size: 0.85rem; color: var(--color-accent); font-weight: 600; }
+        .shortlist-item-remove { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; cursor: pointer; padding: 0.25rem; }
+        .shortlist-item-remove svg { width: 16px; height: 16px; stroke: var(--color-text-muted); }
+        .shortlist-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--color-border); }
+        .shortlist-share { width: 100%; margin-bottom: 0.75rem; }
+        .shortlist-share input { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; }
+        .shortlist-actions { display: flex; gap: 0.75rem; }
+        .shortlist-actions button { flex: 1; padding: 0.75rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .shortlist-btn-copy { background: var(--color-warm); border: none; color: var(--color-stone); }
+        .shortlist-btn-email { background: var(--color-accent); border: none; color: white; }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; }
+        .footer-links a:hover { color: white; }
+
+        /* Mobile */
+        .filters-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
+        .filters-overlay.active { display: block; }
+        
+        @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 900px) { 
+            .catalogue-container { grid-template-columns: 1fr; }
+            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: var(--color-cream); z-index: 200; padding: 2rem; overflow-y: auto; transition: left 0.3s ease; }
+            .filters-sidebar.open { left: 0; }
+            .mobile-filter-btn { display: flex; }
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: flex; }
+            .shortlist-panel { width: 100%; right: -100%; }
+        }
+        @media (max-width: 600px) {
+            .products-grid { grid-template-columns: 1fr; }
+            .footer-container { flex-direction: column; text-align: center; }
+            .wizard-options { grid-template-columns: 1fr; }
+            .compare-items { flex-direction: column; }
+            .compare-item { max-width: none; }
+            .colour-swatches { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ==================== REQUEST A QUOTE BUTTON ==================== */
+        .product-quote-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+            width: 100%; margin-top: 0.75rem; padding: 0.6rem 1rem;
+            background: transparent; border: 1.5px solid var(--color-accent);
+            color: var(--color-accent); border-radius: 4px; font-family: var(--font-body);
+            font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .product-quote-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+        .product-quote-btn:hover { background: var(--color-accent); color: white; }
+
+        /* ==================== QUOTE MODAL ==================== */
+        .quote-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300;
+            display: none; align-items: center; justify-content: center;
+            padding: 1.5rem; backdrop-filter: blur(4px);
+        }
+        .quote-overlay.active { display: flex; }
+        .quote-modal {
+            background: white; border-radius: 12px; max-width: 600px; width: 100%;
+            max-height: 92vh; overflow-y: auto; animation: scaleIn 0.3s ease;
+        }
+        .quote-modal-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 1.5rem 1.75rem 1.25rem;
+            background: linear-gradient(135deg, var(--color-warm), var(--color-cream));
+            border-bottom: 1px solid var(--color-border); border-radius: 12px 12px 0 0;
+        }
+        .quote-modal-header h2 { font-size: 1.35rem; color: var(--color-stone); margin-bottom: 0.2rem; }
+        .quote-modal-subtitle { font-size: 0.83rem; color: var(--color-text-muted); margin: 0; }
+        .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+        .quote-modal-close svg { width: 22px; height: 22px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+
+        .quote-product-card {
+            display: flex; gap: 1.25rem; margin: 1.25rem 1.75rem;
+            padding: 1.125rem; background: var(--color-cream);
+            border-radius: 8px; border: 1px solid var(--color-border); align-items: flex-start;
+        }
+        .quote-product-image { width: 90px; height: 72px; background: var(--color-warm); border-radius: 6px; flex-shrink: 0; overflow: hidden; }
+        .quote-product-image svg { width: 100%; height: 100%; }
+        .quote-product-details { flex: 1; min-width: 0; }
+        .quote-product-category { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); font-weight: 600; display: block; margin-bottom: 0.2rem; }
+        .quote-product-name { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); margin-bottom: 0.55rem; line-height: 1.3; }
+        .quote-product-colour-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+        .quote-product-colour-label { font-size: 0.75rem; color: var(--color-text-muted); }
+        .quote-colour-options { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .quote-colour-btn {
+            width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent;
+            cursor: pointer; transition: all 0.15s; padding: 0;
+        }
+        .quote-colour-btn:hover { transform: scale(1.2); }
+        .quote-colour-btn.selected { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-accent); }
+        .quote-selected-colour-name { font-size: 0.75rem; color: var(--color-stone); font-weight: 500; }
+        .quote-product-price { font-size: 0.88rem; color: var(--color-text-muted); margin: 0; }
+        .quote-product-price strong { color: var(--color-stone); font-weight: 600; }
+
+        .quote-form-body { padding: 0 1.75rem 1.5rem; }
+        .quote-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 0; }
+        .quote-form-group { margin-bottom: 0.875rem; }
+        .quote-form-group label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--color-stone); margin-bottom: 0.3rem; }
+        .quote-form-group input, .quote-form-group textarea {
+            width: 100%; padding: 0.65rem 0.875rem; border: 1.5px solid var(--color-border);
+            border-radius: 6px; font-family: var(--font-body); font-size: 0.875rem;
+            color: var(--color-text); background: white; transition: border-color 0.2s; outline: none;
+        }
+        .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
+        .quote-form-group textarea { resize: vertical; min-height: 78px; }
+        .quote-required { color: var(--color-accent); }
+        .quote-submit-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            width: 100%; padding: 0.95rem; background: var(--color-stone); color: white;
+            border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem;
+            font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.5rem;
+        }
+        .quote-submit-btn:hover { background: var(--color-stone-light); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .quote-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .quote-submit-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .quote-form-note { margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
+        .quote-form-note a { color: var(--color-accent); }
+        .quote-success { display: none; text-align: center; padding: 2.5rem 2rem; }
+        .quote-success-icon { width: 56px; height: 56px; background: var(--color-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+        .quote-success-icon svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
+        .quote-success h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .quote-success p { color: var(--color-text-muted); margin-bottom: 1.5rem; max-width: 380px; margin-left: auto; margin-right: auto; }
+        .quote-success-close { padding: 0.7rem 2rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+        .quote-error { color: var(--color-error); font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
+
+        /* Cemetery autocomplete */
+        .cemetery-search-wrap { position: relative; }
+        .cemetery-search-wrap svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--color-stone); fill: none; stroke-width: 2; pointer-events: none; }
+        .cemetery-search-wrap input { padding-left: 2.1rem !important; }
+        .pac-container { border-radius: 6px; border: 1.5px solid var(--color-border); box-shadow: 0 6px 20px rgba(0,0,0,0.1); font-family: var(--font-body); font-size: 0.85rem; margin-top: 2px; }
+        .pac-item { padding: 0.45rem 0.75rem; cursor: pointer; }
+        .pac-item:hover { background: #f5f3f0; }
+        .pac-item-query { font-size: 0.85rem; color: var(--color-stone); }
+
+        /* Payment step */
+        .quote-pay-step { padding: 0 1.75rem 1.5rem; }
+        .quote-deposit-header { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1.25rem; }
+        .quote-deposit-icon { width: 40px; height: 40px; background: var(--color-stone); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .quote-deposit-icon svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+        .quote-deposit-header h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+        .quote-deposit-header p { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); }
+        .quote-deposit-card { background: #f5f3f0; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem; }
+        .quote-deposit-row { display: flex; justify-content: space-between; font-size: 0.875rem; padding: 0.2rem 0; }
+        .quote-deposit-row span:first-child { color: var(--color-text-muted); }
+        .quote-deposit-total { border-top: 1px solid var(--color-border); margin-top: 0.4rem; padding-top: 0.5rem; font-weight: 600; color: var(--color-stone); }
+        #payment-element { margin-bottom: 1rem; }
+        .quote-pay-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; }
+        .quote-pay-btn:hover { background: var(--color-stone-light); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .quote-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .quote-skip-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; font-family: var(--font-body); }
+
+        @media (max-width: 600px) {
+            .quote-form-row { grid-template-columns: 1fr; }
+            .quote-product-card { flex-direction: column; }
+            .quote-product-image { width: 100%; height: 110px; }
+            .quote-modal-header, .quote-product-card, .quote-form-body { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .quote-product-card { margin-left: 1.25rem; margin-right: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="contact.html">Contact</a>
+    </div>
+
+    <header class="page-header">
+        <div class="breadcrumb">
+            <a href="index.html">Home</a><span>/</span><span>Memorials</span>
+        </div>
+        <h1 class="reveal">Memorial Range</h1>
+        <p class="reveal reveal-delay-1">Browse our collection of beautifully crafted memorials. Each piece is made to order with your personalisation.</p>
+        <button class="wizard-trigger reveal reveal-delay-2" onclick="openWizard()">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Not sure where to start? Help me choose
+        </button>
+    </header>
+
+    <div class="filters-overlay" id="filtersOverlay" onclick="closeFilters()"></div>
+
+    <section class="catalogue">
+        <div class="catalogue-container">
+            <aside class="filters-sidebar reveal" id="filtersSidebar">
+                <div class="filters-header">
+                    <h3>Filters</h3>
+                    <button class="filters-clear" onclick="clearAllFilters()">Clear All</button>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-title">Memorial Type</h4>
+                    <div class="filter-options">
+                        <label class="filter-option"><input type="checkbox" data-filter="type" value="lawn-headstone" onchange="applyFilters()"><span class="checkmark"></span>Lawn Headstones<span class="filter-count">(3)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="type" value="kerb-set" onchange="applyFilters()"><span class="checkmark"></span>Kerb Sets<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="type" value="cremation" onchange="applyFilters()"><span class="checkmark"></span>Cremation Memorials<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="type" value="heart" onchange="applyFilters()"><span class="checkmark"></span>Heart Memorials<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="type" value="book" onchange="applyFilters()"><span class="checkmark"></span>Book Memorials<span class="filter-count">(1)</span></label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-title">Stone Colour</h4>
+                    <div class="colour-swatches">
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="black" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #1a1a1a, #2d2d2d);"></span><span class="swatch-name">Black Galaxy</span></span></label>
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="grey" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #5a5a5a, #7a7a7a);"></span><span class="swatch-name">Rustenberg Grey</span></span></label>
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="blue" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #1a2a3a, #2c3e50);"></span><span class="swatch-name">Vizag Blue</span></span></label>
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="brown" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #6B4423, #8B5A2B);"></span><span class="swatch-name">Indian Aurora</span></span></label>
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="green" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #1d3a2e, #2d4a3e);"></span><span class="swatch-name">Emerald Pearl</span></span></label>
+                        <label class="colour-swatch"><input type="checkbox" data-filter="colour" value="red" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, #5a2028, #722F37);"></span><span class="swatch-name">Ruby Red</span></span></label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-title">Price Range</h4>
+                    <div class="filter-options">
+                        <label class="filter-option"><input type="checkbox" data-filter="price" value="under-1000" onchange="applyFilters()"><span class="checkmark"></span>Under £1,000<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="price" value="1000-1500" onchange="applyFilters()"><span class="checkmark"></span>£1,000 - £1,500<span class="filter-count">(3)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="price" value="1500-2000" onchange="applyFilters()"><span class="checkmark"></span>£1,500 - £2,000<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="price" value="2000-3000" onchange="applyFilters()"><span class="checkmark"></span>£2,000 - £3,000<span class="filter-count">(2)</span></label>
+                        <label class="filter-option"><input type="checkbox" data-filter="price" value="over-3000" onchange="applyFilters()"><span class="checkmark"></span>Over £3,000<span class="filter-count">(1)</span></label>
+                    </div>
+                </div>
+            </aside>
+
+            <main>
+                <div class="active-filters" id="activeFilters">
+                    <span class="active-filters-label">Active filters:</span>
+                </div>
+
+                <div class="results-header">
+                    <div class="results-left">
+                        <button class="mobile-filter-btn" onclick="openFilters()">
+                            <svg viewBox="0 0 24 24" stroke-width="2" fill="none"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+                            Filters
+                        </button>
+                        <span class="results-count">Showing <span id="resultsCount">10</span> memorials</span>
+                    </div>
+                    <div class="sort-dropdown">
+                        <select id="sortSelect" onchange="sortProducts()">
+                            <option value="featured">Featured</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name-az">Name: A to Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="products-grid reveal-stagger" id="productsGrid">
+                    <!-- Product 1 -->
+                    <a href="memorial.html" class="product-card" data-id="1" data-type="lawn-headstone" data-colours="black,grey,blue" data-price="1000-1500" data-price-value="1450" data-name="Classic Ogee Top">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><defs><linearGradient id="sky1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d4cfc6"/><stop offset="100%" stop-color="#e8e4dd"/></linearGradient></defs><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="260" width="400" height="40" fill="#a8c0a0"/><g transform="translate(200,150)"><path d="M-60 100 L-60 -40 Q-60 -70 -40 -85 Q0 -110 40 -85 Q60 -70 60 -40 L60 100 Z" fill="#1a1a1a"/><rect x="-70" y="100" width="140" height="20" fill="#2a2a2a" rx="2"/><line x1="-35" y1="-20" x2="35" y2="-20" stroke="#4a4a4a" stroke-width="2"/><line x1="-30" y1="0" x2="30" y2="0" stroke="#4a4a4a" stroke-width="2"/><line x1="-25" y1="20" x2="25" y2="20" stroke="#4a4a4a" stroke-width="2"/></g></svg>
+                            <span class="product-badge">Popular</span>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Lawn Headstone</span>
+                            <h3 class="product-name">Classic Ogee Top</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.9 (23)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2c3e50;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£1,450</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 2 -->
+                    <a href="memorial.html" class="product-card" data-id="2" data-type="kerb-set" data-colours="black,grey" data-price="over-3000" data-price-value="3200" data-name="Full Cover Kerb Set">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="240" width="400" height="60" fill="#a8c0a0"/><g transform="translate(200,160)"><rect x="-120" y="20" width="240" height="100" fill="#2a2a2a" rx="3"/><rect x="-110" y="30" width="220" height="80" fill="#3a3a3a"/><path d="M-50 20 L-50 -60 Q-50 -85 -30 -95 Q0 -115 30 -95 Q50 -85 50 -60 L50 20 Z" fill="#1a1a1a"/><line x1="-30" y1="-40" x2="30" y2="-40" stroke="#5a5a5a" stroke-width="2"/><line x1="-25" y1="-20" x2="25" y2="-20" stroke="#5a5a5a" stroke-width="2"/></g></svg>
+                            <span class="product-badge premium">Premium</span>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Kerb Set</span>
+                            <h3 class="product-name">Full Cover Kerb Set</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>5.0 (12)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£3,200</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 3 -->
+                    <a href="memorial.html" class="product-card" data-id="3" data-type="cremation" data-colours="black,grey,blue" data-price="under-1000" data-price-value="695" data-name="Polished Desk Tablet">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,150)"><path d="M-80 60 L-70 -30 L70 -30 L80 60 Z" fill="#1a1a1a"/><path d="M-70 -30 L-60 -50 L60 -50 L70 -30 Z" fill="#2a2a2a"/><rect x="-90" y="60" width="180" height="15" fill="#2a2a2a" rx="2"/><line x1="-40" y1="-15" x2="40" y2="-15" stroke="#4a4a4a" stroke-width="2"/><line x1="-35" y1="5" x2="35" y2="5" stroke="#4a4a4a" stroke-width="2"/></g></svg>
+                            <span class="product-badge new">New</span>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Cremation Memorial</span>
+                            <h3 class="product-name">Polished Desk Tablet</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8 (8)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2c3e50;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£695</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 4 -->
+                    <a href="memorial.html" class="product-card" data-id="4" data-type="heart" data-colours="black,red,brown" data-price="1500-2000" data-price-value="1650" data-name="Single Heart on Base">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="255" width="400" height="45" fill="#a8c0a0"/><g transform="translate(200,140)"><path d="M0 80 C-60 40 -80 -20 -50 -50 C-20 -80 0 -60 0 -40 C0 -60 20 -80 50 -50 C80 -20 60 40 0 80 Z" fill="#1a1a1a"/><rect x="-60" y="85" width="120" height="25" fill="#2a2a2a" rx="3"/><rect x="-70" y="110" width="140" height="15" fill="#252525" rx="2"/><line x1="-25" y1="20" x2="25" y2="20" stroke="#4a4a4a" stroke-width="2"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Heart Memorial</span>
+                            <h3 class="product-name">Single Heart on Base</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.9 (15)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#722F37;"></span><span class="product-colour-dot" style="background:#8B5A2B;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£1,650</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 5 -->
+                    <a href="memorial.html" class="product-card" data-id="5" data-type="book" data-colours="black,grey" data-price="1500-2000" data-price-value="1850" data-name="Open Book on Plinth">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,145)"><rect x="-5" y="-50" width="10" height="80" fill="#252525" rx="2"/><path d="M-5 -50 L-5 30 Q-40 35 -80 25 L-80 -55 Q-40 -60 -5 -50" fill="#1a1a1a"/><path d="M5 -50 L5 30 Q40 35 80 25 L80 -55 Q40 -60 5 -50" fill="#1a1a1a"/><rect x="-90" y="40" width="180" height="20" fill="#2a2a2a" rx="3"/><rect x="-100" y="60" width="200" height="25" fill="#252525" rx="3"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Book Memorial</span>
+                            <h3 class="product-name">Open Book on Plinth</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.7 (9)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£1,850</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 6 -->
+                    <a href="memorial.html" class="product-card" data-id="6" data-type="lawn-headstone" data-colours="black,grey,blue,green" data-price="1000-1500" data-price-value="1400" data-name="Square Top Contemporary">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="260" width="400" height="40" fill="#a8c0a0"/><g transform="translate(200,150)"><rect x="-55" y="-80" width="110" height="170" fill="#1a1a1a" rx="3"/><rect x="-65" y="90" width="130" height="20" fill="#2a2a2a" rx="2"/><line x1="-35" y1="-40" x2="35" y2="-40" stroke="#4a4a4a" stroke-width="2"/><line x1="-30" y1="-15" x2="30" y2="-15" stroke="#4a4a4a" stroke-width="2"/><line x1="-25" y1="10" x2="25" y2="10" stroke="#4a4a4a" stroke-width="2"/></g></svg>
+                            <span class="product-badge">Best Value</span>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Lawn Headstone</span>
+                            <h3 class="product-name">Square Top Contemporary</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8 (31)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2c3e50;"></span><span class="product-colour-dot" style="background:#2d4a3e;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£1,400</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 7 -->
+                    <a href="memorial.html" class="product-card" data-id="7" data-type="lawn-headstone" data-colours="black,grey,green" data-price="1000-1500" data-price-value="1500" data-name="Peon Top Classic">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="260" width="400" height="40" fill="#a8c0a0"/><g transform="translate(200,155)"><path d="M-55 95 L-55 -50 L0 -90 L55 -50 L55 95 Z" fill="#1a1a1a"/><rect x="-65" y="95" width="130" height="20" fill="#2a2a2a" rx="2"/><line x1="-35" y1="-20" x2="35" y2="-20" stroke="#4a4a4a" stroke-width="2"/><line x1="-30" y1="5" x2="30" y2="5" stroke="#4a4a4a" stroke-width="2"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Lawn Headstone</span>
+                            <h3 class="product-name">Peon Top Classic</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.6 (18)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2d4a3e;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£1,500</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 8 -->
+                    <a href="memorial.html" class="product-card" data-id="8" data-type="heart" data-colours="black,red" data-price="2000-3000" data-price-value="2200" data-name="Double Heart Memorial">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="255" width="400" height="45" fill="#a8c0a0"/><g transform="translate(200,140)"><path d="M-40 70 C-85 40 -100 -5 -75 -30 C-50 -55 -40 -40 -40 -25 C-40 -40 -30 -55 -5 -30 C20 -5 5 40 -40 70 Z" fill="#1a1a1a" transform="scale(0.8) translate(-20, 10)"/><path d="M30 75 C-25 40 -45 -10 -15 -40 C15 -70 30 -50 30 -30 C30 -50 45 -70 75 -40 C105 -10 85 40 30 75 Z" fill="#2a2a2a"/><rect x="-70" y="80" width="160" height="20" fill="#2a2a2a" rx="3"/><rect x="-80" y="100" width="180" height="15" fill="#252525" rx="2"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Heart Memorial</span>
+                            <h3 class="product-name">Double Heart Memorial</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>5.0 (7)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#722F37;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£2,200</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 9 -->
+                    <a href="memorial.html" class="product-card" data-id="9" data-type="kerb-set" data-colours="black,grey,green" data-price="2000-3000" data-price-value="2800" data-name="Kerb Set with Vase">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="240" width="400" height="60" fill="#a8c0a0"/><g transform="translate(200,160)"><rect x="-110" y="25" width="220" height="90" fill="#2a2a2a" rx="3"/><rect x="-100" y="35" width="200" height="70" fill="#3a3a3a"/><path d="M-40 25 L-40 -50 Q-40 -75 -20 -85 Q0 -95 20 -85 Q40 -75 40 -50 L40 25 Z" fill="#1a1a1a"/><ellipse cx="70" cy="20" rx="15" ry="8" fill="#252525"/><path d="M60 20 L65 -15 L75 -15 L80 20" fill="#2a2a2a"/><circle cx="65" cy="-38" r="5" fill="#c77"/><circle cx="75" cy="-43" r="5" fill="#cc9"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Kerb Set</span>
+                            <h3 class="product-name">Kerb Set with Vase</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8 (14)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#1a1a1a;"></span><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2d4a3e;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£2,800</strong></p>
+                        </div>
+                    </a>
+
+                    <!-- Product 10 -->
+                    <a href="memorial.html" class="product-card" data-id="10" data-type="cremation" data-colours="grey,blue" data-price="under-1000" data-price-value="850" data-name="Slant Marker">
+                        <div class="product-actions">
+                            <button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+                            <button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+                        </div>
+                        <div class="product-image">
+                            <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#sky1)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,150)"><path d="M-70 80 L-60 -20 L60 -20 L70 80 Z" fill="#5a5a5a"/><path d="M-60 -20 L-55 -30 L55 -30 L60 -20 Z" fill="#6a6a6a"/><rect x="-80" y="80" width="160" height="15" fill="#4a4a4a" rx="2"/><line x1="-40" y1="5" x2="40" y2="5" stroke="#3a3a3a" stroke-width="2"/><line x1="-35" y1="30" x2="35" y2="30" stroke="#3a3a3a" stroke-width="2"/></g></svg>
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">Cremation Memorial</span>
+                            <h3 class="product-name">Slant Marker</h3>
+                            <div class="product-meta">
+                                <div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.7 (11)</span></div>
+                                <div class="product-colours"><span class="product-colour-dot" style="background:#6b6b6b;"></span><span class="product-colour-dot" style="background:#2c3e50;"></span></div>
+                            </div>
+                            <p class="product-price">From <strong>£850</strong></p>
+                        </div>
+                    </a>
+
+                    <div class="no-results" id="noResults">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
+                        <h3>No memorials found</h3>
+                        <p>Try adjusting your filters or use our wizard to find the right memorial.</p>
+                        <button onclick="clearAllFilters()">Clear All Filters</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- Floating Actions -->
+    <div class="floating-actions">
+        <button class="floating-btn compare" id="floatingCompare" onclick="openComparePanel()" style="display:none;">
+            <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            <span class="badge" id="compareCount">0</span>
+        </button>
+        <button class="floating-btn shortlist" onclick="openShortlist()">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="floating-btn scroll-top" id="scrollTopBtn" onclick="scrollToTop()">
+            <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+    </div>
+
+    <!-- ==================== QUOTE REQUEST MODAL ==================== -->
+    <div class="quote-overlay" id="quoteOverlay" onclick="if(event.target===this)closeQuoteModal()">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <div>
+                    <h2>Request a Quote</h2>
+                    <p class="quote-modal-subtitle">We'll be in touch within 24 hours</p>
+                </div>
+                <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Selected Product Summary -->
+            <div class="quote-product-card">
+                <div class="quote-product-image" id="quoteProductImage"></div>
+                <div class="quote-product-details">
+                    <span class="quote-product-category" id="quoteProductCategory"></span>
+                    <h3 class="quote-product-name" id="quoteProductName"></h3>
+                    <div class="quote-product-colour-row">
+                        <span class="quote-product-colour-label">Stone colour:</span>
+                        <div class="quote-colour-options" id="quoteColourOptions"></div>
+                        <span class="quote-selected-colour-name" id="quoteSelectedColourName"></span>
+                    </div>
+                    <p class="quote-product-price" id="quoteProductPrice"></p>
+                </div>
+            </div>
+
+            <!-- Quote Form -->
+            <div class="quote-form-body">
+                <form id="quoteForm" novalidate>
+                    <input type="hidden" id="quoteProductId">
+                    <input type="hidden" id="quoteProductNameField">
+                    <input type="hidden" id="quoteProductTypeField">
+                    <input type="hidden" id="quoteSelectedColour">
+                    <input type="hidden" id="quoteProductPriceField">
+
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>First Name <span class="quote-required">*</span></label>
+                            <input type="text" id="quoteFirstName" placeholder="Your first name" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Last Name <span class="quote-required">*</span></label>
+                            <input type="text" id="quoteLastName" placeholder="Your last name" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>Email Address <span class="quote-required">*</span></label>
+                            <input type="email" id="quoteEmail" placeholder="your@email.com" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="quotePhone" placeholder="07123 456 789">
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Cemetery <span class="quote-required">*</span></label>
+                        <div class="cemetery-search-wrap">
+                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <input type="text" id="qCemetery" placeholder="Search for cemetery…" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Additional details</label>
+                        <textarea id="quoteMessage" placeholder="Grave section / plot number, inscription ideas, or any questions…"></textarea>
+                    </div>
+
+                    <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
+
+                    <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
+                        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>Send Quote Request</span>
+                    </button>
+                    <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
+                </form>
+
+                <div class="quote-success" id="quoteSuccess">
+                    <div class="quote-success-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h3>Quote request sent</h3>
+                    <p id="quoteSuccessMsg">We've sent a confirmation to your email and will be in touch within 24 hours to discuss your requirements.</p>
+                    <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Deposit payment -->
+            <div class="quote-pay-step" id="quotePayStep" style="display:none">
+                <div class="quote-deposit-header">
+                    <div class="quote-deposit-icon">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="11" width="22" height="11" rx="2" ry="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div>
+                        <h3>Secure your order</h3>
+                        <p>A 50% deposit confirms your order and reserves your slot</p>
+                    </div>
+                </div>
+                <div class="quote-deposit-card">
+                    <div class="quote-deposit-row">
+                        <span>50% deposit</span>
+                        <span id="qDepositAmount">—</span>
+                    </div>
+                    <div class="quote-deposit-row">
+                        <span>Balance due later</span>
+                        <span id="qBalanceDue">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Order total</span>
+                        <span id="qOrderTotal">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Total today</span>
+                        <span id="qDepositTotal">—</span>
+                    </div>
+                </div>
+                <div id="payment-element"></div>
+                <p class="quote-error" id="quotePayError" style="display:none"></p>
+                <button class="quote-pay-btn" id="quotePayBtn" type="button">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="11" width="22" height="11" rx="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Pay deposit</span>
+                </button>
+                <button class="quote-skip-link" id="quoteSkipBtn" type="button">Skip for now — pay later by invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Modal -->
+    <div class="wizard-overlay" id="wizardOverlay" onclick="if(event.target===this)closeWizard()">
+        <div class="wizard-modal">
+            <div class="wizard-header">
+                <h2>Find Your Perfect Memorial</h2>
+                <button class="wizard-close" onclick="closeWizard()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="wizard-progress">
+                <div class="wizard-step-dot active" data-step="1"></div>
+                <div class="wizard-step-dot" data-step="2"></div>
+                <div class="wizard-step-dot" data-step="3"></div>
+                <div class="wizard-step-dot" data-step="4"></div>
+            </div>
+            <div class="wizard-content">
+                <!-- Step 1: Cemetery Type -->
+                <div class="wizard-step active" data-step="1">
+                    <h3>What type of cemetery is it?</h3>
+                    <p>This helps us show memorials that are permitted at your cemetery.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'lawn')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M12 3v8"/></svg>
+                            <h4>Lawn Cemetery</h4>
+                            <p>Headstones only, no kerbs</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'kerb')">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="13" rx="1"/><rect x="7" y="3" width="10" height="8" rx="1"/></svg>
+                            <h4>Kerb Permitted</h4>
+                            <p>Full surrounds allowed</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'cremation')">
+                            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="8" ry="3"/><path d="M4 18V8c0-2.5 3.5-5 8-5s8 2.5 8 5v10"/></svg>
+                            <h4>Cremation Garden</h4>
+                            <p>Memorial tablets & plaques</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'unsure')">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <h4>I'm Not Sure</h4>
+                            <p>We'll help you find out</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Budget -->
+                <div class="wizard-step" data-step="2">
+                    <h3>What's your budget range?</h3>
+                    <p>All our prices include installation and a 30-year guarantee.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'under-1500')">
+                            <h4>Under £1,500</h4>
+                            <p>Simple, elegant memorials</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '1500-2500')">
+                            <h4>£1,500 - £2,500</h4>
+                            <p>Most popular range</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '2500-4000')">
+                            <h4>£2,500 - £4,000</h4>
+                            <p>Premium options</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'flexible')">
+                            <h4>Budget Flexible</h4>
+                            <p>Show me everything</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Style -->
+                <div class="wizard-step" data-step="3">
+                    <h3>What style appeals to you?</h3>
+                    <p>Choose the look that feels right.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'traditional')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2L8 6v14a2 2 0 002 2h4a2 2 0 002-2V6l-4-4z"/></svg>
+                            <h4>Traditional</h4>
+                            <p>Classic, timeless designs</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'modern')">
+                            <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/></svg>
+                            <h4>Modern</h4>
+                            <p>Clean, contemporary lines</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'unique')">
+                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            <h4>Unique Shape</h4>
+                            <p>Hearts, books, angels</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'any')">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                            <h4>Open to Ideas</h4>
+                            <p>Surprise me</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Results -->
+                <div class="wizard-step" data-step="4">
+                    <div class="wizard-results" id="wizardResults">
+                        <h3>We recommend these memorials for you</h3>
+                        <!-- Results populated by JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="wizard-footer">
+                <button class="wizard-btn wizard-btn-back" onclick="prevWizardStep()" id="wizardBack" style="visibility:hidden;">Back</button>
+                <button class="wizard-btn wizard-btn-next" onclick="nextWizardStep()" id="wizardNext" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Panel -->
+    <div class="compare-panel" id="comparePanel">
+        <div class="compare-panel-inner">
+            <div class="compare-panel-header">
+                <h3>Compare Memorials</h3>
+            </div>
+            <div class="compare-items" id="compareItems">
+                <div class="compare-item compare-item-empty">Select up to 3 memorials</div>
+                <div class="compare-item compare-item-empty">to compare side by side</div>
+                <div class="compare-item compare-item-empty"></div>
+            </div>
+            <div class="compare-actions">
+                <button class="compare-btn-clear" onclick="clearCompare()">Clear All</button>
+                <button class="compare-btn-view" onclick="viewComparison()">View Comparison</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortlist Panel -->
+    <div class="shortlist-overlay" id="shortlistOverlay" onclick="closeShortlist()"></div>
+    <div class="shortlist-panel" id="shortlistPanel">
+        <div class="shortlist-header">
+            <h3>My Shortlist <span id="shortlistCount">0</span></h3>
+            <button class="shortlist-close" onclick="closeShortlist()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="shortlist-content" id="shortlistContent">
+            <div class="shortlist-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p>
+            </div>
+        </div>
+        <div class="shortlist-footer">
+            <div class="shortlist-share">
+                <input type="text" id="shareLink" value="" placeholder="Share link will appear here" readonly>
+            </div>
+            <div class="shortlist-actions">
+                <button class="shortlist-btn-copy" onclick="copyShareLink()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Link</button>
+                <button class="shortlist-btn-email" onclick="emailShortlist()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="index.html#process">Process</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== STATE ====================
+        const state = {
+            filters: { type: [], colour: [], price: [] },
+            compareList: [],
+            shortlist: [],
+            wizard: { cemetery: null, budget: null, style: null, step: 1 }
+        };
+
+        const colourNames = { 'black': 'Black Galaxy', 'grey': 'Rustenberg Grey', 'blue': 'Vizag Blue', 'brown': 'Indian Aurora', 'green': 'Emerald Pearl', 'red': 'Ruby Red' };
+        const products = Array.from(document.querySelectorAll('.product-card[data-id]'));
+
+        // ==================== SCROLL ANIMATIONS ====================
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+            document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => observer.observe(el));
+        }
+
+        // ==================== SCROLL TO TOP ====================
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('scrollTopBtn');
+            if (window.scrollY > 500) btn.classList.add('visible');
+            else btn.classList.remove('visible');
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==================== FILTERS ====================
+        function applyFilters() {
+            state.filters = { type: [], colour: [], price: [] };
+            document.querySelectorAll('input[data-filter]:checked').forEach(input => {
+                state.filters[input.dataset.filter].push(input.value);
+            });
+
+            let visibleCount = 0;
+            products.forEach(product => {
+                const type = product.dataset.type;
+                const colours = product.dataset.colours.split(',');
+                const price = product.dataset.price;
+
+                const matchesType = state.filters.type.length === 0 || state.filters.type.includes(type);
+                const matchesColour = state.filters.colour.length === 0 || state.filters.colour.some(c => colours.includes(c));
+                const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(price);
+
+                if (matchesType && matchesColour && matchesPrice) {
+                    product.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    product.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('resultsCount').textContent = visibleCount;
+            document.getElementById('noResults').classList.toggle('visible', visibleCount === 0);
+            updateActiveFiltersDisplay();
+        }
+
+        function updateActiveFiltersDisplay() {
+            const container = document.getElementById('activeFilters');
+            const hasFilters = state.filters.type.length > 0 || state.filters.colour.length > 0 || state.filters.price.length > 0;
+            container.classList.toggle('has-filters', hasFilters);
+            
+            if (!hasFilters) { container.innerHTML = '<span class="active-filters-label">Active filters:</span>'; return; }
+
+            let html = '<span class="active-filters-label">Active filters:</span>';
+            state.filters.type.forEach(t => html += `<span class="filter-tag">${t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}<button onclick="removeFilter('type', '${t}')">&times;</button></span>`);
+            state.filters.colour.forEach(c => html += `<span class="filter-tag">${colourNames[c]}<button onclick="removeFilter('colour', '${c}')">&times;</button></span>`);
+            state.filters.price.forEach(p => {
+                let label = p === 'under-1000' ? 'Under £1,000' : p === 'over-3000' ? 'Over £3,000' : '£' + p.replace('-', ' - £');
+                html += `<span class="filter-tag">${label}<button onclick="removeFilter('price', '${p}')">&times;</button></span>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function removeFilter(type, value) {
+            const checkbox = document.querySelector(`input[data-filter="${type}"][value="${value}"]`);
+            if (checkbox) { checkbox.checked = false; applyFilters(); }
+        }
+
+        function clearAllFilters() {
+            document.querySelectorAll('input[data-filter]').forEach(input => input.checked = false);
+            applyFilters();
+        }
+
+        // ==================== SORTING ====================
+        function sortProducts() {
+            const sortValue = document.getElementById('sortSelect').value;
+            const grid = document.getElementById('productsGrid');
+            const sorted = [...products].sort((a, b) => {
+                switch(sortValue) {
+                    case 'price-low': return parseInt(a.dataset.priceValue) - parseInt(b.dataset.priceValue);
+                    case 'price-high': return parseInt(b.dataset.priceValue) - parseInt(a.dataset.priceValue);
+                    case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
+                    default: return 0;
+                }
+            });
+            sorted.forEach(p => grid.appendChild(p));
+            grid.appendChild(document.getElementById('noResults'));
+        }
+
+        // ==================== COMPARE ====================
+        function toggleCompare(btn) {
+            const card = btn.closest('.product-card');
+            const id = card.dataset.id;
+            const isActive = btn.classList.contains('active');
+
+            if (isActive) {
+                state.compareList = state.compareList.filter(item => item.id !== id);
+                btn.classList.remove('active');
+            } else {
+                if (state.compareList.length >= 3) {
+                    alert('You can compare up to 3 memorials at a time.');
+                    return;
+                }
+                state.compareList.push({
+                    id,
+                    name: card.dataset.name,
+                    price: card.querySelector('.product-price strong').textContent,
+                    type: card.querySelector('.product-category').textContent
+                });
+                btn.classList.add('active');
+            }
+
+            updateCompareUI();
+        }
+
+        function updateCompareUI() {
+            const count = state.compareList.length;
+            const floatingBtn = document.getElementById('floatingCompare');
+            const countBadge = document.getElementById('compareCount');
+            const panel = document.getElementById('comparePanel');
+
+            floatingBtn.style.display = count > 0 ? 'flex' : 'none';
+            countBadge.textContent = count;
+
+            if (count > 0) {
+                panel.classList.add('active');
+                const container = document.getElementById('compareItems');
+                let html = '';
+                for (let i = 0; i < 3; i++) {
+                    if (state.compareList[i]) {
+                        const item = state.compareList[i];
+                        html += `<div class="compare-item">
+                            <div class="compare-item-image"><svg viewBox="0 0 50 50"><rect width="50" height="50" fill="#e8e4dd"/><rect x="15" y="8" width="20" height="30" fill="#1a1a1a" rx="2"/><rect x="12" y="38" width="26" height="6" fill="#2a2a2a"/></svg></div>
+                            <div class="compare-item-info"><h4>${item.name}</h4><p>${item.price}</p></div>
+                            <button class="compare-item-remove" onclick="removeFromCompare('${item.id}')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                        </div>`;
+                    } else {
+                        html += `<div class="compare-item compare-item-empty">${i === 0 ? 'Add memorials to compare' : ''}</div>`;
+                    }
+                }
+                container.innerHTML = html;
+            } else {
+                panel.classList.remove('active');
+            }
+        }
+
+        function removeFromCompare(id) {
+            state.compareList = state.compareList.filter(item => item.id !== id);
+            document.querySelector(`.product-card[data-id="${id}"] .compare-btn`)?.classList.remove('active');
+            updateCompareUI();
+        }
+
+        function clearCompare() {
+            state.compareList.forEach(item => {
+                document.querySelector(`.product-card[data-id="${item.id}"] .compare-btn`)?.classList.remove('active');
+            });
+            state.compareList = [];
+            updateCompareUI();
+        }
+
+        function openComparePanel() { document.getElementById('comparePanel').classList.add('active'); }
+        function viewComparison() { window.location.href = 'compare.html'; }
+
+        // ==================== SHORTLIST / SAVE ====================
+        function toggleSave(btn) {
+            const card = btn.closest('.product-card');
+            const id = card.dataset.id;
+            const isActive = btn.classList.contains('active');
+
+            if (isActive) {
+                state.shortlist = state.shortlist.filter(item => item.id !== id);
+                btn.classList.remove('active');
+            } else {
+                state.shortlist.push({
+                    id,
+                    name: card.dataset.name,
+                    price: card.querySelector('.product-price strong').textContent,
+                    type: card.querySelector('.product-category').textContent
+                });
+                btn.classList.add('active');
+            }
+            updateShortlistUI();
+            saveShortlistToStorage();
+        }
+
+        function updateShortlistUI() {
+            const count = state.shortlist.length;
+            document.getElementById('shortlistCount').textContent = count;
+
+            const content = document.getElementById('shortlistContent');
+            if (count === 0) {
+                content.innerHTML = `<div class="shortlist-empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p></div>`;
+            } else {
+                let html = '';
+                state.shortlist.forEach(item => {
+                    html += `<div class="shortlist-item">
+                        <div class="shortlist-item-image"><svg viewBox="0 0 70 60"><rect width="70" height="60" fill="#e8e4dd"/><rect x="20" y="8" width="30" height="40" fill="#1a1a1a" rx="2"/><rect x="15" y="48" width="40" height="8" fill="#2a2a2a"/></svg></div>
+                        <div class="shortlist-item-info"><h4>${item.name}</h4><p>${item.price}</p></div>
+                        <button class="shortlist-item-remove" onclick="removeFromShortlist('${item.id}')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                    </div>`;
+                });
+                content.innerHTML = html;
+            }
+
+            // Generate share link
+            if (count > 0) {
+                const ids = state.shortlist.map(i => i.id).join(',');
+                document.getElementById('shareLink').value = `${window.location.origin}/memorials.html?shortlist=${ids}`;
+            }
+        }
+
+        function removeFromShortlist(id) {
+            state.shortlist = state.shortlist.filter(item => item.id !== id);
+            document.querySelector(`.product-card[data-id="${id}"] .save-btn`)?.classList.remove('active');
+            updateShortlistUI();
+            saveShortlistToStorage();
+        }
+
+        function openShortlist() {
+            document.getElementById('shortlistPanel').classList.add('active');
+            document.getElementById('shortlistOverlay').classList.add('active');
+        }
+        function closeShortlist() {
+            document.getElementById('shortlistPanel').classList.remove('active');
+            document.getElementById('shortlistOverlay').classList.remove('active');
+        }
+
+        function copyShareLink() {
+            const input = document.getElementById('shareLink');
+            input.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        function emailShortlist() {
+            const link = document.getElementById('shareLink').value;
+            const subject = encodeURIComponent('My Memorial Shortlist - Sears Melvin');
+            const body = encodeURIComponent(`I've saved some memorials I'm considering:\n\n${link}\n\nWhat do you think?`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        function saveShortlistToStorage() {
+            localStorage.setItem('sm_shortlist', JSON.stringify(state.shortlist));
+        }
+
+        function loadShortlistFromStorage() {
+            const saved = localStorage.getItem('sm_shortlist');
+            if (saved) {
+                state.shortlist = JSON.parse(saved);
+                state.shortlist.forEach(item => {
+                    document.querySelector(`.product-card[data-id="${item.id}"] .save-btn`)?.classList.add('active');
+                });
+                updateShortlistUI();
+            }
+        }
+
+        // ==================== WIZARD ====================
+        function openWizard() {
+            document.getElementById('wizardOverlay').classList.add('active');
+            state.wizard = { cemetery: null, budget: null, style: null, step: 1 };
+            updateWizardUI();
+        }
+
+        function closeWizard() {
+            document.getElementById('wizardOverlay').classList.remove('active');
+        }
+
+        function selectWizardOption(option, field, value) {
+            option.parentElement.querySelectorAll('.wizard-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            state.wizard[field] = value;
+            document.getElementById('wizardNext').disabled = false;
+        }
+
+        function nextWizardStep() {
+            if (state.wizard.step < 4) {
+                state.wizard.step++;
+                updateWizardUI();
+            }
+        }
+
+        function prevWizardStep() {
+            if (state.wizard.step > 1) {
+                state.wizard.step--;
+                updateWizardUI();
+            }
+        }
+
+        function updateWizardUI() {
+            const step = state.wizard.step;
+            
+            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
+            
+            document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
+                dot.classList.remove('active', 'complete');
+                if (i + 1 === step) dot.classList.add('active');
+                else if (i + 1 < step) dot.classList.add('complete');
+            });
+
+            document.getElementById('wizardBack').style.visibility = step > 1 ? 'visible' : 'hidden';
+            document.getElementById('wizardNext').textContent = step === 3 ? 'Show Results' : step === 4 ? 'Browse All' : 'Next';
+            document.getElementById('wizardNext').disabled = step < 4 && !['cemetery', 'budget', 'style'][step-1].split('').some(() => state.wizard[['cemetery', 'budget', 'style'][step-1]]);
+
+            if (step === 4) {
+                generateWizardResults();
+                document.getElementById('wizardNext').onclick = () => { closeWizard(); clearAllFilters(); };
+            }
+        }
+
+        function generateWizardResults() {
+            const results = document.getElementById('wizardResults');
+            // Simple recommendation logic
+            let recommended = products.filter(p => !p.classList.contains('hidden')).slice(0, 3);
+            
+            let html = '<h3>We recommend these memorials for you</h3>';
+            recommended.forEach(p => {
+                html += `<a href="memorial.html" class="wizard-result-card">
+                    <div class="wizard-result-image"><svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="40" y="15" width="40" height="60" fill="#1a1a1a" rx="2"/><rect x="35" y="75" width="50" height="12" fill="#2a2a2a"/></svg></div>
+                    <div class="wizard-result-info">
+                        <h4>${p.dataset.name}</h4>
+                        <p>${p.querySelector('.product-price').innerHTML}</p>
+                        <span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span>
+                    </div>
+                </a>`;
+            });
+            results.innerHTML = html;
+        }
+
+        // ==================== MOBILE ====================
+        function toggleMobileMenu() { document.getElementById('mobileNav').classList.toggle('active'); }
+        function openFilters() {
+            document.getElementById('filtersSidebar').classList.add('open');
+            document.getElementById('filtersOverlay').classList.add('active');
+        }
+        function closeFilters() {
+            document.getElementById('filtersSidebar').classList.remove('open');
+            document.getElementById('filtersOverlay').classList.remove('active');
+        }
+
+        // ==================== QUOTE MODAL ====================
+        const QUOTE_WORKER_URL = '/api/submit';
+
+        // ── Config / Stripe / Maps ──
+        let _stripePK      = '';
+        let _stripeInst    = null;
+        let _stripeElements = null;
+
+        async function loadConfig() {
+            try {
+                const cfg = await fetch('/api/config').then(r => r.json());
+                _stripePK = cfg.stripePublishableKey || '';
+                if (cfg.googleMapsKey) initGoogleMaps(cfg.googleMapsKey);
+            } catch (e) { console.warn('Config load failed', e); }
+        }
+
+        function initGoogleMaps(key) {
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        window._onMapsReady = function() {
+            const input = document.getElementById('qCemetery');
+            if (!input) return;
+            const ac = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'gb' },
+                fields: ['name', 'formatted_address'],
+            });
+            ac.addListener('place_changed', () => {
+                const place = ac.getPlace();
+                input.value = place.name || input.value;
+            });
+        };
+
+        async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId, total) {
+            const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
+            const balance = total ? total - deposit : deposit;
+            document.getElementById('qDepositAmount').textContent = fmt(deposit);
+            document.getElementById('qBalanceDue').textContent    = fmt(balance);
+            document.getElementById('qOrderTotal').textContent    = total ? fmt(total) : fmt(deposit * 2);
+            document.getElementById('qDepositTotal').textContent  = fmt(deposit);
+            document.getElementById('quotePayStep').style.display = 'block';
+
+            if (!_stripePK) {
+                document.getElementById('quoteSkipBtn').click();
+                return;
+            }
+            try {
+                const piRes = await fetch('/api/stripe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product, invoiceId }),
+                });
+                const { clientSecret, error } = await piRes.json();
+                if (error || !clientSecret) throw new Error(error || 'No client secret');
+
+                _stripeInst     = Stripe(_stripePK);
+                _stripeElements = _stripeInst.elements({ clientSecret, appearance: { theme: 'stripe' } });
+                _stripeElements.create('payment').mount('#payment-element');
+            } catch (e) {
+                console.warn('Stripe init failed', e);
+                document.getElementById('quoteSkipBtn').click();
+            }
+        }
+
+        function showQuoteSuccess(depositPaid) {
+            document.getElementById('quotePayStep').style.display = 'none';
+            document.getElementById('quoteSuccess').style.display = 'block';
+            document.getElementById('quoteSuccessMsg').textContent = depositPaid
+                ? 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.'
+                : 'We\'ve sent a confirmation to your email and will be in touch within 24 hours to discuss your requirements.';
+        }
+
+        const QUOTE_COLOUR_MAP = {
+            black: { name: 'Black Galaxy',    bg: '#1a1a1a' },
+            grey:  { name: 'Rustenberg Grey', bg: '#6b6b6b' },
+            blue:  { name: 'Vizag Blue',      bg: '#2c3e50' },
+            brown: { name: 'Indian Aurora',   bg: '#8B5A2B' },
+            green: { name: 'Emerald Pearl',   bg: '#2d4a3e' },
+            red:   { name: 'Ruby Red',        bg: '#722F37' },
+        };
+
+        function openQuoteModal(card) {
+            // Reset form first so hidden fields set below are not cleared
+            document.getElementById('quoteForm').reset();
+
+            const name    = card.dataset.name;
+            const type    = card.dataset.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const colours = card.dataset.colours.split(',');
+            const price   = card.querySelector('.product-price strong').textContent.replace(/^£/, '');
+            const imgSvg  = card.querySelector('.product-image svg')?.outerHTML || '';
+
+            document.getElementById('quoteProductName').textContent     = name;
+            document.getElementById('quoteProductCategory').textContent = type;
+            document.getElementById('quoteProductPrice').innerHTML      = 'From <strong>' + price + '</strong>';
+            document.getElementById('quoteProductImage').innerHTML      = imgSvg;
+            document.getElementById('quoteProductId').value             = card.dataset.id;
+            document.getElementById('quoteProductNameField').value      = name;
+            document.getElementById('quoteProductTypeField').value      = type;
+            document.getElementById('quoteProductPriceField').value     = price;
+
+            // Build colour swatches
+            const colourContainer = document.getElementById('quoteColourOptions');
+            colourContainer.innerHTML = colours.map((c, i) => {
+                const col = QUOTE_COLOUR_MAP[c] || { name: c, bg: '#888' };
+                return `<button type="button" class="quote-colour-btn${i === 0 ? ' selected' : ''}"
+                    data-colour="${col.name}" style="background:${col.bg};"
+                    onclick="selectQuoteColour(this)" title="${col.name}"></button>`;
+            }).join('');
+
+            const defaultColour = (QUOTE_COLOUR_MAP[colours[0]] || { name: colours[0] }).name;
+            document.getElementById('quoteSelectedColour').value        = defaultColour;
+            document.getElementById('quoteSelectedColourName').textContent = defaultColour;
+
+            // Show modal
+            document.getElementById('quoteForm').style.display    = '';
+            document.getElementById('quoteSuccess').style.display = 'none';
+            document.getElementById('quoteError').style.display   = 'none';
+            document.getElementById('quoteOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function selectQuoteColour(btn) {
+            document.querySelectorAll('.quote-colour-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('quoteSelectedColour').value          = btn.dataset.colour;
+            document.getElementById('quoteSelectedColourName').textContent = btn.dataset.colour;
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+
+            // Inject "Request a Quote" button into every product card
+            document.querySelectorAll('.product-card[data-id]').forEach(card => {
+                const info = card.querySelector('.product-info');
+                const btn  = document.createElement('button');
+                btn.className = 'product-quote-btn';
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Request a Quote';
+                btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openQuoteModal(card); });
+                info.appendChild(btn);
+            });
+
+            // Quote form submission
+            document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = document.getElementById('quoteSubmitBtn');
+                submitBtn.disabled = true;
+                submitBtn.querySelector('span').textContent = 'Sending…';
+                document.getElementById('quoteError').style.display = 'none';
+
+                const firstName = document.getElementById('quoteFirstName').value.trim();
+                const lastName  = document.getElementById('quoteLastName').value.trim();
+                const email     = document.getElementById('quoteEmail').value.trim();
+                const phone     = document.getElementById('quotePhone').value.trim();
+                const cemetery  = document.getElementById('qCemetery').value.trim();
+                const message   = document.getElementById('quoteMessage').value.trim();
+                const name      = `${firstName} ${lastName}`.trim();
+                const product   = {
+                    name:   document.getElementById('quoteProductNameField').value,
+                    type:   document.getElementById('quoteProductTypeField').value,
+                    colour: document.getElementById('quoteSelectedColour').value,
+                    price:  document.getElementById('quoteProductPriceField').value,
+                };
+
+                try {
+                    const res = await fetch(QUOTE_WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'quote',
+                            name, email, phone, message,
+                            location: cemetery || null,
+                            product
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.ok) {
+                        document.getElementById('quoteForm').style.display = 'none';
+                        const price   = parseFloat(product.price) || 0;
+                        const deposit = Math.round(price * 0.5);
+                        await showPaymentStep(deposit, name, email, cemetery, product.name, result.invoiceId, price);
+                    } else {
+                        throw new Error(result.error || 'Submission failed');
+                    }
+                } catch {
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('span').textContent = 'Send Quote Request';
+                    document.getElementById('quoteError').style.display = 'block';
+                }
+            });
+
+            document.getElementById('quotePayBtn').addEventListener('click', async function() {
+                const btn = document.getElementById('quotePayBtn');
+                const errEl = document.getElementById('quotePayError');
+                errEl.style.display = 'none';
+                if (!_stripeElements) { showQuoteSuccess(false); return; }
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Processing…';
+                const { error } = await _stripeInst.confirmPayment({
+                    elements: _stripeElements,
+                    confirmParams: { return_url: window.location.href },
+                    redirect: 'if_required',
+                });
+                if (error) {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Pay deposit';
+                    errEl.textContent = error.message;
+                    errEl.style.display = 'block';
+                } else {
+                    showQuoteSuccess(true);
+                }
+            });
+
+            document.getElementById('quoteSkipBtn').addEventListener('click', function() {
+                showQuoteSuccess(false);
+            });
+
+            initScrollAnimations();
+            applyFilters();
+            loadShortlistFromStorage();
+
+            // Check for shortlist in URL
+            const params = new URLSearchParams(window.location.search);
+            const shortlistIds = params.get('shortlist');
+            if (shortlistIds) {
+                shortlistIds.split(',').forEach(id => {
+                    const card = document.querySelector(`.product-card[data-id="${id}"]`);
+                    if (card) {
+                        state.shortlist.push({
+                            id,
+                            name: card.dataset.name,
+                            price: card.querySelector('.product-price strong').textContent,
+                            type: card.querySelector('.product-category').textContent
+                        });
+                        card.querySelector('.save-btn')?.classList.add('active');
+                    }
+                });
+                updateShortlistUI();
+                openShortlist();
+            }
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer style="padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.5);">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="font-family: var(--font-display); font-size: 1.25rem; color: white;">Sears Melvin <span style="font-weight: 300; opacity: 0.5;">Memorials</span></div>
+            <ul style="display: flex; gap: 2rem; list-style: none; flex-wrap: wrap;">
+                <li><a href="index.html#about" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">About</a></li>
+                <li><a href="memorials.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Memorials</a></li>
+                <li><a href="faq.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">FAQ</a></li>
+                <li><a href="care-guide.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Care Guide</a></li>
+                <li><a href="resources.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Support</a></li>
+                <li><a href="contact.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Contact</a></li>
+            </ul>
+            <p style="font-size: 0.8rem;">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08);">
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto;">
+            <a href="index.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: var(--color-text-muted);">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5;"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span style="font-size: 0.65rem; text-transform: uppercase;">Home</span>
+            </a>
+            <a href="memorials.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: var(--color-accent);">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5;"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+                <span style="font-size: 0.65rem; text-transform: uppercase;">Browse</span>
+            </a>
+            <a href="contact.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: white;">
+                <div style="background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3);">
+                    <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 1.5;"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--color-text-muted);">Enquire</span>
+            </a>
+            <a href="faq.html" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: var(--color-text-muted);">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span style="font-size: 0.65rem; text-transform: uppercase;">FAQ</span>
+            </a>
+            <a href="tel:01268208559" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: var(--color-text-muted);">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5;"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                <span style="font-size: 0.65rem; text-transform: uppercase;">Call</span>
+            </a>
+        </div>
+    </nav>
+    <style>@media (max-width: 768px) { .mobile-bottom-nav { display: block !important; } body { padding-bottom: 70px; } }</style>
+    <script src="https://js.stripe.com/v3/"></script>
+</body>
+</html>
