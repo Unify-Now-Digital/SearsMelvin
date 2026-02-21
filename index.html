@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sears Melvin Memorials | Modern Memorial Masonry | South London</title>
     <meta name="description" content="Sears Melvin Memorials - A modern approach to memorial masonry. Bespoke headstones, kerb memorials, and renovations across South London and beyond.">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -20,1149 +16,508 @@
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
             --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', -apple-system, sans-serif;
-            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
 
-        html {
-            scroll-behavior: smooth;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; line-height: 1.2; color: var(--color-stone); }
+        h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); letter-spacing: -0.02em; }
+        h2 { font-size: clamp(2rem, 4vw, 3rem); }
+        h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+        p { font-size: 1rem; color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
 
-        body {
-            font-family: var(--font-body);
-            background-color: var(--color-cream);
-            color: var(--color-text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+        /* Scroll Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        /* Grain overlay for texture */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.03;
-            z-index: 1000;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        }
-
-        /* Typography */
-        h1, h2, h3 {
-            font-family: var(--font-display);
-            font-weight: 400;
-            line-height: 1.2;
-        }
-
-        h1 {
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            letter-spacing: -0.02em;
-        }
-
-        h2 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            letter-spacing: -0.01em;
-        }
-
-        h3 {
-            font-size: clamp(1.25rem, 2vw, 1.5rem);
-        }
-
-        p {
-            font-size: 1rem;
-            color: var(--color-text-muted);
-        }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-left { opacity: 0; transform: translateX(-30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal-left.visible { opacity: 1; transform: translateX(0); }
+        .reveal-right { opacity: 0; transform: translateX(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal-right.visible { opacity: 1; transform: translateX(0); }
+        .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.1s; }
+        .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.2s; }
+        .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.3s; }
+        .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.4s; }
+        .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.5s; }
+        .reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.6s; }
+        .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
 
         /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background-color 0.4s var(--transition-smooth), 
-                        padding 0.4s var(--transition-smooth);
-        }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); transition: padding 0.3s; }
+        nav.scrolled { padding: 0.75rem 2rem; }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta:hover { background-color: var(--color-stone-light); }
 
-        nav.scrolled {
-            background-color: rgba(250, 248, 245, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-        }
+        /* Calm Mode Toggle */
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
 
-        .logo {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 500;
-            color: var(--color-stone);
-            text-decoration: none;
-            letter-spacing: 0.02em;
-        }
+        .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); }
 
-        .logo span {
-            font-weight: 300;
-            opacity: 0.7;
-        }
+        /* Hero */
+        .hero { min-height: 100vh; display: flex; align-items: center; padding: 7rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
+        .hero-content { max-width: 1400px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .hero-text { animation: fadeInUp 1s ease forwards; }
+        .hero-tagline { font-size: 0.875rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+        .hero-tagline::before { content: ''; width: 40px; height: 1px; background-color: var(--color-accent); }
+        .hero h1 { margin-bottom: 1.5rem; }
+        .hero h1 em { font-style: italic; font-weight: 300; color: var(--color-accent); }
+        .hero-description { font-size: 1.125rem; line-height: 1.8; margin-bottom: 2.5rem; max-width: 520px; }
+        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; font-family: var(--font-body); font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s ease; border-radius: 3px; }
+        .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .btn-primary { background-color: var(--color-stone); color: var(--color-cream); }
+        .btn-primary:hover { background-color: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .btn-secondary { background-color: transparent; color: var(--color-stone); border: 1px solid var(--color-stone); }
+        .btn-secondary:hover { background-color: var(--color-stone); color: var(--color-cream); }
+        .btn-accent { background-color: var(--color-accent); color: white; }
+        .btn-accent:hover { background-color: var(--color-stone); }
 
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            list-style: none;
-        }
+        .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
+        .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 4px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.15); position: relative; background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .hero-image svg { width: 100%; height: 100%; }
+        .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
+        .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: rgba(255,255,255,0.9); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
+        .floating-badge { position: absolute; bottom: -30px; right: -30px; width: 140px; height: 140px; background-color: var(--color-accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; animation: float 4s ease-in-out infinite; z-index: 3; }
+        .floating-badge span { font-family: var(--font-display); font-size: 2rem; font-weight: 300; }
+        .floating-badge small { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
 
-        .nav-links a {
-            font-size: 0.875rem;
-            color: var(--color-text);
-            text-decoration: none;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            position: relative;
-            transition: color 0.3s ease;
-        }
+        /* Trust Bar */
+        .trust-bar { background-color: var(--color-stone); padding: 1.5rem 2rem; }
+        .trust-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+        .trust-item { display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: var(--color-cream); }
+        .trust-item svg { width: 24px; height: 24px; stroke: var(--color-accent-light); fill: none; stroke-width: 1.5; flex-shrink: 0; }
+        .trust-item span { font-size: 0.875rem; }
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background-color: var(--color-accent);
-            transition: width 0.3s var(--transition-smooth);
-        }
+        /* Section Styles */
+        .section-label { font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 1rem; }
+        .section-header { text-align: center; max-width: 650px; margin: 0 auto 3rem; }
+        .section-header p { margin-top: 1rem; }
 
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .nav-cta {
-            background-color: var(--color-stone);
-            color: var(--color-cream) !important;
-            padding: 0.75rem 1.5rem;
-            border-radius: 2px;
-            transition: background-color 0.3s ease, transform 0.3s ease !important;
-        }
-
-        .nav-cta::after {
-            display: none !important;
-        }
-
-        .nav-cta:hover {
-            background-color: var(--color-stone-light);
-            transform: translateY(-2px);
-        }
-
-        .mobile-menu {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        .mobile-menu span {
-            width: 24px;
-            height: 2px;
-            background-color: var(--color-stone);
-            transition: transform 0.3s ease;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            position: relative;
-            padding: 8rem 2rem 4rem;
-            background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%);
-        }
-
-        .hero-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .hero-text {
-            animation: fadeInUp 1s var(--transition-smooth) forwards;
-            opacity: 0;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero-tagline {
-            font-size: 0.875rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--color-accent);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .hero-tagline::before {
-            content: '';
-            width: 40px;
-            height: 1px;
-            background-color: var(--color-accent);
-        }
-
-        .hero h1 {
-            margin-bottom: 1.5rem;
-            color: var(--color-stone);
-        }
-
-        .hero h1 em {
-            font-style: italic;
-            font-weight: 300;
-            color: var(--color-accent);
-        }
-
-        .hero-description {
-            font-size: 1.125rem;
-            line-height: 1.8;
-            margin-bottom: 2.5rem;
-            max-width: 520px;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            font-family: var(--font-body);
-            font-size: 0.875rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s var(--transition-smooth);
-        }
-
-        .btn-primary {
-            background-color: var(--color-stone);
-            color: var(--color-cream);
-        }
-
-        .btn-primary:hover {
-            background-color: var(--color-stone-light);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--color-stone);
-            border: 1px solid var(--color-stone);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--color-stone);
-            color: var(--color-cream);
-        }
-
-        .hero-visual {
-            position: relative;
-            animation: fadeInUp 1s 0.3s var(--transition-smooth) forwards;
-            opacity: 0;
-        }
-
-        .hero-image {
-            width: 100%;
-            aspect-ratio: 4/5;
-            background: linear-gradient(145deg, #3D3D3D 0%, #2C2C2C 100%);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 40px 80px rgba(0,0,0,0.15);
-        }
-
-        .hero-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.9;
-        }
-
-        .hero-image::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.4) 100%);
-            pointer-events: none;
-        }
-
-        .hero-image-label {
-            position: absolute;
-            bottom: 2rem;
-            left: 2rem;
-            color: rgba(255,255,255,0.8);
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            z-index: 2;
-        }
-
-        .floating-badge {
-            position: absolute;
-            bottom: -30px;
-            right: -30px;
-            width: 140px;
-            height: 140px;
-            background-color: var(--color-accent);
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-            animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .floating-badge span {
-            font-family: var(--font-display);
-            font-size: 2rem;
-            font-weight: 300;
-        }
-
-        .floating-badge small {
-            font-size: 0.65rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            opacity: 0.9;
-        }
+        /* Categories */
+        .categories { padding: 6rem 2rem; }
+        .categories-container { max-width: 1200px; margin: 0 auto; }
+        .categories-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+        .category-card { border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; }
+        .category-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
+        .category-image { aspect-ratio: 4/3; overflow: hidden; background: linear-gradient(145deg, #e8e4dd, #d4cfc6); }
+        .category-image svg { width: 100%; height: 100%; transition: transform 0.5s ease; }
+        .category-card:hover .category-image svg { transform: scale(1.05); }
+        .category-info { padding: 1.5rem; }
+        .category-info h3 { margin-bottom: 0.25rem; }
+        .category-info p { font-size: 0.9rem; color: var(--color-accent); }
+        .categories-cta { text-align: center; margin-top: 3rem; }
 
         /* About Section */
-        .about {
-            padding: 8rem 2rem;
-            background-color: var(--color-cream);
-        }
-
-        .about-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 6rem;
-            align-items: center;
-        }
-
-        .about-visual {
-            position: relative;
-        }
-
-        .about-image-main {
-            width: 100%;
-            aspect-ratio: 3/4;
-            background: linear-gradient(135deg, var(--color-warm) 0%, #D4CFC6 100%);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .about-image-main img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .about-image-accent {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            bottom: -40px;
-            right: -40px;
-            background-color: var(--color-stone);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .about-image-accent svg {
-            width: 60px;
-            height: 60px;
-            stroke: rgba(255,255,255,0.3);
-            stroke-width: 1;
-            fill: none;
-        }
-
-        .section-label {
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--color-accent);
-            margin-bottom: 1rem;
-        }
-
-        .about-content h2 {
-            color: var(--color-stone);
-            margin-bottom: 2rem;
-        }
-
-        .about-text {
-            font-size: 1.125rem;
-            line-height: 1.9;
-            margin-bottom: 2rem;
-        }
-
-        .values-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .value-item {
-            padding: 1.5rem;
-            background: white;
-            border-radius: 4px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .value-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-        }
-
-        .value-item h4 {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--color-stone);
-        }
-
-        .value-item p {
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        /* Services Section */
-        .services {
-            padding: 8rem 2rem;
-            background-color: var(--color-stone);
-            color: var(--color-cream);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .services::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-        }
-
-        .services-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .services-header {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 5rem;
-        }
-
-        .services-header .section-label {
-            color: var(--color-accent-light);
-        }
-
-        .services-header h2 {
-            color: var(--color-cream);
-            margin-bottom: 1.5rem;
-        }
-
-        .services-header p {
-            color: rgba(255,255,255,0.7);
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        .service-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 4px;
-            padding: 2.5rem;
-            transition: all 0.4s var(--transition-smooth);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .service-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.4s var(--transition-smooth);
-        }
-
-        .service-card:hover {
-            background: rgba(255,255,255,0.08);
-            transform: translateY(-5px);
-        }
-
-        .service-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .service-icon {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-        }
-
-        .service-icon svg {
-            width: 28px;
-            height: 28px;
-            stroke: var(--color-accent-light);
-            stroke-width: 1.5;
-            fill: none;
-        }
-
-        .service-card h3 {
-            color: var(--color-cream);
-            margin-bottom: 1rem;
-        }
-
-        .service-card p {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .service-price {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            color: var(--color-accent-light);
-        }
-
-        /* Process Section */
-        .process {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%);
-        }
-
-        .process-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .process-header {
-            text-align: center;
-            max-width: 600px;
-            margin: 0 auto 5rem;
-        }
-
-        .process-header h2 {
-            color: var(--color-stone);
-            margin-bottom: 1rem;
-        }
-
-        .timeline {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            top: 40px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
-        }
-
-        .timeline-item {
-            flex: 1;
-            text-align: center;
-            padding: 0 1rem;
-            position: relative;
-        }
-
-        .timeline-number {
-            width: 80px;
-            height: 80px;
-            background-color: var(--color-cream);
-            border: 2px solid var(--color-accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            color: var(--color-accent);
-            position: relative;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-
-        .timeline-item:hover .timeline-number {
-            background-color: var(--color-accent);
-            color: white;
-        }
-
-        .timeline-item h4 {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--color-stone);
-            margin-bottom: 0.75rem;
-        }
-
-        .timeline-item p {
-            font-size: 0.9rem;
-            max-width: 200px;
-            margin: 0 auto;
-        }
-
-        /* Testimonial Section */
-        .testimonial {
-            padding: 8rem 2rem;
-            background-color: var(--color-cream);
-        }
-
-        .testimonial-container {
-            max-width: 900px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .quote-mark {
-            font-family: var(--font-display);
-            font-size: 8rem;
-            line-height: 1;
-            color: var(--color-accent);
-            opacity: 0.2;
-            margin-bottom: -3rem;
-        }
-
-        .testimonial-text {
-            font-family: var(--font-display);
-            font-size: clamp(1.5rem, 3vw, 2rem);
-            font-weight: 300;
-            font-style: italic;
-            line-height: 1.6;
-            color: var(--color-stone);
-            margin-bottom: 2rem;
-        }
-
-        .testimonial-author {
-            font-size: 0.875rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--color-accent);
-        }
-
-        /* Gallery Section */
-        .gallery {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%);
-        }
-
-        .gallery-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .gallery-header {
-            text-align: center;
-            max-width: 600px;
-            margin: 0 auto 4rem;
-        }
-
-        .gallery-header h2 {
-            color: var(--color-stone);
-            margin-bottom: 1rem;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-        }
-
-        .gallery-item {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 4px;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s var(--transition-smooth);
-        }
-
-        .gallery-item:hover img {
-            transform: scale(1.1);
-        }
-
-        .gallery-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 2rem 1rem 1rem;
-            background: linear-gradient(transparent, rgba(0,0,0,0.7));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .gallery-item:hover .gallery-overlay {
-            opacity: 1;
-        }
-
-        .gallery-overlay span {
-            color: white;
-            font-size: 0.875rem;
-            letter-spacing: 0.05em;
-        }
-
-        @media (max-width: 768px) {
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Contact Section */
-        .contact {
-            padding: 8rem 2rem;
-            background-color: var(--color-stone);
-            color: var(--color-cream);
-        }
-
-        .contact-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6rem;
-        }
-
-        .contact-info .section-label {
-            color: var(--color-accent-light);
-        }
-
-        .contact-info h2 {
-            color: var(--color-cream);
-            margin-bottom: 1.5rem;
-        }
-
-        .contact-info > p {
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 3rem;
-            max-width: 400px;
-        }
-
-        .contact-details {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .contact-item svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--color-accent-light);
-            stroke-width: 1.5;
-            fill: none;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .contact-item h4 {
-            font-family: var(--font-body);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 0.25rem;
-        }
-
-        .contact-item p, .contact-item a {
-            color: var(--color-cream);
-            font-size: 1.125rem;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .contact-item a:hover {
-            color: var(--color-accent-light);
-        }
-
-        .contact-form {
-            background: rgba(255,255,255,0.05);
-            border-radius: 4px;
-            padding: 3rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 4px;
-            color: var(--color-cream);
-            font-family: var(--font-body);
-            font-size: 1rem;
-            transition: border-color 0.3s ease, background 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--color-accent);
-            background: rgba(255,255,255,0.12);
-        }
-
-        .form-group input::placeholder,
-        .form-group textarea::placeholder {
-            color: rgba(255,255,255,0.3);
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .form-submit {
-            width: 100%;
-            padding: 1.25rem;
-            background: var(--color-accent);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-family: var(--font-body);
-            font-size: 0.875rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: background 0.3s ease, transform 0.3s ease;
-        }
-
-        .form-submit:hover {
-            background: var(--color-accent-light);
-            transform: translateY(-2px);
-        }
+        .about { padding: 6rem 2rem; background: linear-gradient(180deg, var(--color-warm) 0%, var(--color-cream) 100%); }
+        .about-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; }
+        .about-image { aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .about-image svg { width: 100%; height: 100%; }
+        .about-content h2 { margin-bottom: 1.5rem; }
+        .about-text { font-size: 1.1rem; line-height: 1.9; margin-bottom: 1.5rem; }
+        .values-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem; }
+        .value-item { padding: 1.25rem; background: white; border-radius: 6px; transition: transform 0.3s, box-shadow 0.3s; }
+        .value-item:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .value-item h4 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.25rem; }
+        .value-item p { font-size: 0.9rem; }
+
+        /* Process Section - Interactive Timeline */
+        .process { padding: 6rem 2rem; background-color: var(--color-stone); color: var(--color-cream); }
+        .process-container { max-width: 1200px; margin: 0 auto; }
+        .process-header { text-align: center; margin-bottom: 3rem; }
+        .process-header .section-label { color: var(--color-accent-light); }
+        .process-header h2 { color: var(--color-cream); }
+        .process-header p { color: rgba(255,255,255,0.7); }
+
+        /* Timeline Calculator */
+        .timeline-calculator { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 2rem; margin-bottom: 3rem; text-align: center; }
+        .timeline-calculator h3 { font-size: 1.3rem; color: var(--color-cream); margin-bottom: 0.5rem; }
+        .timeline-calculator p { color: rgba(255,255,255,0.6); margin-bottom: 1.5rem; font-size: 0.95rem; }
+        .timeline-result { display: flex; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+        .timeline-date { display: flex; flex-direction: column; align-items: center; }
+        .timeline-date .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent-light); margin-bottom: 0.25rem; }
+        .timeline-date .date { font-family: var(--font-display); font-size: 1.5rem; color: white; }
+        .timeline-arrow { width: 60px; height: 2px; background: var(--color-accent); position: relative; }
+        .timeline-arrow::after { content: '→'; position: absolute; right: -10px; top: -10px; color: var(--color-accent); font-size: 1.2rem; }
+        .timeline-weeks { background: var(--color-accent); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; color: white; }
+
+        /* Timeline Steps */
+        .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+        .timeline::before { content: ''; position: absolute; top: 40px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%); }
+        .timeline-step { text-align: center; padding: 0 1rem; cursor: pointer; }
+        .timeline-number { width: 80px; height: 80px; background: var(--color-stone); border: 2px solid var(--color-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-family: var(--font-display); font-size: 1.75rem; color: var(--color-accent); position: relative; z-index: 1; transition: all 0.3s; }
+        .timeline-step:hover .timeline-number, .timeline-step.active .timeline-number { background: var(--color-accent); color: white; transform: scale(1.1); }
+        .timeline-step h4 { font-size: 1.1rem; color: var(--color-cream); margin-bottom: 0.5rem; }
+        .timeline-step p { font-size: 0.85rem; color: rgba(255,255,255,0.6); max-width: 200px; margin: 0 auto; }
+        .timeline-step .duration { display: inline-block; margin-top: 0.75rem; padding: 0.3rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.75rem; color: var(--color-accent-light); }
+
+        /* Timeline Detail Panel */
+        .timeline-detail { margin-top: 3rem; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 2rem; display: none; }
+        .timeline-detail.active { display: block; animation: fadeIn 0.4s ease; }
+        .timeline-detail h4 { font-size: 1.3rem; color: var(--color-cream); margin-bottom: 1rem; }
+        .timeline-detail-content { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .timeline-detail p { color: rgba(255,255,255,0.7); line-height: 1.8; margin-bottom: 1rem; }
+        .timeline-detail ul { list-style: none; }
+        .timeline-detail li { color: rgba(255,255,255,0.7); padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+        .timeline-detail li::before { content: '✓'; position: absolute; left: 0; color: var(--color-accent-light); }
+
+        /* Before/After Renovation */
+        .renovation { padding: 6rem 2rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); }
+        .renovation-container { max-width: 1200px; margin: 0 auto; }
+        .renovation-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: center; }
+        .before-after { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); aspect-ratio: 4/3; }
+        .before-after-images { position: relative; width: 100%; height: 100%; }
+        .ba-image { position: absolute; inset: 0; background-size: cover; background-position: center; }
+        .ba-image.before { background: linear-gradient(145deg, #8a8a8a, #6a6a6a); clip-path: inset(0 50% 0 0); transition: clip-path 0.1s ease-out; }
+        .ba-image.after { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); }
+        .ba-slider { position: absolute; top: 0; bottom: 0; width: 4px; background: white; left: 50%; transform: translateX(-50%); cursor: ew-resize; z-index: 10; }
+        .ba-slider::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; background: white; border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .ba-slider::after { content: '⟷'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; color: var(--color-stone); }
+        .ba-label { position: absolute; bottom: 1rem; padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.7); color: white; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 3px; }
+        .ba-label.before { left: 1rem; }
+        .ba-label.after { right: 1rem; }
+        .renovation-content h2 { margin-bottom: 1rem; }
+        .renovation-content > p { margin-bottom: 1.5rem; font-size: 1.05rem; }
+        .renovation-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+        .renovation-stat { text-align: center; padding: 1.5rem; background: white; border-radius: 6px; }
+        .renovation-stat .number { font-family: var(--font-display); font-size: 2.5rem; color: var(--color-accent); }
+        .renovation-stat .label { font-size: 0.85rem; color: var(--color-text-muted); }
+
+        /* FAQ Section */
+        .faq { padding: 6rem 2rem; }
+        .faq-container { max-width: 900px; margin: 0 auto; }
+        .faq-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .faq-tab { padding: 0.6rem 1.25rem; background: white; border: 1px solid var(--color-border); border-radius: 25px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .faq-tab:hover { border-color: var(--color-accent); }
+        .faq-tab.active { background: var(--color-accent); color: white; border-color: var(--color-accent); }
+        .faq-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .faq-item { background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .faq-question { padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .faq-question:hover { background: rgba(139,115,85,0.05); }
+        .faq-question h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-stone); margin: 0; }
+        .faq-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--color-warm); display: flex; align-items: center; justify-content: center; transition: transform 0.3s, background 0.3s; flex-shrink: 0; margin-left: 1rem; }
+        .faq-icon svg { width: 12px; height: 12px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
+        .faq-item.open .faq-icon { transform: rotate(180deg); background: var(--color-accent); }
+        .faq-item.open .faq-icon svg { stroke: white; }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .faq-item.open .faq-answer { max-height: 300px; }
+        .faq-answer-inner { padding: 0 1.5rem 1.5rem; color: var(--color-text-muted); line-height: 1.7; }
+
+        /* Memorial Care Guide Teaser */
+        .care-guide { padding: 4rem 2rem; background: var(--color-warm); }
+        .care-guide-container { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 3rem; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        .care-guide-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .care-guide-icon svg { width: 36px; height: 36px; stroke: white; fill: none; stroke-width: 1.5; }
+        .care-guide-content { flex: 1; }
+        .care-guide-content h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .care-guide-content p { font-size: 0.95rem; margin-bottom: 0; }
+        .care-guide-btn { padding: 0.875rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
+        .care-guide-btn:hover { background: var(--color-stone); }
+
+        /* Grief Resources */
+        .grief-resources { padding: 5rem 2rem; background: linear-gradient(135deg, #f9f7f4 0%, #f5f2ed 100%); }
+        .grief-container { max-width: 1000px; margin: 0 auto; text-align: center; }
+        .grief-container h2 { margin-bottom: 1rem; font-size: 1.8rem; }
+        .grief-container > p { max-width: 600px; margin: 0 auto 2rem; }
+        .grief-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .grief-card { background: white; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
+        .grief-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .grief-card svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
+        .grief-card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .grief-card p { font-size: 0.9rem; margin-bottom: 1rem; }
+        .grief-card a { color: var(--color-accent); font-size: 0.85rem; font-weight: 500; }
+        .grief-card a:hover { text-decoration: underline; }
+
+        /* Contact CTA */
+        .contact-cta { padding: 6rem 2rem; background: var(--color-stone); text-align: center; position: relative; overflow: hidden; }
+        .contact-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(139,115,85,0.15) 0%, transparent 50%); }
+        .contact-cta-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+        .contact-cta h2 { color: var(--color-cream); margin-bottom: 1rem; }
+        .contact-cta p { color: rgba(255,255,255,0.7); font-size: 1.1rem; margin-bottom: 2rem; }
+        .contact-cta .btn { margin: 0 0.5rem; }
+        .contact-cta .gentle-message { margin-top: 2rem; font-size: 0.9rem; color: rgba(255,255,255,0.5); font-style: italic; }
 
         /* Footer */
-        footer {
-            padding: 3rem 2rem;
-            background-color: #1A1A1A;
-            color: rgba(255,255,255,0.5);
-        }
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; }
 
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .footer-logo {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            color: white;
-        }
-
-        .footer-logo span {
-            font-weight: 300;
-            opacity: 0.5;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .footer-links a {
-            color: rgba(255,255,255,0.5);
-            text-decoration: none;
-            font-size: 0.875rem;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-copy {
-            font-size: 0.8rem;
-        }
+        /* Scroll to Top */
+        .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .scroll-top:hover { background: var(--color-accent); transform: translateY(-3px); }
+        .scroll-top svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
 
         /* Responsive */
         @media (max-width: 1024px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                gap: 3rem;
-            }
-
-            .hero-visual {
-                max-width: 400px;
-                margin: 0 auto;
-            }
-
-            .about-container {
-                grid-template-columns: 1fr;
-                gap: 4rem;
-            }
-
-            .services-grid {
-                grid-template-columns: 1fr;
-                max-width: 500px;
-                margin: 0 auto;
-            }
-
-            .contact-container {
-                grid-template-columns: 1fr;
-                gap: 4rem;
-            }
+            .hero-content { grid-template-columns: 1fr; text-align: center; }
+            .hero-text { order: 1; }
+            .hero-visual { order: 0; max-width: 400px; margin: 0 auto; }
+            .hero-tagline { justify-content: center; }
+            .hero-tagline::before { display: none; }
+            .hero-description { margin: 0 auto 2rem; }
+            .hero-buttons { justify-content: center; }
+            .about-container { grid-template-columns: 1fr; }
+            .about-image { max-width: 400px; margin: 0 auto; }
+            .timeline { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+            .timeline::before { display: none; }
+            .renovation-grid { grid-template-columns: 1fr; }
+            .care-guide-container { flex-direction: column; text-align: center; }
+            .grief-cards { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .mobile-menu {
-                display: flex;
-            }
-
-            .hero {
-                padding-top: 6rem;
-            }
-
-            .values-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .timeline {
-                flex-direction: column;
-                gap: 3rem;
-            }
-
-            .timeline::before {
-                display: none;
-            }
-
-            .timeline-item {
-                text-align: left;
-                display: flex;
-                gap: 1.5rem;
-                padding: 0;
-            }
-
-            .timeline-number {
-                margin: 0;
-                width: 60px;
-                height: 60px;
-                font-size: 1.25rem;
-                flex-shrink: 0;
-            }
-
-            .timeline-item p {
-                max-width: none;
-                margin: 0;
-            }
-
-            .floating-badge {
-                width: 100px;
-                height: 100px;
-                bottom: -20px;
-                right: -10px;
-            }
-
-            .floating-badge span {
-                font-size: 1.5rem;
-            }
-
-            .footer-container {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .footer-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: flex; }
+            .trust-container { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .categories-grid { grid-template-columns: 1fr; }
+            .values-grid { grid-template-columns: 1fr; }
+            .timeline { grid-template-columns: 1fr; }
+            .timeline-detail-content { grid-template-columns: 1fr; }
+            .renovation-stats { grid-template-columns: 1fr; }
+            .faq-tabs { gap: 0.3rem; }
+            .footer-container { flex-direction: column; text-align: center; }
+            .footer-links { flex-wrap: wrap; justify-content: center; }
+            body { padding-bottom: 70px; }
         }
 
-        /* Scroll animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s var(--transition-smooth), 
-                        transform 0.8s var(--transition-smooth);
-        }
+        /* Mobile Bottom Navigation */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
+        .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
+        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent); }
+        .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .mobile-nav-item span { font-size: 0.65rem; letter-spacing: 0.02em; text-transform: uppercase; }
+        .mobile-nav-item.primary { color: white; }
+        .mobile-nav-item.primary svg { stroke: white; }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
 
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        /* Page Transition */
+        .page-transition { animation: pageLoad 0.4s ease-out; }
+        @keyframes pageLoad { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
+<body class="page-transition">
     <nav id="navbar">
-        <a href="#" class="logo">Sears Melvin <span>Memorials</span></a>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
         <ul class="nav-links">
             <li><a href="#about">About</a></li>
-            <li><a href="#services">Services</a></li>
-            <li><a href="#process">Process</a></li>
-            <li><a href="#contact" class="nav-cta">Get a Quote</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="resources.html">Support</a></li>
+            <li>
+                <label class="calm-toggle" title="Reduce animations and softer colours">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
-        <div class="mobile-menu">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="care-guide.html">Care Guide</a>
+        <a href="resources.html">Support</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero">
         <div class="hero-content">
             <div class="hero-text">
                 <p class="hero-tagline">South London's Modern Memorial Masons</p>
                 <h1>Crafting <em>meaningful</em> tributes for those who matter most</h1>
                 <p class="hero-description">
-                    We're a new kind of memorial companyâ€”built on traditional craftsmanship, 
+                    We're a new kind of memorial company—built on traditional craftsmanship, 
                     powered by modern thinking. Bespoke headstones, kerb memorials, and 
                     renovations delivered with care and transparency.
                 </p>
                 <div class="hero-buttons">
-                    <a href="#contact" class="btn btn-primary">Request a Quote</a>
-                    <a href="#services" class="btn btn-secondary">View Our Work</a>
+                    <a href="memorials.html" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Help Me Choose
+                    </a>
+                    <a href="memorials.html" class="btn btn-secondary">Browse Memorials</a>
                 </div>
             </div>
             <div class="hero-visual">
                 <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1603228254119-e6a4d095dc59?w=800&q=80" alt="Elegant granite memorial headstone" loading="lazy">
+                    <svg viewBox="0 0 400 500">
+                        <defs>
+                            <linearGradient id="heroSky" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d4cfc6"/><stop offset="100%" stop-color="#e0dcd4"/></linearGradient>
+                            <linearGradient id="heroStone" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a1a"/><stop offset="50%" stop-color="#252525"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient>
+                            <linearGradient id="heroGold" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#b8943f"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8943f"/></linearGradient>
+                        </defs>
+                        <rect width="400" height="500" fill="url(#heroSky)"/>
+                        <rect x="0" y="420" width="400" height="80" fill="#9ab094"/>
+                        <g transform="translate(200,220)">
+                            <path d="M-70 175 L-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55 L70 175 Z" fill="url(#heroStone)"/>
+                            <path d="M-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+                            <rect x="-82" y="175" width="164" height="26" fill="#2a2a2a" rx="3"/>
+                            <rect x="-90" y="201" width="180" height="18" fill="#1a1a1a" rx="2"/>
+                            <line x1="-42" y1="-35" x2="42" y2="-35" stroke="url(#heroGold)" stroke-width="3"/>
+                            <line x1="-36" y1="-5" x2="36" y2="-5" stroke="url(#heroGold)" stroke-width="2.5"/>
+                            <line x1="-40" y1="25" x2="40" y2="25" stroke="url(#heroGold)" stroke-width="2.5"/>
+                            <line x1="-32" y1="70" x2="32" y2="70" stroke="#666" stroke-width="2"/>
+                            <line x1="-45" y1="115" x2="45" y2="115" stroke="#666" stroke-width="1.5"/>
+                        </g>
+                        <g transform="translate(305, 405)">
+                            <ellipse cx="0" cy="8" rx="18" ry="6" fill="#3a3a3a"/>
+                            <line x1="-8" y1="8" x2="-12" y2="-25" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="0" y1="8" x2="2" y2="-30" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="8" y1="8" x2="12" y2="-22" stroke="#5a8a5a" stroke-width="2"/>
+                            <circle cx="-12" cy="-28" r="6" fill="#c77"/>
+                            <circle cx="2" cy="-33" r="7" fill="#fff" opacity="0.9"/>
+                            <circle cx="12" cy="-25" r="5" fill="#e9d"/>
+                        </g>
+                    </svg>
                     <span class="hero-image-label">Bespoke Granite Memorial</span>
                 </div>
                 <div class="floating-badge">
                     <small>From</small>
-                    <span>Â£1,400</span>
+                    <span>£1,400</span>
                     <small>Fully Installed</small>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- About Section -->
+    <!-- Trust Bar -->
+    <div class="trust-bar">
+        <div class="trust-container">
+            <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>30 Year Guarantee</span></div>
+            <div class="trust-item"><svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Free Installation</span></div>
+            <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>We Handle Permits</span></div>
+            <div class="trust-item"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>24hr Response</span></div>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <section class="categories reveal">
+        <div class="categories-container">
+            <div class="section-header">
+                <p class="section-label">Our Range</p>
+                <h2>Memorials for every need</h2>
+                <p>From elegant lawn memorials to comprehensive kerb sets, we craft lasting tributes in premium stone.</p>
+            </div>
+            <div class="categories-grid reveal-stagger">
+                <a href="memorials.html?type=lawn-headstone" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="260" width="400" height="40" fill="#a8c0a0"/><g transform="translate(200,150)"><path d="M-50 100 L-50 -30 Q-50 -60 -30 -75 Q0 -95 30 -75 Q50 -60 50 -30 L50 100 Z" fill="#1a1a1a"/><rect x="-58" y="100" width="116" height="16" fill="#2a2a2a" rx="2"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Lawn Headstones</h3><p>From £1,400</p></div>
+                </a>
+                <a href="memorials.html?type=kerb-set" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="240" width="400" height="60" fill="#a8c0a0"/><g transform="translate(200,150)"><rect x="-100" y="30" width="200" height="80" fill="#2a2a2a" rx="3"/><path d="M-40 30 L-40 -40 Q-40 -60 -25 -70 Q0 -85 25 -70 Q40 -60 40 -40 L40 30 Z" fill="#1a1a1a"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Kerb Sets</h3><p>From £2,500</p></div>
+                </a>
+                <a href="memorials.html?type=cremation" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,145)"><path d="M-70 55 L-60 -25 L60 -25 L70 55 Z" fill="#1a1a1a"/><path d="M-60 -25 L-50 -45 L50 -45 L60 -25 Z" fill="#2a2a2a"/><rect x="-80" y="55" width="160" height="12" fill="#2a2a2a" rx="2"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Cremation Memorials</h3><p>From £695</p></div>
+                </a>
+                <a href="memorials.html?type=heart" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="255" width="400" height="45" fill="#a8c0a0"/><g transform="translate(200,130)"><path d="M0 70 C-55 35 -75 -15 -45 -45 C-15 -75 0 -55 0 -35 C0 -55 15 -75 45 -45 C75 -15 55 35 0 70 Z" fill="#1a1a1a"/><rect x="-55" y="75" width="110" height="20" fill="#2a2a2a" rx="3"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Heart Memorials</h3><p>From £1,650</p></div>
+                </a>
+                <a href="memorials.html?type=book" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,140)"><rect x="-5" y="-45" width="10" height="70" fill="#252525" rx="2"/><path d="M-5 -45 L-5 25 Q-35 30 -70 20 L-70 -50 Q-35 -55 -5 -45" fill="#1a1a1a"/><path d="M5 -45 L5 25 Q35 30 70 20 L70 -50 Q35 -55 5 -45" fill="#1a1a1a"/><rect x="-80" y="35" width="160" height="18" fill="#2a2a2a" rx="3"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Book Memorials</h3><p>From £1,850</p></div>
+                </a>
+                <a href="memorials.html?type=children" class="category-card">
+                    <div class="category-image">
+                        <svg viewBox="0 0 400 300"><rect width="400" height="300" fill="url(#heroSky)"/><rect x="0" y="250" width="400" height="50" fill="#a8c0a0"/><g transform="translate(200,145)"><path d="M-35 75 L-35 -20 Q-35 -40 -20 -50 Q0 -65 20 -50 Q35 -40 35 -20 L35 75 Z" fill="#f5f5f5"/><rect x="-42" y="75" width="84" height="12" fill="#e0e0e0" rx="2"/><circle cx="18" cy="-5" r="8" fill="none" stroke="#ccc" stroke-width="1"/><path d="M15 -8 Q18 -12 21 -8" fill="none" stroke="#ccc" stroke-width="0.8"/></g></svg>
+                    </div>
+                    <div class="category-info"><h3>Children's Memorials</h3><p>Compassionate designs</p></div>
+                </a>
+            </div>
+            <div class="categories-cta">
+                <a href="memorials.html" class="btn btn-secondary">View All Memorials</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
     <section class="about" id="about">
         <div class="about-container">
-            <div class="about-visual reveal">
-                <div class="about-image-main">
-                    <img src="https://images.unsplash.com/photo-1515191107209-c28698631303?w=600&q=80" alt="Cemetery memorial with flowers" loading="lazy">
-                </div>
-                <div class="about-image-accent">
-                    <svg viewBox="0 0 100 100">
-                        <path d="M50 10 L90 90 L10 90 Z" />
-                    </svg>
-                </div>
+            <div class="about-image reveal-left">
+                <svg viewBox="0 0 400 500">
+                    <rect width="400" height="500" fill="url(#heroSky)"/>
+                    <rect x="0" y="400" width="400" height="100" fill="#9ab094"/>
+                    <path d="M350 400 Q340 300 350 200 Q360 100 350 50" fill="none" stroke="#7a9a7a" stroke-width="30" opacity="0.3"/>
+                    <ellipse cx="350" cy="80" rx="60" ry="80" fill="#7a9a7a" opacity="0.4"/>
+                    <ellipse cx="340" cy="150" rx="50" ry="70" fill="#8aaa8a" opacity="0.5"/>
+                    <g transform="translate(170,280)">
+                        <path d="M-50 130 L-50 -20 Q-50 -50 -30 -65 Q0 -85 30 -65 Q50 -50 50 -20 L50 130 Z" fill="#1a1a1a"/>
+                        <rect x="-58" y="130" width="116" height="18" fill="#2a2a2a" rx="2"/>
+                        <line x1="-30" y1="10" x2="30" y2="10" stroke="#4a4a4a" stroke-width="2"/>
+                        <line x1="-25" y1="35" x2="25" y2="35" stroke="#4a4a4a" stroke-width="2"/>
+                    </g>
+                    <g transform="translate(130, 395)">
+                        <ellipse cx="0" cy="5" rx="15" ry="5" fill="#3a3a3a"/>
+                        <circle cx="-5" cy="-15" r="5" fill="#d88"/>
+                        <circle cx="5" cy="-12" r="4" fill="#fc9"/>
+                    </g>
+                </svg>
             </div>
-            <div class="about-content reveal">
+            <div class="about-content reveal-right">
                 <p class="section-label">Our Story</p>
                 <h2>A fresh approach to an age-old craft</h2>
                 <p class="about-text">
@@ -1171,362 +526,446 @@
                 </p>
                 <p class="about-text">
                     We're a young, ambitious team challenging the way things have always 
-                    been done. We use modern tools to keep you informed at every stageâ€”from 
-                    your first enquiry to the moment your memorial is installed. No chasing, 
-                    no uncertainty, no endless waiting.
+                    been done. We use modern tools to keep you informed at every stage—from 
+                    your first enquiry to the moment your memorial is installed.
                 </p>
                 <div class="values-grid">
-                    <div class="value-item">
-                        <h4>Transparent</h4>
-                        <p>Clear pricing. Honest timelines. No hidden surprises.</p>
-                    </div>
-                    <div class="value-item">
-                        <h4>Connected</h4>
-                        <p>Real-time updates. Always know where your order stands.</p>
-                    </div>
-                    <div class="value-item">
-                        <h4>Craftsmen</h4>
-                        <p>Traditional skills. Premium materials. Built to last.</p>
-                    </div>
-                    <div class="value-item">
-                        <h4>Caring</h4>
-                        <p>Empathy first. We're here when you need us most.</p>
-                    </div>
+                    <div class="value-item"><h4>Transparent</h4><p>Clear pricing. Honest timelines.</p></div>
+                    <div class="value-item"><h4>Connected</h4><p>Real-time updates on your order.</p></div>
+                    <div class="value-item"><h4>Craftsmen</h4><p>Traditional skills. Premium materials.</p></div>
+                    <div class="value-item"><h4>Caring</h4><p>Empathy first. We're here for you.</p></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Services Section -->
-    <section class="services" id="services">
-        <div class="services-container">
-            <div class="services-header reveal">
-                <p class="section-label">What We Do</p>
-                <h2>Memorial services for every need</h2>
-                <p>From elegant lawn memorials to full kerb sets, we create lasting tributes 
-                   that honour your loved one's memory.</p>
-            </div>
-            <div class="services-grid">
-                <div class="service-card reveal">
-                    <div class="service-icon">
-                        <svg viewBox="0 0 24 24">
-                            <rect x="3" y="6" width="18" height="15" rx="2" />
-                            <path d="M3 10h18" />
-                            <path d="M12 6V3" />
-                        </svg>
-                    </div>
-                    <h3>Headstones</h3>
-                    <p>Beautifully crafted lawn memorials in granite, marble, or natural stone. 
-                       Personalised inscriptions, designs, and photo plaques available.</p>
-                    <p class="service-price">From Â£1,400</p>
-                </div>
-                <div class="service-card reveal">
-                    <div class="service-icon">
-                        <svg viewBox="0 0 24 24">
-                            <rect x="2" y="4" width="20" height="16" rx="2" />
-                            <path d="M2 10h20" />
-                            <path d="M12 4v6" />
-                        </svg>
-                    </div>
-                    <h3>Kerb Memorials</h3>
-                    <p>Full kerb sets that encompass the entire grave. Options include cover 
-                       slabs, chippings, flower vases, and book designs.</p>
-                    <p class="service-price">From Â£2,500</p>
-                </div>
-                <div class="service-card reveal">
-                    <div class="service-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                            <path d="M2 17l10 5 10-5" />
-                            <path d="M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
-                    <h3>Renovations</h3>
-                    <p>Restore existing memorials to their former beauty. Cleaning, 
-                       re-gilding, additional inscriptions, and structural repairs.</p>
-                    <p class="service-price">From Â£350</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Process Section -->
+    <!-- Process Timeline -->
     <section class="process" id="process">
         <div class="process-container">
             <div class="process-header reveal">
                 <p class="section-label">How It Works</p>
                 <h2>A simple, supportive process</h2>
-                <p>We guide you through every stepâ€”from your first enquiry to installation day.</p>
+                <p>We guide you through every step—from your first enquiry to installation day.</p>
             </div>
-            <div class="timeline">
-                <div class="timeline-item reveal">
+
+            <div class="timeline-calculator reveal">
+                <h3>Your Estimated Timeline</h3>
+                <p>If you start today, here's when you can expect your memorial to be installed:</p>
+                <div class="timeline-result">
+                    <div class="timeline-date">
+                        <span class="label">Start Today</span>
+                        <span class="date" id="startDate">17 Feb</span>
+                    </div>
+                    <div class="timeline-arrow"></div>
+                    <span class="timeline-weeks">12-18 weeks</span>
+                    <div class="timeline-arrow"></div>
+                    <div class="timeline-date">
+                        <span class="label">Estimated Installation</span>
+                        <span class="date" id="endDate">May - Jul 2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline reveal-stagger">
+                <div class="timeline-step active" onclick="showTimelineDetail(1)">
                     <div class="timeline-number">1</div>
-                    <div>
-                        <h4>Consultation</h4>
-                        <p>Discuss your vision. We'll advise on designs, materials, and cemetery requirements.</p>
-                    </div>
+                    <h4>Consultation</h4>
+                    <p>Discuss your vision with our team</p>
+                    <span class="duration">Same day</span>
                 </div>
-                <div class="timeline-item reveal">
+                <div class="timeline-step" onclick="showTimelineDetail(2)">
                     <div class="timeline-number">2</div>
-                    <div>
-                        <h4>Design & Quote</h4>
-                        <p>Receive a detailed quote with all costs clearly explained. No hidden fees.</p>
-                    </div>
+                    <h4>Design & Quote</h4>
+                    <p>Detailed proposal with clear pricing</p>
+                    <span class="duration">1-2 days</span>
                 </div>
-                <div class="timeline-item reveal">
+                <div class="timeline-step" onclick="showTimelineDetail(3)">
                     <div class="timeline-number">3</div>
-                    <div>
-                        <h4>Permit & Creation</h4>
-                        <p>We handle cemetery permits while your memorial is expertly crafted.</p>
-                    </div>
+                    <h4>Permit & Creation</h4>
+                    <p>We handle applications while crafting</p>
+                    <span class="duration">10-16 weeks</span>
                 </div>
-                <div class="timeline-item reveal">
+                <div class="timeline-step" onclick="showTimelineDetail(4)">
                     <div class="timeline-number">4</div>
+                    <h4>Installation</h4>
+                    <p>Professional fitting with photos</p>
+                    <span class="duration">1-2 weeks</span>
+                </div>
+            </div>
+
+            <div class="timeline-detail active" id="detail1">
+                <h4>Step 1: Consultation</h4>
+                <div class="timeline-detail-content">
                     <div>
-                        <h4>Installation</h4>
-                        <p>Professional fitting by our team. Photos sent on completion.</p>
+                        <p>Every memorial journey starts with a conversation. Whether you visit our showroom, call us, or fill in our online form, we'll listen to your wishes and offer guidance based on decades of experience.</p>
+                        <p>We'll discuss cemetery regulations, suitable designs, stone options, and help you understand what's possible within your budget.</p>
                     </div>
+                    <ul>
+                        <li>No obligation conversation</li>
+                        <li>Cemetery regulation advice</li>
+                        <li>Design options explained</li>
+                        <li>Budget guidance</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-detail" id="detail2">
+                <h4>Step 2: Design & Quote</h4>
+                <div class="timeline-detail-content">
+                    <div>
+                        <p>We'll prepare a detailed written quote that breaks down every cost—no hidden fees, no surprises. You'll see exactly what you're getting: the memorial design, inscription details, all options, and the total price including installation.</p>
+                        <p>Take all the time you need. There's no pressure to decide quickly.</p>
+                    </div>
+                    <ul>
+                        <li>Itemised pricing</li>
+                        <li>Design mockup included</li>
+                        <li>All options explained</li>
+                        <li>No expiry on quotes</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-detail" id="detail3">
+                <h4>Step 3: Permit & Creation</h4>
+                <div class="timeline-detail-content">
+                    <div>
+                        <p>This is where we do the heavy lifting. We submit your permit application to the cemetery and manage all correspondence. Meanwhile, your memorial is being expertly crafted in our workshop.</p>
+                        <p>We'll keep you updated throughout—you'll never have to chase us for information.</p>
+                    </div>
+                    <ul>
+                        <li>Permit application handled</li>
+                        <li>Regular progress updates</li>
+                        <li>Expert craftsmanship</li>
+                        <li>Quality checks at every stage</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-detail" id="detail4">
+                <h4>Step 4: Installation</h4>
+                <div class="timeline-detail-content">
+                    <div>
+                        <p>Our experienced installation team will fit your memorial with the care and respect it deserves. We work to the highest standards and always leave the graveside immaculate.</p>
+                        <p>We'll send you photos on completion, and you're welcome to visit and see the finished memorial for yourself.</p>
+                    </div>
+                    <ul>
+                        <li>Professional installation</li>
+                        <li>Photo confirmation</li>
+                        <li>30-year guarantee</li>
+                        <li>Aftercare advice included</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Testimonial Section -->
-    <section class="testimonial">
-        <div class="testimonial-container reveal">
-            <div class="quote-mark">"</div>
-            <p class="testimonial-text">
-                From start to finish, Sears Melvin made everything so much easier during 
-                an incredibly difficult time. They kept us informed throughout and the 
-                memorial is absolutely beautiful. We couldn't recommend them more highly.
-            </p>
-            <p class="testimonial-author">â€” The Thompson Family, Lambeth</p>
-        </div>
-    </section>
-
-    <!-- Gallery Section -->
-    <section class="gallery" id="gallery">
-        <div class="gallery-container">
-            <div class="gallery-header reveal">
-                <p class="section-label">Our Work</p>
-                <h2>Recent memorials</h2>
-                <p>Every memorial tells a unique story. Here are some examples of our craftsmanship.</p>
-            </div>
-            <div class="gallery-grid">
-                <div class="gallery-item reveal">
-                    <img src="https://images.unsplash.com/photo-1509128841709-6c13b25058a3?w=500&q=80" alt="Black granite headstone with flowers" loading="lazy">
-                    <div class="gallery-overlay">
-                        <span>Black Granite Headstone</span>
-                    </div>
-                </div>
-                <div class="gallery-item reveal">
-                    <img src="https://images.unsplash.com/photo-1566438480900-0609be27a4be?w=500&q=80" alt="Memorial with carved cross" loading="lazy">
-                    <div class="gallery-overlay">
-                        <span>Traditional Cross Design</span>
-                    </div>
-                </div>
-                <div class="gallery-item reveal">
-                    <img src="https://images.unsplash.com/photo-1541802645635-11f2286a7482?w=500&q=80" alt="Peaceful cemetery setting" loading="lazy">
-                    <div class="gallery-overlay">
-                        <span>Full Kerb Memorial</span>
-                    </div>
-                </div>
-                <div class="gallery-item reveal">
-                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80" alt="Elegant memorial stone" loading="lazy">
-                    <div class="gallery-overlay">
-                        <span>Lawn Memorial</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section class="contact" id="contact">
-        <div class="contact-container">
-            <div class="contact-info reveal">
-                <p class="section-label">Get in Touch</p>
-                <h2>Let's create something meaningful together</h2>
-                <p>Whether you're ready to start or just have questions, we're here to help. 
-                   No pressure, no obligationâ€”just honest guidance.</p>
-                <div class="contact-details">
-                    <div class="contact-item">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
-                        <div>
-                            <h4>Phone</h4>
-                            <a href="tel:01onal268208559">01268 208 559</a>
+    <!-- Before/After Renovation -->
+    <section class="renovation reveal">
+        <div class="renovation-container">
+            <div class="renovation-grid">
+                <div class="before-after" id="beforeAfter">
+                    <div class="before-after-images">
+                        <div class="ba-image after">
+                            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+                                <rect width="400" height="300" fill="#8aaa8a"/>
+                                <g transform="translate(200,140)">
+                                    <path d="M-50 100 L-50 -30 Q-50 -60 -30 -75 Q0 -95 30 -75 Q50 -60 50 -30 L50 100 Z" fill="#1a1a1a"/>
+                                    <rect x="-58" y="100" width="116" height="14" fill="#252525"/>
+                                    <line x1="-30" y1="-10" x2="30" y2="-10" stroke="#d4af37" stroke-width="2"/>
+                                    <line x1="-25" y1="15" x2="25" y2="15" stroke="#d4af37" stroke-width="2"/>
+                                    <line x1="-28" y1="40" x2="28" y2="40" stroke="#888" stroke-width="1.5"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="ba-image before">
+                            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+                                <rect width="400" height="300" fill="#8a9a7a"/>
+                                <g transform="translate(200,140)">
+                                    <path d="M-50 100 L-50 -30 Q-50 -60 -30 -75 Q0 -95 30 -75 Q50 -60 50 -30 L50 100 Z" fill="#4a4a4a"/>
+                                    <rect x="-58" y="100" width="116" height="14" fill="#3a3a3a"/>
+                                    <line x1="-30" y1="-10" x2="30" y2="-10" stroke="#666" stroke-width="2" opacity="0.5"/>
+                                    <line x1="-25" y1="15" x2="25" y2="15" stroke="#666" stroke-width="2" opacity="0.5"/>
+                                    <ellipse cx="-25" cy="60" rx="15" ry="10" fill="#5a6a5a" opacity="0.6"/>
+                                    <ellipse cx="30" cy="75" rx="12" ry="8" fill="#5a6a5a" opacity="0.5"/>
+                                </g>
+                            </svg>
                         </div>
                     </div>
-                    <div class="contact-item">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        <div>
-                            <h4>Email</h4>
-                            <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        <div>
-                            <h4>Serving</h4>
-                            <p>South London & Beyond</p>
-                        </div>
-                    </div>
+                    <div class="ba-slider" id="baSlider"></div>
+                    <span class="ba-label before">Before</span>
+                    <span class="ba-label after">After</span>
                 </div>
-            </div>
-            <div class="contact-form reveal" id="form-wrapper">
-
-                <!-- ✅ Success message (hidden until form is submitted) -->
-                <div id="form-success" style="display:none; text-align:center; padding: 3rem 1rem;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
-                    <h3 id="success-heading" style="color: var(--color-cream); font-family: var(--font-display); font-size: 1.75rem; margin-bottom: 1rem;">
-                        Thank you.
-                    </h3>
-                    <p style="color: rgba(255,255,255,0.7); line-height: 1.8;">
-                        We've received your enquiry and will be in touch within 24 hours.<br>
-                        A confirmation has been sent to your email.
-                    </p>
+                <div class="renovation-content">
+                    <p class="section-label">Restoration Services</p>
+                    <h2>Bring memorials back to life</h2>
+                    <p>Over time, even the finest memorials can show their age. Weathering, moss, faded lettering—we can restore them all. Our renovation service brings dignity back to memorials that have suffered years of exposure.</p>
+                    <p>From simple cleaning to complete re-gilding and structural repairs, we treat every memorial with the respect it deserves.</p>
+                    <div class="renovation-stats">
+                        <div class="renovation-stat"><span class="number">500+</span><span class="label">Memorials restored</span></div>
+                        <div class="renovation-stat"><span class="number">98%</span><span class="label">Customer satisfaction</span></div>
+                    </div>
+                    <a href="contact.html" class="btn btn-primary" style="margin-top: 2rem;">Enquire About Restoration</a>
                 </div>
-
-                <!-- ❌ Error message (hidden until an error occurs) -->
-                <div id="form-error" style="display:none; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem;">
-                    <p style="color: #ff9090; margin: 0;">Something went wrong — please try again or call us on 01268 208 559.</p>
-                </div>
-
-                <form id="enquiry-form">
-                    <div class="form-group">
-                        <label for="name">Your Name</label>
-                        <input type="text" id="name" name="name" placeholder="John Smith" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="john@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" placeholder="07123 456 789">
-                    </div>
-                    <div class="form-group">
-                        <label for="message">How can we help?</label>
-                        <textarea id="message" name="message" placeholder="Tell us about your requirements..."></textarea>
-                    </div>
-                    <button type="submit" class="form-submit" id="submit-btn">Send Enquiry</button>
-                </form>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- FAQ Section -->
+    <section class="faq reveal" id="faq">
+        <div class="faq-container">
+            <div class="section-header">
+                <p class="section-label">Common Questions</p>
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-tabs">
+                <button class="faq-tab active" onclick="filterFaq('all', this)">All</button>
+                <button class="faq-tab" onclick="filterFaq('ordering', this)">Ordering</button>
+                <button class="faq-tab" onclick="filterFaq('permits', this)">Permits</button>
+                <button class="faq-tab" onclick="filterFaq('installation', this)">Installation</button>
+                <button class="faq-tab" onclick="filterFaq('aftercare', this)">Aftercare</button>
+            </div>
+            <div class="faq-list" id="faqList">
+                <div class="faq-item" data-category="ordering">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>How long does the whole process take?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">From placing your order to installation, typically 12-18 weeks. The main variable is permit approval time, which varies by cemetery. We'll give you a realistic timeline specific to your cemetery when you enquire.</div></div>
+                </div>
+                <div class="faq-item" data-category="ordering">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>What deposit do you require?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">We ask for a 50% deposit plus the permit fee to get started. The remaining balance is due once your memorial is complete and ready for installation. We accept bank transfer, card payments, and can arrange payment plans if needed.</div></div>
+                </div>
+                <div class="faq-item" data-category="permits">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>Do I need a permit for a memorial?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">Yes, all cemeteries require a permit before any memorial can be installed. Don't worry—we handle the entire application process for you. The permit fee is usually £300-£500 depending on the cemetery.</div></div>
+                </div>
+                <div class="faq-item" data-category="permits">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>What if my cemetery has specific rules?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">Every cemetery has different regulations about memorial sizes, styles, and materials. We maintain a database of requirements for hundreds of cemeteries and will advise you on what's permitted before you commit.</div></div>
+                </div>
+                <div class="faq-item" data-category="installation">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>Can I be present at the installation?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">Absolutely. Many families choose to be present when the memorial is installed. Just let us know and we'll arrange a time that works for you. If you can't attend, we'll send you photos of the completed installation.</div></div>
+                </div>
+                <div class="faq-item" data-category="aftercare">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4>How do I care for a granite memorial?</h4>
+                        <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="faq-answer"><div class="faq-answer-inner">Granite is very low maintenance. We recommend cleaning with plain water and a soft cloth once or twice a year. Avoid harsh chemicals or pressure washers. We provide a full aftercare guide with every memorial.</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Memorial Care Guide Teaser -->
+    <section class="care-guide reveal">
+        <div class="care-guide-container">
+            <div class="care-guide-icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="care-guide-content">
+                <h3>Free Memorial Care Guide</h3>
+                <p>Download our comprehensive guide to keeping your memorial looking beautiful for years to come. Includes seasonal maintenance tips, cleaning instructions by stone type, and when to call a professional.</p>
+            </div>
+            <button class="care-guide-btn" onclick="alert('Guide download coming soon!')">Download Free Guide</button>
+        </div>
+    </section>
+
+    <!-- Grief Resources -->
+    <section class="grief-resources reveal">
+        <div class="grief-container">
+            <h2>Support When You Need It</h2>
+            <p>We understand this is a difficult time. These resources may help you and your family through the journey.</p>
+            <div class="grief-cards">
+                <div class="grief-card">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <h4>Bereavement Support</h4>
+                    <p>Cruse Bereavement Care offers free support for anyone grieving the death of someone close.</p>
+                    <a href="https://www.cruse.org.uk" target="_blank" rel="noopener">Visit Cruse →</a>
+                </div>
+                <div class="grief-card">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <h4>Planning Checklist</h4>
+                    <p>Our step-by-step guide helps you navigate what needs to happen and when.</p>
+                    <a href="#" onclick="alert('Checklist coming soon!')">Download Checklist →</a>
+                </div>
+                <div class="grief-card">
+                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <h4>Talk to Us</h4>
+                    <p>Sometimes you just need to talk. We're here to listen, no pressure to make any decisions.</p>
+                    <a href="contact.html">Get in Touch →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <section class="contact-cta reveal">
+        <div class="contact-cta-content">
+            <h2>Ready when you are</h2>
+            <p>Whether you're ready to start or just have questions, we're here to help. No pressure, no obligation—just honest guidance when you need it.</p>
+            <div>
+                <a href="contact.html" class="btn btn-accent">Request a Quote</a>
+                <a href="memorials.html" class="btn btn-secondary" style="border-color: rgba(255,255,255,0.3); color: white;">Browse Memorials</a>
+            </div>
+            <p class="gentle-message">Take your time. We're here when you're ready.</p>
+        </div>
+    </section>
+
     <footer>
         <div class="footer-container">
             <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
             <ul class="footer-links">
                 <li><a href="#about">About</a></li>
-                <li><a href="#services">Services</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
                 <li><a href="#process">Process</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="care-guide.html">Care Guide</a></li>
+                <li><a href="resources.html">Support</a></li>
+                <li><a href="contact.html">Contact</a></li>
             </ul>
-            <p class="footer-copy">Â© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
     </footer>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div class="mobile-bottom-nav-inner">
+            <a href="index.html" class="mobile-nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+            </a>
+            <a href="memorials.html" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+                <span>Browse</span>
+            </a>
+            <a href="contact.html" class="mobile-nav-item primary">
+                <div class="nav-icon-bg">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span>Enquire</span>
+            </a>
+            <a href="faq.html" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>FAQ</span>
+            </a>
+            <a href="tel:01onal268208559" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                <span>Call</span>
+            </a>
+        </div>
+    </nav>
+
+    <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+        <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+
     <script>
-        // Navbar scroll effect
-        const navbar = document.getElementById('navbar');
+        // ==================== SCROLL ANIMATIONS ====================
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+            document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-stagger').forEach(el => observer.observe(el));
+        }
+
+        // ==================== NAV SCROLL ====================
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
+            const nav = document.getElementById('navbar');
+            const scrollTop = document.getElementById('scrollTop');
+            if (window.scrollY > 100) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+            if (window.scrollY > 500) scrollTop.classList.add('visible');
+            else scrollTop.classList.remove('visible');
         });
 
-        // Scroll reveal animation
-        const revealElements = document.querySelectorAll('.reveal');
-        const revealOnScroll = () => {
-            revealElements.forEach(element => {
-                const elementTop = element.getBoundingClientRect().top;
-                const windowHeight = window.innerHeight;
-                if (elementTop < windowHeight - 100) {
-                    element.classList.add('active');
-                }
-            });
-        };
-        window.addEventListener('scroll', revealOnScroll);
-        revealOnScroll(); // Initial check
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function toggleMobileMenu() { document.getElementById('mobileNav').classList.toggle('active'); }
+        function toggleCalmMode() { document.body.classList.toggle('calm-mode'); }
 
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+        // ==================== TIMELINE ====================
+        function showTimelineDetail(step) {
+            document.querySelectorAll('.timeline-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.timeline-detail').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.timeline-step')[step-1].classList.add('active');
+            document.getElementById('detail' + step).classList.add('active');
+        }
+
+        // Calculate dates
+        function calculateTimeline() {
+            const today = new Date();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            document.getElementById('startDate').textContent = today.getDate() + ' ' + months[today.getMonth()];
+            
+            const minWeeks = 12, maxWeeks = 18;
+            const minDate = new Date(today.getTime() + minWeeks * 7 * 24 * 60 * 60 * 1000);
+            const maxDate = new Date(today.getTime() + maxWeeks * 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('endDate').textContent = months[minDate.getMonth()] + ' - ' + months[maxDate.getMonth()] + ' ' + maxDate.getFullYear();
+        }
+
+        // ==================== BEFORE/AFTER SLIDER ====================
+        function initBeforeAfter() {
+            const container = document.getElementById('beforeAfter');
+            const slider = document.getElementById('baSlider');
+            const beforeImg = container.querySelector('.ba-image.before');
+            let isDragging = false;
+
+            function updateSlider(x) {
+                const rect = container.getBoundingClientRect();
+                let pos = ((x - rect.left) / rect.width) * 100;
+                pos = Math.max(5, Math.min(95, pos));
+                slider.style.left = pos + '%';
+                beforeImg.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
+            }
+
+            slider.addEventListener('mousedown', () => isDragging = true);
+            document.addEventListener('mouseup', () => isDragging = false);
+            document.addEventListener('mousemove', (e) => { if (isDragging) updateSlider(e.clientX); });
+            slider.addEventListener('touchstart', () => isDragging = true);
+            document.addEventListener('touchend', () => isDragging = false);
+            document.addEventListener('touchmove', (e) => { if (isDragging && e.touches[0]) updateSlider(e.touches[0].clientX); });
+        }
+
+        // ==================== FAQ ====================
+        function toggleFaq(el) {
+            const item = el.parentElement;
+            item.classList.toggle('open');
+        }
+
+        function filterFaq(category, btn) {
+            document.querySelectorAll('.faq-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.faq-item').forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
                 }
             });
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initScrollAnimations();
+            calculateTimeline();
+            initBeforeAfter();
         });
     </script>
 </body>
 </html>
-
-    <script>
-        // ── YOUR WORKER URL ─────────────────────────────────────────────────
-        // After you deploy the worker, paste its URL here:
-        const WORKER_URL = "https://sears-melvin-form.winter-bush-89d1.workers.dev";
-        // ────────────────────────────────────────────────────────────────────
-
-        const form       = document.getElementById('enquiry-form');
-        const submitBtn  = document.getElementById('submit-btn');
-        const successBox = document.getElementById('form-success');
-        const errorBox   = document.getElementById('form-error');
-        const heading    = document.getElementById('success-heading');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            errorBox.style.display = 'none';
-
-            const name    = document.getElementById('name').value.trim();
-            const email   = document.getElementById('email').value.trim();
-            const phone   = document.getElementById('phone').value.trim();
-            const message = document.getElementById('message').value.trim();
-
-            submitBtn.textContent = 'Sending\u2026';
-            submitBtn.disabled = true;
-
-            try {
-                const response = await fetch(WORKER_URL, {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ name, email, phone, message }),
-                });
-
-                const result = await response.json();
-
-                if (result.ok) {
-                    const firstName = name.split(' ')[0];
-                    heading.textContent = 'Thank you, ' + firstName + '.';
-                    form.style.display       = 'none';
-                    errorBox.style.display   = 'none';
-                    successBox.style.display = 'block';
-                } else {
-                    throw new Error('Server error');
-                }
-
-            } catch (err) {
-                errorBox.style.display  = 'block';
-                submitBtn.textContent   = 'Send Enquiry';
-                submitBtn.disabled      = false;
-            }
-        });
-    </script>
