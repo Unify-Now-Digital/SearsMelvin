@@ -759,4 +759,9 @@
         }
 
         // Init
-        document.addEventListener('DOMContentLoaded', (
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('calmMode') === 'true') document.body.classList.add('calm-mode');
+        });
+    </script>
+</body>
+</html>
