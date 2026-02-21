@@ -96,6 +96,70 @@ export default {
       });
     }
 
+    // ── POST /stripe-webhook — verify signature, handle payment events ──
+    if (request.method === "POST" && url.pathname === "/stripe-webhook") {
+      const rawBody     = await request.text();
+      const sigHeader   = request.headers.get("stripe-signature") || "";
+      const whSecret    = env.STRIPE_WEBHOOK_SECRET || "";
+
+      if (whSecret) {
+        const valid = await verifyStripeWebhookSig(rawBody, sigHeader, whSecret);
+        if (!valid) {
+          return new Response(JSON.stringify({ error: "Invalid signature" }), {
+            status: 400, headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      let event;
+      try { event = JSON.parse(rawBody); } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
+      }
+
+      if (event.type === "payment_intent.succeeded") {
+        const pi = event.data.object;
+        const { customer_name: custName, customer_email: custEmail, cemetery, product: prodName } = pi.metadata;
+        const amountPaid = (pi.amount_received / 100).toFixed(2);
+
+        if (env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY && custEmail) {
+          try {
+            await fetch(
+              `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=1`,
+              {
+                method: "PATCH",
+                headers: {
+                  "apikey": env.SUPABASE_SERVICE_KEY,
+                  "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+                  "Content-Type": "application/json",
+                  "Prefer": "return=minimal",
+                },
+                body: JSON.stringify({ stripe_pi_id: pi.id, deposit_paid: true, deposit_amount: parseFloat(amountPaid) }),
+              },
+            );
+          } catch (e) { console.error("Supabase deposit update failed:", e); }
+        }
+
+        if (env.RESEND_API_KEY && custEmail) {
+          try {
+            await sendEmail(env.RESEND_API_KEY, {
+              from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+              to:      custEmail,
+              subject: `Deposit confirmed — ${BUSINESS_NAME}`,
+              html:    workerDepositCustomerEmail({ name: custName, amountPaid, product: prodName, cemetery }),
+            });
+            await sendEmail(env.RESEND_API_KEY, {
+              from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+              to:      BUSINESS_EMAIL,
+              subject: `Deposit received — £${amountPaid} — ${custName || custEmail}`,
+              html:    workerDepositBusinessEmail({ name: custName, email: custEmail, amountPaid, product: prodName, cemetery, piId: pi.id }),
+            });
+          } catch (e) { console.error("Deposit email failed:", e); }
+        }
+      }
+
+      return new Response(JSON.stringify({ received: true }), { headers: { "Content-Type": "application/json" } });
+    }
+
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405 });
     }
@@ -665,6 +729,72 @@ async function createClickUpTask(apiKey, { name, description, listId }) {
     body:    JSON.stringify({ name, description }),
   });
   if (!res.ok) throw new Error(`ClickUp error: ${await res.text()}`);
+}
+
+// ─── Stripe webhook signature verification ────────────────────────────────────
+async function verifyStripeWebhookSig(rawBody, sigHeader, secret) {
+  if (!sigHeader || !secret) return false;
+  const parts  = sigHeader.split(",");
+  const tPart  = parts.find(p => p.startsWith("t="));
+  const v1Part = parts.find(p => p.startsWith("v1="));
+  if (!tPart || !v1Part) return false;
+  const timestamp = tPart.slice(2);
+  const givenSig  = v1Part.slice(3);
+  if (Math.abs(Math.floor(Date.now() / 1000) - parseInt(timestamp, 10)) > 300) return false;
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sigBytes    = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
+  const computedSig = Array.from(new Uint8Array(sigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return computedSig === givenSig;
+}
+
+// ─── Deposit email templates (worker) ────────────────────────────────────────
+function workerDepositCustomerEmail({ name, amountPaid, product, cemetery }) {
+  const firstName = (name || "").split(" ")[0] || "there";
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+<tr><td style="background:#2C2C2C;padding:20px 28px;"><span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:.55;font-weight:300;">Memorials</span></span></td></tr>
+<tr><td style="padding:32px 28px 0;">
+<h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Deposit received, ${esc(firstName)}.</h2>
+<p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">Your <strong style="color:#2C2C2C;">£${esc(amountPaid)}</strong> deposit has been received and your order is confirmed. We'll be in touch within 24 hours.</p>
+</td></tr>
+<tr><td style="padding:0 28px 28px;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;border-radius:8px;">
+<tr><td style="padding:16px 20px;"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:10px;">Order summary</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+${product  ? `<tr><td style="color:#999;padding:4px 0;width:120px;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}</td></tr>` : ""}
+${cemetery ? `<tr><td style="color:#999;padding:4px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
+<tr><td style="color:#999;padding:8px 0 4px;border-top:1px solid #ddd;">Deposit paid</td><td style="color:#2C2C2C;font-weight:700;padding:8px 0 4px;border-top:1px solid #ddd;">£${esc(amountPaid)}</td></tr>
+</table></td></tr></table></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL} &middot; 01268 208 559</span></td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+function workerDepositBusinessEmail({ name, email, amountPaid, product, cemetery, piId }) {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+<tr><td style="background:#2C2C2C;padding:18px 28px;"><table width="100%" cellpadding="0" cellspacing="0"><tr>
+<td><span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:.55;">Memorials</span></span></td>
+<td align="right"><span style="background:#4CAF50;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Deposit Paid</span></td>
+</tr></table></td></tr>
+<tr><td style="padding:24px 28px;">
+<h2 style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;font-weight:normal;margin:0 0 16px;">Deposit Received — £${esc(amountPaid)}</h2>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+<tr><td style="color:#999;padding:5px 0;width:130px;">Customer</td><td style="color:#1A1A1A;font-weight:600;">${esc(name || "—")}</td></tr>
+<tr><td style="color:#999;padding:5px 0;">Email</td><td><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email || "—")}</a></td></tr>
+${product  ? `<tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}</td></tr>` : ""}
+${cemetery ? `<tr><td style="color:#999;padding:5px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
+<tr><td style="color:#999;padding:5px 0;">Amount</td><td style="color:#1A1A1A;font-weight:700;">£${esc(amountPaid)}</td></tr>
+<tr><td style="color:#999;padding:5px 0;font-size:11px;">Stripe PI</td><td style="color:#AAA;font-size:11px;">${esc(piId || "—")}</td></tr>
+</table></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL}</span></td></tr>
+</table></td></tr></table></body></html>`;
 }
 
 // ─── Helper: return JSON response ────────────────────────────────────────────
