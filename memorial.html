@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Ogee Top | Sears Melvin Memorials</title>
+    <meta name="description" content="Classic Ogee Top Lawn Memorial - A timeless design featuring the elegant ogee curved top, hand-finished in premium granite.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+            --stone-primary: #1a1a1a;
+            --stone-secondary: #252525;
+            --stone-highlight: #2d2d2d;
+        }
+
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.15s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+
+        /* Calm Mode Toggle */
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+
+        /* Breadcrumb */
+        .breadcrumb-bar { padding: 5.5rem 2rem 1rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
+        .breadcrumb { display: flex; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text-muted); max-width: 1400px; margin: 0 auto; }
+        .breadcrumb a { color: var(--color-accent); transition: color 0.2s; }
+        .breadcrumb a:hover { color: var(--color-stone); }
+
+        /* Product Layout */
+        .product-detail { padding: 2rem; background-color: var(--color-cream); }
+        .product-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+
+        /* Gallery */
+        .product-gallery { position: sticky; top: 80px; height: fit-content; }
+        .gallery-main { aspect-ratio: 4/5; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.1); background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .gallery-main svg { width: 100%; height: 100%; }
+        .gallery-badge { position: absolute; top: 1.5rem; left: 1.5rem; padding: 0.5rem 1rem; background: var(--color-accent); color: white; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 3px; }
+        
+        /* Live Preview Indicator */
+        .live-indicator { position: absolute; top: 1.5rem; right: 1.5rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; border-radius: 20px; }
+        .live-dot { width: 8px; height: 8px; background: #4ADE80; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Thumbnails */
+        .gallery-thumbs { display: flex; gap: 0.75rem; }
+        .gallery-thumb { width: 72px; height: 72px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; background: var(--color-warm); }
+        .gallery-thumb:hover { opacity: 0.9; transform: translateY(-2px); }
+        .gallery-thumb.active { border-color: var(--color-accent); opacity: 1; }
+        .gallery-thumb svg { width: 100%; height: 100%; }
+
+        /* Product Info */
+        .product-info { padding-top: 0.5rem; }
+        .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
+        .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
+        
+        .product-rating { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .stars { display: flex; gap: 0.15rem; }
+        .stars svg { width: 18px; height: 18px; fill: var(--color-accent); }
+        .rating-text { font-size: 0.9rem; color: var(--color-text-muted); }
+        .rating-text a { color: var(--color-accent); text-decoration: underline; }
+
+        .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+
+        /* Option Groups */
+        .option-group { margin-bottom: 2rem; }
+        .option-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .option-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); }
+        .option-value { font-size: 0.9rem; color: var(--color-stone); font-weight: 500; }
+
+        /* Stone Colour Swatches */
+        .colour-options { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .colour-option { cursor: pointer; text-align: center; transition: transform 0.2s; }
+        .colour-option:hover { transform: scale(1.05); }
+        .colour-option input { display: none; }
+        .colour-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .colour-swatch { 
+            width: 52px; height: 52px; border-radius: 50%; 
+            border: 3px solid transparent; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+            transition: all 0.3s;
+            position: relative;
+        }
+        .colour-swatch::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
+        }
+        .colour-option input:checked + .colour-wrapper .colour-swatch { 
+            border-color: var(--color-accent); 
+            box-shadow: 0 0 0 3px white, 0 0 0 6px var(--color-accent);
+            transform: scale(1.1);
+        }
+        .colour-name { font-size: 0.7rem; color: var(--color-text-muted); max-width: 65px; line-height: 1.3; }
+        .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
+
+        /* Visual Size Selector */
+        .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
+        .size-preview { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.3s; }
+        .size-preview:hover { transform: translateY(-5px); }
+        .size-preview input { display: none; }
+        .size-memorial { transition: all 0.3s; opacity: 0.4; }
+        .size-preview input:checked ~ .size-memorial { opacity: 1; }
+        .size-preview input:checked ~ .size-label { color: var(--color-stone); font-weight: 600; }
+        .size-preview input:checked ~ .size-memorial svg { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+        .size-label { margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
+        .size-label strong { display: block; font-size: 0.9rem; color: var(--color-stone); margin-bottom: 0.25rem; }
+        .size-dimensions { font-size: 0.7rem; color: var(--color-text-muted); }
+        
+        /* Human Scale Reference */
+        .human-reference { display: flex; flex-direction: column; align-items: center; opacity: 0.3; margin-right: 1rem; }
+        .human-reference svg { height: 120px; width: auto; }
+        .human-label { font-size: 0.65rem; color: var(--color-text-muted); margin-top: 0.5rem; }
+
+        /* Inscription Input */
+        .inscription-container { position: relative; }
+        .inscription-input { 
+            width: 100%; min-height: 140px; padding: 1rem; 
+            border: 2px solid var(--color-border); border-radius: 8px; 
+            font-family: var(--font-display); font-size: 1.1rem; 
+            resize: vertical; background: white;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            line-height: 1.6;
+        }
+        .inscription-input:focus { 
+            outline: none; 
+            border-color: var(--color-accent); 
+            box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.1);
+        }
+        .inscription-input::placeholder { color: #bbb; font-style: italic; }
+        
+        .inscription-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
+        .char-counter { font-size: 0.8rem; color: var(--color-text-muted); }
+        .char-counter.warning { color: #c9a227; }
+        .char-counter.over { color: #b44; }
+        .char-bar { width: 150px; height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+        .char-bar-fill { height: 100%; background: var(--color-success); transition: width 0.3s, background 0.3s; border-radius: 3px; }
+        .char-bar-fill.warning { background: #c9a227; }
+        .char-bar-fill.over { background: #b44; }
+
+        .font-selector { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .font-option { padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; background: white; }
+        .font-option:hover { border-color: var(--color-stone); }
+        .font-option.active { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
+        .font-traditional { font-family: 'Times New Roman', serif; }
+        .font-modern { font-family: var(--font-body); }
+        .font-script { font-family: 'Brush Script MT', cursive; font-size: 1rem; }
+
+        /* Add-ons */
+        .addons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .addon-card { padding: 1rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white; }
+        .addon-card:hover { border-color: var(--color-stone); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .addon-card.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.05); }
+        .addon-card input { display: none; }
+        .addon-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem; }
+        .addon-name { font-weight: 600; color: var(--color-stone); font-size: 0.95rem; }
+        .addon-price { color: var(--color-accent); font-weight: 600; }
+        .addon-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
+        .addon-check { width: 22px; height: 22px; border: 2px solid var(--color-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; margin-left: 0.5rem; }
+        .addon-card.selected .addon-check { background: var(--color-accent); border-color: var(--color-accent); }
+        .addon-card.selected .addon-check::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
+
+        /* Price Summary - Sticky */
+        .price-summary { 
+            position: sticky; bottom: 0; left: 0; right: 0;
+            background: white; 
+            border-top: 1px solid var(--color-border);
+            padding: 1.5rem 2rem;
+            margin: 2rem -2rem -2rem;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            z-index: 50;
+        }
+        .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
+        
+        .price-breakdown { flex: 1; }
+        .price-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.35rem; }
+        .price-row.total { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; }
+        .price-total-display { font-family: var(--font-display); font-size: 2rem; color: var(--color-stone); }
+
+        .price-actions { display: flex; gap: 1rem; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 1.75rem; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.03em; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .btn-primary { background: var(--color-stone); color: white; }
+        .btn-primary:hover { background: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-secondary { background: transparent; color: var(--color-stone); border: 2px solid var(--color-stone); }
+        .btn-secondary:hover { background: var(--color-stone); color: white; }
+        .btn-accent { background: var(--color-accent); color: white; }
+        .btn-accent:hover { background: var(--color-accent-light); transform: translateY(-2px); }
+
+        /* Trust Badges */
+        .trust-badges { display: flex; gap: 2rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+        .trust-badge { display: flex; align-items: center; gap: 0.75rem; }
+        .trust-badge svg { width: 32px; height: 32px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .trust-badge-text { font-size: 0.8rem; }
+        .trust-badge-text strong { display: block; color: var(--color-stone); }
+        .trust-badge-text span { color: var(--color-text-muted); }
+
+        /* Features List */
+        .features-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+        .features-title { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 1rem; }
+        .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .feature-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--color-stone); }
+        .feature-item svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+        /* Mobile Bottom Bar */
+        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); padding: 1rem; z-index: 90; }
+        .mobile-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-stone); margin-bottom: 0.5rem; }
+        .mobile-actions { display: flex; gap: 0.75rem; }
+        .mobile-actions .btn { flex: 1; padding: 0.875rem; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .product-container { grid-template-columns: 1fr; gap: 2rem; }
+            .product-gallery { position: relative; top: 0; }
+            .price-summary { position: relative; margin: 2rem 0 0; }
+            .price-summary-inner { flex-direction: column; align-items: stretch; }
+            .price-actions { justify-content: stretch; }
+            .price-actions .btn { flex: 1; }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .size-visual { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
+            .human-reference { display: none; }
+            .addons-grid { grid-template-columns: 1fr; }
+            .trust-badges { flex-direction: column; gap: 1rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .price-summary { display: none; }
+            .mobile-bottom-bar { display: block; }
+            .colour-options { gap: 0.75rem; }
+            .colour-swatch { width: 44px; height: 44px; }
+        }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+    </nav>
+
+    <div class="breadcrumb-bar">
+        <div class="breadcrumb">
+            <a href="index.html">Home</a><span>/</span>
+            <a href="memorials.html">Memorials</a><span>/</span>
+            <a href="memorials.html?type=lawn-headstone">Lawn Headstones</a><span>/</span>
+            <span>Classic Ogee Top</span>
+        </div>
+    </div>
+
+    <section class="product-detail">
+        <div class="product-container">
+            <!-- Gallery with Live Preview -->
+            <div class="product-gallery animate-in">
+                <div class="gallery-main" id="galleryMain">
+                    <svg viewBox="0 0 400 500" id="mainMemorialSvg">
+                        <defs>
+                            <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#d4cfc6"/>
+                                <stop offset="100%" stop-color="#e0dcd4"/>
+                            </linearGradient>
+                            <linearGradient id="stoneGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="var(--stone-primary)"/>
+                                <stop offset="40%" stop-color="var(--stone-secondary)"/>
+                                <stop offset="60%" stop-color="var(--stone-secondary)"/>
+                                <stop offset="100%" stop-color="var(--stone-primary)"/>
+                            </linearGradient>
+                            <linearGradient id="goldLettering" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#b8943f"/>
+                                <stop offset="50%" stop-color="#d4af37"/>
+                                <stop offset="100%" stop-color="#b8943f"/>
+                            </linearGradient>
+                        </defs>
+                        <!-- Background -->
+                        <rect width="400" height="500" fill="url(#sky)"/>
+                        <rect x="0" y="420" width="400" height="80" fill="#9ab094"/>
+                        
+                        <!-- Memorial Stone - Size changes based on selection -->
+                        <g id="memorialStone" transform="translate(200,220)">
+                            <path id="headstoneShape" d="M-70 175 L-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55 L70 175 Z" fill="url(#stoneGradient)"/>
+                            <path d="M-70 -55 Q-70 -95 -45 -115 Q0 -150 45 -115 Q70 -95 70 -55" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+                            <rect id="baseRect1" x="-82" y="175" width="164" height="26" fill="var(--stone-secondary)" rx="3"/>
+                            <rect id="baseRect2" x="-90" y="201" width="180" height="18" fill="var(--stone-primary)" rx="2"/>
+                            
+                            <!-- Dynamic Inscription Text -->
+                            <g id="inscriptionGroup" font-family="Times New Roman, serif">
+                                <text id="inscLine1" x="0" y="-30" text-anchor="middle" fill="url(#goldLettering)" font-size="18"></text>
+                                <text id="inscLine2" x="0" y="0" text-anchor="middle" fill="url(#goldLettering)" font-size="16"></text>
+                                <text id="inscLine3" x="0" y="30" text-anchor="middle" fill="url(#goldLettering)" font-size="14"></text>
+                                <text id="inscLine4" x="0" y="70" text-anchor="middle" fill="#666" font-size="12"></text>
+                                <text id="inscLine5" x="0" y="95" text-anchor="middle" fill="#666" font-size="11"></text>
+                                <text id="inscLine6" x="0" y="120" text-anchor="middle" fill="#666" font-size="11"></text>
+                                <text id="inscLine7" x="0" y="145" text-anchor="middle" fill="#666" font-size="11"></text>
+                            </g>
+                            
+                            <!-- Placeholder lines (shown when no inscription) -->
+                            <g id="placeholderLines">
+                                <line x1="-42" y1="-35" x2="42" y2="-35" stroke="url(#goldLettering)" stroke-width="3" opacity="0.4"/>
+                                <line x1="-36" y1="-5" x2="36" y2="-5" stroke="url(#goldLettering)" stroke-width="2.5" opacity="0.4"/>
+                                <line x1="-40" y1="25" x2="40" y2="25" stroke="url(#goldLettering)" stroke-width="2.5" opacity="0.4"/>
+                                <line x1="-32" y1="70" x2="32" y2="70" stroke="#666" stroke-width="2" opacity="0.3"/>
+                                <line x1="-45" y1="115" x2="45" y2="115" stroke="#666" stroke-width="1.5" opacity="0.3"/>
+                                <line x1="-40" y1="140" x2="40" y2="140" stroke="#666" stroke-width="1.5" opacity="0.3"/>
+                            </g>
+                        </g>
+                        
+                        <!-- Flowers at base -->
+                        <g transform="translate(305, 405)">
+                            <ellipse cx="0" cy="8" rx="18" ry="6" fill="#3a3a3a"/>
+                            <line x1="-8" y1="8" x2="-12" y2="-25" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="0" y1="8" x2="2" y2="-30" stroke="#5a8a5a" stroke-width="2"/>
+                            <line x1="8" y1="8" x2="12" y2="-22" stroke="#5a8a5a" stroke-width="2"/>
+                            <circle cx="-12" cy="-28" r="6" fill="#c77"/>
+                            <circle cx="2" cy="-33" r="7" fill="#fff" opacity="0.9"/>
+                            <circle cx="12" cy="-25" r="5" fill="#e9d"/>
+                        </g>
+                    </svg>
+                    <span class="gallery-badge">Popular Choice</span>
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        Live Preview
+                    </div>
+                </div>
+                
+                <div class="gallery-thumbs">
+                    <div class="gallery-thumb active" onclick="setView('front', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#d4cfc6"/>
+                            <rect x="0" y="60" width="72" height="12" fill="#9ab094"/>
+                            <g transform="translate(36,34)">
+                                <path d="M-16 26 L-16 -12 Q-16 -20 -10 -24 Q0 -32 10 -24 Q16 -20 16 -12 L16 26 Z" fill="var(--stone-primary)"/>
+                                <rect x="-18" y="26" width="36" height="5" fill="var(--stone-secondary)"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('angle', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#d4cfc6"/>
+                            <rect x="0" y="60" width="72" height="12" fill="#9ab094"/>
+                            <g transform="translate(36,34) rotate(-8)">
+                                <path d="M-14 24 L-14 -10 Q-14 -18 -9 -22 Q0 -28 9 -22 Q14 -18 14 -10 L14 24 Z" fill="var(--stone-primary)"/>
+                                <rect x="-16" y="24" width="32" height="4" fill="var(--stone-secondary)"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('detail', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="var(--stone-primary)"/>
+                            <g transform="translate(36,36)">
+                                <line x1="-20" y1="-10" x2="20" y2="-10" stroke="#d4af37" stroke-width="3"/>
+                                <line x1="-16" y1="2" x2="16" y2="2" stroke="#d4af37" stroke-width="2"/>
+                                <line x1="-18" y1="14" x2="18" y2="14" stroke="#555" stroke-width="1.5"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="gallery-thumb" onclick="setView('installed', this)">
+                        <svg viewBox="0 0 72 72">
+                            <rect width="72" height="72" fill="#a8c4a0"/>
+                            <g transform="translate(36,38)">
+                                <path d="M-12 22 L-12 -8 Q-12 -14 -7 -17 Q0 -22 7 -17 Q12 -14 12 -8 L12 22 Z" fill="var(--stone-primary)"/>
+                                <rect x="-14" y="22" width="28" height="4" fill="var(--stone-secondary)"/>
+                                <circle cx="22" cy="15" r="5" fill="#c77"/>
+                                <circle cx="26" cy="8" r="4" fill="#ffd"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Info & Configurator -->
+            <div class="product-info">
+                <span class="product-category animate-in">Lawn Headstone</span>
+                <h1 class="animate-in animate-delay-1">Classic Ogee Top Lawn Memorial</h1>
+                
+                <div class="product-rating animate-in animate-delay-2">
+                    <div class="stars">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <span class="rating-text">4.9 average · <a href="#reviews">23 reviews</a></span>
+                </div>
+
+                <p class="product-description animate-in animate-delay-3">
+                    A timeless design featuring the elegant ogee curved top, hand-finished in premium granite. 
+                    This classic memorial combines traditional craftsmanship with enduring quality, creating 
+                    a dignified tribute that will stand the test of time. Price includes nationwide installation 
+                    and our 30-year guarantee.
+                </p>
+
+                <!-- Stone Colour - Live Updates SVG -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Stone Colour</span>
+                        <span class="option-value" id="selectedColourName">Black Galaxy</span>
+                    </div>
+                    <div class="colour-options">
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="black" data-name="Black Galaxy" data-primary="#1a1a1a" data-secondary="#252525" checked onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);"></span>
+                                <span class="colour-name">Black Galaxy</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="grey" data-name="Rustenberg Grey" data-primary="#5a5a5a" data-secondary="#6b6b6b" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a5a5a 0%, #7a7a7a 50%, #6b6b6b 100%);"></span>
+                                <span class="colour-name">Rustenberg Grey</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="blue" data-name="Vizag Blue" data-primary="#1a2a3a" data-secondary="#243444" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a2a3a 0%, #2c3e50 50%, #1a2a3a 100%);"></span>
+                                <span class="colour-name">Vizag Blue</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="brown" data-name="Indian Aurora" data-primary="#6B4423" data-secondary="#7a5030" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #6B4423 0%, #8B5A2B 50%, #A0522D 100%);"></span>
+                                <span class="colour-name">Indian Aurora</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="green" data-name="Emerald Pearl" data-primary="#1d3a2e" data-secondary="#254438" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1d3a2e 0%, #2d4a3e 50%, #1d3a2e 100%);"></span>
+                                <span class="colour-name">Emerald Pearl</span>
+                            </div>
+                        </label>
+                        <label class="colour-option">
+                            <input type="radio" name="colour" value="red" data-name="Ruby Red" data-primary="#5a2028" data-secondary="#6a2830" onchange="updateColour(this)">
+                            <div class="colour-wrapper">
+                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a2028 0%, #722F37 50%, #5a2028 100%);"></span>
+                                <span class="colour-name">Ruby Red</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Visual Size Selector with Human Reference -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Memorial Size</span>
+                        <span class="option-value" id="selectedSizeName">Standard (24" × 18" × 3")</span>
+                    </div>
+                    <div class="size-visual">
+                        <!-- Human reference for scale -->
+                        <div class="human-reference">
+                            <svg viewBox="0 0 40 120" stroke="#999" stroke-width="2" fill="none" stroke-linecap="round">
+                                <circle cx="20" cy="10" r="8"/>
+                                <line x1="20" y1="18" x2="20" y2="60"/>
+                                <line x1="8" y1="35" x2="32" y2="35"/>
+                                <line x1="20" y1="60" x2="10" y2="100"/>
+                                <line x1="20" y1="60" x2="30" y2="100"/>
+                            </svg>
+                            <span class="human-label">5'6" / 168cm</span>
+                        </div>
+                        
+                        <!-- Standard -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="standard" data-name="Standard" data-dimensions="24&quot; × 18&quot; × 3&quot;" data-price="0" data-scale="1" checked onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 75px;">
+                                <svg viewBox="0 0 60 80" width="60" height="75">
+                                    <path d="M5 72 L5 22 Q5 10 15 4 Q30 -6 45 4 Q55 10 55 22 L55 72 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="72" width="56" height="6" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Standard</strong>
+                                <span class="size-dimensions">24" × 18" × 3"</span>
+                            </div>
+                        </label>
+                        
+                        <!-- Medium -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="medium" data-name="Medium" data-dimensions="27&quot; × 21&quot; × 3&quot;" data-price="150" data-scale="1.15" onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 88px;">
+                                <svg viewBox="0 0 70 95" width="70" height="88">
+                                    <path d="M5 87 L5 27 Q5 12 17 5 Q35 -8 53 5 Q65 12 65 27 L65 87 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="87" width="66" height="7" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Medium +£150</strong>
+                                <span class="size-dimensions">27" × 21" × 3"</span>
+                            </div>
+                        </label>
+                        
+                        <!-- Large -->
+                        <label class="size-preview">
+                            <input type="radio" name="size" value="large" data-name="Large" data-dimensions="30&quot; × 24&quot; × 4&quot;" data-price="300" data-scale="1.3" onchange="updateSize(this)">
+                            <div class="size-memorial" style="height: 100px;">
+                                <svg viewBox="0 0 80 110" width="80" height="100">
+                                    <path d="M5 100 L5 32 Q5 14 19 6 Q40 -10 61 6 Q75 14 75 32 L75 100 Z" fill="var(--stone-primary)"/>
+                                    <rect x="2" y="100" width="76" height="8" fill="var(--stone-secondary)"/>
+                                </svg>
+                            </div>
+                            <div class="size-label">
+                                <strong>Large +£300</strong>
+                                <span class="size-dimensions">30" × 24" × 4"</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Live Inscription Preview -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Inscription</span>
+                        <span class="option-value"><span id="charCount">0</span> / 80 included</span>
+                    </div>
+                    <div class="inscription-container">
+                        <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="300"></textarea>
+                        <div class="inscription-meta">
+                            <div class="char-bar">
+                                <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
+                            </div>
+                            <span class="char-counter" id="charCounter">80 characters included, then £2.40 each</span>
+                        </div>
+                        <div class="font-selector">
+                            <button type="button" class="font-option font-traditional active" onclick="setFont('traditional', this)">Traditional</button>
+                            <button type="button" class="font-option font-modern" onclick="setFont('modern', this)">Modern</button>
+                            <button type="button" class="font-option font-script" onclick="setFont('script', this)">Script</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add-ons -->
+                <div class="option-group">
+                    <div class="option-header">
+                        <span class="option-label">Optional Extras</span>
+                    </div>
+                    <div class="addons-grid">
+                        <label class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="photo" data-price="160">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Ceramic Photo Plaque</div>
+                                    <div class="addon-price">+£160</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Waterproof ceramic photo, 3" oval or rectangle. Lasts 25+ years.</p>
+                        </label>
+                        <label class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="vase" data-price="85">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Matching Flower Vase</div>
+                                    <div class="addon-price">+£85</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Removable granite vase in matching stone colour.</p>
+                        </label>
+                        <label class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="design" data-price="120">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Custom Design/Motif</div>
+                                    <div class="addon-price">+£120</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Carved rose, cross, dove, or custom design of your choice.</p>
+                        </label>
+                        <label class="addon-card" onclick="toggleAddon(this)">
+                            <input type="checkbox" name="addon" value="gold" data-price="95">
+                            <div class="addon-header">
+                                <div>
+                                    <div class="addon-name">Gold Leaf Lettering</div>
+                                    <div class="addon-price">+£95</div>
+                                </div>
+                                <span class="addon-check"></span>
+                            </div>
+                            <p class="addon-desc">Upgrade to genuine gold leaf lettering for a premium finish.</p>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>30 Year Guarantee</strong>
+                            <span>Against manufacturing defects</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>Free Installation</strong>
+                            <span>Anywhere in England & Wales</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <div class="trust-badge-text">
+                            <strong>We Handle Permits</strong>
+                            <span>Cemetery applications included</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="features-section">
+                    <h4 class="features-title">What's Included</h4>
+                    <div class="features-grid">
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Premium granite headstone</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Matching granite base</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 80 characters inscription</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Cemetery permit application</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Professional installation</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Photo on completion</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>30 year guarantee</div>
+                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Aftercare guide</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Price Summary -->
+        <div class="price-summary" id="priceSummary">
+            <div class="price-summary-inner">
+                <div class="price-breakdown">
+                    <div class="price-row">
+                        <span>Classic Ogee Top Memorial</span>
+                        <span id="priceBase">£1,450</span>
+                    </div>
+                    <div class="price-row" id="priceSizeRow" style="display: none;">
+                        <span id="priceSizeLabel">Size upgrade</span>
+                        <span id="priceSizeAmount">+£0</span>
+                    </div>
+                    <div class="price-row" id="priceInscriptionRow" style="display: none;">
+                        <span>Extra inscription (<span id="extraCharsCount">0</span> chars)</span>
+                        <span id="priceInscription">+£0</span>
+                    </div>
+                    <div class="price-row" id="priceAddonsRow" style="display: none;">
+                        <span id="addonsLabel">Optional extras</span>
+                        <span id="priceAddons">+£0</span>
+                    </div>
+                    <div class="price-row total">
+                        <span>Total (fully installed)</span>
+                        <span class="price-total-display" id="priceTotal">£1,450</span>
+                    </div>
+                </div>
+                <div class="price-actions">
+                    <button class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                        Save
+                    </button>
+                    <button class="btn btn-primary">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Request Quote
+                    </button>
+                    <button class="btn btn-accent">
+                        Pay 50% Deposit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bottom-bar">
+        <div class="mobile-price">
+            <span id="mobilePriceTotal">£1,450</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
+        </div>
+        <div class="mobile-actions">
+            <button class="btn btn-secondary">Quote</button>
+            <button class="btn btn-accent">Pay Deposit</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="index.html#process">Process</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== STATE ====================
+        const state = {
+            basePrice: 1450,
+            sizePrice: 0,
+            inscriptionPrice: 0,
+            addonsPrice: 0,
+            selectedColour: 'black',
+            selectedSize: 'standard',
+            inscription: '',
+            font: 'traditional',
+            addons: []
+        };
+
+        // ==================== COLOUR - Live SVG Update ====================
+        function updateColour(input) {
+            const name = input.dataset.name;
+            const primary = input.dataset.primary;
+            const secondary = input.dataset.secondary;
+            
+            document.getElementById('selectedColourName').textContent = name;
+            state.selectedColour = input.value;
+            
+            // Update CSS custom properties (affects entire page)
+            document.documentElement.style.setProperty('--stone-primary', primary);
+            document.documentElement.style.setProperty('--stone-secondary', secondary);
+        }
+
+        // ==================== SIZE - Visual Scale ====================
+        function updateSize(input) {
+            const name = input.dataset.name;
+            const dimensions = input.dataset.dimensions;
+            const price = parseInt(input.dataset.price);
+            const scale = parseFloat(input.dataset.scale);
+            
+            document.getElementById('selectedSizeName').textContent = `${name} (${dimensions})`;
+            state.sizePrice = price;
+            state.selectedSize = input.value;
+            
+            // Scale the main memorial SVG
+            const memorial = document.getElementById('memorialStone');
+            memorial.style.transform = `translate(200px, ${220 - (scale - 1) * 30}px) scale(${scale})`;
+            memorial.style.transition = 'transform 0.4s ease';
+            
+            // Update price row
+            const sizeRow = document.getElementById('priceSizeRow');
+            if (price > 0) {
+                sizeRow.style.display = 'flex';
+                document.getElementById('priceSizeLabel').textContent = `Size upgrade (${name})`;
+                document.getElementById('priceSizeAmount').textContent = `+£${price}`;
+            } else {
+                sizeRow.style.display = 'none';
+            }
+            
+            updateTotalPrice();
+        }
+
+        // ==================== INSCRIPTION - Live Preview ====================
+        function updateInscription(textarea) {
+            const text = textarea.value;
+            const charCount = text.length;
+            state.inscription = text;
+            
+            // Update counter display
+            document.getElementById('charCount').textContent = charCount;
+            const charBar = document.getElementById('charBarFill');
+            const charCounter = document.getElementById('charCounter');
+            const percentage = Math.min((charCount / 80) * 100, 100);
+            charBar.style.width = percentage + '%';
+            
+            // Style based on character count
+            charBar.classList.remove('warning', 'over');
+            charCounter.classList.remove('warning', 'over');
+            
+            if (charCount > 80) {
+                const extraChars = charCount - 80;
+                const extraCost = Math.ceil(extraChars * 2.40);
+                charCounter.textContent = `${extraChars} extra = +£${extraCost.toFixed(2)}`;
+                charBar.classList.add('over');
+                charCounter.classList.add('over');
+                state.inscriptionPrice = extraCost;
+                
+                document.getElementById('priceInscriptionRow').style.display = 'flex';
+                document.getElementById('extraCharsCount').textContent = extraChars;
+                document.getElementById('priceInscription').textContent = `+£${extraCost.toFixed(2)}`;
+            } else if (charCount > 60) {
+                charCounter.textContent = `${80 - charCount} characters remaining`;
+                charBar.classList.add('warning');
+                state.inscriptionPrice = 0;
+                document.getElementById('priceInscriptionRow').style.display = 'none';
+            } else {
+                charCounter.textContent = '80 characters included, then £2.40 each';
+                state.inscriptionPrice = 0;
+                document.getElementById('priceInscriptionRow').style.display = 'none';
+            }
+            
+            // Live update on SVG
+            updateInscriptionSVG(text);
+            updateTotalPrice();
+        }
+
+        function updateInscriptionSVG(text) {
+            const lines = text.split('\n').slice(0, 7);
+            const placeholders = document.getElementById('placeholderLines');
+            const inscGroup = document.getElementById('inscriptionGroup');
+            
+            if (text.trim().length > 0) {
+                placeholders.style.display = 'none';
+                inscGroup.style.display = 'block';
+                
+                for (let i = 1; i <= 7; i++) {
+                    const lineEl = document.getElementById(`inscLine${i}`);
+                    if (lineEl) lineEl.textContent = lines[i-1] || '';
+                }
+            } else {
+                placeholders.style.display = 'block';
+                inscGroup.style.display = 'none';
+            }
+        }
+
+        function setFont(fontType, btn) {
+            state.font = fontType;
+            document.querySelectorAll('.font-option').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const fontFamily = {
+                'traditional': 'Times New Roman, serif',
+                'modern': 'DM Sans, sans-serif',
+                'script': 'Brush Script MT, cursive'
+            }[fontType];
+            
+            const inscGroup = document.getElementById('inscriptionGroup');
+            if (inscGroup) inscGroup.setAttribute('font-family', fontFamily);
+        }
+
+        // ==================== ADD-ONS ====================
+        function toggleAddon(card) {
+            card.classList.toggle('selected');
+            
+            let total = 0;
+            let addonsText = [];
+            document.querySelectorAll('.addon-card.selected input').forEach(inp => {
+                total += parseInt(inp.dataset.price);
+                addonsText.push(inp.value);
+            });
+            
+            state.addonsPrice = total;
+            state.addons = addonsText;
+            
+            const addonsRow = document.getElementById('priceAddonsRow');
+            if (total > 0) {
+                addonsRow.style.display = 'flex';
+                document.getElementById('priceAddons').textContent = `+£${total}`;
+            } else {
+                addonsRow.style.display = 'none';
+            }
+            
+            updateTotalPrice();
+        }
+
+        // ==================== PRICING ====================
+        function updateTotalPrice() {
+            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            const formatted = `£${total.toLocaleString()}`;
+            
+            document.getElementById('priceTotal').textContent = formatted;
+            document.getElementById('mobilePriceTotal').textContent = formatted;
+        }
+
+        // ==================== GALLERY VIEWS ====================
+        function setView(view, thumb) {
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+            // Could swap main SVG content here for different angles
+        }
+
+        // ==================== CALM MODE ====================
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialColour = document.querySelector('input[name="colour"]:checked');
+            if (initialColour) updateColour(initialColour);
+            
+            const initialSize = document.querySelector('input[name="size"]:checked');
+            if (initialSize) updateSize(initialSize);
+        });
+    </script>
+</body>
+</html>

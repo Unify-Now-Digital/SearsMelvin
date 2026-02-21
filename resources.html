@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support & Resources | Sears Melvin Memorials</title>
+    <meta name="description" content="Support resources for those experiencing bereavement. Helpful organisations, planning guides, and what to expect during this difficult time.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity: 0.6s ease, transform 0.6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+        .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
+
+        /* Page Header */
+        .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .page-header h1 { font-size: 2.75rem; margin-bottom: 1rem; }
+        .page-header p { font-size: 1.15rem; max-width: 650px; margin: 0 auto; line-height: 1.8; }
+
+        /* Content */
+        .resources-section { padding: 4rem 2rem; }
+        .resources-container { max-width: 1000px; margin: 0 auto; }
+
+        /* Intro */
+        .intro-message { 
+            text-align: center; max-width: 700px; margin: 0 auto 4rem;
+            padding: 2.5rem; background: white; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .intro-message svg { width: 48px; height: 48px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 1.5rem; }
+        .intro-message h2 { font-size: 1.75rem; margin-bottom: 1rem; }
+        .intro-message p { font-size: 1.05rem; line-height: 1.8; }
+
+        /* Section Heading */
+        .section-heading { margin-bottom: 2rem; text-align: center; }
+        .section-heading h2 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+        .section-heading p { font-size: 1rem; }
+
+        /* Support Organizations */
+        .org-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 4rem; }
+        .org-card { background: white; border-radius: 10px; padding: 1.75rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: transform 0.3s, box-shadow 0.3s; }
+        .org-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .org-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .org-icon { width: 48px; height: 48px; background: var(--color-warm); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .org-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .org-header h3 { font-size: 1.15rem; }
+        .org-card > p { font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem; }
+        .org-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-accent); font-size: 0.9rem; font-weight: 500; }
+        .org-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .org-link:hover { text-decoration: underline; }
+        .org-phone { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.9rem; color: var(--color-stone); font-weight: 500; }
+        .org-phone svg { width: 16px; height: 16px; stroke: var(--color-success); fill: none; stroke-width: 2; }
+
+        /* What to Expect */
+        .expect-section { margin-bottom: 4rem; }
+        .expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .expect-card { background: white; border-radius: 10px; padding: 1.75rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); text-align: center; }
+        .expect-card .number { width: 40px; height: 40px; margin: 0 auto 1rem; background: var(--color-accent); color: white; border-radius: 50%; font-family: var(--font-display); font-size: 1.25rem; display: flex; align-items: center; justify-content: center; }
+        .expect-card h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .expect-card p { font-size: 0.9rem; line-height: 1.7; }
+
+        /* Checklist */
+        .checklist-section { margin-bottom: 4rem; }
+        .checklist-container { background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .checklist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .checklist-header h3 { font-size: 1.5rem; }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: var(--color-accent); color: white; border-radius: 6px; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; }
+        .download-btn:hover { transform: translateY(-2px); }
+        .download-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .checklist-group { margin-bottom: 2rem; }
+        .checklist-group h4 { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
+        .checklist-items { list-style: none; }
+        .checklist-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); }
+        .checklist-item:last-child { border-bottom: none; }
+        .check-box { width: 22px; height: 22px; border: 2px solid var(--color-border); border-radius: 4px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .check-box:hover { border-color: var(--color-accent); }
+        .check-box.checked { background: var(--color-success); border-color: var(--color-success); }
+        .check-box.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+        .checklist-item span { font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.5; }
+        .checklist-item.checked span { text-decoration: line-through; opacity: 0.6; }
+
+        /* Helpful Reading */
+        .reading-section { margin-bottom: 4rem; }
+        .reading-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .reading-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: transform 0.3s; }
+        .reading-card:hover { transform: translateY(-4px); }
+        .reading-image { height: 140px; background: linear-gradient(135deg, var(--color-warm) 0%, var(--color-border) 100%); display: flex; align-items: center; justify-content: center; }
+        .reading-image svg { width: 48px; height: 48px; stroke: var(--color-accent); fill: none; stroke-width: 1; opacity: 0.6; }
+        .reading-content { padding: 1.5rem; }
+        .reading-content h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .reading-content p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
+        .reading-link { color: var(--color-accent); font-size: 0.85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.35rem; }
+        .reading-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* CTA */
+        .cta-section { text-align: center; padding: 3rem; background: var(--color-stone); border-radius: 12px; color: white; }
+        .cta-section h3 { font-size: 1.75rem; color: white; margin-bottom: 0.75rem; }
+        .cta-section p { color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .cta-section .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: white; color: var(--color-stone); border-radius: 6px; font-weight: 500; transition: all 0.3s; }
+        .cta-section .btn:hover { transform: translateY(-3px); }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .org-grid { grid-template-columns: 1fr; }
+            .expect-grid { grid-template-columns: 1fr; }
+            .reading-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+    </nav>
+
+    <header class="page-header">
+        <h1>Support & Resources</h1>
+        <p>Losing someone you love is one of life's hardest experiences. You don't have to face it alone. Here are some resources that might help.</p>
+    </header>
+
+    <section class="resources-section">
+        <div class="resources-container">
+            <!-- Intro Message -->
+            <div class="intro-message reveal">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <h2>Take your time</h2>
+                <p>There's no right or wrong way to grieve, and there's no timeline you need to follow. These resources are here whenever you're ready—whether that's today, next month, or next year.</p>
+            </div>
+
+            <!-- Support Organizations -->
+            <div class="section-heading reveal">
+                <h2>Bereavement Support</h2>
+                <p>Organisations that offer free support, counselling, and guidance</p>
+            </div>
+
+            <div class="org-grid reveal">
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon">
+                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        </div>
+                        <h3>Cruse Bereavement Support</h3>
+                    </div>
+                    <p>Free support, advice and information to anyone who has been bereaved. They offer one-to-one support, group sessions, and a helpline.</p>
+                    <a href="https://www.cruse.org.uk" target="_blank" class="org-link">
+                        Visit website <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <div class="org-phone">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        Helpline: 0808 808 1677
+                    </div>
+                </div>
+
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        </div>
+                        <h3>Mind</h3>
+                    </div>
+                    <p>Mental health charity offering information, advice and support. Their resources on coping with grief can help you understand what you're experiencing.</p>
+                    <a href="https://www.mind.org.uk" target="_blank" class="org-link">
+                        Visit website <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <div class="org-phone">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        Infoline: 0300 123 3393
+                    </div>
+                </div>
+
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon">
+                            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h3>Samaritans</h3>
+                    </div>
+                    <p>24-hour emotional support for anyone struggling to cope. You don't have to be suicidal to call – they're there to listen whenever you need someone.</p>
+                    <a href="https://www.samaritans.org" target="_blank" class="org-link">
+                        Visit website <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <div class="org-phone">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        Free 24/7: 116 123
+                    </div>
+                </div>
+
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-9 9c0 4.17 2.84 7.67 6.7 8.68a9 9 0 0 0 11.6-11.6A8.97 8.97 0 0 0 12 2z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <h3>Child Bereavement UK</h3>
+                    </div>
+                    <p>Support for families when a child dies, and for children and young people when someone important to them dies. Offers a helpline and online resources.</p>
+                    <a href="https://www.childbereavementuk.org" target="_blank" class="org-link">
+                        Visit website <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <div class="org-phone">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        Helpline: 0800 02 888 40
+                    </div>
+                </div>
+            </div>
+
+            <!-- What to Expect -->
+            <div class="expect-section reveal">
+                <div class="section-heading">
+                    <h2>What to Expect</h2>
+                    <p>Grief is different for everyone, but these experiences are common</p>
+                </div>
+
+                <div class="expect-grid">
+                    <div class="expect-card">
+                        <div class="number">1</div>
+                        <h4>Shock & Numbness</h4>
+                        <p>Feeling disconnected or like you're on autopilot is normal, especially in the early days. Your mind is protecting you.</p>
+                    </div>
+                    <div class="expect-card">
+                        <div class="number">2</div>
+                        <h4>Waves of Emotion</h4>
+                        <p>Grief comes in waves—sometimes triggered, sometimes out of nowhere. Sadness, anger, guilt, and even relief are all normal.</p>
+                    </div>
+                    <div class="expect-card">
+                        <div class="number">3</div>
+                        <h4>Physical Symptoms</h4>
+                        <p>Grief affects the body too. Fatigue, trouble sleeping, loss of appetite, or physical aches are all common responses.</p>
+                    </div>
+                    <div class="expect-card">
+                        <div class="number">4</div>
+                        <h4>Good Days & Bad Days</h4>
+                        <p>Healing isn't linear. Having a good day doesn't mean you're "over it"—and bad days don't mean you're not healing.</p>
+                    </div>
+                    <div class="expect-card">
+                        <div class="number">5</div>
+                        <h4>Triggers & Anniversaries</h4>
+                        <p>Birthdays, holidays, songs, or places can bring grief flooding back. This is normal and often softens with time.</p>
+                    </div>
+                    <div class="expect-card">
+                        <div class="number">6</div>
+                        <h4>Finding a New Normal</h4>
+                        <p>Grief changes us. Over time, you'll find ways to carry your loss while still living your life fully.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planning Checklist -->
+            <div class="checklist-section reveal">
+                <div class="checklist-container">
+                    <div class="checklist-header">
+                        <h3>Memorial Planning Checklist</h3>
+                        <a href="#" class="download-btn" onclick="window.print(); return false;">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF
+                        </a>
+                    </div>
+
+                    <div class="checklist-group">
+                        <h4>Information Gathering</h4>
+                        <ul class="checklist-items">
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Locate the Deed of Grant / Exclusive Right of Burial</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Find the grave number and cemetery name</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Check cemetery regulations (kerb sets allowed? Size limits?)</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Confirm who is the registered grave owner</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="checklist-group">
+                        <h4>Design Decisions</h4>
+                        <ul class="checklist-items">
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Choose memorial type (headstone, kerb set, cremation)</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Select stone colour and finish</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Draft inscription wording</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Consider additional features (photo plaque, vase, book design)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="checklist-group">
+                        <h4>Next Steps</h4>
+                        <ul class="checklist-items">
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Request quotes from memorial masons</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Review and approve design proof</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Pay deposit and permit fee</span>
+                            </li>
+                            <li class="checklist-item">
+                                <div class="check-box" onclick="toggleCheck(this)"></div>
+                                <span>Wait for permit approval (typically 4-12 weeks)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Helpful Reading -->
+            <div class="reading-section reveal">
+                <div class="section-heading">
+                    <h2>Helpful Reading</h2>
+                    <p>Books and resources recommended by others who have experienced loss</p>
+                </div>
+
+                <div class="reading-grid">
+                    <div class="reading-card">
+                        <div class="reading-image">
+                            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <div class="reading-content">
+                            <h4>"It's OK That You're Not OK"</h4>
+                            <p>by Megan Devine. A compassionate guide that validates the reality of grief without trying to fix it.</p>
+                            <span class="reading-link">Find at your local library</span>
+                        </div>
+                    </div>
+
+                    <div class="reading-card">
+                        <div class="reading-image">
+                            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <div class="reading-content">
+                            <h4>"H is for Hawk"</h4>
+                            <p>by Helen Macdonald. A beautiful memoir about grief, nature, and finding unexpected paths through loss.</p>
+                            <span class="reading-link">Find at your local library</span>
+                        </div>
+                    </div>
+
+                    <div class="reading-card">
+                        <div class="reading-image">
+                            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <div class="reading-content">
+                            <h4>"When Breath Becomes Air"</h4>
+                            <p>by Paul Kalanithi. A neurosurgeon's reflections on life, death, and what makes life worth living.</p>
+                            <span class="reading-link">Find at your local library</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-section reveal">
+                <h3>We're here for you</h3>
+                <p>When you're ready to think about a memorial, we'll guide you through every step—no pressure, no rush. Just honest support from people who understand.</p>
+                <a href="contact.html" class="btn">Get in Touch</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="care-guide.html">Memorial Care</a></li>
+                <li><a href="resources.html">Support Resources</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle checklist items
+        function toggleCheck(el) {
+            el.classList.toggle('checked');
+            el.closest('.checklist-item').classList.toggle('checked');
+        }
+
+        // Scroll reveal
+        function initScrollReveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            reveals.forEach(el => observer.observe(el));
+        }
+
+        // Calm mode
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            initScrollReveal();
+            if (localStorage.getItem('calmMode') === 'true') {
+                document.body.classList.add('calm-mode');
+                document.getElementById('calmMode').checked = true;
+            }
+        });
+    </script>
+</body>
+</html>
