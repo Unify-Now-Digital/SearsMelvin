@@ -128,7 +128,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "quote", name, email, phone, message, product, submittedAt });
+    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -249,7 +249,7 @@ async function handleEnquiry(env, data, submittedAt) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, message, enquiry_type, submittedAt });
+    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, enquiry_type });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -480,63 +480,64 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
 //  SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
 /**
- * Inserts a row into the public.leads table.
- *
- * Required Supabase table — run once in Supabase SQL editor:
- *
- *   create table public.leads (
- *     id            uuid        default gen_random_uuid() primary key,
- *     created_at    timestamptz default now(),
- *     source        text        default 'website',
- *     type          text,       -- 'quote' | 'enquiry'
- *     name          text,
- *     email         text,
- *     phone         text,
- *     message       text,
- *     enquiry_type  text,
- *     product_name  text,
- *     product_type  text,
- *     stone_colour  text,
- *     memorial_size text,
- *     addons        text,
- *     inscription   text,
- *     guide_price   numeric,
- *     submitted_at  timestamptz
- *   );
- *   alter table public.leads enable row level security;
+ * Writes to three Supabase tables:
+ *   customers   — contact info (first_name, last_name, email, phone)
+ *   orders      — order details (sku, color, value, order_type, customer contact)
+ *   inscriptions — inscription text (only if quote has inscription)
  */
-async function insertSupabaseRecord(env, { type, name, email, phone, message,
-  enquiry_type, product, submittedAt }) {
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, product }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
 
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/leads`, {
-    method:  "POST",
-    headers: {
-      "apikey":        env.SUPABASE_SERVICE_KEY,
-      "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      "Content-Type":  "application/json",
-      "Prefer":        "return=minimal",
-    },
+  const headers = {
+    "apikey":        env.SUPABASE_SERVICE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    "Content-Type":  "application/json",
+    "Prefer":        "return=minimal",
+  };
+
+  const parts = name.trim().split(" ");
+
+  // 1. customers table
+  const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
+    method: "POST",
+    headers,
     body: JSON.stringify({
-      source:        "website",
-      type,
-      name,
+      first_name: parts[0],
+      last_name:  parts.slice(1).join(" ") || null,
       email,
-      phone:         phone || null,
-      message:       message || null,
-      enquiry_type:  enquiry_type || null,
-      product_name:  product?.name   || null,
-      product_type:  product?.type   || null,
-      stone_colour:  product?.colour || null,
-      memorial_size: product?.size   || null,
-      addons:        Array.isArray(product?.addons) ? product.addons.join(", ") : null,
-      inscription:   product?.inscription || null,
-      guide_price:   product?.price ? parseFloat(product.price) : null,
-      submitted_at:  new Date().toISOString(),
+      phone: phone || null,
     }),
   });
+  if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
 
-  if (!res.ok) throw new Error(`Supabase error ${res.status}: ${await res.text()}`);
+  // 2. orders table
+  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      customer_name:  name,
+      customer_email: email,
+      customer_phone: phone || null,
+      order_type:     type === "quote" ? "quote" : (enquiry_type || null),
+      sku:            product?.name   || null,
+      color:          product?.colour || null,
+      value:          product?.price  ? parseFloat(product.price) : null,
+      location:       null,
+    }),
+  });
+  if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
+
+  // 3. inscriptions table (only for quotes with inscription text)
+  if (product?.inscription) {
+    const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        inscription_text: product.inscription,
+      }),
+    });
+    if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
+  }
 }
 
 
