@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequently Asked Questions | Sears Melvin Memorials</title>
+    <meta name="description" content="Find answers to common questions about ordering memorials, permits, installation, and aftercare. We're here to help.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        /* Calm Mode */
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+
+        .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
+
+        /* Page Header */
+        .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .page-header h1 { font-size: 2.75rem; margin-bottom: 1rem; }
+        .page-header p { font-size: 1.15rem; max-width: 600px; margin: 0 auto 2rem; }
+
+        /* Search Box */
+        .search-container { max-width: 600px; margin: 0 auto; position: relative; }
+        .search-input { 
+            width: 100%; padding: 1rem 1.25rem 1rem 3.5rem; 
+            border: 2px solid white; border-radius: 50px; 
+            font-family: var(--font-body); font-size: 1rem;
+            background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .search-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 4px 30px rgba(0,0,0,0.12); }
+        .search-input::placeholder { color: #aaa; }
+        .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .search-clear { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: var(--color-warm); border: none; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.2s; }
+        .search-clear.visible { display: flex; }
+        .search-clear:hover { background: var(--color-border); }
+        .search-clear svg { width: 14px; height: 14px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+
+        /* FAQ Content */
+        .faq-section { padding: 4rem 2rem; }
+        .faq-container { max-width: 900px; margin: 0 auto; }
+
+        /* Topic Tabs */
+        .topic-tabs { display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 3rem; flex-wrap: wrap; }
+        .topic-tab { 
+            padding: 0.75rem 1.5rem; 
+            background: white; border: 2px solid var(--color-border); border-radius: 30px;
+            font-size: 0.9rem; font-weight: 500; color: var(--color-text-muted);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .topic-tab:hover { border-color: var(--color-stone); color: var(--color-stone); }
+        .topic-tab.active { background: var(--color-stone); border-color: var(--color-stone); color: white; }
+        .topic-tab svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; vertical-align: -3px; margin-right: 0.5rem; }
+
+        /* FAQ Groups */
+        .faq-group { margin-bottom: 3rem; display: none; }
+        .faq-group.active { display: block; animation: fadeInUp 0.4s ease; }
+        .faq-group-header { margin-bottom: 1.5rem; }
+        .faq-group-header h2 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+        .faq-group-header p { font-size: 0.95rem; }
+
+        /* Accordion */
+        .faq-item { 
+            background: white; border-radius: 8px; margin-bottom: 1rem; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            overflow: hidden; transition: box-shadow 0.3s;
+        }
+        .faq-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .faq-item.hidden { display: none; }
+        .faq-question { 
+            width: 100%; padding: 1.25rem 1.5rem; 
+            background: none; border: none; 
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+            cursor: pointer; text-align: left;
+            font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-stone);
+            transition: color 0.2s;
+        }
+        .faq-question:hover { color: var(--color-accent); }
+        .faq-question svg { width: 20px; height: 20px; stroke: var(--color-accent); fill: none; stroke-width: 2; flex-shrink: 0; transition: transform 0.3s; }
+        .faq-item.open .faq-question svg { transform: rotate(180deg); }
+        
+        .faq-answer { 
+            max-height: 0; overflow: hidden; 
+            transition: max-height 0.4s ease, padding 0.3s ease;
+        }
+        .faq-item.open .faq-answer { max-height: 500px; }
+        .faq-answer-content { 
+            padding: 0 1.5rem 1.5rem; 
+            font-size: 0.95rem; line-height: 1.8; color: var(--color-text-muted);
+        }
+        .faq-answer-content a { color: var(--color-accent); text-decoration: underline; }
+        .faq-answer-content ul { margin: 1rem 0; padding-left: 1.5rem; }
+        .faq-answer-content li { margin-bottom: 0.5rem; }
+
+        /* Helpful feedback */
+        .faq-helpful { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+        .faq-helpful span { font-size: 0.85rem; color: var(--color-text-muted); }
+        .faq-helpful-btn { padding: 0.4rem 0.75rem; background: var(--color-warm); border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.35rem; }
+        .faq-helpful-btn:hover { background: var(--color-border); }
+        .faq-helpful-btn.selected { background: var(--color-success); color: white; }
+        .faq-helpful-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* No Results */
+        .no-results { text-align: center; padding: 3rem 2rem; display: none; }
+        .no-results.visible { display: block; }
+        .no-results svg { width: 64px; height: 64px; stroke: var(--color-border); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
+        .no-results h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .no-results p { margin-bottom: 1.5rem; }
+        .no-results .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.5rem; background: var(--color-accent); color: white; border-radius: 6px; font-weight: 500; transition: all 0.3s; }
+        .no-results .btn:hover { transform: translateY(-2px); }
+
+        /* Still Have Questions */
+        .still-questions { 
+            text-align: center; padding: 3rem; margin-top: 2rem;
+            background: var(--color-stone); border-radius: 12px; color: white;
+        }
+        .still-questions h3 { font-size: 1.75rem; color: white; margin-bottom: 0.75rem; }
+        .still-questions p { color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .still-questions .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: white; color: var(--color-stone); border-radius: 6px; font-weight: 500; transition: all 0.3s; }
+        .still-questions .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .still-questions .btn svg { width: 20px; height: 20px; stroke: var(--color-accent); fill: none; stroke-width: 2; }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .topic-tabs { gap: 0.5rem; }
+            .topic-tab { padding: 0.6rem 1rem; font-size: 0.85rem; }
+            .topic-tab svg { display: none; }
+        }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+    </nav>
+
+    <header class="page-header">
+        <h1>How can we help?</h1>
+        <p>Find answers to common questions about ordering, permits, installation, and caring for memorials.</p>
+        
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="faqSearch" placeholder="Search for answers..." oninput="searchFAQ(this.value)">
+            <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <section class="faq-section">
+        <div class="faq-container">
+            <!-- Topic Tabs -->
+            <div class="topic-tabs">
+                <button class="topic-tab active" onclick="filterTopic('all')">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                    All Topics
+                </button>
+                <button class="topic-tab" onclick="filterTopic('ordering')">
+                    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    Ordering
+                </button>
+                <button class="topic-tab" onclick="filterTopic('permits')">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Permits
+                </button>
+                <button class="topic-tab" onclick="filterTopic('installation')">
+                    <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    Installation
+                </button>
+                <button class="topic-tab" onclick="filterTopic('aftercare')">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    Aftercare
+                </button>
+            </div>
+
+            <!-- FAQ Groups -->
+            <div class="faq-group active" id="faq-all">
+                <!-- Ordering FAQs -->
+                <div class="faq-group-header">
+                    <h2>Ordering</h2>
+                    <p>Questions about getting started and placing your order</p>
+                </div>
+
+                <div class="faq-item" data-topic="ordering" data-keywords="cost price how much pay deposit">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        How much does a memorial cost?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>Memorial prices vary depending on the type, size, stone colour, and any additional features. Here's a general guide:</p>
+                            <ul>
+                                <li><strong>Lawn headstones:</strong> From £1,400 fully installed</li>
+                                <li><strong>Kerb memorials:</strong> From £2,500 fully installed</li>
+                                <li><strong>Cremation memorials:</strong> From £650 fully installed</li>
+                                <li><strong>Renovations:</strong> From £350 depending on work required</li>
+                            </ul>
+                            <p>All our prices include installation and a 10-year guarantee. We'll provide a detailed quote with no hidden fees after understanding your requirements.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="ordering" data-keywords="deposit payment pay when invoice">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        How does payment work?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>We split payment into two stages to give you peace of mind:</p>
+                            <ul>
+                                <li><strong>50% deposit</strong> when you confirm your order (plus any permit fees)</li>
+                                <li><strong>Remaining 50%</strong> when the memorial is ready for installation</li>
+                            </ul>
+                            <p>We accept bank transfer, credit/debit cards, and cheques. You'll never pay the final balance until you've approved the completed work.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="ordering" data-keywords="long time wait how long process timeline">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        How long does the whole process take?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>The typical timeline from order to installation is <strong>12-20 weeks</strong>. This breaks down as:</p>
+                            <ul>
+                                <li><strong>Permit approval:</strong> 4-12 weeks (depends on the cemetery)</li>
+                                <li><strong>Manufacturing:</strong> 3-4 weeks</li>
+                                <li><strong>Installation:</strong> Within 2 weeks of permit approval</li>
+                            </ul>
+                            <p>We keep you informed at every stage and will give you a more precise estimate based on your specific cemetery. Some cemeteries have faster processing times than others.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permits FAQs -->
+                <div class="faq-group-header" style="margin-top: 3rem;">
+                    <h2>Permits</h2>
+                    <p>Understanding cemetery permissions and requirements</p>
+                </div>
+
+                <div class="faq-item" data-topic="permits" data-keywords="permit permission need required cemetery council">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        Do I need a permit for a memorial?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p><strong>Yes</strong>, all cemeteries require a permit before a memorial can be installed. This is to ensure the memorial meets their specifications and is placed on the correct grave.</p>
+                            <p>Don't worry - <strong>we handle the entire permit process for you</strong>. We'll submit the application, chase progress, and keep you informed every step of the way.</p>
+                            <p>Permit fees typically range from £200-£500 depending on the cemetery and type of memorial.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="permits" data-keywords="kerb kerbs kerbset full memorial allowed permitted">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        Can I have a kerb set at any cemetery?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p><strong>Not always.</strong> Some cemeteries only permit lawn-style memorials (headstone only), while others allow full kerb sets.</p>
+                            <p>We can check the regulations for your specific cemetery and advise on what's permitted. <a href="contact.html">Contact us</a> with your cemetery name and we'll confirm the options available to you.</p>
+                            <p>If you're not sure which cemetery you'll be using, our <a href="finder.html">Memorial Finder</a> can help you understand your options.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="permits" data-keywords="grave owner deeds ownership who can order">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        Who can order a memorial for a grave?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>Only the <strong>registered grave owner</strong> (or their authorised representative) can apply for a memorial permit. This is the person named on the Deed of Grant or Exclusive Right of Burial.</p>
+                            <p>If the original owner has passed away, ownership may need to be transferred before a memorial can be installed. We can advise on this process.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation FAQs -->
+                <div class="faq-group-header" style="margin-top: 3rem;">
+                    <h2>Installation</h2>
+                    <p>What to expect when your memorial is fitted</p>
+                </div>
+
+                <div class="faq-item" data-topic="installation" data-keywords="installation fitting attend present be there watch">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        Can I be present for the installation?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p><strong>Absolutely.</strong> Many families choose to be present, and you're welcome to attend. We'll coordinate the date and time with you.</p>
+                            <p>If you'd prefer not to attend, that's completely fine too. We'll send you photographs once the memorial is installed so you can see the finished result.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="installation" data-keywords="ground settle waiting how long after burial">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        How long after burial can a memorial be installed?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>Most cemeteries require a <strong>waiting period of 6-12 months</strong> after burial before a memorial can be installed. This allows the ground to settle properly.</p>
+                            <p>You can order and design your memorial during this time - we'll coordinate the installation date once the waiting period has passed and the permit is approved.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aftercare FAQs -->
+                <div class="faq-group-header" style="margin-top: 3rem;">
+                    <h2>Aftercare</h2>
+                    <p>Caring for your memorial over time</p>
+                </div>
+
+                <div class="faq-item" data-topic="aftercare" data-keywords="clean cleaning maintain care look after">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        How do I clean and maintain a memorial?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>Granite memorials are low-maintenance, but a gentle clean every few months helps keep them looking their best:</p>
+                            <ul>
+                                <li>Use clean water and a soft cloth or sponge</li>
+                                <li>Avoid harsh chemicals, bleach, or pressure washers</li>
+                                <li>Remove leaves and debris regularly</li>
+                                <li>For stubborn marks, a little washing-up liquid is fine</li>
+                            </ul>
+                            <p>For detailed guidance, see our <a href="care-guide.html">Memorial Care Guide</a>.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="aftercare" data-keywords="add inscription additional lettering extra name">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        Can I add more inscription later?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p><strong>Yes.</strong> It's common to add additional names, dates, or messages to an existing memorial. This can often be done on-site without removing the memorial.</p>
+                            <p>We'll need a permit for additional inscription work, just like the original installation. <a href="contact.html">Contact us</a> to discuss your requirements.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-topic="aftercare" data-keywords="guarantee warranty covered problem issue">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        What guarantee do you offer?
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <p>All our memorials come with a <strong>10-year guarantee</strong> covering:</p>
+                            <ul>
+                                <li>Structural integrity of the stone</li>
+                                <li>Quality of the inscription and gilding</li>
+                                <li>Installation workmanship</li>
+                            </ul>
+                            <p>This doesn't cover natural weathering or damage caused by vandalism or third parties, but we're always here to help with repairs and maintenance work.</p>
+                            <div class="faq-helpful">
+                                <span>Was this helpful?</span>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, true)"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> Yes</button>
+                                <button class="faq-helpful-btn" onclick="markHelpful(this, false)"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> No</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Results -->
+            <div class="no-results" id="noResults">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                <h3>No results found</h3>
+                <p>We couldn't find an answer matching your search. Try different keywords or get in touch with us directly.</p>
+                <a href="contact.html" class="btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Contact Us
+                </a>
+            </div>
+
+            <!-- Still Have Questions -->
+            <div class="still-questions reveal">
+                <h3>Still have questions?</h3>
+                <p>Can't find what you're looking for? We're here to help—no question is too small.</p>
+                <a href="contact.html" class="btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Get in Touch
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="care-guide.html">Memorial Care</a></li>
+                <li><a href="resources.html">Support Resources</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle FAQ accordion
+        function toggleFAQ(btn) {
+            const item = btn.parentElement;
+            const wasOpen = item.classList.contains('open');
+            
+            // Close all other FAQs
+            document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+            
+            // Toggle this one
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        // Filter by topic
+        function filterTopic(topic) {
+            // Update tabs
+            document.querySelectorAll('.topic-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Clear search
+            document.getElementById('faqSearch').value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            
+            // Show/hide FAQs
+            const faqs = document.querySelectorAll('.faq-item');
+            let visible = 0;
+            
+            faqs.forEach(faq => {
+                if (topic === 'all' || faq.dataset.topic === topic) {
+                    faq.classList.remove('hidden');
+                    visible++;
+                } else {
+                    faq.classList.add('hidden');
+                }
+            });
+            
+            // Show/hide section headers
+            document.querySelectorAll('.faq-group-header').forEach(h => {
+                h.style.display = topic === 'all' ? 'block' : 'none';
+            });
+            
+            // Show no results if needed
+            document.getElementById('noResults').classList.toggle('visible', visible === 0);
+        }
+
+        // Search FAQs
+        function searchFAQ(query) {
+            const clearBtn = document.getElementById('searchClear');
+            clearBtn.classList.toggle('visible', query.length > 0);
+            
+            if (query.length < 2) {
+                // Reset to show all
+                document.querySelectorAll('.faq-item').forEach(faq => faq.classList.remove('hidden'));
+                document.querySelectorAll('.faq-group-header').forEach(h => h.style.display = 'block');
+                document.getElementById('noResults').classList.remove('visible');
+                return;
+            }
+            
+            // Reset topic tabs
+            document.querySelectorAll('.topic-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.topic-tab').classList.add('active');
+            
+            // Search
+            const lowerQuery = query.toLowerCase();
+            const faqs = document.querySelectorAll('.faq-item');
+            let visible = 0;
+            
+            faqs.forEach(faq => {
+                const question = faq.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = faq.querySelector('.faq-answer-content').textContent.toLowerCase();
+                const keywords = faq.dataset.keywords || '';
+                
+                const matches = question.includes(lowerQuery) || 
+                               answer.includes(lowerQuery) || 
+                               keywords.includes(lowerQuery);
+                
+                faq.classList.toggle('hidden', !matches);
+                if (matches) visible++;
+            });
+            
+            // Hide section headers during search
+            document.querySelectorAll('.faq-group-header').forEach(h => h.style.display = 'none');
+            
+            // Show no results
+            document.getElementById('noResults').classList.toggle('visible', visible === 0);
+        }
+
+        function clearSearch() {
+            document.getElementById('faqSearch').value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            searchFAQ('');
+        }
+
+        // Helpful feedback
+        function markHelpful(btn, helpful) {
+            const btns = btn.parentElement.querySelectorAll('.faq-helpful-btn');
+            btns.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            // Could send to analytics here
+        }
+
+        // Scroll reveal
+        function initScrollReveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            reveals.forEach(el => observer.observe(el));
+        }
+
+        // Calm mode
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            initScrollReveal();
+            
+            if (localStorage.getItem('calmMode') === 'true') {
+                document.body.classList.add('calm-mode');
+                document.getElementById('calmMode').checked = true;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Memorials | Sears Melvin Memorials</title>
+    <meta name="description" content="Compare memorial options side by side. See features, pricing, and find the perfect tribute for your loved one.">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
+        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--color-accent); }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
+        .calm-toggle input { display: none; }
+        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
+        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
+        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
+        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
+        .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
+
+        /* Page Header */
+        .page-header { padding: 7rem 2rem 2rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .page-header h1 { font-size: 2.25rem; margin-bottom: 0.75rem; }
+        .page-header p { font-size: 1rem; max-width: 600px; margin: 0 auto; }
+
+        /* Compare Section */
+        .compare-section { padding: 2rem; }
+        .compare-container { max-width: 1200px; margin: 0 auto; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .empty-state svg { width: 80px; height: 80px; stroke: var(--color-border); fill: none; stroke-width: 1; margin-bottom: 1.5rem; }
+        .empty-state h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .empty-state p { margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 1.5rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; transition: all 0.3s; border: none; }
+        .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .btn-primary { background: var(--color-accent); color: white; }
+        .btn-primary:hover { background: var(--color-stone); transform: translateY(-2px); }
+
+        /* Comparison Table */
+        .compare-table { display: none; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .compare-table.active { display: block; }
+
+        .compare-header { display: grid; grid-template-columns: 200px repeat(var(--compare-count, 3), 1fr); border-bottom: 1px solid var(--color-border); }
+        .compare-header-cell { padding: 1.5rem; text-align: center; position: relative; }
+        .compare-header-cell:first-child { background: var(--color-warm); }
+        .compare-remove { position: absolute; top: 0.75rem; right: 0.75rem; width: 28px; height: 28px; background: var(--color-cream); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .compare-remove svg { width: 14px; height: 14px; stroke: var(--color-text-muted); }
+        .compare-remove:hover { background: var(--color-stone); }
+        .compare-remove:hover svg { stroke: white; }
+
+        .compare-image { width: 120px; height: 100px; margin: 0 auto 1rem; background: var(--color-warm); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .compare-image svg { width: 100%; height: 100%; }
+        .compare-name { font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 0.25rem; }
+        .compare-type { font-size: 0.8rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .compare-row { display: grid; grid-template-columns: 200px repeat(var(--compare-count, 3), 1fr); border-bottom: 1px solid var(--color-border); }
+        .compare-row:last-child { border-bottom: none; }
+        .compare-row:nth-child(even) { background: var(--color-cream); }
+
+        .compare-cell { padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .compare-label { font-weight: 600; font-size: 0.85rem; color: var(--color-stone); justify-content: flex-start; background: var(--color-warm); }
+
+        .compare-cell .check { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .compare-cell .check.yes { background: rgba(74, 124, 89, 0.15); }
+        .compare-cell .check.yes svg { stroke: var(--color-success); }
+        .compare-cell .check.no { background: rgba(180, 68, 68, 0.1); }
+        .compare-cell .check.no svg { stroke: #b44; }
+        .compare-cell .check svg { width: 14px; height: 14px; stroke-width: 3; fill: none; }
+
+        .compare-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-accent); }
+
+        .compare-footer { display: grid; grid-template-columns: 200px repeat(var(--compare-count, 3), 1fr); background: var(--color-stone); }
+        .compare-footer-cell { padding: 1.25rem; display: flex; align-items: center; justify-content: center; }
+        .compare-footer-cell:first-child { background: var(--color-stone-light); }
+        .compare-footer .btn { width: 100%; justify-content: center; background: var(--color-accent); }
+        .compare-footer .btn:hover { background: white; color: var(--color-stone); }
+
+        .best-for { display: inline-block; padding: 0.4rem 0.75rem; background: rgba(139, 115, 85, 0.12); border-radius: 20px; font-size: 0.75rem; font-weight: 500; color: var(--color-accent); }
+
+        /* Add Another */
+        .add-column { border: 2px dashed var(--color-border); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; min-height: 200px; cursor: pointer; transition: all 0.3s; }
+        .add-column:hover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.05); }
+        .add-column svg { width: 32px; height: 32px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .add-column span { font-size: 0.9rem; color: var(--color-text-muted); }
+
+        /* Recommendation */
+        .recommendation { margin-top: 2rem; padding: 2rem; background: white; border-radius: 12px; border-left: 4px solid var(--color-success); }
+        .recommendation h3 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; margin-bottom: 0.75rem; }
+        .recommendation h3 svg { width: 24px; height: 24px; stroke: var(--color-success); fill: none; stroke-width: 2; }
+        .recommendation p { font-size: 0.95rem; line-height: 1.7; }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.5); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links a { color: rgba(255,255,255,0.5); font-size: 0.875rem; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .compare-table { overflow-x: auto; }
+            .compare-header, .compare-row, .compare-footer { min-width: 700px; }
+            .footer-container { flex-direction: column; text-align: center; }
+        }
+
+        /* Mobile Bottom Nav */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
+        .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; color: var(--color-text-muted); }
+        .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .mobile-nav-item span { font-size: 0.65rem; text-transform: uppercase; }
+        .mobile-nav-item.primary { color: white; }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg svg { stroke: white; }
+        .mobile-nav-item.primary span { color: var(--color-text-muted); }
+        @media (max-width: 768px) { .mobile-bottom-nav { display: block; } body { padding-bottom: 70px; } }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 36" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2L14 8M14 8C8 8 4 12 4 18V32C4 33.1 4.9 34 6 34H22C23.1 34 24 33.1 24 32V18C24 12 20 8 14 8Z"/>
+                <path d="M10 16H18M14 16V24" stroke-linecap="round"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="memorials.html">Memorials</a></li>
+            <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li>
+                <label class="calm-toggle">
+                    <input type="checkbox" onchange="toggleCalmMode()">
+                    <span class="calm-switch"></span>
+                    Calm
+                </label>
+            </li>
+            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <h1>Compare Memorials</h1>
+        <p>View your selected memorials side by side to help make your decision</p>
+    </header>
+
+    <!-- Compare Section -->
+    <section class="compare-section">
+        <div class="compare-container">
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+                <svg viewBox="0 0 24 24">
+                    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                <h2>No memorials to compare</h2>
+                <p>Browse our memorial range and click the compare button on any products you'd like to see side by side.</p>
+                <a href="memorials.html" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+                    Browse Memorials
+                </a>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="compare-table" id="compareTable" style="--compare-count: 3;">
+                <div class="compare-header">
+                    <div class="compare-header-cell"></div>
+                    <div class="compare-header-cell" id="col1">
+                        <button class="compare-remove" onclick="removeFromCompare(0)">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div class="compare-image">
+                            <svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="40" y="10" width="40" height="55" rx="8" ry="20" fill="#1a1a1a"/><rect x="35" y="65" width="50" height="12" fill="#2a2a2a"/></svg>
+                        </div>
+                        <h3 class="compare-name">Classic Ogee Top</h3>
+                        <span class="compare-type">Lawn Memorial</span>
+                    </div>
+                    <div class="compare-header-cell" id="col2">
+                        <button class="compare-remove" onclick="removeFromCompare(1)">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div class="compare-image">
+                            <svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="10" y="55" width="100" height="10" fill="#2a2a2a"/><rect x="10" y="65" width="100" height="30" fill="#3a3a3a"/><rect x="35" y="10" width="50" height="45" fill="#1a1a1a" rx="2"/></svg>
+                        </div>
+                        <h3 class="compare-name">Traditional Kerb Set</h3>
+                        <span class="compare-type">Kerb Memorial</span>
+                    </div>
+                    <div class="compare-header-cell add-column" id="addCol" onclick="window.location='memorials.html'">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        <span>Add another</span>
+                    </div>
+                </div>
+
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Price From</div>
+                    <div class="compare-cell"><span class="compare-price">£1,400</span></div>
+                    <div class="compare-cell"><span class="compare-price">£2,800</span></div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Cemetery Type</div>
+                    <div class="compare-cell">Lawn sections only</div>
+                    <div class="compare-cell">Kerb-set sections</div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Photo Plaque</div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Flower Vase</div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Cover Slab</div>
+                    <div class="compare-cell">
+                        <span class="check no"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+                    </div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Chippings Area</div>
+                    <div class="compare-cell">
+                        <span class="check no"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+                    </div>
+                    <div class="compare-cell">
+                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+                    </div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Typical Timeline</div>
+                    <div class="compare-cell">10-14 weeks</div>
+                    <div class="compare-cell">12-18 weeks</div>
+                    <div class="compare-cell"></div>
+                </div>
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">Best For</div>
+                    <div class="compare-cell"><span class="best-for">Budget-conscious</span></div>
+                    <div class="compare-cell"><span class="best-for">Complete tribute</span></div>
+                    <div class="compare-cell"></div>
+                </div>
+
+                <div class="compare-footer">
+                    <div class="compare-footer-cell"></div>
+                    <div class="compare-footer-cell">
+                        <a href="memorial.html" class="btn">
+                            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View Details
+                        </a>
+                    </div>
+                    <div class="compare-footer-cell">
+                        <a href="memorial.html" class="btn">
+                            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View Details
+                        </a>
+                    </div>
+                    <div class="compare-footer-cell"></div>
+                </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="recommendation" id="recommendation" style="display: none;">
+                <h3>
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Our Recommendation
+                </h3>
+                <p>Based on your selections, the <strong>Traditional Kerb Set</strong> offers the most complete tribute with the cover slab and chippings area. If your cemetery permits kerb sets, this provides a beautifully enclosed space for flowers and mementos. However, if your cemetery only allows lawn memorials, the <strong>Classic Ogee Top</strong> is an elegant and cost-effective choice.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="permit-checker.html">Permit Checker</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <p style="font-size: 0.8rem;">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <div class="mobile-nav-inner">
+            <a href="index.html" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+            </a>
+            <a href="memorials.html" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+                <span>Browse</span>
+            </a>
+            <a href="contact.html" class="mobile-nav-item primary">
+                <div class="nav-icon-bg">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span>Enquire</span>
+            </a>
+            <a href="faq.html" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>FAQ</span>
+            </a>
+            <a href="tel:01268208559" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                <span>Call</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // Check URL for compare items
+        let compareItems = [];
+
+        function init() {
+            const params = new URLSearchParams(window.location.search);
+            const ids = params.get('items');
+            
+            if (ids) {
+                compareItems = ids.split(',');
+                loadCompareItems();
+            } else {
+                // Check localStorage
+                const stored = localStorage.getItem('smm_compare');
+                if (stored) {
+                    compareItems = JSON.parse(stored);
+                    if (compareItems.length > 0) {
+                        loadCompareItems();
+                    }
+                }
+            }
+
+            updateUI();
+        }
+
+        function loadCompareItems() {
+            // In a real implementation, this would fetch data for each item
+            // For now, show the demo comparison table
+            if (compareItems.length > 0) {
+                document.getElementById('compareTable').classList.add('active');
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('recommendation').style.display = 'block';
+            }
+        }
+
+        function updateUI() {
+            const hasItems = compareItems.length > 0 || document.getElementById('compareTable').classList.contains('active');
+            document.getElementById('emptyState').style.display = hasItems ? 'none' : 'block';
+        }
+
+        function removeFromCompare(index) {
+            compareItems.splice(index, 1);
+            localStorage.setItem('smm_compare', JSON.stringify(compareItems));
+            
+            if (compareItems.length === 0) {
+                document.getElementById('compareTable').classList.remove('active');
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('recommendation').style.display = 'none';
+            }
+        }
+
+        function toggleCalmMode() {
+            document.body.classList.toggle('calm-mode');
+        }
+
+        function toggleMobileMenu() {
+            // Mobile menu toggle
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
