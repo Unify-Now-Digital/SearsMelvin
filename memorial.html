@@ -980,6 +980,10 @@
     </div>
 
     <script>
+        // ── Product image URL shown in quote emails ──────────────────────────
+        // Set this to the publicly accessible image URL for this memorial.
+        const PRODUCT_IMAGE_URL = '';
+
         // ==================== STATE ====================
         const state = {
             basePrice: 1450,
@@ -1393,6 +1397,7 @@
                                 addons:      getSelectedAddons(),
                                 inscription: state.inscription ? state.inscription.substring(0, 120) : '',
                                 price:       String(total),
+                                image:       PRODUCT_IMAGE_URL,
                             }
                         })
                     });
