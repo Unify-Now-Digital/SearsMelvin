@@ -41,12 +41,59 @@ export default {
     const requestOrigin  = request.headers.get("Origin") || "";
     const corsHeaders = {
       "Access-Control-Allow-Origin":  allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0],
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
+    }
+
+    const url = new URL(request.url);
+
+    // ── GET /config — return publishable keys ──
+    if (request.method === "GET" && url.pathname === "/config") {
+      return new Response(JSON.stringify({
+        stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY || '',
+        googleMapsKey:        env.GOOGLE_MAPS_KEY        || '',
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── POST /stripe — create Stripe PaymentIntent ──
+    if (request.method === "POST" && url.pathname === "/stripe") {
+      if (!env.STRIPE_SECRET_KEY) {
+        return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { amount, name, email, cemetery, product: productName } = await request.json();
+      const body = new URLSearchParams({
+        amount:                               String(Math.round(Number(amount) * 100)),
+        currency:                             "gbp",
+        "automatic_payment_methods[enabled]": "true",
+        "metadata[customer_name]":            name         || "",
+        "metadata[customer_email]":           email        || "",
+        "metadata[cemetery]":                 cemetery     || "",
+        "metadata[product]":                  productName  || "",
+        description: `50% deposit — ${productName || "Memorial"} — ${name || ""}`,
+      });
+      const stripeRes = await fetch("https://api.stripe.com/v1/payment_intents", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.STRIPE_SECRET_KEY}`,
+          "Content-Type":  "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+      const pi = await stripeRes.json();
+      if (pi.error) {
+        return new Response(JSON.stringify({ error: pi.error.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ clientSecret: pi.client_secret }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (request.method !== "POST") {
@@ -82,7 +129,7 @@ export default {
 //  QUOTE REQUEST HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
-  const { name, email, phone, message, product = {} } = data;
+  const { name, email, phone, message, product = {}, location } = data;
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
 
@@ -92,7 +139,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }),
+      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -124,7 +171,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product });
+    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -269,7 +316,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
  * Business notification — three clearly labelled sections:
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
-function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addons      = Array.isArray(product.addons) && product.addons.length > 0
     ? product.addons.join(", ") : "";
   const inscription = product.inscription ? product.inscription.trim() : "";
@@ -348,6 +395,7 @@ function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, su
         <tr><td style="padding:5px 0;color:#999;width:110px;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
         <tr><td style="padding:5px 0;color:#999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
         <tr><td style="padding:5px 0;color:#999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
+        ${location ? `<tr><td style="padding:5px 0;color:#999;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>` : ""}
       </table>
     </td></tr>
 

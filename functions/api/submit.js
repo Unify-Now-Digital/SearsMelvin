@@ -86,7 +86,7 @@ export async function onRequestPost(context) {
 //  QUOTE REQUEST HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt) {
-  const { name, email, phone, message, product = {} } = data;
+  const { name, email, phone, message, product = {}, location } = data;
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
 
@@ -96,7 +96,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }),
+      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -128,7 +128,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product });
+    await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -273,7 +273,7 @@ async function handleEnquiry(env, data, submittedAt) {
  * Business notification — three clearly labelled sections:
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
-function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addons      = Array.isArray(product.addons) && product.addons.length > 0
     ? product.addons.join(", ") : "";
   const inscription = product.inscription ? product.inscription.trim() : "";
@@ -353,6 +353,7 @@ function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, su
         <tr><td style="padding:5px 0;color:#999;width:110px;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
         <tr><td style="padding:5px 0;color:#999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
         <tr><td style="padding:5px 0;color:#999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
+        ${location ? `<tr><td style="padding:5px 0;color:#999;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>` : ""}
       </table>
     </td></tr>
 
