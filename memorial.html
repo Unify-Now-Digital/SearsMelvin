@@ -269,6 +269,43 @@
             .colour-swatch { width: 44px; height: 44px; }
         }
 
+        /* Quote Modal */
+        .quote-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
+        .quote-overlay.active { display: flex; }
+        .quote-modal { background: white; border-radius: 12px; max-width: 580px; width: 100%; max-height: 92vh; overflow-y: auto; }
+        .quote-modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 1.75rem 1.25rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); border-radius: 12px 12px 0 0; }
+        .quote-modal-header h2 { font-size: 1.35rem; color: var(--color-stone); margin-bottom: 0.2rem; }
+        .quote-modal-subtitle { font-size: 0.83rem; color: var(--color-text-muted); margin: 0; }
+        .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
+        .quote-modal-close svg { width: 22px; height: 22px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .quote-config-summary { margin: 1.25rem 1.75rem; padding: 1rem 1.125rem; background: var(--color-cream); border-radius: 8px; border: 1px solid var(--color-border); font-size: 0.85rem; }
+        .quote-config-summary h3 { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); font-weight: 700; margin-bottom: 0.6rem; }
+        .quote-config-row { display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--color-text-muted); }
+        .quote-config-row span:last-child { color: var(--color-stone); font-weight: 500; }
+        .quote-config-total { display: flex; justify-content: space-between; padding: 0.5rem 0 0; margin-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 0.85rem; }
+        .quote-config-total span:last-child { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); font-weight: 600; }
+        .quote-form-body { padding: 0 1.75rem 1.5rem; }
+        .quote-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+        .quote-form-group { margin-bottom: 0.875rem; }
+        .quote-form-group label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--color-stone); margin-bottom: 0.3rem; }
+        .quote-form-group input, .quote-form-group textarea { width: 100%; padding: 0.65rem 0.875rem; border: 1.5px solid var(--color-border); border-radius: 6px; font-family: var(--font-body); font-size: 0.875rem; color: var(--color-text); background: white; transition: border-color 0.2s; outline: none; }
+        .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
+        .quote-form-group textarea { resize: vertical; min-height: 80px; }
+        .quote-required { color: var(--color-accent); }
+        .quote-submit-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.25rem; }
+        .quote-submit-btn:hover { background: var(--color-stone-light); }
+        .quote-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .quote-form-note { margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
+        .quote-form-note a { color: var(--color-accent); }
+        .quote-success { display: none; text-align: center; padding: 2.5rem 2rem; }
+        .quote-success-icon { width: 56px; height: 56px; background: var(--color-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+        .quote-success-icon svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
+        .quote-success h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .quote-success p { color: var(--color-text-muted); margin-bottom: 1.5rem; }
+        .quote-success-close { padding: 0.7rem 2rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+        .quote-error { color: #b44; font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
+        @media (max-width: 600px) { .quote-form-row { grid-template-columns: 1fr; } }
+
         /* Footer */
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
@@ -679,7 +716,7 @@
                             <p class="addon-desc">Weather-resistant ceramic photo, professionally reproduced. Lasts 25+ years. Tap to choose size.</p>
                         </div>
 
-                        <label class="addon-card" onclick="toggleAddon(this)">
+                        <div class="addon-card" onclick="toggleAddon(this)">
                             <input type="checkbox" name="addon" value="vase" data-price="85">
                             <div class="addon-header">
                                 <div>
@@ -689,9 +726,9 @@
                                 <span class="addon-check"></span>
                             </div>
                             <p class="addon-desc">Removable granite vase in matching stone colour.</p>
-                        </label>
+                        </div>
 
-                        <label class="addon-card" onclick="toggleAddon(this)">
+                        <div class="addon-card" onclick="toggleAddon(this)">
                             <input type="checkbox" name="addon" value="design" data-price="120">
                             <div class="addon-header">
                                 <div>
@@ -701,7 +738,7 @@
                                 <span class="addon-check"></span>
                             </div>
                             <p class="addon-desc">Carved rose, cross, dove, or custom design of your choice.</p>
-                        </label>
+                        </div>
 
                         <label class="addon-card" onclick="toggleAddon(this)">
                             <input type="checkbox" name="addon" value="extra-lettering" data-price="0">
@@ -842,7 +879,7 @@
                         <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                         Save
                     </button>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" onclick="openQuoteModal()">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         Request Quote
                     </button>
@@ -860,7 +897,7 @@
             <span id="mobilePriceTotal">£1,450</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
         </div>
         <div class="mobile-actions">
-            <button class="btn btn-secondary">Quote</button>
+            <button class="btn btn-secondary" onclick="openQuoteModal()">Quote</button>
             <button class="btn btn-accent">Pay Deposit</button>
         </div>
     </div>
@@ -877,6 +914,70 @@
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Quote Request Modal -->
+    <div class="quote-overlay" id="quoteOverlay" onclick="if(event.target===this)closeQuoteModal()">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <div>
+                    <h2>Request a Quote</h2>
+                    <p class="quote-modal-subtitle">We'll be in touch within 24 hours</p>
+                </div>
+                <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="quote-config-summary">
+                <h3>Your Configuration</h3>
+                <div class="quote-config-row"><span>Stone</span><span id="qsColour">—</span></div>
+                <div class="quote-config-row"><span>Size</span><span id="qsSize">—</span></div>
+                <div class="quote-config-row" id="qsAddonsRow" style="display:none"><span>Extras</span><span id="qsAddons">—</span></div>
+                <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
+            </div>
+            <div class="quote-form-body">
+                <form id="quoteForm" novalidate>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>First Name <span class="quote-required">*</span></label>
+                            <input type="text" id="qFirstName" placeholder="Your first name" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Last Name <span class="quote-required">*</span></label>
+                            <input type="text" id="qLastName" placeholder="Your last name" required>
+                        </div>
+                    </div>
+                    <div class="quote-form-row">
+                        <div class="quote-form-group">
+                            <label>Email Address <span class="quote-required">*</span></label>
+                            <input type="email" id="qEmail" placeholder="your@email.com" required>
+                        </div>
+                        <div class="quote-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="qPhone" placeholder="07123 456 789">
+                        </div>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>Cemetery &amp; any other details</label>
+                        <textarea id="qMessage" placeholder="Cemetery name, grave section/plot number, or any questions..."></textarea>
+                    </div>
+                    <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
+                    <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
+                        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>Send Quote Request</span>
+                    </button>
+                    <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
+                </form>
+                <div class="quote-success" id="quoteSuccess">
+                    <div class="quote-success-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h3>Quote request sent</h3>
+                    <p>We've sent a confirmation to your email and will be in touch within 24 hours.</p>
+                    <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==================== STATE ====================
@@ -1211,6 +1312,32 @@
             document.body.classList.toggle('calm-mode');
         }
 
+        // ==================== QUOTE MODAL ====================
+        function openQuoteModal() {
+            document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
+            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
+            if (state.addonsPrice > 0) {
+                document.getElementById('qsAddonsRow').style.display = 'flex';
+                document.getElementById('qsAddons').textContent      = '+£' + state.addonsPrice;
+            } else {
+                document.getElementById('qsAddonsRow').style.display = 'none';
+            }
+            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
+
+            document.getElementById('quoteForm').reset();
+            document.getElementById('quoteForm').style.display    = '';
+            document.getElementById('quoteSuccess').style.display = 'none';
+            document.getElementById('quoteError').style.display   = 'none';
+            document.getElementById('quoteOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             const initialColour = document.querySelector('input[name="colour"]:checked');
@@ -1218,6 +1345,59 @@
             const initialSize = document.querySelector('input[name="size"]:checked');
             if (initialSize) updateSize(initialSize);
             updatePlaceholderColour();
+
+            document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('quoteSubmitBtn');
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Sending…';
+                document.getElementById('quoteError').style.display = 'none';
+
+                const firstName = document.getElementById('qFirstName').value.trim();
+                const lastName  = document.getElementById('qLastName').value.trim();
+                const email     = document.getElementById('qEmail').value.trim();
+                const phone     = document.getElementById('qPhone').value.trim();
+                const message   = document.getElementById('qMessage').value.trim();
+
+                const colour = document.getElementById('selectedColourName').textContent;
+                const size   = document.getElementById('selectedSizeName').textContent;
+                const total  = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+                const insc   = state.inscription ? '\nInscription: ' + state.inscription.substring(0, 100) : '';
+                const configNote = 'Stone: ' + colour + ' | Size: ' + size + insc +
+                                   '\nGuide total: £' + total.toLocaleString() +
+                                   (message ? '\n\n' + message : '');
+
+                try {
+                    const res = await fetch('/api/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type:    'quote',
+                            name:    (firstName + ' ' + lastName).trim(),
+                            email,
+                            phone,
+                            message: configNote,
+                            product: {
+                                name:   'Classic Ogee Top Lawn Memorial',
+                                type:   'Lawn Headstone',
+                                colour: colour,
+                                price:  String(total),
+                            }
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.ok) {
+                        document.getElementById('quoteForm').style.display    = 'none';
+                        document.getElementById('quoteSuccess').style.display = 'block';
+                    } else {
+                        throw new Error(result.error || 'Submission failed');
+                    }
+                } catch {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Send Quote Request';
+                    document.getElementById('quoteError').style.display = 'block';
+                }
+            });
         });
     </script>
 </body>
