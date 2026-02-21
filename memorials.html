@@ -1383,7 +1383,7 @@
             const name    = card.dataset.name;
             const type    = card.dataset.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             const colours = card.dataset.colours.split(',');
-            const price   = card.querySelector('.product-price strong').textContent;
+            const price   = card.querySelector('.product-price strong').textContent.replace(/^£/, '');
             const imgSvg  = card.querySelector('.product-image svg')?.outerHTML || '';
 
             document.getElementById('quoteProductName').textContent     = name;
