@@ -180,7 +180,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
   // Product image: must be a full absolute URL for email clients
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
-  const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
