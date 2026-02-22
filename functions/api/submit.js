@@ -86,7 +86,8 @@ export async function onRequestPost(context) {
 //  QUOTE REQUEST HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt) {
-  const { name, email, phone, message, product = {}, location } = data;
+  const { name, email, phone, message, product = {}, location, payment_preference } = data;
+  const invoiceOnly = payment_preference === 'invoice_only';
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
 
@@ -95,8 +96,8 @@ async function handleQuoteRequest(env, data, submittedAt) {
     await sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
-      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }),
+      subject: `${invoiceOnly ? "Invoice Request" : "New Quote Request"} — ${product.name || "Memorial"} — ${name}`,
+      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -108,8 +109,8 @@ async function handleQuoteRequest(env, data, submittedAt) {
     await sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      email,
-      subject: `Your quote request — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex }),
+      subject: `Your ${invoiceOnly ? "invoice request" : "quote request"} — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly }),
     });
   } catch (err) {
     console.error("Failed to send quote customer email:", err);
@@ -142,7 +143,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
 
-  return jsonResponse({ ok: true, invoiceId });
+  return jsonResponse({ ok: true, invoiceId, invoiceOnly });
 }
 
 
@@ -275,9 +276,13 @@ async function handleEnquiry(env, data, submittedAt) {
  * Business notification — three clearly labelled sections:
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
-function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
-  const addons      = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons.join(", ") : "";
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly }) {
+  // Addons: use addonLineItems (with prices) if sent, else fallback to names-only
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems
+    : Array.isArray(product.addons) && product.addons.length > 0
+      ? product.addons.map(function(n){ return { name: n, price: null }; })
+      : [];
   const inscription = product.inscription ? product.inscription.trim() : "";
   const priceFormatted = formatPrice(product.price);
   const imageUrl    = product.image && product.image.trim() ? product.image.trim() : "";
@@ -294,13 +299,13 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
     <tr><td style="background:#2C2C2C;padding:18px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
         <td><span style="font-family:Georgia,serif;font-size:18px;color:#fff;font-weight:normal;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></span></td>
-        <td align="right"><span style="background:#8B7355;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">New Quote</span></td>
+        <td align="right"><span style="background:#8B7355;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${invoiceOnly ? "Invoice Request" : "New Quote"}</span></td>
       </tr></table>
     </td></tr>
 
     <!-- ── Title ── -->
     <tr><td style="padding:26px 28px 4px;">
-      <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px;">New Quote Request</h2>
+      <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px;">${invoiceOnly ? "Invoice Request" : "New Quote Request"}</h2>
       <p style="color:#AAA;font-size:12px;margin:0;">Received ${esc(submittedAt)}</p>
     </td></tr>
 
@@ -329,10 +334,10 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                 <td style="color:#999;padding:4px 0;">Size</td>
                 <td style="color:#1A1A1A;padding:4px 0;">${esc(product.size)}</td>
               </tr>` : ""}
-              ${addons ? `<tr>
-                <td style="color:#999;padding:4px 0;vertical-align:top;">Optional extras</td>
-                <td style="color:#1A1A1A;padding:4px 0;">${esc(addons)}</td>
-              </tr>` : ""}
+              ${addonItems.map(function(item){ return `<tr>
+                <td style="color:#999;padding:4px 0;vertical-align:top;">${item === addonItems[0] ? "Optional extras" : ""}</td>
+                <td style="color:#1A1A1A;padding:4px 0;">${esc(item.name)}${item.price ? " <span style=\"color:#8B7355;font-size:12px;\">(+£" + item.price.toLocaleString() + ")</span>" : ""}</td>
+              </tr>`; }).join("")}
               ${inscription ? `<tr>
                 <td style="color:#999;padding:4px 0;vertical-align:top;">Inscription</td>
                 <td style="padding:4px 0;">
@@ -380,10 +385,14 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 }
 
 /** Customer confirmation — warm and branded, with quote summary card */
-function quoteCustomerEmail({ firstName, product, stoneHex }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly }) {
   const priceFormatted = formatPrice(product.price);
-  const addons = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons.join(", ") : "";
+  // Addons: use addonLineItems (with prices) if sent, else fallback to names-only
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems
+    : Array.isArray(product.addons) && product.addons.length > 0
+      ? product.addons.map(function(n){ return { name: n, price: null }; })
+      : [];
   const imageUrl = product.image && product.image.trim() ? product.image.trim() : "";
 
   return `<!DOCTYPE html>
@@ -401,7 +410,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
     <tr><td style="padding:30px 28px 0;">
       <h2 style="font-family:Georgia,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px;">Thank you, ${esc(firstName)}.</h2>
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 22px;">
-        We've received your quote request for the
+        We've received your ${invoiceOnly ? "invoice request" : "quote request"} for the
         <strong style="color:#2C2C2C;">${esc(product.name || "memorial")}</strong>
         and our team will be in touch within 24 hours to discuss your requirements.
       </p>
@@ -425,7 +434,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
                 </td>
               </tr>
               ${product.size ? `<tr><td style="color:#999;padding:3px 0;">Size</td><td style="color:#2C2C2C;">${esc(product.size)}</td></tr>` : ""}
-              ${addons ? `<tr><td style="color:#999;padding:3px 0;vertical-align:top;">Extras</td><td style="color:#2C2C2C;">${esc(addons)}</td></tr>` : ""}
+              ${addonItems.map(function(item, idx){ return `<tr><td style="color:#999;padding:3px 0;width:100px;${idx===0?"":"opacity:0;"}">${idx===0?"Extras":""}</td><td style="color:#2C2C2C;">${esc(item.name)}${item.price ? " (+£" + item.price.toLocaleString() + ")" : ""}</td></tr>`; }).join("")}
               <tr><td style="color:#999;padding:6px 0 3px;border-top:1px solid #E0DCD5;">Guide total</td><td style="color:#2C2C2C;font-weight:700;padding:6px 0 3px;border-top:1px solid #E0DCD5;">£${esc(priceFormatted)} <span style="font-weight:400;color:#999;">fully installed</span></td></tr>
             </table>
           </td>
