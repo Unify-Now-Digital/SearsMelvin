@@ -45,7 +45,7 @@ export async function onRequestPost(context) {
 }
 
 async function handleQuoteRequest(env, data, submittedAt) {
-  const { name, email, phone, message, product = {}, location, payment_preference } = data;
+  const { name, email, phone, cemetery, message, product = {}, location, payment_preference } = data;
   const invoiceOnly = payment_preference === 'invoice_only';
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
@@ -65,10 +65,10 @@ async function handleQuoteRequest(env, data, submittedAt) {
   // 1. Business notification email (critical)
   try {
     await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: BUSINESS_EMAIL,
-      subject: `${invoiceOnly ? "Invoice Request" : "New Quote Request"} — ${product.name || "Memorial"} — ${name}`,
-      html: quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }),
+      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to:      BUSINESS_EMAIL,
+      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
+      html:    quoteBusinessEmail({ name, email, phone, cemetery, message, product, stoneHex, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
