@@ -91,13 +91,25 @@ async function handleQuoteRequest(env, data, submittedAt) {
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
 
+  // 0. Stripe Invoice — generate FIRST so URL is available for the customer email
+  let stripeInvoiceUrl = null;
+  if (invoiceOnly && env.STRIPE_SECRET_KEY) {
+    try {
+      stripeInvoiceUrl = await createStripeInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location,
+      });
+    } catch (err) {
+      console.error("Stripe invoice creation failed:", err);
+    }
+  }
+
   // 1. Business notification email (critical)
   try {
     await sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `${invoiceOnly ? "Invoice Request" : "New Quote Request"} — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly }),
+      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -110,7 +122,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      email,
       subject: `Your ${invoiceOnly ? "invoice request" : "quote request"} — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly }),
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl }),
     });
   } catch (err) {
     console.error("Failed to send quote customer email:", err);
@@ -141,18 +153,6 @@ async function handleQuoteRequest(env, data, submittedAt) {
     await createGHLContact(env, { name, email, phone, type: "quote", product });
   } catch (err) {
     console.error("GHL contact create failed:", err);
-  }
-
-  // 6. Stripe Invoice (only when customer chose invoice-only)
-  let stripeInvoiceUrl = null;
-  if (invoiceOnly && env.STRIPE_SECRET_KEY) {
-    try {
-      stripeInvoiceUrl = await createStripeInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location,
-      });
-    } catch (err) {
-      console.error("Stripe invoice creation failed:", err);
-    }
   }
 
   return jsonResponse({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl });
@@ -288,7 +288,7 @@ async function handleEnquiry(env, data, submittedAt) {
  * Business notification — three clearly labelled sections:
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
-function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }) {
   // Addons: use addonLineItems (with prices) if sent, else fallback to names-only
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -375,6 +375,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
         <tr><td style="padding:5px 0;color:#999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
         <tr><td style="padding:5px 0;color:#999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
         ${location ? `<tr><td style="padding:5px 0;color:#999;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>` : ""}
+      ${invoiceOnly && stripeInvoiceUrl ? `<tr><td style="padding:5px 0;color:#999;vertical-align:top;">Stripe Invoice</td><td style="padding:5px 0;"><a href="${stripeInvoiceUrl}" style="color:#8B7355;font-weight:600;">View invoice ↗</a></td></tr>` : ""}
       </table>
     </td></tr>
 
@@ -397,7 +398,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 }
 
 /** Customer confirmation — warm and branded, with quote summary card */
-function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl }) {
   const priceFormatted = formatPrice(product.price);
   // Addons: use addonLineItems (with prices) if sent, else fallback to names-only
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -455,6 +456,19 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly }) {
     </td></tr>
 
     <tr><td style="padding:0 28px 32px;">
+      ${invoiceOnly && stripeInvoiceUrl ? `
+      <!-- Invoice CTA button -->
+      <div style="margin:0 0 20px;">
+        <a href="${stripeInvoiceUrl}"
+           style="display:inline-block;background:#8B7355;color:#fff;text-decoration:none;
+                  padding:13px 28px;border-radius:6px;font-size:14px;font-weight:600;
+                  letter-spacing:0.03em;">
+          View &amp; Pay Invoice →
+        </a>
+        <p style="color:#888;font-size:12px;margin:8px 0 0;">
+          Your invoice is ready. Pay at any time before the due date — no rush.
+        </p>
+      </div>` : ""}
       <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
         If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">01268 208 559</strong>.
       </p>
@@ -791,9 +805,10 @@ async function createStripeInvoice(stripeKey, { name, email, phone, product, loc
     "metadata[cemetery]": location || "",
   });
 
-  // 5. Finalise — this generates the PDF and sends the invoice email to the customer
+  // 5. Finalise — this generates the PDF and the hosted_invoice_url.
+  //    auto_advance: false so Stripe does NOT send its own email — we send our branded one via Resend.
   const finalised = await stripePost(`/invoices/${invoice.id}/finalize`, {
-    auto_advance: "true",
+    auto_advance: "false",
   });
 
   return finalised.hosted_invoice_url || null;
