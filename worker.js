@@ -41,12 +41,189 @@ export default {
     const requestOrigin  = request.headers.get("Origin") || "";
     const corsHeaders = {
       "Access-Control-Allow-Origin":  allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0],
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
+    }
+
+    const url = new URL(request.url);
+
+    // ── GET /config — return publishable keys ──
+    if (request.method === "GET" && url.pathname === "/config") {
+      return new Response(JSON.stringify({
+        stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY || '',
+        googleMapsKey:        env.GOOGLE_MAPS_KEY        || '',
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── POST /stripe — create Stripe PaymentIntent ──
+    if (request.method === "POST" && url.pathname === "/stripe") {
+      if (!env.STRIPE_SECRET_KEY) {
+        return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { amount, name, email, cemetery, product: productName, invoiceId } = await request.json();
+      const body = new URLSearchParams({
+        amount:                               String(Math.round(Number(amount) * 100)),
+        currency:                             "gbp",
+        "automatic_payment_methods[enabled]": "true",
+        "metadata[customer_name]":            name         || "",
+        "metadata[customer_email]":           email        || "",
+        "metadata[cemetery]":                 cemetery     || "",
+        "metadata[product]":                  productName  || "",
+        "metadata[invoice_id]":               invoiceId    || "",
+        description: `50% deposit — ${productName || "Memorial"} — ${name || ""}`,
+      });
+      const stripeRes = await fetch("https://api.stripe.com/v1/payment_intents", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.STRIPE_SECRET_KEY}`,
+          "Content-Type":  "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+      const pi = await stripeRes.json();
+      if (pi.error) {
+        return new Response(JSON.stringify({ error: pi.error.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ clientSecret: pi.client_secret }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── POST /stripe-webhook — verify signature, handle payment events ──
+    if (request.method === "POST" && url.pathname === "/stripe-webhook") {
+      const rawBody     = await request.text();
+      const sigHeader   = request.headers.get("stripe-signature") || "";
+      const whSecret    = env.STRIPE_WEBHOOK_SECRET || "";
+
+      if (whSecret) {
+        const valid = await verifyStripeWebhookSig(rawBody, sigHeader, whSecret);
+        if (!valid) {
+          return new Response(JSON.stringify({ error: "Invalid signature" }), {
+            status: 400, headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      let event;
+      try { event = JSON.parse(rawBody); } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 });
+      }
+
+      if (event.type === "payment_intent.succeeded") {
+        const pi = event.data.object;
+        const { customer_name: custName, customer_email: custEmail, cemetery,
+                product: prodName, invoice_id: piInvoiceId } = pi.metadata;
+        const amountPaid = (pi.amount_received / 100).toFixed(2);
+        const today      = new Date().toISOString().split("T")[0];
+
+        if (env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY) {
+          const sbH = {
+            "apikey":        env.SUPABASE_SERVICE_KEY,
+            "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            "Content-Type":  "application/json",
+          };
+          try {
+            if (piInvoiceId) {
+              // Invoice was created at quote time — update status to "partial" and record payment.
+              const patchRes = await fetch(
+                `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${piInvoiceId}`,
+                {
+                  method:  "PATCH",
+                  headers: { ...sbH, "Prefer": "return=minimal" },
+                  body: JSON.stringify({ status: "partial", payment_method: "Stripe" }),
+                },
+              );
+              if (!patchRes.ok) {
+                console.error(`Supabase invoices PATCH error ${patchRes.status}: ${await patchRes.text()}`);
+              }
+
+              await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+                method:  "POST",
+                headers: { ...sbH, "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  invoice_id: piInvoiceId,
+                  amount:     parseFloat(amountPaid),
+                  date:       today,
+                  method:     "card",
+                  reference:  pi.id,
+                  notes:      prodName ? `50% deposit — ${prodName}` : "50% deposit",
+                }),
+              });
+            } else {
+              // Fallback: no invoice_id in metadata — look up order by email,
+              // create invoice and payment records.
+              let orderId = null;
+              if (custEmail) {
+                const oRes = await fetch(
+                  `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=1&select=id`,
+                  { headers: sbH },
+                );
+                if (oRes.ok) { const rows = await oRes.json(); orderId = rows[0]?.id || null; }
+              }
+
+              const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
+                method:  "POST",
+                headers: { ...sbH, "Prefer": "return=representation" },
+                body: JSON.stringify({
+                  order_id:       orderId,
+                  customer_name:  custName || custEmail || "Unknown",
+                  amount:         parseFloat(amountPaid),
+                  status:         "partial",
+                  issue_date:     today,
+                  due_date:       today,
+                  payment_method: "Stripe",
+                }),
+              });
+              if (invRes.ok) {
+                const invoices  = await invRes.json();
+                const invoiceId = invoices[0]?.id || null;
+
+                await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+                  method:  "POST",
+                  headers: { ...sbH, "Prefer": "return=minimal" },
+                  body: JSON.stringify({
+                    invoice_id: invoiceId,
+                    amount:     parseFloat(amountPaid),
+                    date:       today,
+                    method:     "card",
+                    reference:  pi.id,
+                    notes:      prodName ? `50% deposit — ${prodName}` : "50% deposit",
+                  }),
+                });
+              } else {
+                console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+              }
+            }
+          } catch (e) { console.error("Supabase invoice/payment insert failed:", e); }
+        }
+
+        if (env.RESEND_API_KEY && custEmail) {
+          try {
+            await sendEmail(env.RESEND_API_KEY, {
+              from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+              to:      custEmail,
+              subject: `Deposit confirmed — ${BUSINESS_NAME}`,
+              html:    workerDepositCustomerEmail({ name: custName, amountPaid, product: prodName, cemetery }),
+            });
+            await sendEmail(env.RESEND_API_KEY, {
+              from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+              to:      BUSINESS_EMAIL,
+              subject: `Deposit received — £${amountPaid} — ${custName || custEmail}`,
+              html:    workerDepositBusinessEmail({ name: custName, email: custEmail, amountPaid, product: prodName, cemetery, piId: pi.id }),
+            });
+          } catch (e) { console.error("Deposit email failed:", e); }
+        }
+      }
+
+      return new Response(JSON.stringify({ received: true }), { headers: { "Content-Type": "application/json" } });
     }
 
     if (request.method !== "POST") {
@@ -82,7 +259,7 @@ export default {
 //  QUOTE REQUEST HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
-  const { name, email, phone, message, product = {} } = data;
+  const { name, email, phone, message, product = {}, location } = data;
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
 
@@ -92,7 +269,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }),
+      html:    quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -122,9 +299,11 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("Failed to create ClickUp quote task:", err);
   }
 
-  // 4. Supabase record (non-critical)
+  // 4. Supabase record (non-critical) — returns { invoiceId } for quotes
+  let invoiceId = null;
   try {
-    await insertSupabaseRecord(env, { type: "quote", name, email, phone, message, product, submittedAt });
+    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
+    invoiceId = sbResult?.invoiceId || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -136,7 +315,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("GHL contact create failed:", err);
   }
 
-  return json({ ok: true }, 200, corsHeaders);
+  return json({ ok: true, invoiceId }, 200, corsHeaders);
 }
 
 
@@ -144,7 +323,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
 //  REGULAR ENQUIRY HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleEnquiry(env, data, submittedAt, corsHeaders) {
-  const { name, email, phone, message, enquiry_type } = data;
+  const { name, email, phone, message, enquiry_type, location } = data;
 
   if (!message) {
     return json({ ok: false, error: "Missing required fields" }, 400, corsHeaders);
@@ -245,7 +424,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
 
   // 4. Supabase record (non-critical)
   try {
-    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, message, enquiry_type, submittedAt });
+    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, enquiry_type, location });
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -269,7 +448,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
  * Business notification — three clearly labelled sections:
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
-function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, submittedAt }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addons      = Array.isArray(product.addons) && product.addons.length > 0
     ? product.addons.join(", ") : "";
   const inscription = product.inscription ? product.inscription.trim() : "";
@@ -348,6 +527,7 @@ function quoteBusinessEmail({ name, email, phone, message, product, stoneHex, su
         <tr><td style="padding:5px 0;color:#999;width:110px;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
         <tr><td style="padding:5px 0;color:#999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
         <tr><td style="padding:5px 0;color:#999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
+        ${location ? `<tr><td style="padding:5px 0;color:#999;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>` : ""}
       </table>
     </td></tr>
 
@@ -474,38 +654,95 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
 // ═══════════════════════════════════════════════════════════════════
 //  SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function insertSupabaseRecord(env, { type, name, email, phone, message,
-  enquiry_type, product, submittedAt }) {
+/**
+ * Writes to three Supabase tables:
+ *   customers    — contact info (first_name, last_name, email, phone)
+ *   orders       — order details (sku, color, value, order_type, customer contact)
+ *   inscriptions — inscription text (only if quote has inscription)
+ */
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
 
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/leads`, {
-    method:  "POST",
-    headers: {
-      "apikey":        env.SUPABASE_SERVICE_KEY,
-      "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      "Content-Type":  "application/json",
-      "Prefer":        "return=minimal",
-    },
+  const headers = {
+    "apikey":        env.SUPABASE_SERVICE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    "Content-Type":  "application/json",
+    "Prefer":        "return=minimal",
+  };
+
+  const parts = name.trim().split(" ");
+  const today = new Date().toISOString().split("T")[0];
+
+  // 1. customers table
+  const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
+    method: "POST",
+    headers,
     body: JSON.stringify({
-      source:        "website",
-      type,
-      name,
+      first_name: parts[0],
+      last_name:  parts.slice(1).join(" ") || null,
       email,
-      phone:         phone || null,
-      message:       message || null,
-      enquiry_type:  enquiry_type || null,
-      product_name:  product?.name   || null,
-      product_type:  product?.type   || null,
-      stone_colour:  product?.colour || null,
-      memorial_size: product?.size   || null,
-      addons:        Array.isArray(product?.addons) ? product.addons.join(", ") : null,
-      inscription:   product?.inscription || null,
-      guide_price:   product?.price ? parseFloat(product.price) : null,
-      submitted_at:  new Date().toISOString(),
+      phone: phone || null,
     }),
   });
+  if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
 
-  if (!res.ok) throw new Error(`Supabase error ${res.status}: ${await res.text()}`);
+  // 2. orders table — return=representation so we get the new row's id
+  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({
+      customer_name:  name,
+      customer_email: email,
+      customer_phone: phone || null,
+      order_type:     type === "quote" ? "quote" : (enquiry_type || null),
+      sku:            product?.name   || null,
+      color:          product?.colour || null,
+      value:          product?.price  ? parseFloat(product.price) : null,
+      location:       location || null,
+    }),
+  });
+  if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
+  const orderRows = await orderRes.json();
+  const orderId   = orderRows[0]?.id || null;
+
+  // 3. invoices table — created at quote time with the FULL order value so that
+  //    outstanding balance = invoice.amount − SUM(payments.amount) at any point.
+  let invoiceId = null;
+  if (type === "quote" && product?.price) {
+    const fullAmount = parseFloat(product.price);
+    const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
+      method: "POST",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({
+        order_id:      orderId,
+        customer_name: name,
+        amount:        fullAmount,
+        status:        "pending",
+        issue_date:    today,
+        due_date:      today,
+      }),
+    });
+    if (!invRes.ok) {
+      console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+    } else {
+      const invRows = await invRes.json();
+      invoiceId = invRows[0]?.id || null;
+    }
+  }
+
+  // 4. inscriptions table (only for quotes with inscription text)
+  if (product?.inscription) {
+    const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        inscription_text: product.inscription,
+      }),
+    });
+    if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
+  }
+
+  return invoiceId ? { invoiceId } : undefined;
 }
 
 
@@ -590,6 +827,72 @@ async function createClickUpTask(apiKey, { name, description, listId }) {
     body:    JSON.stringify({ name, description }),
   });
   if (!res.ok) throw new Error(`ClickUp error: ${await res.text()}`);
+}
+
+// ─── Stripe webhook signature verification ────────────────────────────────────
+async function verifyStripeWebhookSig(rawBody, sigHeader, secret) {
+  if (!sigHeader || !secret) return false;
+  const parts  = sigHeader.split(",");
+  const tPart  = parts.find(p => p.startsWith("t="));
+  const v1Part = parts.find(p => p.startsWith("v1="));
+  if (!tPart || !v1Part) return false;
+  const timestamp = tPart.slice(2);
+  const givenSig  = v1Part.slice(3);
+  if (Math.abs(Math.floor(Date.now() / 1000) - parseInt(timestamp, 10)) > 300) return false;
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sigBytes    = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
+  const computedSig = Array.from(new Uint8Array(sigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return computedSig === givenSig;
+}
+
+// ─── Deposit email templates (worker) ────────────────────────────────────────
+function workerDepositCustomerEmail({ name, amountPaid, product, cemetery }) {
+  const firstName = (name || "").split(" ")[0] || "there";
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+<tr><td style="background:#2C2C2C;padding:20px 28px;"><span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:.55;font-weight:300;">Memorials</span></span></td></tr>
+<tr><td style="padding:32px 28px 0;">
+<h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Deposit received, ${esc(firstName)}.</h2>
+<p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">Your <strong style="color:#2C2C2C;">£${esc(amountPaid)}</strong> deposit has been received and your order is confirmed. We'll be in touch within 24 hours.</p>
+</td></tr>
+<tr><td style="padding:0 28px 28px;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;border-radius:8px;">
+<tr><td style="padding:16px 20px;"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:10px;">Order summary</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+${product  ? `<tr><td style="color:#999;padding:4px 0;width:120px;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}</td></tr>` : ""}
+${cemetery ? `<tr><td style="color:#999;padding:4px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
+<tr><td style="color:#999;padding:8px 0 4px;border-top:1px solid #ddd;">Deposit paid</td><td style="color:#2C2C2C;font-weight:700;padding:8px 0 4px;border-top:1px solid #ddd;">£${esc(amountPaid)}</td></tr>
+</table></td></tr></table></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL} &middot; 01268 208 559</span></td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+function workerDepositBusinessEmail({ name, email, amountPaid, product, cemetery, piId }) {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+<tr><td style="background:#2C2C2C;padding:18px 28px;"><table width="100%" cellpadding="0" cellspacing="0"><tr>
+<td><span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:.55;">Memorials</span></span></td>
+<td align="right"><span style="background:#4CAF50;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Deposit Paid</span></td>
+</tr></table></td></tr>
+<tr><td style="padding:24px 28px;">
+<h2 style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;font-weight:normal;margin:0 0 16px;">Deposit Received — £${esc(amountPaid)}</h2>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+<tr><td style="color:#999;padding:5px 0;width:130px;">Customer</td><td style="color:#1A1A1A;font-weight:600;">${esc(name || "—")}</td></tr>
+<tr><td style="color:#999;padding:5px 0;">Email</td><td><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email || "—")}</a></td></tr>
+${product  ? `<tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}</td></tr>` : ""}
+${cemetery ? `<tr><td style="color:#999;padding:5px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
+<tr><td style="color:#999;padding:5px 0;">Amount</td><td style="color:#1A1A1A;font-weight:700;">£${esc(amountPaid)}</td></tr>
+<tr><td style="color:#999;padding:5px 0;font-size:11px;">Stripe PI</td><td style="color:#AAA;font-size:11px;">${esc(piId || "—")}</td></tr>
+</table></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL}</span></td></tr>
+</table></td></tr></table></body></html>`;
 }
 
 // ─── Helper: return JSON response ────────────────────────────────────────────

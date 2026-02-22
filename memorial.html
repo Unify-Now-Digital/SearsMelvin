@@ -290,6 +290,7 @@
         .quote-form-group { margin-bottom: 0.875rem; }
         .quote-form-group label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--color-stone); margin-bottom: 0.3rem; }
         .quote-form-group input, .quote-form-group textarea { width: 100%; padding: 0.65rem 0.875rem; border: 1.5px solid var(--color-border); border-radius: 6px; font-family: var(--font-body); font-size: 0.875rem; color: var(--color-text); background: white; transition: border-color 0.2s; outline: none; }
+        .quote-form-group input[type="radio"] { width: auto; padding: 0; border: none; border-radius: 0; background: transparent; flex-shrink: 0; margin-top: 2px; }
         .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
         .quote-form-group textarea { resize: vertical; min-height: 80px; }
         .quote-required { color: var(--color-accent); }
@@ -307,21 +308,31 @@
         .quote-error { color: #b44; font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
         @media (max-width: 600px) { .quote-form-row { grid-template-columns: 1fr; } }
 
-        /* Cemetery search autocomplete */
-        .cem-autocomplete { position: relative; }
-        .cem-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid var(--color-border); border-top: none; border-radius: 0 0 6px 6px; max-height: 190px; overflow-y: auto; z-index: 500; display: none; }
-        .cem-suggestions.active { display: block; }
-        .cem-suggestion { padding: 0.6rem 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; transition: background 0.15s; }
-        .cem-suggestion:hover { background: var(--color-cream); }
-        .cem-suggestion svg { width: 16px; height: 16px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; flex-shrink: 0; }
-        .cem-suggestion-name { font-size: 0.85rem; font-weight: 500; color: var(--color-stone); }
-        .cem-suggestion-area { font-size: 0.75rem; color: var(--color-text-muted); }
-        .cem-badge { font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px; font-weight: 700; text-transform: uppercase; flex-shrink: 0; }
-        .cem-badge.kerb { background: rgba(74,124,89,0.15); color: #3a7a52; }
-        .cem-badge.lawn { background: rgba(139,115,85,0.15); color: var(--color-accent); }
+        /* Cemetery autocomplete */
+        .cemetery-search-wrap { position: relative; }
+        .cemetery-search-wrap svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--color-stone); fill: none; stroke-width: 2; pointer-events: none; }
+        .cemetery-search-wrap input { padding-left: 2.1rem !important; }
+        .pac-container { border-radius: 6px; border: 1.5px solid var(--color-border); box-shadow: 0 6px 20px rgba(0,0,0,0.1); font-family: var(--font-body); font-size: 0.85rem; margin-top: 2px; }
+        .pac-item { padding: 0.45rem 0.75rem; cursor: pointer; }
+        .pac-item:hover { background: #f5f3f0; }
+        .pac-item-query { font-size: 0.85rem; color: var(--color-stone); }
 
-        /* Cemetery map */
-        #qCemeteryMap { height: 180px; border-radius: 6px; border: 1.5px solid var(--color-border); margin-top: 0.5rem; display: none; }
+        /* Payment step */
+        .quote-pay-step { padding: 0 1.75rem 1.5rem; }
+        .quote-deposit-header { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1.25rem; }
+        .quote-deposit-icon { width: 40px; height: 40px; background: var(--color-stone); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .quote-deposit-icon svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+        .quote-deposit-header h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+        .quote-deposit-header p { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); }
+        .quote-deposit-card { background: #f5f3f0; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem; }
+        .quote-deposit-row { display: flex; justify-content: space-between; font-size: 0.875rem; padding: 0.2rem 0; }
+        .quote-deposit-row span:first-child { color: var(--color-text-muted); }
+        .quote-deposit-total { border-top: 1px solid var(--color-border); margin-top: 0.4rem; padding-top: 0.5rem; font-weight: 600; color: var(--color-stone); }
+        #payment-element { margin-bottom: 1rem; }
+        .quote-pay-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; }
+        .quote-pay-btn:hover { background: var(--color-stone-light); }
+        .quote-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .quote-skip-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; font-family: var(--font-body); }
 
         /* Footer */
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
@@ -989,7 +1000,7 @@
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        <span>Send Quote Request</span>
+                        <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
                     <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
                 </form>
@@ -998,9 +1009,47 @@
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
                     <h3>Quote request sent</h3>
-                    <p>We've sent a confirmation to your email and will be in touch within 24 hours.</p>
+                    <p id="quoteSuccessMsg">We've sent a confirmation to your email and will be in touch within 24 hours.</p>
                     <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
                 </div>
+            </div>
+
+            <!-- Step 2: Deposit payment -->
+            <div class="quote-pay-step" id="quotePayStep" style="display:none">
+                <div class="quote-deposit-header">
+                    <div class="quote-deposit-icon">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="11" width="22" height="11" rx="2" ry="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div>
+                        <h3>Secure your order</h3>
+                        <p>A 50% deposit confirms your order and reserves your slot</p>
+                    </div>
+                </div>
+                <div class="quote-deposit-card">
+                    <div class="quote-deposit-row">
+                        <span>50% deposit</span>
+                        <span id="qDepositAmount">—</span>
+                    </div>
+                    <div class="quote-deposit-row">
+                        <span>Balance due later</span>
+                        <span id="qBalanceDue">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Order total</span>
+                        <span id="qOrderTotal">—</span>
+                    </div>
+                    <div class="quote-deposit-row quote-deposit-total">
+                        <span>Total today</span>
+                        <span id="qDepositTotal">—</span>
+                    </div>
+                </div>
+                <div id="payment-element"></div>
+                <p class="quote-error" id="quotePayError" style="display:none"></p>
+                <button class="quote-pay-btn" id="quotePayBtn" type="button">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="11" width="22" height="11" rx="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Pay deposit</span>
+                </button>
+                <button class="quote-skip-link" id="quoteSkipBtn" type="button">Skip for now — pay later by invoice</button>
             </div>
         </div>
     </div>
@@ -1008,7 +1057,8 @@
     <script>
         // ── Product image URL shown in quote emails ──────────────────────────
         // Set this to the publicly accessible image URL for this memorial.
-        const PRODUCT_IMAGE_URL = '';
+        // TODO: Replace with real product photograph URL (e.g. https://searsmelvin.co.uk/images/classic-ogee-top.jpg)
+        const PRODUCT_IMAGE_URL = 'https://searsmelvin.co.uk/classic-ogee-top.png';
 
         // ==================== STATE ====================
         const state = {
@@ -1390,6 +1440,20 @@
             document.getElementById('quoteError').style.display   = 'none';
             document.getElementById('quoteOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
+
+            // Payment preference listeners - update button text and border styles
+            document.querySelectorAll('input[name="paymentPref"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    const label = document.getElementById('quoteSubmitLabel');
+                    const isInvoice = this.value === 'invoice_only';
+                    if (label) label.textContent = isInvoice ? 'Request Invoice' : 'Send Quote Request';
+                    // Update radio label borders
+                    document.querySelectorAll('input[name="paymentPref"]').forEach(function(r) {
+                        const lbl = r.closest('label');
+                        if (lbl) lbl.style.borderColor = r.checked ? 'var(--color-accent)' : 'var(--color-border)';
+                    });
+                });
+            });
         }
 
         function closeQuoteModal() {
@@ -1398,7 +1462,117 @@
         }
 
         // ==================== INIT ====================
+        // ==================== CONFIG + STRIPE + MAPS ====================
+        let _stripePK = '';
+        let _stripeInst = null;
+        let _stripeElements = null;
+        let _quoteTotal = 0;
+        let _quoteName  = '';
+        let _quoteEmail = '';
+        let _quoteCemetery = '';
+        let _quoteProduct = '';
+
+        async function loadConfig() {
+            try {
+                const cfg = await fetch('/api/config').then(r => r.json());
+                _stripePK = cfg.stripePublishableKey || '';
+                if (cfg.googleMapsKey) initGoogleMaps(cfg.googleMapsKey);
+            } catch (e) { console.warn('Config load failed', e); }
+        }
+
+        function initGoogleMaps(key) {
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        window._onMapsReady = async function() {
+            const wrap = document.querySelector('.cemetery-search-wrap');
+            const oldInput = document.getElementById('qCemetery');
+            if (!wrap || !oldInput) return;
+
+            // Use new PlaceAutocompleteElement (replaces deprecated Autocomplete)
+            try {
+                const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
+                const autocomplete = new PlaceAutocompleteElement({
+                    componentRestrictions: { country: 'gb' },
+                });
+                autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.9rem;';
+                autocomplete.id = 'qCemeteryAuto';
+                wrap.replaceChild(autocomplete, oldInput);
+
+                autocomplete.addEventListener('gmp-placeselect', async (event) => {
+                    const place = event.place;
+                    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+                    // Store in a hidden input for form submission
+                    let hiddenInput = document.getElementById('qCemeteryValue');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'qCemeteryValue';
+                        hiddenInput.name = 'cemetery';
+                        wrap.appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = place.displayName || place.formattedAddress || '';
+                });
+            } catch(e) {
+                // Fallback to original Autocomplete if PlaceAutocompleteElement not available
+                if (google.maps.places && google.maps.places.Autocomplete) {
+                    const ac = new google.maps.places.Autocomplete(oldInput, {
+                        componentRestrictions: { country: 'gb' },
+                        fields: ['name', 'formatted_address'],
+                    });
+                    ac.addListener('place_changed', () => {
+                        const place = ac.getPlace();
+                        oldInput.value = place.name || oldInput.value;
+                    });
+                }
+                console.warn('PlaceAutocompleteElement not available, using fallback:', e);
+            }
+        };
+
+        async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId) {
+            _quoteName     = name;
+            _quoteEmail    = email;
+            _quoteCemetery = cemetery;
+            _quoteProduct  = product;
+
+            const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
+            const balance = _quoteTotal - deposit;
+            document.getElementById('qDepositAmount').textContent = fmt(deposit);
+            document.getElementById('qBalanceDue').textContent    = fmt(balance);
+            document.getElementById('qOrderTotal').textContent    = fmt(_quoteTotal);
+            document.getElementById('qDepositTotal').textContent  = fmt(deposit);
+            document.getElementById('quotePayStep').style.display = 'block';
+
+            if (!_stripePK) {
+                document.getElementById('quoteSkipBtn').click();
+                return;
+            }
+
+            try {
+                const piRes = await fetch('/api/stripe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product, invoiceId }),
+                });
+                const { clientSecret, error } = await piRes.json();
+                if (error || !clientSecret) throw new Error(error || 'No client secret');
+
+                _stripeInst     = Stripe(_stripePK);
+                _stripeElements = _stripeInst.elements({ clientSecret, appearance: { theme: 'stripe' } });
+                const el = _stripeElements.create('payment');
+                el.mount('#payment-element');
+            } catch (e) {
+                console.warn('Stripe init failed', e);
+                document.getElementById('quoteSkipBtn').click();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+
             const initialColour = document.querySelector('input[name="colour"]:checked');
             if (initialColour) updateColour(initialColour);
             const initialSize = document.querySelector('input[name="size"]:checked');
@@ -1421,24 +1595,27 @@
 
                 const colour = document.getElementById('selectedColourName').textContent;
                 const total  = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+                const name   = (firstName + ' ' + lastName).trim();
 
                 try {
                     const res = await fetch('/api/submit', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            type:    'quote',
-                            name:    (firstName + ' ' + lastName).trim(),
+                            type:     'quote',
+                            name,
                             email,
                             phone,
-                            cemetery,
                             message,
+                            location: cemetery || null,
+                            payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
                                 name:        'Classic Ogee Top Lawn Memorial',
                                 type:        'Lawn Headstone',
                                 colour:      colour,
                                 size:        document.getElementById('selectedSizeName').textContent,
                                 addons:      getSelectedAddons(),
+                            addonLineItems: getAddonLineItems(),
                                 inscription: state.inscription ? state.inscription.substring(0, 120) : '',
                                 price:       String(total),
                                 image:       PRODUCT_IMAGE_URL,
@@ -1447,8 +1624,17 @@
                     });
                     const result = await res.json();
                     if (result.ok) {
-                        document.getElementById('quoteForm').style.display    = 'none';
-                        document.getElementById('quoteSuccess').style.display = 'block';
+                        document.getElementById('quoteForm').style.display = 'none';
+                        _quoteTotal = total;
+                        if (result.invoiceOnly) {
+                            // Invoice flow: skip deposit step, show success screen
+                            document.getElementById('quoteForm').style.display   = 'none';
+                            document.getElementById('quoteSuccess').style.display = 'block';
+                            document.getElementById('quoteSuccessMsg').textContent =
+                                'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.';
+                        } else {
+                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
+                        }
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
@@ -1458,7 +1644,41 @@
                     document.getElementById('quoteError').style.display = 'block';
                 }
             });
+
+            document.getElementById('quotePayBtn').addEventListener('click', async function() {
+                const btn = document.getElementById('quotePayBtn');
+                const errEl = document.getElementById('quotePayError');
+                errEl.style.display = 'none';
+                if (!_stripeElements) { showQuoteSuccess(false); return; }
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Processing…';
+                const { error } = await _stripeInst.confirmPayment({
+                    elements: _stripeElements,
+                    confirmParams: { return_url: window.location.href },
+                    redirect: 'if_required',
+                });
+                if (error) {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Pay deposit';
+                    errEl.textContent = error.message;
+                    errEl.style.display = 'block';
+                } else {
+                    showQuoteSuccess(true);
+                }
+            });
+
+            document.getElementById('quoteSkipBtn').addEventListener('click', function() {
+                showQuoteSuccess(false);
+            });
         });
+
+        function showQuoteSuccess(depositPaid) {
+            document.getElementById('quotePayStep').style.display = 'none';
+            document.getElementById('quoteSuccess').style.display = 'block';
+            document.getElementById('quoteSuccessMsg').textContent = depositPaid
+                ? 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.'
+                : 'We\'ve sent a confirmation to your email and will be in touch within 24 hours.';
+        }
     </script>
 
     <!-- Cemetery map feature for RAQ modal -->
@@ -1541,5 +1761,6 @@
             }
         });
     </script>
+    <script src="https://js.stripe.com/v3/"></script>
 </body>
 </html>

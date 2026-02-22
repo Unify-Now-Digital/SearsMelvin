@@ -1,0 +1,3 @@
+name = "sears-melvin-memorials"
+main = "worker.js"
+compatibility_date = "2026-02-21"
