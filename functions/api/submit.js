@@ -237,7 +237,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
                     <tr>
                       <td align="center" style="background-color:#F5F3F0;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
-                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="200" style="display:block;width:200px;max-width:100%;height:auto;border-radius:4px;" />
+                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
                       </td>
                     </tr>
                   </table>` : ""}
@@ -448,7 +448,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
                   ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
                     <tr>
                       <td align="center" style="background-color:#ffffff;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
-                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="200" style="display:block;width:200px;max-width:100%;height:auto;border-radius:4px;" />
+                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
                       </td>
                     </tr>
                   </table>` : ""}
