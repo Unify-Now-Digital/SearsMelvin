@@ -1074,7 +1074,7 @@
         // ── Product image URL shown in quote emails ──────────────────────────
         // Set this to the publicly accessible image URL for this memorial.
         // TODO: Replace with real product photograph URL (e.g. https://searsmelvin.co.uk/images/classic-ogee-top.jpg)
-        const PRODUCT_IMAGE_URL = 'https://searsmelvin.co.uk/sm-logo.svg';
+        const PRODUCT_IMAGE_URL = 'https://searsmelvin.co.uk/classic-ogee-top.png';
 
         // ==================== STATE ====================
         const state = {
@@ -1642,7 +1642,15 @@
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
                         _quoteTotal = total;
-                        await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
+                        if (result.invoiceOnly) {
+                            // Invoice flow: skip deposit step, show success screen
+                            document.getElementById('quoteForm').style.display   = 'none';
+                            document.getElementById('quoteSuccess').style.display = 'block';
+                            document.getElementById('quoteSuccessMsg').textContent =
+                                'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.';
+                        } else {
+                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
+                        }
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
