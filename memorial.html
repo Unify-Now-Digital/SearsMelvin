@@ -993,10 +993,29 @@
                         <label>Additional details</label>
                         <textarea id="qMessage" placeholder="Grave section / plot number, inscription ideas, or any questions…"></textarea>
                     </div>
+                    <div class="quote-form-group" style="margin-top:0.5rem;">
+                        <label style="display:block;font-size:0.8rem;letter-spacing:0.06em;text-transform:uppercase;color:#8B7355;font-weight:600;margin-bottom:0.6rem;">How would you like to proceed?</label>
+                        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                            <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;padding:0.75rem;border:1.5px solid var(--color-accent);border-radius:6px;background:rgba(139,115,85,0.04);">
+                                <input type="radio" name="paymentPref" id="qPayDeposit" value="deposit" checked style="margin-top:2px;flex-shrink:0;accent-color:var(--color-accent);">
+                                <div>
+                                    <div style="font-weight:600;font-size:0.9rem;color:var(--color-stone);">Pay 50% deposit &amp; reserve your slot</div>
+                                    <div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:1px;">Secure your order now. Balance due on completion.</div>
+                                </div>
+                            </label>
+                            <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;padding:0.75rem;border:1.5px solid var(--color-border);border-radius:6px;">
+                                <input type="radio" name="paymentPref" id="qPayInvoice" value="invoice_only" style="margin-top:2px;flex-shrink:0;accent-color:var(--color-accent);">
+                                <div>
+                                    <div style="font-weight:600;font-size:0.9rem;color:var(--color-stone);">Request an invoice &mdash; pay later</div>
+                                    <div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:1px;">Receive a formal quote &amp; invoice. No payment needed now.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        <span>Send Quote Request</span>
+                        <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
                     <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
                 </form>
@@ -1053,7 +1072,8 @@
     <script>
         // ── Product image URL shown in quote emails ──────────────────────────
         // Set this to the publicly accessible image URL for this memorial.
-        const PRODUCT_IMAGE_URL = '';
+        // TODO: Replace with real product photograph URL (e.g. https://searsmelvin.co.uk/images/classic-ogee-top.jpg)
+        const PRODUCT_IMAGE_URL = 'https://searsmelvin.co.uk/sm-logo.svg';
 
         // ==================== STATE ====================
         const state = {
@@ -1435,6 +1455,20 @@
             document.getElementById('quoteError').style.display   = 'none';
             document.getElementById('quoteOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
+
+            // Payment preference listeners - update button text and border styles
+            document.querySelectorAll('input[name="paymentPref"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    const label = document.getElementById('quoteSubmitLabel');
+                    const isInvoice = this.value === 'invoice_only';
+                    if (label) label.textContent = isInvoice ? 'Request Invoice' : 'Send Quote Request';
+                    // Update radio label borders
+                    document.querySelectorAll('input[name="paymentPref"]').forEach(function(r) {
+                        const lbl = r.closest('label');
+                        if (lbl) lbl.style.borderColor = r.checked ? 'var(--color-accent)' : 'var(--color-border)';
+                    });
+                });
+            });
         }
 
         function closeQuoteModal() {
@@ -1468,17 +1502,49 @@
             document.head.appendChild(s);
         }
 
-        window._onMapsReady = function() {
-            const input = document.getElementById('qCemetery');
-            if (!input) return;
-            const ac = new google.maps.places.Autocomplete(input, {
-                componentRestrictions: { country: 'gb' },
-                fields: ['name', 'formatted_address'],
-            });
-            ac.addListener('place_changed', () => {
-                const place = ac.getPlace();
-                input.value = place.name || input.value;
-            });
+        window._onMapsReady = async function() {
+            const wrap = document.querySelector('.cemetery-search-wrap');
+            const oldInput = document.getElementById('qCemetery');
+            if (!wrap || !oldInput) return;
+
+            // Use new PlaceAutocompleteElement (replaces deprecated Autocomplete)
+            try {
+                const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
+                const autocomplete = new PlaceAutocompleteElement({
+                    componentRestrictions: { country: 'gb' },
+                });
+                autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.9rem;';
+                autocomplete.id = 'qCemeteryAuto';
+                wrap.replaceChild(autocomplete, oldInput);
+
+                autocomplete.addEventListener('gmp-placeselect', async (event) => {
+                    const place = event.place;
+                    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+                    // Store in a hidden input for form submission
+                    let hiddenInput = document.getElementById('qCemeteryValue');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'qCemeteryValue';
+                        hiddenInput.name = 'cemetery';
+                        wrap.appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = place.displayName || place.formattedAddress || '';
+                });
+            } catch(e) {
+                // Fallback to original Autocomplete if PlaceAutocompleteElement not available
+                if (google.maps.places && google.maps.places.Autocomplete) {
+                    const ac = new google.maps.places.Autocomplete(oldInput, {
+                        componentRestrictions: { country: 'gb' },
+                        fields: ['name', 'formatted_address'],
+                    });
+                    ac.addListener('place_changed', () => {
+                        const place = ac.getPlace();
+                        oldInput.value = place.name || oldInput.value;
+                    });
+                }
+                console.warn('PlaceAutocompleteElement not available, using fallback:', e);
+            }
         };
 
         async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId) {
@@ -1539,7 +1605,7 @@
                 const lastName  = document.getElementById('qLastName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
-                const cemetery  = document.getElementById('qCemetery').value.trim();
+                const cemetery  = (document.getElementById('qCemeteryValue') || document.getElementById('qCemetery') || {value: ''}).value.trim();
                 const message   = document.getElementById('qMessage').value.trim();
 
                 const colour = document.getElementById('selectedColourName').textContent;
@@ -1557,12 +1623,14 @@
                             phone,
                             message,
                             location: cemetery || null,
+                            payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
                                 name:        'Classic Ogee Top Lawn Memorial',
                                 type:        'Lawn Headstone',
                                 colour:      colour,
                                 size:        document.getElementById('selectedSizeName').textContent,
                                 addons:      getSelectedAddons(),
+                            addonLineItems: getAddonLineItems(),
                                 inscription: state.inscription ? state.inscription.substring(0, 120) : '',
                                 price:       String(total),
                                 image:       PRODUCT_IMAGE_URL,
