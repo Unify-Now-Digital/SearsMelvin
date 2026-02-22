@@ -143,7 +143,19 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
 
-  return jsonResponse({ ok: true, invoiceId, invoiceOnly });
+  // 6. Stripe Invoice (only when customer chose invoice-only)
+  let stripeInvoiceUrl = null;
+  if (invoiceOnly && env.STRIPE_SECRET_KEY) {
+    try {
+      stripeInvoiceUrl = await createStripeInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location,
+      });
+    } catch (err) {
+      console.error("Stripe invoice creation failed:", err);
+    }
+  }
+
+  return jsonResponse({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl });
 }
 
 
@@ -650,6 +662,142 @@ async function createGHLContact(env, { name, email, phone, type, product }) {
   if (!res.ok) throw new Error(`GHL error ${res.status}: ${await res.text()}`);
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// STRIPE INVOICE HELPER
+// ═══════════════════════════════════════════════════════════════════
+/**
+ * Creates and finalises a Stripe Invoice for a quote request.
+ *
+ * Line items:
+ *   • Base memorial (product.price minus addon prices)
+ *   • Each addon (from product.addonLineItems or product.addons)
+ *   • Installation (if included in product price, shown as £0 line)
+ *
+ * The invoice is set to `send_invoice` with 30 days due and auto-finalised,
+ * which causes Stripe to email the PDF invoice directly to the customer.
+ *
+ * Returns the hosted invoice URL so it can be included in the business email.
+ */
+async function createStripeInvoice(stripeKey, { name, email, phone, product, location }) {
+  const stripePost = (path, params) => fetch(`https://api.stripe.com/v1${path}`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${stripeKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params),
+  }).then(async r => {
+    const json = await r.json();
+    if (json.error) throw new Error(`Stripe ${path}: ${json.error.message}`);
+    return json;
+  });
+
+  // 1. Find or create a Stripe Customer
+  const existingRes = await fetch(
+    `https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=1`,
+    { headers: { "Authorization": `Bearer ${stripeKey}` } }
+  ).then(r => r.json());
+
+  let customerId;
+  if (existingRes.data && existingRes.data.length > 0) {
+    customerId = existingRes.data[0].id;
+    // Update name/phone if we have it
+    await stripePost(`/customers/${customerId}`, {
+      name: name || "",
+      ...(phone ? { phone } : {}),
+    });
+  } else {
+    const customer = await stripePost("/customers", {
+      email,
+      name: name || "",
+      ...(phone ? { phone } : {}),
+      ...(location ? { "metadata[cemetery]": location } : {}),
+    });
+    customerId = customer.id;
+  }
+
+  // 2. Calculate line item amounts (in pence)
+  const totalPricePence = Math.round(parseFloat(product.price || 0) * 100);
+
+  // Work out addon total so we can derive the base memorial price
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems
+    : [];
+  const addonTotalPence = addonItems.reduce((sum, a) => sum + Math.round(parseFloat(a.price || 0) * 100), 0);
+
+  // Base price = total - addons (ensure ≥ 0)
+  const basePricePence = Math.max(0, totalPricePence - addonTotalPence);
+
+  const productDescription = [
+    product.name || "Memorial",
+    product.colour ? `· ${product.colour}` : "",
+    product.size ? `· ${product.size}` : "",
+  ].filter(Boolean).join(" ");
+
+  const invoiceMetadata = {
+    "metadata[customer_name]": name || "",
+    "metadata[product]": product.name || "",
+    "metadata[cemetery]": location || "",
+  };
+
+  // 3. Create invoice items (attached to customer, pending = attached to next invoice)
+  // Base memorial
+  await stripePost("/invoiceitems", {
+    customer: customerId,
+    amount: String(basePricePence),
+    currency: "gbp",
+    description: productDescription + " (inc. installation)",
+    ...invoiceMetadata,
+  });
+
+  // Each addon as a separate line item
+  for (const addon of addonItems) {
+    const addonPence = Math.round(parseFloat(addon.price || 0) * 100);
+    if (addonPence > 0) {
+      await stripePost("/invoiceitems", {
+        customer: customerId,
+        amount: String(addonPence),
+        currency: "gbp",
+        description: addon.name || "Add-on",
+        ...invoiceMetadata,
+      });
+    }
+  }
+
+  // If no addonLineItems with prices, just use addons as zero-value descriptive lines
+  if (addonItems.length === 0 && Array.isArray(product.addons) && product.addons.length > 0) {
+    for (const addonName of product.addons) {
+      await stripePost("/invoiceitems", {
+        customer: customerId,
+        amount: "0",
+        currency: "gbp",
+        description: addonName,
+        ...invoiceMetadata,
+      });
+    }
+  }
+
+  // 4. Create the Invoice
+  const invoice = await stripePost("/invoices", {
+    customer: customerId,
+    collection_method: "send_invoice",
+    days_until_due: "30",
+    auto_advance: "false",
+    description: `Sears Melvin Memorials — ${productDescription}`,
+    footer: "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance is due within 30 days.",
+    "metadata[customer_name]": name || "",
+    "metadata[product]": product.name || "",
+    "metadata[cemetery]": location || "",
+  });
+
+  // 5. Finalise — this generates the PDF and sends the invoice email to the customer
+  const finalised = await stripePost(`/invoices/${invoice.id}/finalize`, {
+    auto_advance: "true",
+  });
+
+  return finalised.hosted_invoice_url || null;
+}
 
 // ─── Helper: format a price string as "2,481" (no decimals, no £ prefix) ──────
 function formatPrice(str) {
