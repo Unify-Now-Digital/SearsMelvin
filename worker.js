@@ -67,8 +67,14 @@ export default {
         });
       }
       const { amount, name, email, cemetery, product: productName, invoiceId } = await request.json();
+      const parsedAmount = Number(amount);
+      if (!parsedAmount || parsedAmount <= 0) {
+        return new Response(JSON.stringify({ error: "Invalid amount" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const body = new URLSearchParams({
-        amount:                               String(Math.round(Number(amount) * 100)),
+        amount:                               String(Math.round(parsedAmount * 100)),
         currency:                             "gbp",
         "automatic_payment_methods[enabled]": "true",
         "metadata[customer_name]":            name         || "",
@@ -349,7 +355,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
     </td></tr>
     <tr><td style="padding:26px 28px 4px;">
       <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px;">New Website Enquiry</h2>
-      <p style="color:#AAA;font-size:12px;margin:0;">Received ${submittedAt}</p>
+      <p style="color:#AAA;font-size:12px;margin:0;">Received ${esc(submittedAt)}</p>
     </td></tr>
     <tr><td style="padding:20px 28px 0;"><hr style="border:none;border-top:1px solid #E0DCD5;margin:0;"></td></tr>
     <tr><td style="padding:20px 28px 0;">
