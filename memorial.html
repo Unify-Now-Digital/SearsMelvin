@@ -714,8 +714,12 @@
             </div>
             <div class="quote-config-summary">
                 <h3>Your Configuration</h3>
+                <div class="quote-config-row"><span>Memorial</span><span id="qsProduct">—</span></div>
                 <div class="quote-config-row"><span>Stone</span><span id="qsColour">—</span></div>
                 <div class="quote-config-row"><span>Size</span><span id="qsSize">—</span></div>
+                <div class="quote-config-row" id="qsFontRow" style="display:none"><span>Font</span><span id="qsFont">—</span></div>
+                <div class="quote-config-row" id="qsLetterColourRow" style="display:none"><span>Lettering</span><span id="qsLetterColour">—</span></div>
+                <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
                 <div id="qsExtrasContainer"></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
             </div>
@@ -1267,8 +1271,30 @@
 
         // ==================== QUOTE MODAL ====================
         function openQuoteModal() {
+            document.getElementById('qsProduct').textContent = productData ? productData.name : 'Memorial';
             document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
             document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
+
+            // Font
+            var fontRow = document.getElementById('qsFontRow');
+            if (state.font) {
+                document.getElementById('qsFont').textContent = state.font === 'script' ? 'Script' : 'Traditional';
+                fontRow.style.display = '';
+            } else { fontRow.style.display = 'none'; }
+
+            // Lettering colour
+            var lcRow = document.getElementById('qsLetterColourRow');
+            if (state.letterColour) {
+                document.getElementById('qsLetterColour').textContent = state.letterColour.charAt(0).toUpperCase() + state.letterColour.slice(1);
+                lcRow.style.display = '';
+            } else { lcRow.style.display = 'none'; }
+
+            // Inscription preview
+            var insRow = document.getElementById('qsInscriptionRow');
+            if (state.inscription && state.inscription.trim()) {
+                document.getElementById('qsInscription').textContent = state.inscription.substring(0, 80) + (state.inscription.length > 80 ? '…' : '');
+                insRow.style.display = '';
+            } else { insRow.style.display = 'none'; }
 
             const addonItems = getAddonLineItems();
             document.getElementById('qsExtrasContainer').innerHTML = addonItems.map(function(item) {
@@ -1462,6 +1488,8 @@
                                 addons:      getSelectedAddons(),
                             addonLineItems: getAddonLineItems(),
                                 inscription: state.inscription ? state.inscription.substring(0, 120) : '',
+                                font:        state.font || '',
+                                letterColour: state.letterColour || '',
                                 price:       String(total),
                                 image:       PRODUCT_IMAGE_URL,
                             }
