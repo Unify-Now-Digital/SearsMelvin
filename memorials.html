@@ -193,7 +193,7 @@
         .wizard-result-card { display: flex; gap: 1.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 1rem; transition: all 0.2s; }
         .wizard-result-card:hover { border-color: var(--color-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .wizard-result-image { width: 120px; height: 100px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
-        .wizard-result-image svg { width: 100%; height: 100%; }
+        .wizard-result-image svg, .wizard-result-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
         .wizard-result-info h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
         .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
         .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
@@ -207,7 +207,7 @@
         .compare-item { flex: 1; max-width: 250px; display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--color-warm); border-radius: 6px; position: relative; }
         .compare-item-empty { border: 2px dashed var(--color-border); background: transparent; justify-content: center; color: var(--color-text-muted); font-size: 0.9rem; min-height: 70px; }
         .compare-item-image { width: 50px; height: 50px; background: var(--color-cream); border-radius: 4px; }
-        .compare-item-image svg { width: 100%; height: 100%; }
+        .compare-item-image svg, .compare-item-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
         .compare-item-info h4 { font-size: 0.9rem; line-height: 1.2; }
         .compare-item-info p { font-size: 0.8rem; color: var(--color-text-muted); }
         .compare-item-remove { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -230,7 +230,7 @@
         .shortlist-empty svg { width: 48px; height: 48px; stroke: var(--color-border); margin-bottom: 1rem; }
         .shortlist-item { display: flex; gap: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 0.75rem; position: relative; }
         .shortlist-item-image { width: 70px; height: 60px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
-        .shortlist-item-image svg { width: 100%; height: 100%; }
+        .shortlist-item-image svg, .shortlist-item-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
         .shortlist-item-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
         .shortlist-item-info p { font-size: 0.85rem; color: var(--color-accent); font-weight: 600; }
         .shortlist-item-remove { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; cursor: pointer; padding: 0.25rem; }
@@ -668,7 +668,7 @@
                     '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
                 ).join('');
 
-                productsHTML += '<a href="memorial.html?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '"><div class="product-actions"><button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button><button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8</span></div><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="memorial.html?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action compare-btn" onclick="event.preventDefault(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button><button class="product-action save-btn" onclick="event.preventDefault(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8</span></div><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -777,7 +777,7 @@
             if (isActive) { state.compareList = state.compareList.filter(item => item.id !== id); btn.classList.remove('active'); }
             else {
                 if (state.compareList.length >= 3) { alert('You can compare up to 3 memorials at a time.'); return; }
-                state.compareList.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent });
+                state.compareList.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
                 btn.classList.add('active');
             }
             updateCompareUI();
@@ -797,7 +797,8 @@
                 for (let i = 0; i < 3; i++) {
                     if (state.compareList[i]) {
                         const item = state.compareList[i];
-                        html += '<div class="compare-item"><div class="compare-item-image"><svg viewBox="0 0 50 50"><rect width="50" height="50" fill="#e8e4dd"/><rect x="15" y="8" width="20" height="30" fill="#1a1a1a" rx="2"/><rect x="12" y="38" width="26" height="6" fill="#2a2a2a"/></svg></div><div class="compare-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="compare-item-remove" onclick="removeFromCompare(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                        var cImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
+                        html += '<div class="compare-item"><div class="compare-item-image">' + cImg + '</div><div class="compare-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="compare-item-remove" onclick="removeFromCompare(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                     } else {
                         html += '<div class="compare-item compare-item-empty">' + (i === 0 ? 'Add memorials to compare' : '') + '</div>';
                     }
@@ -832,7 +833,7 @@
             const isActive = btn.classList.contains('active');
             if (isActive) { state.shortlist = state.shortlist.filter(item => item.id !== id); btn.classList.remove('active'); }
             else {
-                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent });
+                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
                 btn.classList.add('active');
             }
             updateShortlistUI();
@@ -848,7 +849,8 @@
             } else {
                 let html = '';
                 state.shortlist.forEach(item => {
-                    html += '<div class="shortlist-item"><div class="shortlist-item-image"><svg viewBox="0 0 70 60"><rect width="70" height="60" fill="#e8e4dd"/><rect x="20" y="8" width="30" height="40" fill="#1a1a1a" rx="2"/><rect x="15" y="48" width="40" height="8" fill="#2a2a2a"/></svg></div><div class="shortlist-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                    var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
+                    html += '<div class="shortlist-item"><div class="shortlist-item-image">' + sImg + '</div><div class="shortlist-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
@@ -946,7 +948,8 @@
             if (recommended.length === 0) recommended = products.slice(0, 3);
             let html = '<h3>We recommend these memorials for you</h3>';
             recommended.forEach(p => {
-                html += '<a href="memorial.html?slug=' + p.dataset.name.toLowerCase().replace(/\s+/g, '-') + '" class="wizard-result-card"><div class="wizard-result-image"><svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="40" y="15" width="40" height="60" fill="#1a1a1a" rx="2"/><rect x="35" y="75" width="50" height="12" fill="#2a2a2a"/></svg></div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
+                var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
+                html += '<a href="memorial.html?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
             });
             results.innerHTML = html;
         }
@@ -990,7 +993,7 @@
                         shortlistIds.split(',').forEach(id => {
                             const card = document.querySelector('.product-card[data-id="' + id + '"]');
                             if (card) {
-                                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent });
+                                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
                                 const btn = card.querySelector('.save-btn');
                                 if (btn) btn.classList.add('active');
                             }
