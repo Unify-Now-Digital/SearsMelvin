@@ -533,8 +533,10 @@
             const graveField = document.getElementById('graveField');
             const photoField = document.getElementById('photoField');
             
-            cemeteryField.style.display = (type === 'new-memorial' || type === 'additional') ? 'block' : 'none';
-            graveField.style.display = (type === 'new-memorial' || type === 'additional') ? 'block' : 'none';
+            const showCemetery = (type === 'new-memorial' || type === 'additional');
+            cemeteryField.style.display = showCemetery ? 'block' : 'none';
+            if (!showCemetery) document.getElementById('cemetery').value = '';
+            graveField.style.display = showCemetery ? 'block' : 'none';
             photoField.style.display = (type === 'renovation') ? 'block' : 'none';
             
             // Update message placeholder
@@ -564,7 +566,7 @@
                 suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
             } else {
                 suggestions.innerHTML = matches.map(c => `
-                    <div class="cemetery-suggestion" onclick="selectCemetery('${c.name}', '${c.type}')">
+                    <div class="cemetery-suggestion" onclick="selectCemetery('${c.name.replace(/'/g, "\\'")}', '${c.type}')">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="cemetery-suggestion-text">
                             <span class="cemetery-suggestion-name">${c.name}</span>
@@ -666,37 +668,29 @@
         });
 
         function handleFileSelect(files) {
-            const preview = document.getElementById('filePreview');
-            
             Array.from(files).forEach(file => {
                 if (file.type.startsWith('image/') && uploadedFiles.length < 5) {
                     uploadedFiles.push(file);
-                    preview.innerHTML += `
-                        <div class="file-preview-item">
-                            <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
-                            <button type="button" onclick="removeFile('${file.name}')">
-                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                        </div>
-                    `;
                 }
             });
+            renderFilePreviews();
         }
 
-        function removeFile(name) {
-            uploadedFiles = uploadedFiles.filter(f => f.name !== name);
+        function renderFilePreviews() {
             const preview = document.getElementById('filePreview');
-            preview.innerHTML = '';
-            uploadedFiles.forEach(file => {
-                preview.innerHTML += `
-                    <div class="file-preview-item">
-                        <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
-                        <button type="button" onclick="removeFile('${file.name}')">
-                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                    </div>
-                `;
-            });
+            preview.innerHTML = uploadedFiles.map((file, i) => `
+                <div class="file-preview-item">
+                    <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
+                    <button type="button" onclick="removeFile(${i})">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFilePreviews();
         }
 
         // Form submission
@@ -773,7 +767,11 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('calmMode') === 'true') document.body.classList.add('calm-mode');
+            if (localStorage.getItem('calmMode') === 'true') {
+                document.body.classList.add('calm-mode');
+                const cb = document.getElementById('calmMode');
+                if (cb) cb.checked = true;
+            }
         });
     </script>
 </body>
