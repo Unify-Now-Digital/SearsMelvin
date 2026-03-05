@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classic Ogee Top | Sears Melvin Memorials</title>
-    <meta name="description" content="Classic Ogee Top Lawn Memorial - A timeless design featuring the elegant ogee curved top, hand-finished in premium granite.">
+    <title>Memorial | Sears Melvin Memorials</title>
+    <meta name="description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -553,8 +554,8 @@
 
             <!-- Product Info & Configurator -->
             <div class="product-info">
-                <span class="product-category animate-in">Lawn Headstone</span>
-                <h1 class="animate-in animate-delay-1">Classic Ogee Top Lawn Memorial</h1>
+                <span class="product-category animate-in" id="productCategory">Loading...</span>
+                <h1 class="animate-in animate-delay-1" id="productName">Loading...</h1>
                 
                 <div class="product-rating animate-in animate-delay-2">
                     <div class="stars">
@@ -567,12 +568,7 @@
                     <span class="rating-text">4.9 average · <a href="#reviews">23 reviews</a></span>
                 </div>
 
-                <p class="product-description animate-in animate-delay-3">
-                    A timeless design featuring the elegant ogee curved top, hand-finished in premium granite. 
-                    This classic memorial combines traditional craftsmanship with enduring quality, creating 
-                    a dignified tribute that will stand the test of time. Price includes nationwide installation 
-                    and our 30-year guarantee.
-                </p>
+                <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
 
                 <!-- Stone Colour - Live Updates SVG -->
                 <div class="option-group">
@@ -580,49 +576,8 @@
                         <span class="option-label">Stone Colour</span>
                         <span class="option-value" id="selectedColourName">Black Galaxy</span>
                     </div>
-                    <div class="colour-options">
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="black" data-name="Black Galaxy" data-primary="#1a1a1a" data-secondary="#252525" data-highlight="#2d2d2d" checked onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);"></span>
-                                <span class="colour-name">Black Galaxy</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="grey" data-name="Rustenberg Grey" data-primary="#5a5a5a" data-secondary="#6b6b6b" data-highlight="#7a7a7a" onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a5a5a 0%, #7a7a7a 50%, #6b6b6b 100%);"></span>
-                                <span class="colour-name">Rustenberg Grey</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="blue" data-name="Vizag Blue" data-primary="#1a2a3a" data-secondary="#243444" data-highlight="#2c3e50" onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1a2a3a 0%, #2c3e50 50%, #1a2a3a 100%);"></span>
-                                <span class="colour-name">Vizag Blue</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="brown" data-name="Indian Aurora" data-primary="#6B4423" data-secondary="#7a5030" data-highlight="#8B5A2B" onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #6B4423 0%, #8B5A2B 50%, #A0522D 100%);"></span>
-                                <span class="colour-name">Indian Aurora</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="green" data-name="Emerald Pearl" data-primary="#1d3a2e" data-secondary="#254438" data-highlight="#2d4a3e" onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #1d3a2e 0%, #2d4a3e 50%, #1d3a2e 100%);"></span>
-                                <span class="colour-name">Emerald Pearl</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
-                            <input type="radio" name="colour" value="red" data-name="Ruby Red" data-primary="#5a2028" data-secondary="#6a2830" data-highlight="#722F37" onchange="updateColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #5a2028 0%, #722F37 50%, #5a2028 100%);"></span>
-                                <span class="colour-name">Ruby Red</span>
-                            </div>
-                        </label>
+                    <div class="colour-options" id="stoneColourOptions">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading colours...</span>
                     </div>
                 </div>
 
@@ -630,65 +585,10 @@
                 <div class="option-group">
                     <div class="option-header">
                         <span class="option-label">Memorial Size</span>
-                        <span class="option-value" id="selectedSizeName">Standard (24" × 18" × 3")</span>
+                        <span class="option-value" id="selectedSizeName">Loading...</span>
                     </div>
-                    <div class="size-visual">
-                        <!-- Human reference for scale -->
-                        <div class="human-reference">
-                            <svg viewBox="0 0 40 120" stroke="#999" stroke-width="2" fill="none" stroke-linecap="round">
-                                <circle cx="20" cy="10" r="8"/>
-                                <line x1="20" y1="18" x2="20" y2="60"/>
-                                <line x1="8" y1="35" x2="32" y2="35"/>
-                                <line x1="20" y1="60" x2="10" y2="100"/>
-                                <line x1="20" y1="60" x2="30" y2="100"/>
-                            </svg>
-                            <span class="human-label">5'6" / 168cm</span>
-                        </div>
-                        
-                        <!-- Standard -->
-                        <label class="size-preview">
-                            <input type="radio" name="size" value="standard" data-name="Standard" data-dimensions="24&quot; × 18&quot; × 3&quot;" data-price="0" data-scale="1" checked onchange="updateSize(this)">
-                            <div class="size-memorial" style="height: 75px;">
-                                <svg viewBox="0 0 60 80" width="60" height="75">
-                                    <path d="M5 72 L5 22 Q5 10 15 4 Q30 -6 45 4 Q55 10 55 22 L55 72 Z" fill="var(--stone-primary)"/>
-                                    <rect x="2" y="72" width="56" height="6" fill="var(--stone-secondary)"/>
-                                </svg>
-                            </div>
-                            <div class="size-label">
-                                <strong>Standard</strong>
-                                <span class="size-dimensions">24" × 18" × 3"</span>
-                            </div>
-                        </label>
-                        
-                        <!-- Medium -->
-                        <label class="size-preview">
-                            <input type="radio" name="size" value="medium" data-name="Medium" data-dimensions="27&quot; × 21&quot; × 3&quot;" data-price="150" data-scale="1.15" onchange="updateSize(this)">
-                            <div class="size-memorial" style="height: 88px;">
-                                <svg viewBox="0 0 70 95" width="70" height="88">
-                                    <path d="M5 87 L5 27 Q5 12 17 5 Q35 -8 53 5 Q65 12 65 27 L65 87 Z" fill="var(--stone-primary)"/>
-                                    <rect x="2" y="87" width="66" height="7" fill="var(--stone-secondary)"/>
-                                </svg>
-                            </div>
-                            <div class="size-label">
-                                <strong>Medium +£150</strong>
-                                <span class="size-dimensions">27" × 21" × 3"</span>
-                            </div>
-                        </label>
-                        
-                        <!-- Large -->
-                        <label class="size-preview">
-                            <input type="radio" name="size" value="large" data-name="Large" data-dimensions="30&quot; × 24&quot; × 4&quot;" data-price="300" data-scale="1.3" onchange="updateSize(this)">
-                            <div class="size-memorial" style="height: 100px;">
-                                <svg viewBox="0 0 80 110" width="80" height="100">
-                                    <path d="M5 100 L5 32 Q5 14 19 6 Q40 -10 61 6 Q75 14 75 32 L75 100 Z" fill="var(--stone-primary)"/>
-                                    <rect x="2" y="100" width="76" height="8" fill="var(--stone-secondary)"/>
-                                </svg>
-                            </div>
-                            <div class="size-label">
-                                <strong>Large +£300</strong>
-                                <span class="size-dimensions">30" × 24" × 4"</span>
-                            </div>
-                        </label>
+                    <div class="size-visual" id="sizeOptions">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading sizes...</span>
                     </div>
                 </div>
 
@@ -766,55 +666,8 @@
                     </div>
 
                     <!-- Fixed 2-column card grid — never reflows -->
-                    <div class="addons-grid">
-                        <!-- Photo Plaque — compact card, no internal expansion -->
-                        <div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">
-                            <input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="160">
-                            <div class="addon-header">
-                                <div>
-                                    <div class="addon-name">Ceramic Photo Plaque</div>
-                                    <div class="addon-price" id="photoPriceLabel">+£160</div>
-                                </div>
-                                <span class="addon-check"></span>
-                            </div>
-                            <p class="addon-desc">Weather-resistant ceramic photo, professionally reproduced. Lasts 25+ years. Tap to choose size.</p>
-                        </div>
-
-                        <div class="addon-card" onclick="toggleAddon(this)">
-                            <input type="checkbox" name="addon" value="vase" data-price="85">
-                            <div class="addon-header">
-                                <div>
-                                    <div class="addon-name">Matching Flower Vase</div>
-                                    <div class="addon-price">+£85</div>
-                                </div>
-                                <span class="addon-check"></span>
-                            </div>
-                            <p class="addon-desc">Removable granite vase in matching stone colour.</p>
-                        </div>
-
-                        <div class="addon-card" onclick="toggleAddon(this)">
-                            <input type="checkbox" name="addon" value="design" data-price="120">
-                            <div class="addon-header">
-                                <div>
-                                    <div class="addon-name">Custom Design / Motif</div>
-                                    <div class="addon-price">+£120</div>
-                                </div>
-                                <span class="addon-check"></span>
-                            </div>
-                            <p class="addon-desc">Carved rose, cross, dove, or custom design of your choice.</p>
-                        </div>
-
-                        <label class="addon-card" onclick="toggleAddon(this)">
-                            <input type="checkbox" name="addon" value="extra-lettering" data-price="0">
-                            <div class="addon-header">
-                                <div>
-                                    <div class="addon-name">Extra Lettering</div>
-                                    <div class="addon-price">£2.40 / letter</div>
-                                </div>
-                                <span class="addon-check"></span>
-                            </div>
-                            <p class="addon-desc">Automatically calculated above 100 characters included.</p>
-                        </label>
+                    <div class="addons-grid" id="addonsGrid">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading extras...</span>
                     </div>
 
                     <!-- Photo size panel — sits BELOW the grid, never disrupts card positions -->
@@ -899,15 +752,8 @@
                 <!-- Features -->
                 <div class="features-section">
                     <h4 class="features-title">What's Included</h4>
-                    <div class="features-grid">
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Premium granite headstone</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Matching granite base</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 100 characters inscription</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Cemetery permit application</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Professional installation</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Photo on completion</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>30 year guarantee</div>
-                        <div class="feature-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Aftercare guide</div>
+                    <div class="features-grid" id="featuresGrid">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -918,8 +764,8 @@
             <div class="price-summary-inner">
                 <div class="price-breakdown">
                     <div class="price-row">
-                        <span>Classic Ogee Top Memorial</span>
-                        <span id="priceBase">£1,450</span>
+                        <span id="priceBaseName">Memorial</span>
+                        <span id="priceBase">—</span>
                     </div>
                     <div class="price-row" id="priceSizeRow" style="display: none;">
                         <span id="priceSizeLabel">Size upgrade</span>
@@ -935,7 +781,7 @@
                     </div>
                     <div class="price-row total">
                         <span>Total (fully installed)</span>
-                        <span class="price-total-display" id="priceTotal">£1,450</span>
+                        <span class="price-total-display" id="priceTotal">—</span>
                     </div>
                 </div>
                 <div class="price-actions">
@@ -958,7 +804,7 @@
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
         <div class="mobile-price">
-            <span id="mobilePriceTotal">£1,450</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
+            <span id="mobilePriceTotal">—</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
         </div>
         <div class="mobile-actions">
             <button class="btn btn-secondary" onclick="openQuoteModal()">Quote</button>
@@ -1091,14 +937,19 @@
     </div>
 
     <script>
-        // ── Product image URL shown in quote emails ──────────────────────────
-        // Set this to the publicly accessible image URL for this memorial.
-        // TODO: Replace with real product photograph URL (e.g. https://searsmelvin.co.uk/images/classic-ogee-top.jpg)
-        const PRODUCT_IMAGE_URL = 'https://searsmelvin.co.uk/classic-ogee-top.png';
+        // ==================== SUPABASE ====================
+        const SUPABASE_URL  = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+        let PRODUCT_IMAGE_URL = '';
+        let productData = null;
+        let charsIncluded = 80;
+        let pricePerChar = 2.40;
 
         // ==================== STATE ====================
         const state = {
-            basePrice: 1450,
+            basePrice: 0,
             sizePrice: 0,
             inscriptionPrice: 0,
             addonsPrice: 0,
@@ -1113,6 +964,162 @@
             colour: 'black',
             selectedSize: 'standard'
         };
+
+        // ==================== LOAD PRODUCT FROM SUPABASE ====================
+        async function loadProduct() {
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('slug');
+            if (!slug) { document.getElementById('productName').textContent = 'Product not found'; return; }
+
+            try {
+                // Fetch product with category
+                const { data: product, error: prodErr } = await supabase
+                    .from('products')
+                    .select('*, product_categories (name, slug)')
+                    .eq('slug', slug)
+                    .eq('is_active', true)
+                    .single();
+                if (prodErr || !product) { document.getElementById('productName').textContent = 'Product not found'; return; }
+
+                productData = product;
+                state.basePrice = parseFloat(product.base_price);
+                PRODUCT_IMAGE_URL = product.image_url || '';
+                charsIncluded = product.inscription_chars_included || 80;
+                pricePerChar = parseFloat(product.inscription_price_per_char) || 2.40;
+
+                // Fetch sizes, colours, addons in parallel
+                const [sizesRes, coloursRes, addonsRes] = await Promise.all([
+                    supabase.from('product_sizes').select('*').eq('product_id', product.id).order('display_order'),
+                    supabase.from('stone_colours').select('*').eq('is_active', true).order('display_order'),
+                    supabase.from('product_addons').select('*').eq('is_active', true).order('display_order')
+                ]);
+
+                // Populate page
+                document.title = product.name + ' | Sears Melvin Memorials';
+                document.getElementById('productCategory').textContent = product.product_categories?.name || 'Memorial';
+                document.getElementById('productName').textContent = product.name;
+                document.getElementById('productDescription').textContent = product.description + ' Price includes nationwide installation and our 30-year guarantee.';
+                document.getElementById('priceBaseName').textContent = product.name;
+                document.getElementById('priceBase').textContent = '£' + state.basePrice.toLocaleString();
+
+                // Render stone colours
+                renderStoneColours(coloursRes.data || []);
+
+                // Render sizes
+                renderSizes(sizesRes.data || []);
+
+                // Render addons
+                renderAddons(addonsRes.data || []);
+
+                // Render features
+                renderFeatures(product.included_features || []);
+
+                // Update inscription label
+                document.getElementById('charCounter').textContent = charsIncluded + ' characters included, then £' + pricePerChar.toFixed(2) + ' each';
+                document.querySelector('#charCount').parentElement.innerHTML = '<span id="charCount">0</span> / ' + charsIncluded + ' included';
+
+                updateTotalPrice();
+            } catch (err) {
+                console.error('Error loading product:', err);
+                document.getElementById('productName').textContent = 'Error loading product';
+            }
+        }
+
+        function renderStoneColours(colours) {
+            const container = document.getElementById('stoneColourOptions');
+            if (!colours.length) { container.innerHTML = '<span>No colours available</span>'; return; }
+            let html = '';
+            colours.forEach(function(c, i) {
+                const highlight = c.hex_secondary || c.hex_primary;
+                html += '<label class="colour-option">'
+                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '"' + (i === 0 ? ' checked' : '') + ' onchange="updateColour(this)">'
+                    + '<div class="colour-wrapper">'
+                    + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + c.hex_primary + ' 0%, ' + highlight + ' 50%, ' + c.hex_primary + ' 100%);"></span>'
+                    + '<span class="colour-name">' + c.name + '</span>'
+                    + '</div></label>';
+            });
+            container.innerHTML = html;
+            // Apply first colour
+            var first = container.querySelector('input[name="colour"]');
+            if (first) { updateColour(first); document.getElementById('selectedColourName').textContent = first.dataset.name; }
+        }
+
+        function renderSizes(sizes) {
+            const container = document.getElementById('sizeOptions');
+            if (!sizes.length) { container.innerHTML = '<span>No sizes available</span>'; return; }
+            const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
+            const heightMap = { 0: 75, 1: 88, 2: 100 };
+            let html = '';
+            sizes.forEach(function(s, i) {
+                const price = parseFloat(s.price_adjustment);
+                const scale = scaleMap[i] || (1 + i * 0.15);
+                const h = heightMap[i] || (75 + i * 13);
+                const w = Math.round(h * 0.8);
+                const vw = Math.round(w * 0.75);
+                const vh = Math.round(h * 1.1);
+                const priceLabel = price > 0 ? ' +£' + price.toLocaleString() : '';
+                html += '<label class="size-preview">'
+                    + '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + s.dimensions.replace(/"/g, '&quot;') + '" data-price="' + price + '" data-scale="' + scale + '"' + (s.is_default ? ' checked' : '') + ' onchange="updateSize(this)">'
+                    + '<div class="size-memorial" style="height: ' + h + 'px;">'
+                    + '<svg viewBox="0 0 ' + vw + ' ' + vh + '" width="' + w + '" height="' + h + '">'
+                    + '<path d="M5 ' + (vh-8) + ' L5 ' + Math.round(vh*0.28) + ' Q5 ' + Math.round(vh*0.1) + ' ' + Math.round(vw*0.25) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw*0.5) + ' ' + Math.round(-vh*0.06) + ' ' + Math.round(vw*0.75) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw-5) + ' ' + Math.round(vh*0.1) + ' ' + (vw-5) + ' ' + Math.round(vh*0.28) + ' L' + (vw-5) + ' ' + (vh-8) + ' Z" fill="var(--stone-primary)"/>'
+                    + '<rect x="2" y="' + (vh-8) + '" width="' + (vw-4) + '" height="' + Math.round(vh*0.07) + '" fill="var(--stone-secondary)"/>'
+                    + '</svg></div>'
+                    + '<div class="size-label"><strong>' + s.size_name + priceLabel + '</strong>'
+                    + '<span class="size-dimensions">' + s.dimensions + '</span></div></label>';
+            });
+            container.innerHTML = html;
+            // Set initial size label
+            var defaultSize = sizes.find(function(s) { return s.is_default; }) || sizes[0];
+            document.getElementById('selectedSizeName').textContent = defaultSize.size_name + ' (' + defaultSize.dimensions + ')';
+        }
+
+        function renderAddons(addons) {
+            const container = document.getElementById('addonsGrid');
+            let html = '';
+            // Photo Plaque addon (special handling)
+            var photoAddon = addons.find(function(a) { return a.slug === 'photo-plaque'; });
+            if (photoAddon) {
+                var photoPrice = parseFloat(photoAddon.price);
+                html += '<div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">'
+                    + '<input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="' + photoPrice + '">'
+                    + '<div class="addon-header"><div>'
+                    + '<div class="addon-name">' + photoAddon.name + '</div>'
+                    + '<div class="addon-price" id="photoPriceLabel">+£' + photoPrice + '</div>'
+                    + '</div><span class="addon-check"></span></div>'
+                    + '<p class="addon-desc">' + photoAddon.description + '</p></div>';
+            }
+            // Regular addons
+            addons.forEach(function(a) {
+                if (a.slug === 'photo-plaque') return;
+                var price = parseFloat(a.price);
+                html += '<div class="addon-card" onclick="toggleAddon(this)">'
+                    + '<input type="checkbox" name="addon" value="' + a.slug + '" data-price="' + price + '">'
+                    + '<div class="addon-header"><div>'
+                    + '<div class="addon-name">' + a.name + '</div>'
+                    + '<div class="addon-price">+£' + price.toLocaleString() + '</div>'
+                    + '</div><span class="addon-check"></span></div>'
+                    + '<p class="addon-desc">' + a.description + '</p></div>';
+            });
+            // Extra lettering addon (always present, calculated)
+            html += '<label class="addon-card" onclick="toggleAddon(this)">'
+                + '<input type="checkbox" name="addon" value="extra-lettering" data-price="0">'
+                + '<div class="addon-header"><div>'
+                + '<div class="addon-name">Extra Lettering</div>'
+                + '<div class="addon-price">£' + pricePerChar.toFixed(2) + ' / letter</div>'
+                + '</div><span class="addon-check"></span></div>'
+                + '<p class="addon-desc">Automatically calculated above ' + charsIncluded + ' characters included.</p></label>';
+            container.innerHTML = html;
+        }
+
+        function renderFeatures(features) {
+            const container = document.getElementById('featuresGrid');
+            if (!features || !features.length) { container.innerHTML = ''; return; }
+            const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+            container.innerHTML = features.map(function(f) {
+                return '<div class="feature-item">' + checkSvg + f + '</div>';
+            }).join('');
+        }
 
         const letterColourMap = {
             gold:     { fill: 'url(#goldLettering)', lowerFill: 'rgba(212,175,55,0.65)' },
@@ -1183,13 +1190,13 @@
             document.getElementById('charCount').textContent = charCount;
             const charBar = document.getElementById('charBarFill');
             const charCounter = document.getElementById('charCounter');
-            const pct = Math.min((charCount / 100) * 100, 100);
+            const pct = Math.min((charCount / charsIncluded) * 100, 100);
             charBar.style.width = pct + '%';
             charBar.classList.remove('warning','over');
             charCounter.classList.remove('warning','over');
-            if (charCount > 100) {
-                const extra = charCount - 100;
-                const cost  = parseFloat((extra * 2.40).toFixed(2));
+            if (charCount > charsIncluded) {
+                const extra = charCount - charsIncluded;
+                const cost  = parseFloat((extra * pricePerChar).toFixed(2));
                 charCounter.textContent = `${extra} extra chars = +£${cost.toFixed(2)}`;
                 charBar.classList.add('over');
                 charCounter.classList.add('over');
@@ -1197,13 +1204,13 @@
                 document.getElementById('priceInscriptionRow').style.display = 'flex';
                 document.getElementById('extraCharsCount').textContent = extra;
                 document.getElementById('priceInscription').textContent = `+£${cost.toFixed(2)}`;
-            } else if (charCount > 80) {
-                charCounter.textContent = `${100 - charCount} characters remaining`;
+            } else if (charCount > charsIncluded - 20) {
+                charCounter.textContent = `${charsIncluded - charCount} characters remaining`;
                 charBar.classList.add('warning');
                 state.inscriptionPrice = 0;
                 document.getElementById('priceInscriptionRow').style.display = 'none';
             } else {
-                charCounter.textContent = '100 characters included, then £2.40 each';
+                charCounter.textContent = charsIncluded + ' characters included, then £' + pricePerChar.toFixed(2) + ' each';
                 state.inscriptionPrice = 0;
                 document.getElementById('priceInscriptionRow').style.display = 'none';
             }
@@ -1611,7 +1618,8 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadProduct();
             loadConfig();
 
             const initialColour = document.querySelector('input[name="colour"]:checked');
@@ -1651,8 +1659,8 @@
                             location: cemetery || null,
                             payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
-                                name:        'Classic Ogee Top Lawn Memorial',
-                                type:        'Lawn Headstone',
+                                name:        productData ? productData.name : 'Memorial',
+                                type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
                                 colour:      colour,
                                 size:        document.getElementById('selectedSizeName').textContent,
                                 addons:      getSelectedAddons(),
@@ -1674,7 +1682,7 @@
                             document.getElementById('quoteSuccessMsg').textContent =
                                 'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.';
                         } else {
-                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, 'Classic Ogee Top Lawn Memorial', result.invoiceId);
+                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId);
                         }
                     } else {
                         throw new Error(result.error || 'Submission failed');
