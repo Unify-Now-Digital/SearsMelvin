@@ -17,7 +17,7 @@ const STONE_COLOURS = {
 };
 
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
@@ -68,7 +68,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, cemetery, message, product, stoneHex, submittedAt }),
+      html:    quoteBusinessEmail({ name, email, phone, location: cemetery, message, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);

@@ -232,7 +232,7 @@
         .faq-item.open .faq-icon { transform: rotate(180deg); background: var(--color-accent); }
         .faq-item.open .faq-icon svg { stroke: white; }
         .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
-        .faq-item.open .faq-answer { max-height: 300px; }
+        .faq-item.open .faq-answer { max-height: 1000px; }
         .faq-answer-inner { padding: 0 1.5rem 1.5rem; color: var(--color-text-muted); line-height: 1.7; }
 
         /* Memorial Care Guide Teaser */
@@ -363,7 +363,7 @@
         </button>
     </nav>
     <div class="mobile-nav" id="mobileNav">
-        <a href="#about">About</a>
+        <a href="#about" onclick="toggleMobileMenu()">About</a>
         <a href="memorials.html">Memorials</a>
         <a href="permit-checker.html">Permit Checker</a>
         <a href="faq.html">FAQ</a>
@@ -555,14 +555,14 @@
                 <div class="timeline-result">
                     <div class="timeline-date">
                         <span class="label">Start Today</span>
-                        <span class="date" id="startDate">17 Feb</span>
+                        <span class="date" id="startDate">Today</span>
                     </div>
                     <div class="timeline-arrow"></div>
                     <span class="timeline-weeks">12-18 weeks</span>
                     <div class="timeline-arrow"></div>
                     <div class="timeline-date">
                         <span class="label">Estimated Installation</span>
-                        <span class="date" id="endDate">May - Jul 2026</span>
+                        <span class="date" id="endDate">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -935,12 +935,12 @@
                 beforeImg.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
             }
 
-            slider.addEventListener('mousedown', () => isDragging = true);
+            container.addEventListener('mousedown', (e) => { isDragging = true; updateSlider(e.clientX); });
             document.addEventListener('mouseup', () => isDragging = false);
             document.addEventListener('mousemove', (e) => { if (isDragging) updateSlider(e.clientX); });
-            slider.addEventListener('touchstart', () => isDragging = true);
+            container.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches[0]) updateSlider(e.touches[0].clientX); }, { passive: true });
             document.addEventListener('touchend', () => isDragging = false);
-            document.addEventListener('touchmove', (e) => { if (isDragging && e.touches[0]) updateSlider(e.touches[0].clientX); });
+            document.addEventListener('touchmove', (e) => { if (isDragging && e.touches[0]) { e.preventDefault(); updateSlider(e.touches[0].clientX); } }, { passive: false });
         }
 
         // ==================== FAQ ====================

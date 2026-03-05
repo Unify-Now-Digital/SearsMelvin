@@ -59,6 +59,9 @@
         .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
         .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; }
 
         /* Page Header */
         .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
@@ -220,7 +223,7 @@
             <li><a href="care-guide.html">Care Guide</a></li>
             <li>
                 <label class="calm-toggle">
-                    <input type="checkbox" onchange="toggleCalmMode()">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
                     <span class="calm-switch"></span>
                     Calm
                 </label>
@@ -231,6 +234,14 @@
             <span></span><span></span><span></span>
         </button>
     </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="resources.html">Support</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
     <!-- Page Header -->
     <header class="page-header">
@@ -529,10 +540,17 @@
 
         function toggleCalmMode() {
             document.body.classList.toggle('calm-mode');
+            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
         }
 
         function toggleMobileMenu() {
-            // Mobile menu toggle
+            document.getElementById('mobileNav').classList.toggle('active');
+        }
+
+        // Restore calm mode from localStorage
+        if (localStorage.getItem('calmMode') === 'true') {
+            document.body.classList.add('calm-mode');
+            document.getElementById('calmMode').checked = true;
         }
 
         // Close suggestions when clicking outside

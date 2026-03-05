@@ -6,6 +6,7 @@
     <title>Memorial Range | Sears Melvin Memorials</title>
     <meta name="description" content="Browse our collection of beautifully crafted memorials. Lawn headstones, kerb sets, cremation memorials, and more.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -537,19 +538,6 @@
         </div>
     </div>
 
-    <footer>
-        <div class="footer-container">
-            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
-            <ul class="footer-links">
-                <li><a href="index.html#about">About</a></li>
-                <li><a href="memorials.html">Memorials</a></li>
-                <li><a href="index.html#process">Process</a></li>
-                <li><a href="contact.html">Contact</a></li>
-            </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-        </div>
-    </footer>
-
     <script>
         // ==================== SUPABASE CONFIG ====================
         const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
@@ -603,6 +591,7 @@
 
                 renderFilters();
                 renderProducts();
+                applyUrlFilters();
                 initScrollAnimations();
                 loadShortlistFromStorage();
             } catch (error) {
@@ -744,8 +733,8 @@
             const grid = document.getElementById('productsGrid');
             const sorted = [...products].sort((a, b) => {
                 switch(sortValue) {
-                    case 'price-low': return parseInt(a.dataset.priceValue) - parseInt(b.dataset.priceValue);
-                    case 'price-high': return parseInt(b.dataset.priceValue) - parseInt(a.dataset.priceValue);
+                    case 'price-low': return parseFloat(a.dataset.priceValue) - parseFloat(b.dataset.priceValue);
+                    case 'price-high': return parseFloat(b.dataset.priceValue) - parseFloat(a.dataset.priceValue);
                     case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
                     default: return 0;
                 }
@@ -917,7 +906,8 @@
             });
             document.getElementById('wizardBack').style.visibility = step > 1 ? 'visible' : 'hidden';
             document.getElementById('wizardNext').textContent = step === 3 ? 'Show Results' : step === 4 ? 'Browse All' : 'Next';
-            document.getElementById('wizardNext').disabled = step < 4 && !['cemetery', 'budget', 'style'][step-1].split('').some(() => state.wizard[['cemetery', 'budget', 'style'][step-1]]);
+            const wizardFields = ['cemetery', 'budget', 'style'];
+            document.getElementById('wizardNext').disabled = step < 4 && !state.wizard[wizardFields[step-1]];
             if (step === 4) {
                 generateWizardResults();
                 document.getElementById('wizardNext').onclick = () => { closeWizard(); clearAllFilters(); };
@@ -946,13 +936,29 @@
             document.getElementById('filtersOverlay').classList.remove('active');
         }
 
+        // ==================== URL PARAM FILTERS ====================
+        function applyUrlFilters() {
+            const params = new URLSearchParams(window.location.search);
+            const typeParam = params.get('type');
+            if (typeParam) {
+                const checkbox = document.querySelector('input[data-filter="type"][value="' + typeParam + '"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                    applyFilters();
+                }
+            }
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             const params = new URLSearchParams(window.location.search);
             const shortlistIds = params.get('shortlist');
             if (shortlistIds) {
+                let checkCount = 0;
                 const checkProducts = setInterval(() => {
+                    checkCount++;
+                    if (checkCount > 100) { clearInterval(checkProducts); return; }
                     if (products.length > 0) {
                         clearInterval(checkProducts);
                         shortlistIds.split(',').forEach(id => {

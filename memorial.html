@@ -53,6 +53,11 @@
         .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
         .nav-links a:hover { color: var(--color-accent); }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; }
 
         /* Calm Mode Toggle */
         .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
@@ -259,6 +264,7 @@
         }
         @media (max-width: 768px) {
             .nav-links { display: none; }
+            .mobile-menu-btn { display: flex; }
             .size-visual { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
             .human-reference { display: none; }
             .addons-grid { grid-template-columns: 1fr; }
@@ -293,6 +299,15 @@
         .quote-form-group input[type="radio"] { width: auto; padding: 0; border: none; border-radius: 0; background: transparent; flex-shrink: 0; margin-top: 2px; }
         .quote-form-group input:focus, .quote-form-group textarea:focus { border-color: var(--color-accent); }
         .quote-form-group textarea { resize: vertical; min-height: 80px; }
+        .cem-autocomplete { position: relative; }
+        .cem-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid var(--color-border); border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+        .cem-suggestions.active { display: block; }
+        .cem-suggestion { padding: 0.6rem 0.875rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
+        .cem-suggestion:hover { background: var(--color-warm); }
+        .cem-suggestion-name { font-size: 0.875rem; color: var(--color-text); }
+        .cem-suggestion-area { font-size: 0.75rem; color: var(--color-text-muted); }
+        .cem-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 3px; background: var(--color-warm); color: var(--color-text-muted); }
+        #qCemeteryMap { height: 200px; border-radius: 6px; margin-top: 0.5rem; display: none; }
         .quote-required { color: var(--color-accent); }
         .quote-submit-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.25rem; }
         .quote-submit-btn:hover { background: var(--color-stone-light); }
@@ -367,7 +382,16 @@
             </li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
     </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="resources.html">Support</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
     <div class="breadcrumb-bar">
         <div class="breadcrumb">
@@ -546,42 +570,42 @@
                     </div>
                     <div class="colour-options">
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="black" data-name="Black Galaxy" data-primary="#1a1a1a" data-secondary="#252525" checked onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="black" data-name="Black Galaxy" data-primary="#1a1a1a" data-secondary="#252525" data-highlight="#2d2d2d" checked onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);"></span>
                                 <span class="colour-name">Black Galaxy</span>
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="grey" data-name="Rustenberg Grey" data-primary="#5a5a5a" data-secondary="#6b6b6b" onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="grey" data-name="Rustenberg Grey" data-primary="#5a5a5a" data-secondary="#6b6b6b" data-highlight="#7a7a7a" onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #5a5a5a 0%, #7a7a7a 50%, #6b6b6b 100%);"></span>
                                 <span class="colour-name">Rustenberg Grey</span>
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="blue" data-name="Vizag Blue" data-primary="#1a2a3a" data-secondary="#243444" onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="blue" data-name="Vizag Blue" data-primary="#1a2a3a" data-secondary="#243444" data-highlight="#2c3e50" onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #1a2a3a 0%, #2c3e50 50%, #1a2a3a 100%);"></span>
                                 <span class="colour-name">Vizag Blue</span>
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="brown" data-name="Indian Aurora" data-primary="#6B4423" data-secondary="#7a5030" onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="brown" data-name="Indian Aurora" data-primary="#6B4423" data-secondary="#7a5030" data-highlight="#8B5A2B" onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #6B4423 0%, #8B5A2B 50%, #A0522D 100%);"></span>
                                 <span class="colour-name">Indian Aurora</span>
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="green" data-name="Emerald Pearl" data-primary="#1d3a2e" data-secondary="#254438" onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="green" data-name="Emerald Pearl" data-primary="#1d3a2e" data-secondary="#254438" data-highlight="#2d4a3e" onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #1d3a2e 0%, #2d4a3e 50%, #1d3a2e 100%);"></span>
                                 <span class="colour-name">Emerald Pearl</span>
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="colour" value="red" data-name="Ruby Red" data-primary="#5a2028" data-secondary="#6a2830" onchange="updateColour(this)">
+                            <input type="radio" name="colour" value="red" data-name="Ruby Red" data-primary="#5a2028" data-secondary="#6a2830" data-highlight="#722F37" onchange="updateColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #5a2028 0%, #722F37 50%, #5a2028 100%);"></span>
                                 <span class="colour-name">Ruby Red</span>
@@ -1387,6 +1411,11 @@
             thumb.classList.add('active');
         }
 
+        // ==================== MOBILE MENU ====================
+        function toggleMobileMenu() {
+            document.getElementById('mobileNav').classList.toggle('active');
+        }
+
         // ==================== CALM MODE ====================
         function toggleCalmMode() {
             document.body.classList.toggle('calm-mode');
@@ -1488,8 +1517,8 @@
         }
 
         window._onMapsReady = async function() {
-            const wrap = document.querySelector('.cemetery-search-wrap');
-            const oldInput = document.getElementById('qCemetery');
+            const wrap = document.querySelector('.cem-autocomplete');
+            const oldInput = document.getElementById('qCemeteryInput');
             if (!wrap || !oldInput) return;
 
             // Use new PlaceAutocompleteElement (replaces deprecated Autocomplete)
