@@ -846,9 +846,12 @@
 
         // Select single option
         function selectOption(card, category, value) {
+            const stepEl = document.querySelector('.step.active');
+            const grid = stepEl ? stepEl.querySelector('.options-grid') : null;
+            if (grid) {
+                grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            }
             if (card) {
-                const container = card.closest('.options-grid');
-                container.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
             }
             selections[category] = value;
