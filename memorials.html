@@ -159,7 +159,7 @@
         .no-results button { padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-body); }
         .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(4px); }
         .wizard-overlay.active { display: flex; }
-        .wizard-modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow: hidden; animation: scaleIn 0.3s ease; }
+        .wizard-modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; animation: scaleIn 0.3s ease; }
         .wizard-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
         .wizard-header h2 { font-size: 1.5rem; }
         .wizard-close { background: none; border: none; cursor: pointer; padding: 0.5rem; }
@@ -197,7 +197,7 @@
         .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
         .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
         .wizard-result-match svg { width: 14px; height: 14px; stroke: currentColor; }
-        .compare-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--color-accent); padding: 1.5rem 2rem; z-index: 90; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
+        .compare-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--color-accent); padding: 1.5rem 2rem; z-index: 90; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); max-height: 50vh; overflow-y: auto; }
         .compare-panel.active { transform: translateY(0); }
         .compare-panel-inner { max-width: 1200px; margin: 0 auto; }
         .compare-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
@@ -245,7 +245,7 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; }
         .footer-links a:hover { color: white; }
         .filters-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
@@ -260,6 +260,14 @@
             .mobile-menu-btn { display: flex; }
             .shortlist-panel { width: 100%; right: -100%; }
         }
+        @media (max-width: 768px) {
+            body { padding-bottom: 70px; }
+            .compare-panel.active { bottom: 70px; }
+            .floating-actions { bottom: calc(70px + 1rem); }
+            .product-actions { opacity: 1; transform: translateX(0); }
+            .product-card:hover { transform: none; }
+            .page-header { padding: 6rem 1rem 2rem; }
+        }
         @media (max-width: 600px) {
             .products-grid { grid-template-columns: 1fr; }
             .footer-container { flex-direction: column; text-align: center; }
@@ -267,6 +275,8 @@
             .compare-items { flex-direction: column; }
             .compare-item { max-width: none; }
             .colour-swatches { grid-template-columns: repeat(2, 1fr); }
+            .page-header h1 { font-size: 1.8rem; }
+            .wizard-modal { max-height: 85vh; }
         }
     </style>
 </head>
@@ -529,6 +539,7 @@
         </div>
         <div class="shortlist-footer">
             <div class="shortlist-share">
+                <label for="shareLink" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Share link</label>
                 <input type="text" id="shareLink" value="" placeholder="Share link will appear here" readonly>
             </div>
             <div class="shortlist-actions">
@@ -664,12 +675,23 @@
 
         // ==================== SCROLL ANIMATIONS ====================
         function initScrollAnimations() {
+            const revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
+            // Immediately reveal elements already in the viewport
+            revealEls.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    el.classList.add('visible');
+                }
+            });
+            // Observe for elements that will scroll into view later
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) { entry.target.classList.add('visible'); }
                 });
             }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-            document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => observer.observe(el));
+            revealEls.forEach(el => {
+                if (!el.classList.contains('visible')) observer.observe(el);
+            });
         }
 
         // ==================== SCROLL TO TOP ====================
@@ -978,16 +1000,16 @@
     </script>
 
     <!-- Footer -->
-    <footer style="padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.5);">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="font-family: var(--font-display); font-size: 1.25rem; color: white;">Sears Melvin <span style="font-weight: 300; opacity: 0.5;">Memorials</span></div>
-            <ul style="display: flex; gap: 2rem; list-style: none; flex-wrap: wrap;">
-                <li><a href="index.html#about" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">About</a></li>
-                <li><a href="memorials.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Memorials</a></li>
-                <li><a href="faq.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">FAQ</a></li>
-                <li><a href="care-guide.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Care Guide</a></li>
-                <li><a href="resources.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Support</a></li>
-                <li><a href="contact.html" style="color: rgba(255,255,255,0.5); font-size: 0.875rem;">Contact</a></li>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <ul class="footer-links">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="memorials.html">Memorials</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="care-guide.html">Care Guide</a></li>
+                <li><a href="resources.html">Support</a></li>
+                <li><a href="contact.html">Contact</a></li>
             </ul>
             <p style="font-size: 0.8rem;">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>

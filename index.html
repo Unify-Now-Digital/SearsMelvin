@@ -875,6 +875,15 @@
     <script>
         // ==================== SCROLL ANIMATIONS ====================
         function initScrollAnimations() {
+            const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-stagger');
+            // Immediately reveal elements already in the viewport
+            revealEls.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    el.classList.add('visible');
+                }
+            });
+            // Observe for elements that will scroll into view later
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -882,8 +891,9 @@
                     }
                 });
             }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
-            document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-stagger').forEach(el => observer.observe(el));
+            revealEls.forEach(el => {
+                if (!el.classList.contains('visible')) observer.observe(el);
+            });
         }
 
         // ==================== NAV SCROLL ====================
