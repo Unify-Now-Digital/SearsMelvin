@@ -396,7 +396,12 @@
                 // Check localStorage
                 const stored = localStorage.getItem('smm_compare');
                 if (stored) {
-                    compareItems = JSON.parse(stored);
+                    try {
+                        compareItems = JSON.parse(stored);
+                    } catch (e) {
+                        compareItems = [];
+                        localStorage.removeItem('smm_compare');
+                    }
                     if (compareItems.length > 0) {
                         loadCompareItems();
                     }
