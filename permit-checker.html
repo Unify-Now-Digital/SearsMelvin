@@ -381,30 +381,36 @@
     </nav>
 
     <script>
-        // Cemetery Database — North London
-        const cemeteries = [
-            { id: 'islington-st-pancras', name: 'Islington & St Pancras Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 420, weeks: '10-14', installed: '20+' },
-            { id: 'st-marylebone', name: 'St Marylebone Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '8-12', installed: '18+' },
-            { id: 'highgate', name: 'Highgate Cemetery', area: 'Highgate, North London', postcode: 'N6', kerb: false, lawn: true, cremation: false, fee: 480, weeks: '14-18', installed: '10+', note: 'historic' },
-            { id: 'tottenham', name: 'Tottenham Cemetery', area: 'Tottenham, North London', postcode: 'N17', kerb: true, lawn: true, cremation: true, fee: 360, weeks: '10-14', installed: '13+' },
-            { id: 'tottenham-park', name: 'Tottenham Park Cemetery', area: 'Edmonton, North London', postcode: 'N18', kerb: true, lawn: true, cremation: true, fee: 370, weeks: '10-14', installed: '15+' },
-            { id: 'edmonton', name: 'Edmonton Cemetery', area: 'Edmonton, North London', postcode: 'N9', kerb: true, lawn: true, cremation: true, fee: 385, weeks: '10-14', installed: '15+' },
-            { id: 'southgate', name: 'Southgate Cemetery', area: 'Southgate, North London', postcode: 'N14', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '12-16', installed: '9+' },
-            { id: 'new-southgate', name: 'New Southgate Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: true, lawn: true, cremation: true, fee: 380, weeks: '8-12', installed: '22+' },
-            { id: 'great-northern', name: 'Great Northern London Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: false, lawn: true, cremation: true, fee: 350, weeks: '10-14', installed: '16+' },
-            { id: 'enfield', name: 'Enfield Crematorium & Cemetery', area: 'Enfield, North London', postcode: 'EN1', kerb: false, lawn: true, cremation: true, fee: 340, weeks: '8-12', installed: '12+' },
-            { id: 'hertford-road', name: 'Hertford Road Cemetery', area: 'Enfield, North London', postcode: 'EN3', kerb: true, lawn: true, cremation: true, fee: 365, weeks: '10-14', installed: '14+' },
-            { id: 'lavender-hill', name: 'Lavender Hill Cemetery', area: 'Enfield, North London', postcode: 'EN2', kerb: true, lawn: true, cremation: true, fee: 375, weeks: '8-12', installed: '11+' },
-            { id: 'hendon', name: 'Hendon Cemetery & Crematorium', area: 'Hendon, North London', postcode: 'NW7', kerb: true, lawn: true, cremation: true, fee: 410, weeks: '10-14', installed: '18+' },
-            { id: 'hampstead', name: 'Hampstead Cemetery', area: 'Fortune Green, North London', postcode: 'NW6', kerb: false, lawn: true, cremation: false, fee: 320, weeks: '12-16', installed: '8+', note: 'conservation' },
-            { id: 'paddington-old', name: 'Paddington Old Cemetery', area: 'Kilburn, North London', postcode: 'NW6', kerb: true, lawn: true, cremation: true, fee: 355, weeks: '8-12', installed: '14+' },
-            { id: 'east-finchley', name: 'East Finchley Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 390, weeks: '10-14', installed: '20+' },
-            { id: 'wood-green', name: 'Wood Green Cemetery', area: 'Wood Green, North London', postcode: 'N22', kerb: true, lawn: true, cremation: true, fee: 345, weeks: '8-12', installed: '16+' },
-            { id: 'brunswick-park', name: 'Brunswick Park Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: false, lawn: true, cremation: true, fee: 330, weeks: '10-14', installed: '10+' },
-            { id: 'trent-park', name: 'Trent Park Cemetery', area: 'Cockfosters, North London', postcode: 'EN4', kerb: false, lawn: true, cremation: true, fee: 360, weeks: '12-16', installed: '8+' },
-            { id: 'stoke-newington', name: 'Stoke Newington Cemetery', area: 'Stoke Newington, North London', postcode: 'N16', kerb: true, lawn: true, cremation: true, fee: 370, weeks: '10-14', installed: '12+' },
-            { id: 'abney-park', name: 'Abney Park Cemetery', area: 'Stoke Newington, North London', postcode: 'N16', kerb: false, lawn: true, cremation: false, fee: 290, weeks: '14-18', installed: '6+', note: 'historic' }
-        ];
+        // Cemetery Database — loaded from Supabase
+        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzODk2MDYsImV4cCI6MjA2MTk2NTYwNn0.091FETrC_5IL3PxKusRRthLJ2MnufjMZbFhzOmEjXZo';
+        const SB_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+        let cemeteries = [];
+        (async function loadCemeteries() {
+            try {
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=slug,name,area,region,postcode,kerb_allowed,lawn_section,cremation_section,permit_fee,processing_weeks,installed_count,note&is_active=eq.true&order=display_order';
+                const res = await fetch(url, { headers: SB_HEADERS });
+                if (!res.ok) throw new Error(res.status);
+                const rows = await res.json();
+                cemeteries = rows.map(r => ({
+                    id: r.slug,
+                    name: r.name,
+                    area: r.area,
+                    region: r.region,
+                    postcode: r.postcode,
+                    kerb: r.kerb_allowed,
+                    lawn: r.lawn_section,
+                    cremation: r.cremation_section,
+                    fee: r.permit_fee,
+                    weeks: r.processing_weeks,
+                    installed: r.installed_count,
+                    note: r.note
+                }));
+            } catch (e) {
+                console.warn('Cemetery load failed:', e);
+            }
+        })();
 
         function searchCemetery(query) {
             const suggestions = document.getElementById('suggestions');
@@ -414,11 +420,12 @@
             }
 
             const q = query.toLowerCase();
-            const matches = cemeteries.filter(c => 
-                c.name.toLowerCase().includes(q) || 
-                c.area.toLowerCase().includes(q) || 
-                c.postcode.toLowerCase().includes(q)
-            ).slice(0, 5);
+            const matches = cemeteries.filter(c =>
+                c.name.toLowerCase().includes(q) ||
+                c.area.toLowerCase().includes(q) ||
+                c.postcode.toLowerCase().includes(q) ||
+                c.region.toLowerCase().includes(q)
+            ).slice(0, 8);
 
             if (matches.length === 0) {
                 suggestions.innerHTML = '<div class="suggestion" style="color: var(--color-text-muted); justify-content: center;">No cemeteries found. <a href="contact.html" style="color: var(--color-accent); margin-left: 0.5rem;">Ask us about this cemetery</a></div>';
@@ -433,7 +440,7 @@
                     </div>
                     <div class="suggestion-text">
                         <div class="suggestion-name">${c.name}</div>
-                        <div class="suggestion-area">${c.area} · ${c.postcode}</div>
+                        <div class="suggestion-area">${c.area} · ${c.postcode} · ${c.region}</div>
                     </div>
                     <span class="suggestion-badge ${c.kerb ? 'kerb' : 'lawn'}">${c.kerb ? 'Kerb OK' : 'Lawn Only'}</span>
                 </div>

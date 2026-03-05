@@ -496,32 +496,29 @@
     </footer>
 
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-        // Cemetery database — North London cemeteries
-        const cemeteries = [
-            { name: 'Islington & St Pancras Cemetery', area: 'East Finchley, N2', type: 'kerb' },
-            { name: 'St Marylebone Cemetery', area: 'East Finchley, N2', type: 'kerb' },
-            { name: 'Highgate Cemetery', area: 'Highgate, N6', type: 'lawn' },
-            { name: 'Tottenham Cemetery', area: 'Tottenham, N17', type: 'kerb' },
-            { name: 'Tottenham Park Cemetery', area: 'Edmonton, N18', type: 'kerb' },
-            { name: 'Edmonton Cemetery', area: 'Edmonton, N9', type: 'kerb' },
-            { name: 'Southgate Cemetery', area: 'Southgate, N14', type: 'kerb' },
-            { name: 'New Southgate Cemetery', area: 'New Southgate, N11', type: 'kerb' },
-            { name: 'Great Northern London Cemetery', area: 'New Southgate, N11', type: 'lawn' },
-            { name: 'Enfield Crematorium & Cemetery', area: 'Enfield, EN1', type: 'lawn' },
-            { name: 'Hertford Road Cemetery', area: 'Enfield, EN3', type: 'kerb' },
-            { name: 'Lavender Hill Cemetery', area: 'Enfield, EN2', type: 'kerb' },
-            { name: 'Hendon Cemetery & Crematorium', area: 'Hendon, NW7', type: 'kerb' },
-            { name: 'Hampstead Cemetery', area: 'Fortune Green, NW6', type: 'lawn' },
-            { name: 'Paddington Old Cemetery', area: 'Kilburn, NW6', type: 'kerb' },
-            { name: 'East Finchley Cemetery', area: 'East Finchley, N2', type: 'kerb' },
-            { name: 'Finchley (St Marylebone) Cemetery', area: 'Finchley, N2', type: 'kerb' },
-            { name: 'Wood Green Cemetery', area: 'Wood Green, N22', type: 'kerb' },
-            { name: 'Brunswick Park Cemetery', area: 'New Southgate, N11', type: 'lawn' },
-            { name: 'Trent Park Cemetery', area: 'Cockfosters, EN4', type: 'lawn' },
-            { name: 'Arnos Vale Cemetery', area: 'Arnos Grove, N14', type: 'kerb' },
-            { name: 'Stoke Newington Cemetery', area: 'Stoke Newington, N16', type: 'kerb' },
-            { name: 'Abney Park Cemetery', area: 'Stoke Newington, N16', type: 'lawn' },
-        ];
+        // Supabase config
+        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SB_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+        // Cemetery data from Supabase
+        let cemeteries = [];
+        (async function loadCemeteries() {
+            try {
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed&is_active=eq.true&order=display_order';
+                const res = await fetch(url, { headers: SB_HEADERS });
+                if (!res.ok) throw new Error(res.status);
+                const rows = await res.json();
+                cemeteries = rows.map(r => ({
+                    name: r.name,
+                    area: r.area + ', ' + r.postcode,
+                    region: r.region,
+                    type: r.kerb_allowed ? 'kerb' : 'lawn'
+                }));
+            } catch (e) {
+                console.warn('Cemetery load failed, using empty list:', e);
+            }
+        })();
 
         // Enquiry type selection
         function selectEnquiryType(el, type) {
@@ -556,12 +553,14 @@
                 suggestions.classList.remove('active');
                 return;
             }
-            
-            const matches = cemeteries.filter(c => 
-                c.name.toLowerCase().includes(query.toLowerCase()) ||
-                c.area.toLowerCase().includes(query.toLowerCase())
-            );
-            
+
+            const q = query.toLowerCase();
+            const matches = cemeteries.filter(c =>
+                c.name.toLowerCase().includes(q) ||
+                c.area.toLowerCase().includes(q) ||
+                c.region.toLowerCase().includes(q)
+            ).slice(0, 8);
+
             if (matches.length === 0) {
                 suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
             } else {
@@ -570,7 +569,7 @@
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="cemetery-suggestion-text">
                             <span class="cemetery-suggestion-name">${c.name}</span>
-                            <span class="cemetery-suggestion-area">${c.area}</span>
+                            <span class="cemetery-suggestion-area">${c.area} · ${c.region}</span>
                         </span>
                         <span class="cemetery-badge ${c.type}">${c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only'}</span>
                     </div>
