@@ -223,7 +223,7 @@
             <li><a href="care-guide.html">Care Guide</a></li>
             <li>
                 <label class="calm-toggle">
-                    <input type="checkbox" onchange="toggleCalmMode()">
+                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
                     <span class="calm-switch"></span>
                     Calm
                 </label>
@@ -540,10 +540,17 @@
 
         function toggleCalmMode() {
             document.body.classList.toggle('calm-mode');
+            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
         }
 
         function toggleMobileMenu() {
             document.getElementById('mobileNav').classList.toggle('active');
+        }
+
+        // Restore calm mode from localStorage
+        if (localStorage.getItem('calmMode') === 'true') {
+            document.body.classList.add('calm-mode');
+            document.getElementById('calmMode').checked = true;
         }
 
         // Close suggestions when clicking outside
