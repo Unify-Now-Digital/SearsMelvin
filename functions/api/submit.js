@@ -258,6 +258,14 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                       <td style="color:#999999;padding:4px 0;vertical-align:top;">Size</td>
                       <td style="color:#1A1A1A;padding:4px 0;">${esc(product.size)}</td>
                     </tr>` : ""}
+                    ${product.font ? `<tr>
+                      <td style="color:#999999;padding:4px 0;vertical-align:top;">Font</td>
+                      <td style="color:#1A1A1A;padding:4px 0;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td>
+                    </tr>` : ""}
+                    ${product.letterColour ? `<tr>
+                      <td style="color:#999999;padding:4px 0;vertical-align:top;">Lettering colour</td>
+                      <td style="color:#1A1A1A;padding:4px 0;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td>
+                    </tr>` : ""}
                   </table>
 
                   <!-- Line items table -->
@@ -469,6 +477,14 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
                       <td style="color:#999999;padding:3px 0;vertical-align:top;">Size</td>
                       <td style="color:#2C2C2C;">${esc(product.size)}</td>
                     </tr>` : ""}
+                    ${product.font ? `<tr>
+                      <td style="color:#999999;padding:3px 0;vertical-align:top;">Font</td>
+                      <td style="color:#2C2C2C;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td>
+                    </tr>` : ""}
+                    ${product.letterColour ? `<tr>
+                      <td style="color:#999999;padding:3px 0;vertical-align:top;">Lettering colour</td>
+                      <td style="color:#2C2C2C;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td>
+                    </tr>` : ""}
                   </table>
 
                   <!-- Price breakdown -->
@@ -628,6 +644,8 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
     `• Type: ${product.type || "—"}`,
     `• Stone: ${product.colour || "—"}`,
     `• Size: ${product.size || "—"}`,
+    product.font ? `• Font: ${product.font === 'script' ? 'Script' : 'Traditional'}` : "",
+    product.letterColour ? `• Lettering colour: ${product.letterColour}` : "",
     `• Extras: ${addons}`,
     product.inscription ? `• Inscription: "${product.inscription}"` : "",
     `• Guide total: £${formatPrice(product.price)}`, "",
