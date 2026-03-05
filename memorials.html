@@ -124,7 +124,14 @@
         .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
         .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
         .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; }
+        @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
+        .product-card:nth-child(1) { animation-delay: 0s; }
+        .product-card:nth-child(2) { animation-delay: 0.05s; }
+        .product-card:nth-child(3) { animation-delay: 0.1s; }
+        .product-card:nth-child(4) { animation-delay: 0.15s; }
+        .product-card:nth-child(5) { animation-delay: 0.2s; }
+        .product-card:nth-child(6) { animation-delay: 0.25s; }
         .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
         .product-card.hidden { display: none; }
         .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
@@ -360,7 +367,7 @@
                             <svg viewBox="0 0 24 24" stroke-width="2" fill="none"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
                             Filters
                         </button>
-                        <span class="results-count">Showing <span id="resultsCount">10</span> memorials</span>
+                        <span class="results-count">Showing <span id="resultsCount">...</span> memorials</span>
                     </div>
                     <div class="sort-dropdown">
                         <select id="sortSelect" onchange="sortProducts()">
@@ -371,7 +378,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="products-grid reveal-stagger" id="productsGrid">
+                <div class="products-grid" id="productsGrid">
                     <div id="productsLoading" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
                         <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--color-accent); fill: none; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
                         <p style="margin-top: 1rem; color: var(--color-text-muted);">Loading memorials...</p>
@@ -600,12 +607,16 @@
                 renderFilters();
                 renderProducts();
                 applyUrlFilters();
-                initScrollAnimations();
                 loadShortlistFromStorage();
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('productsLoading').innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Error loading memorials. Please refresh the page.</p>';
+                const loadingEl = document.getElementById('productsLoading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Error loading memorials. Please refresh the page.</p>';
+                }
+                document.getElementById('resultsCount').textContent = '0';
             }
+            initScrollAnimations();
         }
 
         // ==================== RENDER FILTERS ====================
