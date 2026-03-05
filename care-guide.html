@@ -25,9 +25,6 @@
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
 
-        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
-        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
@@ -48,12 +45,6 @@
         .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
         .nav-links a:hover { color: var(--color-accent); }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
-        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
-        .calm-toggle input { display: none; }
-        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
-        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
-        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
-        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
         .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
         .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
@@ -206,13 +197,6 @@
             <li><a href="memorials.html">Memorials</a></li>
             <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
-            <li>
-                <label class="calm-toggle">
-                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
-                    <span class="calm-switch"></span>
-                    Calm
-                </label>
-            </li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
@@ -517,12 +501,6 @@
             document.getElementById('mobileNav').classList.toggle('active');
         }
 
-        // Calm mode
-        function toggleCalmMode() {
-            document.body.classList.toggle('calm-mode');
-            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
-        }
-
         // Smooth scroll for TOC links
         document.querySelectorAll('.toc-list a').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -539,10 +517,6 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             initScrollReveal();
-            if (localStorage.getItem('calmMode') === 'true') {
-                document.body.classList.add('calm-mode');
-                document.getElementById('calmMode').checked = true;
-            }
         });
     </script>
 </body>

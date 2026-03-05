@@ -25,10 +25,6 @@
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
 
-        /* Calm Mode */
-        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
-        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
@@ -51,12 +47,6 @@
         .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
         .nav-links a:hover { color: var(--color-accent); }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
-        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
-        .calm-toggle input { display: none; }
-        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
-        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
-        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
-        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
         .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
         .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
@@ -221,13 +211,6 @@
             <li><a href="memorials.html">Memorials</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="care-guide.html">Care Guide</a></li>
-            <li>
-                <label class="calm-toggle">
-                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
-                    <span class="calm-switch"></span>
-                    Calm
-                </label>
-            </li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -398,23 +381,29 @@
     </nav>
 
     <script>
-        // Cemetery Database
+        // Cemetery Database — North London
         const cemeteries = [
-            { id: 'greenford-park', name: 'Greenford Park Cemetery', area: 'Ealing, West London', postcode: 'UB6', kerb: true, lawn: true, cremation: true, fee: 375, weeks: '8-12', installed: '24+' },
-            { id: 'lambeth', name: 'Lambeth Cemetery', area: 'Tooting, South London', postcode: 'SW17', kerb: true, lawn: true, cremation: true, fee: 420, weeks: '10-14', installed: '18+' },
-            { id: 'hither-green', name: 'Hither Green Cemetery', area: 'Lewisham, South East London', postcode: 'SE6', kerb: true, lawn: true, cremation: true, fee: 350, weeks: '8-12', installed: '30+' },
-            { id: 'edmonton', name: 'Edmonton Cemetery', area: 'Enfield, North London', postcode: 'N9', kerb: true, lawn: true, cremation: true, fee: 385, weeks: '10-14', installed: '15+' },
-            { id: 'nunhead', name: 'Nunhead Cemetery', area: 'Southwark, South London', postcode: 'SE15', kerb: false, lawn: true, cremation: true, fee: 280, weeks: '12-16', installed: '12+', note: 'historic' },
-            { id: 'streatham', name: 'Streatham Cemetery', area: 'Lambeth, South London', postcode: 'SW16', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '8-12', installed: '20+' },
-            { id: 'west-norwood', name: 'West Norwood Cemetery', area: 'Lambeth, South London', postcode: 'SE27', kerb: false, lawn: true, cremation: true, fee: 320, weeks: '14-18', installed: '8+', note: 'conservation' },
-            { id: 'camberwell', name: 'Camberwell New Cemetery', area: 'Southwark, South London', postcode: 'SE23', kerb: true, lawn: true, cremation: true, fee: 365, weeks: '10-14', installed: '16+' },
-            { id: 'greenwich', name: 'Greenwich Cemetery', area: 'Greenwich, South East London', postcode: 'SE18', kerb: true, lawn: true, cremation: true, fee: 410, weeks: '10-14', installed: '22+' },
-            { id: 'plumstead', name: 'Plumstead Cemetery', area: 'Greenwich, South East London', postcode: 'SE18', kerb: true, lawn: true, cremation: true, fee: 380, weeks: '8-12', installed: '14+' },
-            { id: 'woolwich', name: 'Woolwich Cemetery', area: 'Greenwich, South East London', postcode: 'SE18', kerb: true, lawn: true, cremation: true, fee: 390, weeks: '10-12', installed: '19+' },
-            { id: 'catford', name: 'Catford Cemetery', area: 'Lewisham, South East London', postcode: 'SE6', kerb: true, lawn: true, cremation: true, fee: 355, weeks: '8-12', installed: '25+' },
-            { id: 'brockley', name: 'Brockley Cemetery', area: 'Lewisham, South East London', postcode: 'SE4', kerb: true, lawn: true, cremation: true, fee: 340, weeks: '8-10', installed: '11+' },
-            { id: 'tottenham', name: 'Tottenham Cemetery', area: 'Haringey, North London', postcode: 'N17', kerb: true, lawn: true, cremation: true, fee: 360, weeks: '10-14', installed: '13+' },
-            { id: 'southgate', name: 'Southgate Cemetery', area: 'Enfield, North London', postcode: 'N14', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '12-16', installed: '9+' }
+            { id: 'islington-st-pancras', name: 'Islington & St Pancras Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 420, weeks: '10-14', installed: '20+' },
+            { id: 'st-marylebone', name: 'St Marylebone Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '8-12', installed: '18+' },
+            { id: 'highgate', name: 'Highgate Cemetery', area: 'Highgate, North London', postcode: 'N6', kerb: false, lawn: true, cremation: false, fee: 480, weeks: '14-18', installed: '10+', note: 'historic' },
+            { id: 'tottenham', name: 'Tottenham Cemetery', area: 'Tottenham, North London', postcode: 'N17', kerb: true, lawn: true, cremation: true, fee: 360, weeks: '10-14', installed: '13+' },
+            { id: 'tottenham-park', name: 'Tottenham Park Cemetery', area: 'Edmonton, North London', postcode: 'N18', kerb: true, lawn: true, cremation: true, fee: 370, weeks: '10-14', installed: '15+' },
+            { id: 'edmonton', name: 'Edmonton Cemetery', area: 'Edmonton, North London', postcode: 'N9', kerb: true, lawn: true, cremation: true, fee: 385, weeks: '10-14', installed: '15+' },
+            { id: 'southgate', name: 'Southgate Cemetery', area: 'Southgate, North London', postcode: 'N14', kerb: true, lawn: true, cremation: true, fee: 395, weeks: '12-16', installed: '9+' },
+            { id: 'new-southgate', name: 'New Southgate Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: true, lawn: true, cremation: true, fee: 380, weeks: '8-12', installed: '22+' },
+            { id: 'great-northern', name: 'Great Northern London Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: false, lawn: true, cremation: true, fee: 350, weeks: '10-14', installed: '16+' },
+            { id: 'enfield', name: 'Enfield Crematorium & Cemetery', area: 'Enfield, North London', postcode: 'EN1', kerb: false, lawn: true, cremation: true, fee: 340, weeks: '8-12', installed: '12+' },
+            { id: 'hertford-road', name: 'Hertford Road Cemetery', area: 'Enfield, North London', postcode: 'EN3', kerb: true, lawn: true, cremation: true, fee: 365, weeks: '10-14', installed: '14+' },
+            { id: 'lavender-hill', name: 'Lavender Hill Cemetery', area: 'Enfield, North London', postcode: 'EN2', kerb: true, lawn: true, cremation: true, fee: 375, weeks: '8-12', installed: '11+' },
+            { id: 'hendon', name: 'Hendon Cemetery & Crematorium', area: 'Hendon, North London', postcode: 'NW7', kerb: true, lawn: true, cremation: true, fee: 410, weeks: '10-14', installed: '18+' },
+            { id: 'hampstead', name: 'Hampstead Cemetery', area: 'Fortune Green, North London', postcode: 'NW6', kerb: false, lawn: true, cremation: false, fee: 320, weeks: '12-16', installed: '8+', note: 'conservation' },
+            { id: 'paddington-old', name: 'Paddington Old Cemetery', area: 'Kilburn, North London', postcode: 'NW6', kerb: true, lawn: true, cremation: true, fee: 355, weeks: '8-12', installed: '14+' },
+            { id: 'east-finchley', name: 'East Finchley Cemetery', area: 'East Finchley, North London', postcode: 'N2', kerb: true, lawn: true, cremation: true, fee: 390, weeks: '10-14', installed: '20+' },
+            { id: 'wood-green', name: 'Wood Green Cemetery', area: 'Wood Green, North London', postcode: 'N22', kerb: true, lawn: true, cremation: true, fee: 345, weeks: '8-12', installed: '16+' },
+            { id: 'brunswick-park', name: 'Brunswick Park Cemetery', area: 'New Southgate, North London', postcode: 'N11', kerb: false, lawn: true, cremation: true, fee: 330, weeks: '10-14', installed: '10+' },
+            { id: 'trent-park', name: 'Trent Park Cemetery', area: 'Cockfosters, North London', postcode: 'EN4', kerb: false, lawn: true, cremation: true, fee: 360, weeks: '12-16', installed: '8+' },
+            { id: 'stoke-newington', name: 'Stoke Newington Cemetery', area: 'Stoke Newington, North London', postcode: 'N16', kerb: true, lawn: true, cremation: true, fee: 370, weeks: '10-14', installed: '12+' },
+            { id: 'abney-park', name: 'Abney Park Cemetery', area: 'Stoke Newington, North London', postcode: 'N16', kerb: false, lawn: true, cremation: false, fee: 290, weeks: '14-18', installed: '6+', note: 'historic' }
         ];
 
         function searchCemetery(query) {
@@ -538,19 +527,8 @@
             document.getElementById('cemeterySearch').focus();
         }
 
-        function toggleCalmMode() {
-            document.body.classList.toggle('calm-mode');
-            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
-        }
-
         function toggleMobileMenu() {
             document.getElementById('mobileNav').classList.toggle('active');
-        }
-
-        // Restore calm mode from localStorage
-        if (localStorage.getItem('calmMode') === 'true') {
-            document.body.classList.add('calm-mode');
-            document.getElementById('calmMode').checked = true;
         }
 
         // Close suggestions when clicking outside

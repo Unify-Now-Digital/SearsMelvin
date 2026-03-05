@@ -24,10 +24,6 @@
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
 
-        /* Calm Mode */
-        body.calm-mode { --color-cream: #F5F3F0; --color-warm: #EBE8E3; --color-accent: #9A8B7A; font-size: 1.05rem; }
-        body.calm-mode * { animation-duration: 0s !important; transition-duration: 0.1s !important; }
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
@@ -59,13 +55,6 @@
         .mobile-nav.active { display: block; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); }
 
-        /* Calm Mode Toggle */
-        .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
-        .calm-toggle input { display: none; }
-        .calm-switch { width: 36px; height: 20px; background: var(--color-border); border-radius: 10px; position: relative; transition: background 0.3s; }
-        .calm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.3s; }
-        .calm-toggle input:checked + .calm-switch { background: var(--color-accent); }
-        .calm-toggle input:checked + .calm-switch::after { transform: translateX(16px); }
 
         /* Page Header */
         .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
@@ -74,45 +63,48 @@
 
         /* Contact Layout */
         .contact-section { padding: 4rem 2rem; }
-        .contact-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem; }
+        .contact-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem; align-items: start; }
 
         /* Contact Info */
-        .contact-info { padding: 2rem 0; }
-        .contact-intro { margin-bottom: 2.5rem; }
-        .contact-intro h2 { font-size: 1.75rem; margin-bottom: 1rem; }
-        .contact-intro p { line-height: 1.8; }
+        .contact-info { padding: 0; position: sticky; top: 100px; }
+        .contact-intro { margin-bottom: 2rem; }
+        .contact-intro h2 { font-size: 2rem; margin-bottom: 0.75rem; }
+        .contact-intro p { line-height: 1.8; font-size: 1.05rem; }
 
-        .contact-methods { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem; }
-        .contact-method { display: flex; gap: 1rem; padding: 1.25rem; background: white; border-radius: 8px; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
-        .contact-method:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-        .contact-method-icon { width: 48px; height: 48px; background: var(--color-warm); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .contact-method-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
-        .contact-method-content h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
-        .contact-method-content p { font-size: 0.9rem; margin-bottom: 0.25rem; }
+        .contact-methods { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+        .contact-method { display: flex; gap: 1.25rem; padding: 1.5rem; background: white; border-radius: 12px; border: 1px solid var(--color-border); transition: all 0.3s; cursor: pointer; text-decoration: none; }
+        .contact-method:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); border-color: var(--color-accent); }
+        .contact-method-icon { width: 52px; height: 52px; background: linear-gradient(135deg, var(--color-warm), rgba(139,115,85,0.15)); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.3s; }
+        .contact-method:hover .contact-method-icon { background: var(--color-accent); }
+        .contact-method-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; transition: stroke 0.3s; }
+        .contact-method:hover .contact-method-icon svg { stroke: white; }
+        .contact-method-content { display: flex; flex-direction: column; justify-content: center; }
+        .contact-method-content h4 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--color-stone); }
+        .contact-method-content p { font-size: 0.95rem; margin-bottom: 0.15rem; }
         .contact-method-content a { color: var(--color-accent); font-weight: 500; }
         .contact-method-content small { font-size: 0.8rem; color: var(--color-text-muted); }
 
         /* Reassurance */
-        .reassurance { padding: 1.5rem; background: rgba(74, 124, 89, 0.08); border-radius: 8px; border-left: 4px solid var(--color-success); }
+        .reassurance { padding: 1.5rem; background: white; border-radius: 12px; border: 1px solid rgba(74, 124, 89, 0.2); }
         .reassurance h4 { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; color: var(--color-success); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
         .reassurance h4 svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; }
         .reassurance p { font-size: 0.9rem; line-height: 1.6; }
 
         /* Smart Form */
-        .contact-form-wrapper { background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        .contact-form-wrapper { background: white; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 10px 40px rgba(0,0,0,0.06); border: 1px solid var(--color-border); }
         .form-header { margin-bottom: 2rem; }
         .form-header h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .form-header p { font-size: 0.95rem; }
 
         /* Enquiry Type Selector */
-        .enquiry-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
-        .enquiry-type { padding: 1.25rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s; }
-        .enquiry-type:hover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.03); }
-        .enquiry-type.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
+        .enquiry-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.875rem; margin-bottom: 2rem; }
+        .enquiry-type { padding: 1.25rem 1rem; border: 2px solid var(--color-border); border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.25s; }
+        .enquiry-type:hover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.03); transform: translateY(-2px); }
+        .enquiry-type.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.06); box-shadow: 0 0 0 1px var(--color-accent); }
         .enquiry-type input { display: none; }
-        .enquiry-type-icon { width: 48px; height: 48px; margin: 0 auto 0.75rem; background: var(--color-warm); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .enquiry-type-icon { width: 48px; height: 48px; margin: 0 auto 0.75rem; background: var(--color-warm); border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.25s; }
         .enquiry-type.selected .enquiry-type-icon { background: var(--color-accent); }
-        .enquiry-type-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; transition: stroke 0.3s; }
+        .enquiry-type-icon svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; transition: stroke 0.25s; }
         .enquiry-type.selected .enquiry-type-icon svg { stroke: white; }
         .enquiry-type-label { font-weight: 600; font-size: 0.95rem; color: var(--color-stone); }
         .enquiry-type-desc { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem; }
@@ -128,17 +120,18 @@
         .form-group label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.5rem; }
         .form-group label .required { color: var(--color-error); }
 
-        .form-input, .form-select, .form-textarea { 
-            width: 100%; padding: 0.875rem 1rem; 
-            border: 2px solid var(--color-border); border-radius: 6px; 
-            font-family: var(--font-body); font-size: 1rem; 
-            background: white;
-            transition: border-color 0.3s, box-shadow 0.3s; 
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 0.875rem 1rem;
+            border: 1.5px solid var(--color-border); border-radius: 8px;
+            font-family: var(--font-body); font-size: 1rem;
+            background: var(--color-cream);
+            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
         }
-        .form-input:focus, .form-select:focus, .form-textarea:focus { 
-            outline: none; 
-            border-color: var(--color-accent); 
-            box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.1);
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.08);
+            background: white;
         }
         .form-input::placeholder, .form-textarea::placeholder { color: #bbb; }
         .form-textarea { min-height: 140px; resize: vertical; }
@@ -192,16 +185,17 @@
         .appointment-slot.selected .time { color: rgba(255,255,255,0.8); }
 
         /* Submit Button */
-        .form-submit { 
-            width: 100%; padding: 1.125rem; margin-top: 1rem;
-            background: var(--color-stone); color: white; 
-            border: none; border-radius: 6px; 
-            font-family: var(--font-body); font-size: 1rem; font-weight: 500;
+        .form-submit {
+            width: 100%; padding: 1.125rem; margin-top: 1.5rem;
+            background: var(--color-accent); color: white;
+            border: none; border-radius: 10px;
+            font-family: var(--font-body); font-size: 1rem; font-weight: 600;
+            letter-spacing: 0.02em;
             cursor: pointer; transition: all 0.3s;
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
         }
-        .form-submit:hover { background: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
-        .form-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .form-submit:hover { background: var(--color-stone); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,44,44,0.2); }
+        .form-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
         .form-submit svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
 
         .form-footer { margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
@@ -220,14 +214,19 @@
         /* Mobile */
         @media (max-width: 1024px) {
             .contact-container { grid-template-columns: 1fr; gap: 2rem; }
+            .contact-info { position: static; }
+            .contact-methods { flex-direction: row; flex-wrap: wrap; }
+            .contact-method { flex: 1; min-width: 220px; }
         }
         @media (max-width: 768px) {
             .nav-links { display: none; }
             .mobile-menu-btn { display: block; }
-            .enquiry-type-grid { grid-template-columns: 1fr; }
+            .enquiry-type-grid { grid-template-columns: repeat(2, 1fr); }
             .form-row { grid-template-columns: 1fr; }
             .appointment-grid { grid-template-columns: repeat(2, 1fr); }
-            .contact-method { flex-direction: column; text-align: center; }
+            .contact-methods { flex-direction: column; }
+            .contact-method { min-width: 0; }
+            .contact-form-wrapper { padding: 1.5rem; }
         }
  
         /* Footer */
@@ -255,13 +254,6 @@
             <li><a href="memorials.html">Memorials</a></li>
             <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
-            <li>
-                <label class="calm-toggle">
-                    <input type="checkbox" id="calmMode" onchange="toggleCalmMode()">
-                    <span class="calm-switch"></span>
-                    Calm
-                </label>
-            </li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -320,7 +312,7 @@
                         </div>
                         <div class="contact-method-content">
                             <h4>Visit our showroom</h4>
-                            <p>South London</p>
+                            <p>North London</p>
                             <small>By appointment only</small>
                         </div>
                     </div>
@@ -504,23 +496,31 @@
     </footer>
 
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-        // Cemetery database (would be from API in production)
+        // Cemetery database — North London cemeteries
         const cemeteries = [
-            { name: 'Lambeth Cemetery', area: 'Tooting, SW17', type: 'kerb' },
-            { name: 'Streatham Cemetery', area: 'Streatham, SW16', type: 'lawn' },
-            { name: 'West Norwood Cemetery', area: 'West Norwood, SE27', type: 'kerb' },
-            { name: 'Camberwell Old Cemetery', area: 'Honor Oak, SE23', type: 'kerb' },
-            { name: 'Camberwell New Cemetery', area: 'Honor Oak, SE23', type: 'lawn' },
-            { name: 'Nunhead Cemetery', area: 'Nunhead, SE15', type: 'kerb' },
-            { name: 'Lewisham & Grove Park Cemetery', area: 'Grove Park, SE12', type: 'kerb' },
-            { name: 'Hither Green Cemetery', area: 'Hither Green, SE13', type: 'kerb' },
-            { name: 'Brockley Cemetery', area: 'Brockley, SE4', type: 'kerb' },
-            { name: 'Greenwich Cemetery', area: 'Charlton, SE7', type: 'lawn' },
-            { name: 'Woolwich Cemetery', area: 'Woolwich, SE18', type: 'kerb' },
-            { name: 'Plumstead Cemetery', area: 'Plumstead, SE18', type: 'kerb' },
-            { name: 'Eltham Cemetery', area: 'Eltham, SE9', type: 'lawn' },
-            { name: 'Edmonton Cemetery', area: 'Edmonton, N9', type: 'kerb' },
+            { name: 'Islington & St Pancras Cemetery', area: 'East Finchley, N2', type: 'kerb' },
+            { name: 'St Marylebone Cemetery', area: 'East Finchley, N2', type: 'kerb' },
+            { name: 'Highgate Cemetery', area: 'Highgate, N6', type: 'lawn' },
+            { name: 'Tottenham Cemetery', area: 'Tottenham, N17', type: 'kerb' },
             { name: 'Tottenham Park Cemetery', area: 'Edmonton, N18', type: 'kerb' },
+            { name: 'Edmonton Cemetery', area: 'Edmonton, N9', type: 'kerb' },
+            { name: 'Southgate Cemetery', area: 'Southgate, N14', type: 'kerb' },
+            { name: 'New Southgate Cemetery', area: 'New Southgate, N11', type: 'kerb' },
+            { name: 'Great Northern London Cemetery', area: 'New Southgate, N11', type: 'lawn' },
+            { name: 'Enfield Crematorium & Cemetery', area: 'Enfield, EN1', type: 'lawn' },
+            { name: 'Hertford Road Cemetery', area: 'Enfield, EN3', type: 'kerb' },
+            { name: 'Lavender Hill Cemetery', area: 'Enfield, EN2', type: 'kerb' },
+            { name: 'Hendon Cemetery & Crematorium', area: 'Hendon, NW7', type: 'kerb' },
+            { name: 'Hampstead Cemetery', area: 'Fortune Green, NW6', type: 'lawn' },
+            { name: 'Paddington Old Cemetery', area: 'Kilburn, NW6', type: 'kerb' },
+            { name: 'East Finchley Cemetery', area: 'East Finchley, N2', type: 'kerb' },
+            { name: 'Finchley (St Marylebone) Cemetery', area: 'Finchley, N2', type: 'kerb' },
+            { name: 'Wood Green Cemetery', area: 'Wood Green, N22', type: 'kerb' },
+            { name: 'Brunswick Park Cemetery', area: 'New Southgate, N11', type: 'lawn' },
+            { name: 'Trent Park Cemetery', area: 'Cockfosters, EN4', type: 'lawn' },
+            { name: 'Arnos Vale Cemetery', area: 'Arnos Grove, N14', type: 'kerb' },
+            { name: 'Stoke Newington Cemetery', area: 'Stoke Newington, N16', type: 'kerb' },
+            { name: 'Abney Park Cemetery', area: 'Stoke Newington, N16', type: 'lawn' },
         ];
 
         // Enquiry type selection
@@ -754,25 +754,11 @@
             }
         });
 
-        // Calm mode toggle
-        function toggleCalmMode() {
-            document.body.classList.toggle('calm-mode');
-            localStorage.setItem('calmMode', document.body.classList.contains('calm-mode'));
-        }
-
         // Mobile menu
         function toggleMobileMenu() {
             document.getElementById('mobileNav').classList.toggle('active');
         }
 
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('calmMode') === 'true') {
-                document.body.classList.add('calm-mode');
-                const cb = document.getElementById('calmMode');
-                if (cb) cb.checked = true;
-            }
-        });
     </script>
 </body>
 </html>
