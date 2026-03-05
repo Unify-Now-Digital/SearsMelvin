@@ -538,19 +538,6 @@
         </div>
     </div>
 
-    <footer>
-        <div class="footer-container">
-            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
-            <ul class="footer-links">
-                <li><a href="index.html#about">About</a></li>
-                <li><a href="memorials.html">Memorials</a></li>
-                <li><a href="index.html#process">Process</a></li>
-                <li><a href="contact.html">Contact</a></li>
-            </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-        </div>
-    </footer>
-
     <script>
         // ==================== SUPABASE CONFIG ====================
         const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
@@ -746,8 +733,8 @@
             const grid = document.getElementById('productsGrid');
             const sorted = [...products].sort((a, b) => {
                 switch(sortValue) {
-                    case 'price-low': return parseInt(a.dataset.priceValue) - parseInt(b.dataset.priceValue);
-                    case 'price-high': return parseInt(b.dataset.priceValue) - parseInt(a.dataset.priceValue);
+                    case 'price-low': return parseFloat(a.dataset.priceValue) - parseFloat(b.dataset.priceValue);
+                    case 'price-high': return parseFloat(b.dataset.priceValue) - parseFloat(a.dataset.priceValue);
                     case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
                     default: return 0;
                 }
