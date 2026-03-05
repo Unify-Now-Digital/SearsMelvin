@@ -41,6 +41,7 @@ export async function onRequestPost(context) {
     timeZone: "Europe/London", dateStyle: "medium", timeStyle: "short",
   });
   if (data.type === "quote") return handleQuoteRequest(env, data, submittedAt);
+  if (data.type === "appointment") return handleAppointment(env, data, submittedAt);
   return handleEnquiry(env, data, submittedAt);
 }
 
@@ -161,6 +162,187 @@ async function handleEnquiry(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
   return jsonResponse({ ok: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// APPOINTMENT BOOKING
+// ═══════════════════════════════════════════════════════════════════
+
+async function handleAppointment(env, data, submittedAt) {
+  const { name, email, phone, appointment_type, appointment_date, appointment_time, notes } = data;
+  if (!appointment_date || !appointment_time)
+    return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
+
+  const firstName = name.split(" ")[0];
+  const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call" };
+  const typeLabel = typeLabels[appointment_type] || appointment_type;
+  const dateFormatted = new Date(appointment_date + "T00:00:00").toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  // 1. Google Calendar event
+  let calendarLink = null;
+  try {
+    calendarLink = await createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel });
+  } catch (err) {
+    console.error("Google Calendar event creation failed:", err);
+  }
+
+  // 2. Business notification email
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: BUSINESS_EMAIL,
+      subject: `New Appointment Request — ${typeLabel} — ${name}`,
+      html: appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }),
+    });
+  } catch (err) {
+    console.error("Failed to send appointment business email:", err);
+    return jsonResponse({ ok: false, error: "Failed to send notification" }, 500);
+  }
+
+  // 3. Customer confirmation email
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      subject: `Appointment request received — ${BUSINESS_NAME}`,
+      html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
+    });
+  } catch (err) {
+    console.error("Failed to send appointment customer email:", err);
+  }
+
+  // 4. ClickUp task
+  try {
+    await createClickUpTask(env.CLICKUP_API_KEY, {
+      name: `Appointment — ${typeLabel} — ${name}`,
+      description: `=== APPOINTMENT REQUEST ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n\nAPPOINTMENT\n• Type: ${typeLabel}\n• Date: ${dateFormatted}\n• Time: ${appointment_time}\n• Notes: ${notes || "None"}\n\n---\nSubmitted: ${submittedAt}`,
+      listId: CLICKUP_LIST_ID,
+    });
+  } catch (err) {
+    console.error("Failed to create ClickUp appointment task:", err);
+  }
+
+  // 5. Supabase
+  try {
+    await insertSupabaseRecord(env, { type: "appointment", name, email, phone, enquiry_type: appointment_type });
+  } catch (err) {
+    console.error("Supabase appointment insert failed:", err);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
+async function createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel }) {
+  if (!env.GOOGLE_SERVICE_ACCOUNT_KEY || !env.GOOGLE_CALENDAR_ID) return null;
+
+  const serviceAccount = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_KEY);
+  const token = await getGoogleAccessToken(serviceAccount);
+
+  const startDateTime = `${appointment_date}T${appointment_time}:00`;
+  const endHour = parseInt(appointment_time.split(":")[0]);
+  const endMin = parseInt(appointment_time.split(":")[1]) + 30;
+  const endTime = `${String(endHour + Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
+  const endDateTime = `${appointment_date}T${endTime}:00`;
+
+  const event = {
+    summary: `${typeLabel} — ${name}`,
+    description: `Customer: ${name}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\nType: ${typeLabel}\n${notes ? "\nNotes: " + notes : ""}`,
+    start: { dateTime: startDateTime, timeZone: "Europe/London" },
+    end: { dateTime: endDateTime, timeZone: "Europe/London" },
+    attendees: [{ email }],
+    reminders: { useDefault: false, overrides: [{ method: "email", minutes: 60 }, { method: "popup", minutes: 30 }] },
+  };
+
+  const calendarId = encodeURIComponent(env.GOOGLE_CALENDAR_ID);
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?sendUpdates=all`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Google Calendar API error ${res.status}: ${errText}`);
+  }
+
+  const created = await res.json();
+  return created.htmlLink || null;
+}
+
+async function getGoogleAccessToken(serviceAccount) {
+  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const now = Math.floor(Date.now() / 1000);
+  const claimSet = btoa(JSON.stringify({
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/calendar.events",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
+  const signatureInput = `${header}.${claimSet}`;
+  const key = await importPKCS8Key(serviceAccount.private_key);
+  const sig = await crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5" }, key, new TextEncoder().encode(signatureInput));
+  const jwt = `${signatureInput}.${arrayBufferToBase64Url(sig)}`;
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) throw new Error("Failed to get Google access token: " + JSON.stringify(tokenData));
+  return tokenData.access_token;
+}
+
+async function importPKCS8Key(pem) {
+  const pemContents = pem.replace(/-----BEGIN PRIVATE KEY-----/g, "").replace(/-----END PRIVATE KEY-----/g, "").replace(/\s/g, "");
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  return crypto.subtle.importKey("pkcs8", binaryDer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+}
+
+function arrayBufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }) {
+  return `
+    <div style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:2rem;">
+      <h2 style="color:#2C2C2C;margin-bottom:1rem;">New Appointment Request</h2>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:8px 0;color:#666;width:140px;">Customer</td><td style="padding:8px 0;font-weight:600;">${name}</td></tr>
+        <tr><td style="padding:8px 0;color:#666;">Email</td><td style="padding:8px 0;"><a href="mailto:${email}">${email}</a></td></tr>
+        <tr><td style="padding:8px 0;color:#666;">Phone</td><td style="padding:8px 0;">${phone || "Not provided"}</td></tr>
+        <tr><td style="padding:8px 0;color:#666;">Type</td><td style="padding:8px 0;font-weight:600;">${typeLabel}</td></tr>
+        <tr><td style="padding:8px 0;color:#666;">Date</td><td style="padding:8px 0;font-weight:600;">${dateFormatted}</td></tr>
+        <tr><td style="padding:8px 0;color:#666;">Time</td><td style="padding:8px 0;font-weight:600;">${appointment_time}</td></tr>
+        ${notes ? `<tr><td style="padding:8px 0;color:#666;">Notes</td><td style="padding:8px 0;">${notes}</td></tr>` : ""}
+      </table>
+      ${calendarLink ? `<p style="margin-top:1rem;"><a href="${calendarLink}" style="color:#8B7355;font-weight:600;">View in Google Calendar →</a></p>` : ""}
+      <p style="color:#999;font-size:0.85rem;margin-top:1.5rem;">Submitted: ${submittedAt}</p>
+    </div>`;
+}
+
+function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }) {
+  return `
+    <div style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:2rem;">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <h1 style="color:#2C2C2C;font-size:1.5rem;">Appointment Request Received</h1>
+      </div>
+      <p style="color:#666;line-height:1.8;">Dear ${firstName},</p>
+      <p style="color:#666;line-height:1.8;">Thank you for requesting a <strong>${typeLabel.toLowerCase()}</strong>. We've received your request for:</p>
+      <div style="background:#FAF8F5;border-radius:8px;padding:1.25rem;margin:1.5rem 0;border-left:4px solid #8B7355;">
+        <p style="margin:0;color:#2C2C2C;font-weight:600;">${dateFormatted} at ${appointment_time}</p>
+        <p style="margin:0.25rem 0 0;color:#666;">${typeLabel}</p>
+      </div>
+      <p style="color:#666;line-height:1.8;">We'll confirm your appointment within 24 hours. Once confirmed, you'll receive a calendar invite with all the details.</p>
+      <p style="color:#666;line-height:1.8;">If you need to change or cancel, just reply to this email or call us on <strong>01268 208 559</strong>.</p>
+      <p style="color:#666;line-height:1.8;margin-top:1.5rem;">Warm regards,<br><strong>Sears Melvin Memorials</strong></p>
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════════

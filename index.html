@@ -36,6 +36,7 @@
         /* Scroll Animations */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -73,6 +74,15 @@
         .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
         .mobile-nav.active { display: block; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); }
+
+        /* Showroom Banner */
+        .showroom-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 101; background: var(--color-stone); color: white; font-size: 0.85rem; text-align: center; padding: 0.6rem 1rem; }
+        .showroom-banner-inner { display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
+        .showroom-banner-inner svg { flex-shrink: 0; }
+        .showroom-banner-link { color: var(--color-accent-light); font-weight: 600; margin-left: 0.5rem; transition: color 0.2s; }
+        .showroom-banner-link:hover { color: white; }
+        .showroom-banner + .hero { padding-top: 9rem; }
+        nav { top: 36px; }
 
         /* Hero */
         .hero { min-height: 100vh; display: flex; align-items: center; padding: 7rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
@@ -249,6 +259,32 @@
         .grief-card a:hover { text-decoration: underline; }
 
         /* Contact CTA */
+        /* Appointment Booking */
+        .appointment-section { padding: 5rem 2rem; background: white; }
+        .appointment-container { max-width: 800px; margin: 0 auto; text-align: center; }
+        .appointment-container h2 { margin-bottom: 0.75rem; }
+        .appointment-container > p { font-size: 1.1rem; margin-bottom: 2.5rem; max-width: 550px; margin-left: auto; margin-right: auto; }
+        .appointment-form { background: var(--color-cream); border-radius: 16px; padding: 2.5rem; text-align: left; border: 1px solid var(--color-border); }
+        .appointment-form h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .appointment-form > p { font-size: 0.95rem; margin-bottom: 1.75rem; }
+        .appt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .appt-row.full { grid-template-columns: 1fr; }
+        .appt-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .appt-group label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+        .appt-group input, .appt-group select, .appt-group textarea { padding: 0.8rem 1rem; border: 1.5px solid var(--color-border); border-radius: 8px; font-family: var(--font-body); font-size: 0.95rem; background: white; transition: border-color 0.3s; }
+        .appt-group input:focus, .appt-group select:focus, .appt-group textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(139,115,85,0.08); }
+        .appt-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; cursor: pointer; }
+        .appt-group textarea { min-height: 80px; resize: vertical; }
+        .appt-submit { width: 100%; padding: 1rem; margin-top: 1rem; background: var(--color-accent); color: white; border: none; border-radius: 8px; font-family: var(--font-body); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .appt-submit:hover { background: var(--color-stone); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,44,44,0.2); }
+        .appt-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .appt-submit svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .appt-success { display: none; text-align: center; padding: 2rem; }
+        .appt-success.show { display: block; }
+        .appt-success svg { width: 48px; height: 48px; stroke: var(--color-success); fill: none; stroke-width: 2; margin-bottom: 1rem; }
+        .appt-success h4 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { .appt-row { grid-template-columns: 1fr; } }
+
         .contact-cta { padding: 6rem 2rem; background: var(--color-stone); text-align: center; position: relative; overflow: hidden; }
         .contact-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(139,115,85,0.15) 0%, transparent 50%); }
         .contact-cta-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
@@ -353,6 +389,15 @@
         <a href="contact.html">Contact</a>
     </div>
 
+    <!-- Showroom Banner -->
+    <div class="showroom-banner">
+        <div class="showroom-banner-inner">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span><strong>Showroom coming soon to NW11</strong> — Visit us by appointment</span>
+            <a href="#book" class="showroom-banner-link">Book a visit &rarr;</a>
+        </div>
+    </div>
+
     <!-- Hero -->
     <section class="hero">
         <div class="hero-content">
@@ -365,7 +410,7 @@
                     renovations delivered with care and transparency.
                 </p>
                 <div class="hero-buttons">
-                    <a href="memorials.html" class="btn btn-primary">
+                    <a href="finder.html" class="btn btn-primary">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         Help Me Choose
                     </a>
@@ -792,6 +837,85 @@
         </div>
     </section>
 
+    <!-- Appointment Booking -->
+    <section class="appointment-section reveal" id="book">
+        <div class="appointment-container">
+            <h2>Book a Consultation</h2>
+            <p>Visit our showroom or arrange a call. No obligation—just a chance to discuss your needs in person or over the phone.</p>
+            <div class="appointment-form" id="appointmentForm">
+                <div id="apptFormFields">
+                    <h3>Request an Appointment</h3>
+                    <p>Choose a date and time that works for you. We'll confirm within 24 hours.</p>
+                    <div class="appt-row">
+                        <div class="appt-group">
+                            <label for="apptName">Your name</label>
+                            <input type="text" id="apptName" placeholder="Full name" required>
+                        </div>
+                        <div class="appt-group">
+                            <label for="apptEmail">Email</label>
+                            <input type="email" id="apptEmail" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+                    <div class="appt-row">
+                        <div class="appt-group">
+                            <label for="apptPhone">Phone</label>
+                            <input type="tel" id="apptPhone" placeholder="07xxx xxx xxx">
+                        </div>
+                        <div class="appt-group">
+                            <label for="apptType">Appointment type</label>
+                            <select id="apptType">
+                                <option value="showroom">Showroom visit (NW11)</option>
+                                <option value="phone">Phone consultation</option>
+                                <option value="video">Video call</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="appt-row">
+                        <div class="appt-group">
+                            <label for="apptDate">Preferred date</label>
+                            <input type="date" id="apptDate" required>
+                        </div>
+                        <div class="appt-group">
+                            <label for="apptTime">Preferred time</label>
+                            <select id="apptTime">
+                                <option value="09:00">9:00 AM</option>
+                                <option value="09:30">9:30 AM</option>
+                                <option value="10:00" selected>10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="13:30">1:30 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="14:30">2:30 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="15:30">3:30 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                                <option value="16:30">4:30 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="appt-row full">
+                        <div class="appt-group">
+                            <label for="apptNotes">Anything we should know? (optional)</label>
+                            <textarea id="apptNotes" placeholder="E.g. type of memorial you're considering, cemetery name..."></textarea>
+                        </div>
+                    </div>
+                    <button class="appt-submit" id="apptSubmit" onclick="submitAppointment()">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Request Appointment
+                    </button>
+                </div>
+                <div class="appt-success" id="apptSuccess">
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <h4>Appointment Request Sent</h4>
+                    <p>We'll confirm your appointment within 24 hours. You'll receive a calendar invite once confirmed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact CTA -->
     <section class="contact-cta reveal">
         <div class="contact-cta-content">
@@ -950,11 +1074,62 @@
             });
         }
 
+        // ==================== APPOINTMENT BOOKING ====================
+        async function submitAppointment() {
+            const btn = document.getElementById('apptSubmit');
+            const name = document.getElementById('apptName').value.trim();
+            const email = document.getElementById('apptEmail').value.trim();
+            const phone = document.getElementById('apptPhone').value.trim();
+            const type = document.getElementById('apptType').value;
+            const date = document.getElementById('apptDate').value;
+            const time = document.getElementById('apptTime').value;
+            const notes = document.getElementById('apptNotes').value.trim();
+
+            if (!name || !email || !date) {
+                alert('Please fill in your name, email, and preferred date.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Sending...';
+
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'appointment',
+                        name, email, phone,
+                        appointment_type: type,
+                        appointment_date: date,
+                        appointment_time: time,
+                        notes,
+                    }),
+                });
+                const result = await res.json();
+                if (result.ok) {
+                    document.getElementById('apptFormFields').style.display = 'none';
+                    document.getElementById('apptSuccess').classList.add('show');
+                } else {
+                    throw new Error(result.error || 'Failed to submit');
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again or call us on 01268 208 559.');
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Request Appointment';
+            }
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             initScrollAnimations();
             calculateTimeline();
             initBeforeAfter();
+            // Set min date for appointment to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateInput = document.getElementById('apptDate');
+            if (dateInput) dateInput.min = tomorrow.toISOString().split('T')[0];
         });
     </script>
 </body>
