@@ -7,7 +7,7 @@
     <meta name="description" content="Browse our collection of beautifully crafted memorials. Lawn headstones, kerb sets, cremation memorials, and more.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase data loaded via REST API directly -->
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -557,7 +557,15 @@
         // ==================== SUPABASE CONFIG ====================
         const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+        async function supabaseFetch(table, params) {
+            const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
+            Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+            const res = await fetch(url.toString(), { headers: SUPABASE_HEADERS });
+            if (!res.ok) throw new Error('Supabase query failed: ' + res.status + ' ' + (await res.text()));
+            return res.json();
+        }
 
         // ==================== STATE ====================
         const state = {
@@ -577,31 +585,17 @@
         // ==================== DATA LOADING ====================
         async function loadData() {
             try {
-                const { data: categories, error: catError } = await supabase
-                    .from('product_categories')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('display_order');
-                if (catError) throw catError;
+                const [categories, colours, productsData] = await Promise.all([
+                    supabaseFetch('product_categories', { select: '*', is_active: 'eq.true', order: 'display_order' }),
+                    supabaseFetch('stone_colours', { select: '*', is_active: 'eq.true', order: 'display_order' }),
+                    supabaseFetch('products', { select: '*,product_categories(name,slug)', is_active: 'eq.true', order: 'display_order' })
+                ]);
                 state.categories = categories;
-
-                const { data: colours, error: colError } = await supabase
-                    .from('stone_colours')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('display_order');
-                if (colError) throw colError;
                 state.colours = colours;
 
                 colours.forEach(c => { colourNames[c.slug] = c.name; });
                 categories.forEach(c => { categoryNames[c.id] = c.name; });
 
-                const { data: productsData, error: prodError } = await supabase
-                    .from('products')
-                    .select(`*, product_categories (name, slug)`)
-                    .eq('is_active', true)
-                    .order('display_order');
-                if (prodError) throw prodError;
                 state.productsData = productsData;
 
                 renderFilters();
@@ -991,7 +985,14 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
-            loadData();
+            // Loading timeout - show error if data doesn't load within 15s
+            const loadingTimeout = setTimeout(() => {
+                const loadingEl = document.getElementById('productsLoading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Loading timed out. Please refresh the page.</p>';
+                }
+            }, 15000);
+            loadData().finally(() => clearTimeout(loadingTimeout));
             const params = new URLSearchParams(window.location.search);
             const shortlistIds = params.get('shortlist');
             if (shortlistIds) {
