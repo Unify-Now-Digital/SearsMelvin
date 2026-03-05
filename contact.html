@@ -55,6 +55,9 @@
         
         .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; transition: all 0.3s; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); }
 
         /* Calm Mode Toggle */
         .calm-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; }
@@ -265,6 +268,14 @@
             <span></span><span></span><span></span>
         </button>
     </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="resources.html">Support</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
     <header class="page-header">
         <h1 class="animate-in">We're here when you're ready</h1>
@@ -757,7 +768,7 @@
 
         // Mobile menu
         function toggleMobileMenu() {
-            // Toggle mobile nav
+            document.getElementById('mobileNav').classList.toggle('active');
         }
 
         // Init

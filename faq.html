@@ -58,6 +58,9 @@
 
         .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); margin: 5px 0; }
+        .mobile-nav { display: none; position: fixed; top: 60px; left: 0; right: 0; background: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; }
 
         /* Page Header */
         .page-header { padding: 7rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
@@ -208,8 +211,16 @@
             </li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
-        <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
     </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html#about">About</a>
+        <a href="memorials.html">Memorials</a>
+        <a href="permit-checker.html">Permit Checker</a>
+        <a href="faq.html">FAQ</a>
+        <a href="resources.html">Support</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
     <header class="page-header">
         <h1>How can we help?</h1>
@@ -228,23 +239,23 @@
         <div class="faq-container">
             <!-- Topic Tabs -->
             <div class="topic-tabs">
-                <button class="topic-tab active" onclick="filterTopic('all')">
+                <button class="topic-tab active" onclick="filterTopic('all', this)">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
                     All Topics
                 </button>
-                <button class="topic-tab" onclick="filterTopic('ordering')">
+                <button class="topic-tab" onclick="filterTopic('ordering', this)">
                     <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     Ordering
                 </button>
-                <button class="topic-tab" onclick="filterTopic('permits')">
+                <button class="topic-tab" onclick="filterTopic('permits', this)">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                     Permits
                 </button>
-                <button class="topic-tab" onclick="filterTopic('installation')">
+                <button class="topic-tab" onclick="filterTopic('installation', this)">
                     <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                     Installation
                 </button>
-                <button class="topic-tab" onclick="filterTopic('aftercare')">
+                <button class="topic-tab" onclick="filterTopic('aftercare', this)">
                     <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     Aftercare
                 </button>
@@ -554,10 +565,10 @@
         }
 
         // Filter by topic
-        function filterTopic(topic) {
+        function filterTopic(topic, btn) {
             // Update tabs
             document.querySelectorAll('.topic-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            btn.classList.add('active');
             
             // Clear search
             document.getElementById('faqSearch').value = '';
@@ -653,6 +664,11 @@
             }, { threshold: 0.1 });
             
             reveals.forEach(el => observer.observe(el));
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            document.getElementById('mobileNav').classList.toggle('active');
         }
 
         // Calm mode
