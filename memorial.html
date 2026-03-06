@@ -350,6 +350,13 @@
         .quote-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .quote-skip-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; font-family: var(--font-body); }
 
+        /* Save Toast */
+        .save-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); z-index: 200; background: var(--color-stone); color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; pointer-events: none; max-width: 420px; width: max-content; }
+        .save-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        .save-toast svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 2; flex-shrink: 0; }
+        .save-toast a { color: var(--color-accent); font-weight: 500; text-decoration: underline; white-space: nowrap; }
+        @media (max-width: 600px) { .save-toast { bottom: 140px; max-width: calc(100vw - 2rem); } }
+
         /* Footer */
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
@@ -664,6 +671,12 @@
         </div>
     </div>
 
+    <!-- Save Toast Notification -->
+    <div class="save-toast" id="saveToast">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span id="saveToastMsg">Saved to your shortlist. <a href="memorials.html">View shortlist</a></span>
+    </div>
+
     <footer>
         <div class="footer-container">
             <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
@@ -682,8 +695,8 @@
         <div class="quote-modal">
             <div class="quote-modal-header">
                 <div>
-                    <h2>Request a Quote</h2>
-                    <p class="quote-modal-subtitle">We'll be in touch within 24 hours</p>
+                    <h2>Request a Free Quote</h2>
+                    <p class="quote-modal-subtitle">No payment required today — we'll send your personalised quote within 24 hours</p>
                 </div>
                 <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
                     <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -738,14 +751,18 @@
                     </div>
                     <div class="quote-form-group">
                         <label>How would you like to proceed?</label>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.3rem;">
+                        <div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin-top:0.3rem;">
                             <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:8px; cursor:pointer; background:rgba(139,115,85,0.04); transition:border-color 0.2s;">
-                                <input type="radio" name="paymentPref" value="deposit" checked>
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay 50% deposit</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Secure your order now, pay balance later</span></span>
+                                <input type="radio" name="paymentPref" value="quote_only" checked>
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Just send my quote</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">No payment needed — review the quote at your own pace</span></span>
+                            </label>
+                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
+                                <input type="radio" name="paymentPref" value="deposit">
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay 50% deposit now</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Secure your order today, pay balance on completion</span></span>
                             </label>
                             <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
                                 <input type="radio" name="paymentPref" value="invoice_only">
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay in full by invoice</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Receive an invoice to pay in full</span></span>
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Request an invoice</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">We'll send a formal invoice when you're ready</span></span>
                             </label>
                         </div>
                     </div>
@@ -754,7 +771,7 @@
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
-                    <p class="quote-form-note">We'll never share your details. By submitting you agree to our <a href="privacy.html">Privacy Policy</a>.</p>
+                    <p class="quote-form-note">No payment is taken until you're ready to proceed. We'll never share your details. <a href="privacy.html">Privacy Policy</a></p>
                 </form>
                 <div class="quote-success" id="quoteSuccess">
                     <div class="quote-success-icon">
@@ -1238,11 +1255,24 @@
             if (exists) {
                 saved = saved.filter(function(s) { return s.id !== productData.id; });
                 if (btn) btn.textContent = 'Save';
+                showSaveToast('Removed from your shortlist.');
             } else {
                 saved.push({ id: productData.id, slug: productData.slug, name: productData.name, price: '£' + state.basePrice.toLocaleString(), type: productData.product_categories?.name || 'Memorial', image: productData.image_url || '' });
                 if (btn) btn.textContent = 'Saved';
+                showSaveToast('Saved to your shortlist. <a href="memorials.html">View shortlist</a>');
             }
             localStorage.setItem('sm_shortlist', JSON.stringify(saved));
+        }
+
+        var _toastTimer;
+        function showSaveToast(html) {
+            var toast = document.getElementById('saveToast');
+            var msg = document.getElementById('saveToastMsg');
+            if (!toast || !msg) return;
+            clearTimeout(_toastTimer);
+            msg.innerHTML = html;
+            toast.classList.add('visible');
+            _toastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 4000);
         }
 
         function checkIfSaved() {
@@ -1339,12 +1369,12 @@
             document.querySelectorAll('input[name="paymentPref"]').forEach(function(radio) {
                 radio.addEventListener('change', function() {
                     const label = document.getElementById('quoteSubmitLabel');
-                    const isInvoice = this.value === 'invoice_only';
-                    if (label) label.textContent = isInvoice ? 'Request Invoice' : 'Send Quote Request';
-                    // Update radio label borders
+                    var labels = { quote_only: 'Send Quote Request', deposit: 'Continue to Deposit', invoice_only: 'Request Invoice' };
+                    if (label) label.textContent = labels[this.value] || 'Send Quote Request';
                     document.querySelectorAll('input[name="paymentPref"]').forEach(function(r) {
                         const lbl = r.closest('label');
                         if (lbl) lbl.style.borderColor = r.checked ? 'var(--color-accent)' : 'var(--color-border)';
+                        if (lbl) lbl.style.background = r.checked ? 'rgba(139,115,85,0.04)' : 'transparent';
                     });
                 });
             });
@@ -1522,9 +1552,12 @@
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
                         _quoteTotal = total;
-                        if (result.invoiceOnly) {
-                            // Invoice flow: skip deposit step, show success screen
-                            document.getElementById('quoteForm').style.display   = 'none';
+                        var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
+                        if (pref === 'quote_only') {
+                            document.getElementById('quoteSuccess').style.display = 'block';
+                            document.getElementById('quoteSuccessMsg').textContent =
+                                "Your quote request has been received. We'll email you a detailed quote within 24 hours — no payment is needed at this stage.";
+                        } else if (result.invoiceOnly) {
                             document.getElementById('quoteSuccess').style.display = 'block';
                             document.getElementById('quoteSuccessMsg').textContent =
                                 'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.';
