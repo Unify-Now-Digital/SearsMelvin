@@ -268,9 +268,23 @@ export default {
 //  QUOTE REQUEST HANDLER
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
-  const { name, email, phone, message, product = {}, location } = data;
+  const { name, email, phone, message, product = {}, location, payment_preference } = data;
+  const invoiceOnly = payment_preference === "invoice_only";
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
+
+  // 0. Stripe Invoice — create if configured
+  let stripeInvoiceUrl = null;
+  if (env.STRIPE_SECRET_KEY) {
+    try {
+      stripeInvoiceUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location,
+        isFullInvoice: invoiceOnly,
+      });
+    } catch (err) {
+      console.error("Stripe invoice creation failed:", err);
+    }
+  }
 
   // 1. Business notification email (critical)
   try {
@@ -324,7 +338,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("GHL contact create failed:", err);
   }
 
-  return json({ ok: true, invoiceId }, 200, corsHeaders);
+  return json({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl }, 200, corsHeaders);
 }
 
 
@@ -984,6 +998,125 @@ async function createGHLContact(env, { name, email, phone, type, product }) {
   if (!res.ok) throw new Error(`GHL error ${res.status}: ${await res.text()}`);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// STRIPE DEPOSIT INVOICE — creates a 50% deposit invoice (or full if invoice_only)
+// ═══════════════════════════════════════════════════════════════════
+async function createStripeDepositInvoice(stripeKey, { name, email, phone, product, location, isFullInvoice }) {
+  const stripePost = (path, params) => fetch(`https://api.stripe.com/v1${path}`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${stripeKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params),
+  }).then(async r => {
+    const json = await r.json();
+    if (json.error) throw new Error(`Stripe ${path}: ${json.error.message}`);
+    return json;
+  });
+
+  const stripeGet = (path) => fetch(`https://api.stripe.com/v1${path}`, {
+    headers: { "Authorization": `Bearer ${stripeKey}` },
+  }).then(r => r.json());
+
+  // Find or create Stripe customer
+  const existingRes = await stripeGet(`/customers?email=${encodeURIComponent(email)}&limit=1`);
+  let customerId;
+  if (existingRes.data && existingRes.data.length > 0) {
+    customerId = existingRes.data[0].id;
+    await stripePost(`/customers/${customerId}`, { name: name || "", ...(phone ? { phone } : {}) });
+  } else {
+    const customer = await stripePost("/customers", {
+      email, name: name || "", ...(phone ? { phone } : {}),
+      ...(location ? { "metadata[cemetery]": location } : {}),
+    });
+    customerId = customer.id;
+  }
+
+  const totalPricePence = Math.round(parseFloat(product.price || 0) * 100);
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems : [];
+  const addonTotalPence = addonItems.reduce((sum, a) => sum + Math.round(parseFloat(a.price || 0) * 100), 0);
+  const basePricePence = Math.max(0, totalPricePence - addonTotalPence);
+  const productDescription = [product.name || "Memorial", product.colour ? `· ${product.colour}` : "", product.size ? `· ${product.size}` : ""].filter(Boolean).join(" ");
+
+  // For deposit invoices, charge 50%. For full invoices, charge 100%.
+  const multiplier = isFullInvoice ? 1 : 0.5;
+  const label = isFullInvoice ? "" : " — 50% deposit";
+
+  // Helper: find existing Stripe Product by metadata key, or create a new one
+  async function findOrCreateStripeProduct(itemName, itemType) {
+    const searchRes = await stripeGet(
+      `/products/search?query=metadata['sm_name']:'${encodeURIComponent(itemName)}' AND metadata['sm_type']:'${encodeURIComponent(itemType)}'&limit=1`
+    );
+    if (searchRes.data && searchRes.data.length > 0) return searchRes.data[0];
+    return stripePost("/products", {
+      name: itemName,
+      "metadata[sm_name]": itemName,
+      "metadata[sm_type]": itemType,
+      "metadata[source]": "searsmelvin",
+    });
+  }
+
+  // Create Stripe Product + one-time Price for the base memorial
+  const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
+  const basePrice = await stripePost("/prices", {
+    product: memorialProduct.id,
+    unit_amount: String(Math.round(basePricePence * multiplier)),
+    currency: "gbp",
+  });
+  await stripePost("/invoiceitems", {
+    customer: customerId,
+    price: basePrice.id,
+    description: productDescription + " (inc. installation & permit)" + label,
+  });
+
+  // Create Stripe Products + Prices for each addon line item
+  for (const addon of addonItems) {
+    const addonPence = Math.round(parseFloat(addon.price || 0) * 100);
+    if (addonPence > 0) {
+      const addonProduct = await findOrCreateStripeProduct(addon.name || "Add-on", "addon");
+      const addonPrice = await stripePost("/prices", {
+        product: addonProduct.id,
+        unit_amount: String(Math.round(addonPence * multiplier)),
+        currency: "gbp",
+      });
+      await stripePost("/invoiceitems", {
+        customer: customerId,
+        price: addonPrice.id,
+        description: (addon.name || "Add-on") + label,
+      });
+    }
+  }
+
+  // Fallback: add addon names as zero-value items if no priced line items
+  if (addonItems.length === 0 && Array.isArray(product.addons) && product.addons.length > 0) {
+    for (const addonName of product.addons) {
+      const addonProduct = await findOrCreateStripeProduct(addonName, "addon");
+      const zeroPrice = await stripePost("/prices", {
+        product: addonProduct.id,
+        unit_amount: "0",
+        currency: "gbp",
+      });
+      await stripePost("/invoiceitems", { customer: customerId, price: zeroPrice.id, description: addonName });
+    }
+  }
+
+  const invoiceDescription = isFullInvoice
+    ? `Sears Melvin Memorials — ${productDescription}`
+    : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
+  const invoiceFooter = isFullInvoice
+    ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
+    : "Thank you for choosing Sears Melvin Memorials. This invoice is for a 50% deposit. The remaining balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
+
+  const invoice = await stripePost("/invoices", {
+    customer: customerId, collection_method: "send_invoice", days_until_due: "30", auto_advance: "false",
+    description: invoiceDescription,
+    footer: invoiceFooter,
+    "metadata[customer_name]": name || "", "metadata[product]": product.name || "",
+    "metadata[cemetery]": location || "", "metadata[invoice_type]": isFullInvoice ? "full" : "deposit",
+  });
+
+  const finalised = await stripePost(`/invoices/${invoice.id}/finalize`, { auto_advance: "false" });
+  return finalised.hosted_invoice_url || null;
+}
 
 // ─── Helper: format a price string as "2,481" (no decimals, no £ prefix) ──────
 function formatPrice(str) {
