@@ -235,10 +235,14 @@ async function handleAppointment(env, data, submittedAt) {
 }
 
 async function createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel }) {
-  if (!env.GOOGLE_SERVICE_ACCOUNT_KEY || !env.GOOGLE_CALENDAR_ID) return null;
+  // Supports both OAuth 2.0 refresh token (preferred) and service account key
+  const hasOAuth = env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REFRESH_TOKEN;
+  const hasServiceAccount = env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if ((!hasOAuth && !hasServiceAccount) || !env.GOOGLE_CALENDAR_ID) return null;
 
-  const serviceAccount = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_KEY);
-  const token = await getGoogleAccessToken(serviceAccount);
+  const token = hasOAuth
+    ? await getOAuthAccessToken(env)
+    : await getServiceAccountAccessToken(JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_KEY));
 
   const startDateTime = `${appointment_date}T${appointment_time}:00`;
   const endHour = parseInt(appointment_time.split(":")[0]);
@@ -271,7 +275,25 @@ async function createGoogleCalendarEvent(env, { name, email, phone, appointment_
   return created.htmlLink || null;
 }
 
-async function getGoogleAccessToken(serviceAccount) {
+// ── OAuth 2.0 refresh token flow (preferred) ────────────────────────────────
+async function getOAuthAccessToken(env) {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      refresh_token: env.GOOGLE_REFRESH_TOKEN,
+    }),
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error("OAuth token refresh failed: " + JSON.stringify(data));
+  return data.access_token;
+}
+
+// ── Service account fallback ─────────────────────────────────────────────────
+async function getServiceAccountAccessToken(serviceAccount) {
   const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
   const claimSet = btoa(JSON.stringify({
@@ -292,7 +314,7 @@ async function getGoogleAccessToken(serviceAccount) {
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
   const tokenData = await tokenRes.json();
-  if (!tokenData.access_token) throw new Error("Failed to get Google access token: " + JSON.stringify(tokenData));
+  if (!tokenData.access_token) throw new Error("Service account token failed: " + JSON.stringify(tokenData));
   return tokenData.access_token;
 }
 
