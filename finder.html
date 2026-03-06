@@ -476,12 +476,12 @@
             .wizard-nav .btn { width: 100%; justify-content: center; }
             .nav-links { display: none; }
             .mobile-menu-btn { display: flex; }
-            .mobile-bottom-nav { display: block; }
             body { padding-bottom: 70px; }
         }
 
         /* Mobile Bottom Nav */
-        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }

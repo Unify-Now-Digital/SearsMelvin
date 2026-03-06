@@ -967,11 +967,12 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
     return json;
   });
 
+  const stripeGet = (path) => fetch(`https://api.stripe.com/v1${path}`, {
+    headers: { "Authorization": `Bearer ${stripeKey}` },
+  }).then(r => r.json());
+
   // Find or create Stripe customer
-  const existingRes = await fetch(
-    `https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=1`,
-    { headers: { "Authorization": `Bearer ${stripeKey}` } }
-  ).then(r => r.json());
+  const existingRes = await stripeGet(`/customers?email=${encodeURIComponent(email)}&limit=1`);
   let customerId;
   if (existingRes.data && existingRes.data.length > 0) {
     customerId = existingRes.data[0].id;
@@ -995,32 +996,64 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   const multiplier = isFullInvoice ? 1 : 0.5;
   const label = isFullInvoice ? "" : " — 50% deposit";
 
+  // Helper: find existing Stripe Product by metadata key, or create a new one
+  async function findOrCreateStripeProduct(itemName, itemType) {
+    const searchRes = await stripeGet(
+      `/products/search?query=metadata['sm_name']:'${encodeURIComponent(itemName)}' AND metadata['sm_type']:'${encodeURIComponent(itemType)}'&limit=1`
+    );
+    if (searchRes.data && searchRes.data.length > 0) return searchRes.data[0];
+    return stripePost("/products", {
+      name: itemName,
+      "metadata[sm_name]": itemName,
+      "metadata[sm_type]": itemType,
+      "metadata[source]": "searsmelvin",
+    });
+  }
+
+  // Create Stripe Product + one-time Price for the base memorial
+  const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
+  const basePrice = await stripePost("/prices", {
+    product: memorialProduct.id,
+    unit_amount: String(Math.round(basePricePence * multiplier)),
+    currency: "gbp",
+  });
   await stripePost("/invoiceitems", {
     customer: customerId,
-    amount: String(Math.round(basePricePence * multiplier)),
-    currency: "gbp",
+    price: basePrice.id,
     description: productDescription + " (inc. installation & permit)" + label,
   });
 
+  // Create Stripe Products + Prices for each addon line item
   for (const addon of addonItems) {
     const addonPence = Math.round(parseFloat(addon.price || 0) * 100);
     if (addonPence > 0) {
+      const addonProduct = await findOrCreateStripeProduct(addon.name || "Add-on", "addon");
+      const addonPrice = await stripePost("/prices", {
+        product: addonProduct.id,
+        unit_amount: String(Math.round(addonPence * multiplier)),
+        currency: "gbp",
+      });
       await stripePost("/invoiceitems", {
         customer: customerId,
-        amount: String(Math.round(addonPence * multiplier)),
-        currency: "gbp",
+        price: addonPrice.id,
         description: (addon.name || "Add-on") + label,
       });
     }
   }
 
+  // Fallback: add addon names as zero-value items if no priced line items
   if (addonItems.length === 0 && Array.isArray(product.addons) && product.addons.length > 0) {
     for (const addonName of product.addons) {
-      await stripePost("/invoiceitems", { customer: customerId, amount: "0", currency: "gbp", description: addonName });
+      const addonProduct = await findOrCreateStripeProduct(addonName, "addon");
+      const zeroPrice = await stripePost("/prices", {
+        product: addonProduct.id,
+        unit_amount: "0",
+        currency: "gbp",
+      });
+      await stripePost("/invoiceitems", { customer: customerId, price: zeroPrice.id, description: addonName });
     }
   }
 
-  const depositTotal = Math.round(totalPricePence * multiplier);
   const invoiceDescription = isFullInvoice
     ? `Sears Melvin Memorials — ${productDescription}`
     : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
