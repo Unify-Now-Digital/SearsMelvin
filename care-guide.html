@@ -60,6 +60,12 @@
         .care-section { padding: 4rem 2rem; }
         .care-container { max-width: 900px; margin: 0 auto; }
 
+        /* Back to top */
+        .back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--color-accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; visibility: hidden; transition: all 0.3s; z-index: 50; }
+        .back-to-top.visible { opacity: 1; visibility: visible; }
+        .back-to-top:hover { background: var(--color-stone); transform: translateY(-2px); }
+        .back-to-top svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
+
         /* Download Banner */
         .download-banner { 
             display: flex; align-items: center; justify-content: space-between; gap: 2rem;
@@ -87,6 +93,8 @@
         .toc-list { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
         .toc-list li a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--color-warm); border-radius: 6px; font-size: 0.95rem; color: var(--color-stone); transition: all 0.2s; }
         .toc-list li a:hover { background: var(--color-border); transform: translateX(4px); }
+        .toc-list li a.active { background: var(--color-accent); color: white; transform: translateX(4px); }
+        .toc-list li a.active svg { stroke: white; }
         .toc-list li a svg { width: 18px; height: 18px; stroke: var(--color-accent); fill: none; stroke-width: 2; flex-shrink: 0; }
 
         /* Content Section */
@@ -196,17 +204,18 @@
             <li><a href="index.html#about">About</a></li>
             <li><a href="memorials.html">Memorials</a></li>
             <li><a href="permit-checker.html">Permit Checker</a></li>
+            <li><a href="resources.html">Support</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
     </nav>
     <div class="mobile-nav" id="mobileNav">
-        <a href="index.html#about">About</a>
+        <a href="index.html">Home</a>
         <a href="memorials.html">Memorials</a>
         <a href="permit-checker.html">Permit Checker</a>
-        <a href="faq.html">FAQ</a>
         <a href="resources.html">Support</a>
+        <a href="faq.html">FAQ</a>
         <a href="contact.html">Contact</a>
     </div>
 
@@ -468,15 +477,21 @@
         </div>
     </section>
 
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+
     <footer>
         <div class="footer-container">
             <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
             <ul class="footer-links">
-                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html">Home</a></li>
                 <li><a href="memorials.html">Memorials</a></li>
                 <li><a href="faq.html">FAQ</a></li>
                 <li><a href="care-guide.html">Memorial Care</a></li>
-                <li><a href="resources.html">Support Resources</a></li>
+                <li><a href="resources.html">Support</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
             </ul>
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
@@ -514,9 +529,31 @@
             });
         });
 
+        // Back to top button
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            backToTop.classList.toggle('visible', window.scrollY > 400);
+        });
+
+        // Active TOC highlighting
+        const tocLinks = document.querySelectorAll('.toc-list a');
+        const sections = document.querySelectorAll('.content-section[id]');
+        function updateActiveToc() {
+            const navH = document.querySelector('nav').offsetHeight + 20;
+            let current = '';
+            sections.forEach(s => {
+                if (window.scrollY >= s.offsetTop - navH - 60) current = s.id;
+            });
+            tocLinks.forEach(link => {
+                link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+            });
+        }
+        window.addEventListener('scroll', updateActiveToc);
+
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             initScrollReveal();
+            updateActiveToc();
         });
     </script>
 </body>

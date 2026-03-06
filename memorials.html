@@ -827,7 +827,7 @@
         }
 
         function openComparePanel() { document.getElementById('comparePanel').classList.add('active'); }
-        function viewComparison() { alert('Comparison view coming soon!'); }
+        function viewComparison() { window.location.href = 'compare.html?items=' + state.compareList.join(','); }
 
         // ==================== SHORTLIST / SAVE ====================
         function toggleSave(btn) {
@@ -836,7 +836,7 @@
             const isActive = btn.classList.contains('active');
             if (isActive) { state.shortlist = state.shortlist.filter(item => item.id !== id); btn.classList.remove('active'); }
             else {
-                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
                 btn.classList.add('active');
             }
             updateShortlistUI();
@@ -853,13 +853,14 @@
                 let html = '';
                 state.shortlist.forEach(item => {
                     var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
-                    html += '<div class="shortlist-item"><div class="shortlist-item-image">' + sImg + '</div><div class="shortlist-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                    var link = item.slug ? 'memorial.html?slug=' + item.slug : '#';
+                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
             if (count > 0) {
-                const ids = state.shortlist.map(i => i.id).join(',');
-                document.getElementById('shareLink').value = window.location.origin + '/memorials.html?shortlist=' + ids;
+                const slugs = state.shortlist.map(i => i.slug || i.id).join(',');
+                document.getElementById('shareLink').value = window.location.origin + '/memorials.html?shortlist=' + slugs;
             }
         }
 
@@ -882,9 +883,15 @@
 
         function copyShareLink() {
             const input = document.getElementById('shareLink');
-            input.select();
-            document.execCommand('copy');
-            alert('Link copied to clipboard!');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(input.value).then(function() {
+                    var btn = input.nextElementSibling;
+                    if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
+                });
+            } else {
+                input.select();
+                document.execCommand('copy');
+            }
         }
 
         function emailShortlist() {
@@ -1000,12 +1007,16 @@
                     if (checkCount > 100) { clearInterval(checkProducts); return; }
                     if (products.length > 0) {
                         clearInterval(checkProducts);
-                        shortlistIds.split(',').forEach(id => {
-                            const card = document.querySelector('.product-card[data-id="' + id + '"]');
+                        shortlistIds.split(',').forEach(key => {
+                            // Match by slug or id
+                            const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
                             if (card) {
-                                state.shortlist.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
-                                const btn = card.querySelector('.save-btn');
-                                if (btn) btn.classList.add('active');
+                                const id = card.dataset.id;
+                                if (!state.shortlist.some(s => s.id === id)) {
+                                    state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                                    const btn = card.querySelector('.save-btn');
+                                    if (btn) btn.classList.add('active');
+                                }
                             }
                         });
                         updateShortlistUI();

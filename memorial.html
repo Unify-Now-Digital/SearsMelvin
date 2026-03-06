@@ -485,13 +485,6 @@
                             </div>
                         </label>
                         <label class="colour-option">
-                            <input type="radio" name="letterColour" value="goldleaf" data-name="Gold Leaf" data-price="0" onchange="updateLetterColour(this)">
-                            <div class="colour-wrapper">
-                                <span class="colour-swatch" style="background: linear-gradient(145deg, #c8a535 0%, #f0cd50 50%, #c8a535 100%); box-shadow: 0 2px 8px rgba(200,165,53,0.35);"></span>
-                                <span class="colour-name">Gold Leaf</span>
-                            </div>
-                        </label>
-                        <label class="colour-option">
                             <input type="radio" name="letterColour" value="white" data-name="White" data-price="0" onchange="updateLetterColour(this)">
                             <div class="colour-wrapper">
                                 <span class="colour-swatch" style="background: linear-gradient(145deg, #e8e4dc 0%, #ffffff 50%, #ddd9d0 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.08);"></span>
@@ -600,7 +593,7 @@
                         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         <div class="trust-badge-text">
                             <strong>We Handle Permits</strong>
-                            <span>Cemetery applications included</span>
+                            <span>Application service included (cemetery fee separate)</span>
                         </div>
                     </div>
                 </div>
@@ -635,22 +628,23 @@
                         <span id="addonsLabel">Optional extras</span>
                         <span id="priceAddons">+£0</span>
                     </div>
+                    <div class="price-row" id="pricePermitRow" style="display: none;">
+                        <span>Cemetery permit fee (est.)</span>
+                        <span id="pricePermitFee">+£0</span>
+                    </div>
                     <div class="price-row total">
                         <span>Total (fully installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
                 </div>
                 <div class="price-actions">
-                    <button class="btn btn-secondary">
-                        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                        Save
+                    <button class="btn btn-secondary" onclick="saveMemorial()">
+                        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <span id="saveBtnLabel">Save</span>
                     </button>
                     <button class="btn btn-primary" onclick="openQuoteModal()">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         Request Quote
-                    </button>
-                    <button class="btn btn-accent">
-                        Pay 50% Deposit
                     </button>
                 </div>
             </div>
@@ -663,8 +657,10 @@
             <span id="mobilePriceTotal">—</span> <span style="font-size: 0.9rem; color: var(--color-text-muted);">installed</span>
         </div>
         <div class="mobile-actions">
-            <button class="btn btn-secondary" onclick="openQuoteModal()">Quote</button>
-            <button class="btn btn-accent">Pay Deposit</button>
+            <button class="btn btn-secondary" onclick="saveMemorial()" style="padding:0.5rem;" aria-label="Save">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="btn btn-primary" onclick="openQuoteModal()">Request Quote</button>
         </div>
     </div>
 
@@ -702,6 +698,7 @@
                 <div class="quote-config-row" id="qsLetterColourRow" style="display:none"><span>Lettering</span><span id="qsLetterColour">—</span></div>
                 <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
                 <div id="qsExtrasContainer"></div>
+                <div class="quote-config-row" id="qsPermitFeeRow" style="display:none"><span>Cemetery permit fee (est.)</span><span id="qsPermitFee">—</span></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
             </div>
             <div class="quote-form-body">
@@ -738,6 +735,19 @@
                     <div class="quote-form-group">
                         <label>Plot number &amp; any other details</label>
                         <textarea id="qMessage" placeholder="Grave section/plot number, or any questions…"></textarea>
+                    </div>
+                    <div class="quote-form-group">
+                        <label>How would you like to proceed?</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.3rem;">
+                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:8px; cursor:pointer; background:rgba(139,115,85,0.04); transition:border-color 0.2s;">
+                                <input type="radio" name="paymentPref" value="deposit" checked>
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay 50% deposit</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Secure your order now, pay balance later</span></span>
+                            </label>
+                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
+                                <input type="radio" name="paymentPref" value="invoice_only">
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay in full by invoice</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Receive an invoice to pay in full</span></span>
+                            </label>
+                        </div>
                     </div>
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on 01268 208 559.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
@@ -887,6 +897,12 @@
                 // Render addons
                 renderAddons(addons || []);
 
+                // Hide garden kerb for kerb-set and cremation categories (already included or not applicable)
+                if (catSlug === 'kerb-sets' || catSlug === 'cremation') {
+                    var kerbCard = document.getElementById('kerbAddonCard');
+                    if (kerbCard) kerbCard.style.display = 'none';
+                }
+
                 // Render features
                 renderFeatures(product.included_features || []);
 
@@ -895,6 +911,7 @@
                 document.querySelector('#charCount').parentElement.innerHTML = '<span id="charCount">0</span> / ' + charsIncluded + ' included';
 
                 updateTotalPrice();
+                checkIfSaved();
             } catch (err) {
                 console.error('Error loading product:', err);
                 document.getElementById('productName').textContent = 'Error loading product';
@@ -1212,6 +1229,31 @@
         // ==================== GALLERY VIEWS ====================
         // Gallery switching handled by switchGalleryImage()
 
+        // ==================== SAVE / SHORTLIST ====================
+        function saveMemorial() {
+            if (!productData) return;
+            var saved = JSON.parse(localStorage.getItem('sm_shortlist') || '[]');
+            var exists = saved.some(function(s) { return s.id === productData.id; });
+            var btn = document.getElementById('saveBtnLabel');
+            if (exists) {
+                saved = saved.filter(function(s) { return s.id !== productData.id; });
+                if (btn) btn.textContent = 'Save';
+            } else {
+                saved.push({ id: productData.id, slug: productData.slug, name: productData.name, price: '£' + state.basePrice.toLocaleString(), type: productData.product_categories?.name || 'Memorial', image: productData.image_url || '' });
+                if (btn) btn.textContent = 'Saved';
+            }
+            localStorage.setItem('sm_shortlist', JSON.stringify(saved));
+        }
+
+        function checkIfSaved() {
+            if (!productData) return;
+            var saved = JSON.parse(localStorage.getItem('sm_shortlist') || '[]');
+            if (saved.some(function(s) { return s.id === productData.id; })) {
+                var btn = document.getElementById('saveBtnLabel');
+                if (btn) btn.textContent = 'Saved';
+            }
+        }
+
         // ==================== MOBILE MENU ====================
         function toggleMobileMenu() {
             document.getElementById('mobileNav').classList.toggle('active');
@@ -1280,6 +1322,10 @@
             }).join('');
 
             const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            // Reset permit fee for fresh modal open (user can select cemetery below)
+            _selectedCemeteryFee = 0;
+            var permitRow = document.getElementById('qsPermitFeeRow');
+            if (permitRow) permitRow.style.display = 'none';
             document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
 
             document.getElementById('quoteForm').reset();
@@ -1568,23 +1614,21 @@
     <!-- Cemetery map feature for RAQ modal -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPcU=" crossorigin=""></script>
     <script>
-        const QUOTE_CEMETERIES = [
-            { name: 'Lambeth Cemetery',                  area: 'Tooting, SW17',       type: 'kerb', lat: 51.4292, lng: -0.1600 },
-            { name: 'Streatham Cemetery',                area: 'Streatham, SW16',     type: 'lawn', lat: 51.4147, lng: -0.1331 },
-            { name: 'West Norwood Cemetery',             area: 'West Norwood, SE27',  type: 'kerb', lat: 51.4281, lng: -0.1012 },
-            { name: 'Camberwell Old Cemetery',           area: 'Honor Oak, SE23',     type: 'kerb', lat: 51.4516, lng: -0.0541 },
-            { name: 'Camberwell New Cemetery',           area: 'Honor Oak, SE23',     type: 'lawn', lat: 51.4510, lng: -0.0535 },
-            { name: 'Nunhead Cemetery',                  area: 'Nunhead, SE15',       type: 'kerb', lat: 51.4635, lng: -0.0567 },
-            { name: 'Lewisham & Grove Park Cemetery',    area: 'Grove Park, SE12',    type: 'kerb', lat: 51.4195, lng: -0.0261 },
-            { name: 'Hither Green Cemetery',             area: 'Hither Green, SE13',  type: 'kerb', lat: 51.4437, lng: -0.0088 },
-            { name: 'Brockley Cemetery',                 area: 'Brockley, SE4',       type: 'kerb', lat: 51.4641, lng: -0.0258 },
-            { name: 'Greenwich Cemetery',                area: 'Charlton, SE7',       type: 'lawn', lat: 51.4824, lng:  0.0321 },
-            { name: 'Woolwich Cemetery',                 area: 'Woolwich, SE18',      type: 'kerb', lat: 51.4887, lng:  0.0752 },
-            { name: 'Plumstead Cemetery',                area: 'Plumstead, SE18',     type: 'kerb', lat: 51.4823, lng:  0.0891 },
-            { name: 'Eltham Cemetery',                   area: 'Eltham, SE9',         type: 'lawn', lat: 51.4508, lng:  0.0726 },
-            { name: 'Edmonton Cemetery',                 area: 'Edmonton, N9',        type: 'kerb', lat: 51.6133, lng: -0.0551 },
-            { name: 'Tottenham Park Cemetery',           area: 'Edmonton, N18',       type: 'kerb', lat: 51.6044, lng: -0.0540 },
-        ];
+        let QUOTE_CEMETERIES = [];
+        (async function loadQuoteCemeteries() {
+            try {
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
+                const res = await fetch(url, { headers: SUPABASE_HEADERS });
+                if (!res.ok) throw new Error(res.status);
+                const rows = await res.json();
+                QUOTE_CEMETERIES = rows.map(r => ({
+                    name: r.name,
+                    area: r.area + ', ' + r.postcode,
+                    type: r.kerb_allowed ? 'kerb' : 'lawn',
+                    fee: r.permit_fee || 0
+                }));
+            } catch (e) { console.warn('Cemetery load failed:', e); }
+        })();
 
         let _qMap = null;
         let _qMarker = null;
@@ -1607,6 +1651,8 @@
             setTimeout(function() { _qMap.invalidateSize(); }, 100);
         }
 
+        let _selectedCemeteryFee = 0;
+
         function searchQuoteCemetery(query) {
             const suggestions = document.getElementById('qCemSuggestions');
             const q = query.trim().toLowerCase();
@@ -1616,12 +1662,12 @@
             }
             const matches = QUOTE_CEMETERIES.filter(function(c) {
                 return c.name.toLowerCase().includes(q) || c.area.toLowerCase().includes(q);
-            });
+            }).slice(0, 8);
             if (!matches.length) {
                 suggestions.innerHTML = '<div class="cem-suggestion"><span class="cem-suggestion-name" style="color:var(--color-text-muted)">No results — type cemetery name in the notes below</span></div>';
             } else {
                 suggestions.innerHTML = matches.map(function(c) {
-                    return '<div class="cem-suggestion" onclick="selectQuoteCemetery(\'' + c.name.replace(/'/g, "\\'") + '\', \'' + c.area + '\', \'' + c.type + '\', ' + c.lat + ', ' + c.lng + ')">'
+                    return '<div class="cem-suggestion" onclick="selectQuoteCemetery(\'' + c.name.replace(/'/g, "\\'") + '\', \'' + c.area.replace(/'/g, "\\'") + '\', \'' + c.type + '\', ' + (c.fee || 0) + ')">'
                         + '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
                         + '<span style="flex:1"><span class="cem-suggestion-name">' + c.name + '</span><br><span class="cem-suggestion-area">' + c.area + '</span></span>'
                         + '<span class="cem-badge ' + c.type + '">' + (c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only') + '</span>'
@@ -1631,11 +1677,27 @@
             suggestions.classList.add('active');
         }
 
-        function selectQuoteCemetery(name, area, type, lat, lng) {
+        function selectQuoteCemetery(name, area, type, fee) {
             document.getElementById('qCemeteryInput').value = name + ', ' + area;
             document.getElementById('qCemeteryName').value = name + ', ' + area;
             document.getElementById('qCemSuggestions').classList.remove('active');
-            _initQMap(lat, lng);
+            _selectedCemeteryFee = fee || 0;
+            updatePermitFeeRow();
+        }
+
+        function updatePermitFeeRow() {
+            var row = document.getElementById('qsPermitFeeRow');
+            var totalEl = document.getElementById('qsTotal');
+            if (_selectedCemeteryFee > 0 && row) {
+                document.getElementById('qsPermitFee').textContent = '£' + _selectedCemeteryFee.toLocaleString();
+                row.style.display = '';
+            } else if (row) {
+                row.style.display = 'none';
+            }
+            // Recalculate total with permit fee
+            var memorialTotal = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            var grandTotal = memorialTotal + _selectedCemeteryFee;
+            if (totalEl) totalEl.textContent = '£' + grandTotal.toLocaleString();
         }
 
         // Close suggestions when clicking outside
