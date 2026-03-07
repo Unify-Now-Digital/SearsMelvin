@@ -222,8 +222,13 @@
                 body: JSON.stringify({ action: 'resend-tracking', email: email })
             });
             var data = await res.json();
-            successEl.textContent = data.message || 'If we have orders for that email, tracking links have been sent.';
-            successEl.style.display = 'block';
+            if (data.ok) {
+                successEl.textContent = data.message || 'If we have orders for that email, tracking links have been sent.';
+                successEl.style.display = 'block';
+            } else {
+                errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+                errorEl.style.display = 'block';
+            }
         } catch (err) {
             errorEl.textContent = 'Something went wrong. Please try again.';
             errorEl.style.display = 'block';
