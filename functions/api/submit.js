@@ -83,7 +83,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: email,
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html: quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl }),
+      html: quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl, editToken }),
     });
   } catch (err) {
     console.error("Failed to send quote customer email:", err);
@@ -102,9 +102,11 @@ async function handleQuoteRequest(env, data, submittedAt) {
 
   // 4. Supabase
   let invoiceId = null;
+  let editToken = null;
   try {
-    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
+    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location, message });
     invoiceId = sbResult?.invoiceId || null;
+    editToken = sbResult?.editToken || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -116,7 +118,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
 
-  return jsonResponse({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl });
+  return jsonResponse({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl, editToken });
 }
 
 async function handleEnquiry(env, data, submittedAt) {
@@ -504,11 +506,12 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
                     <!-- Total row -->
                     <tr style="background-color:#F5F3F0;">
-                      <td style="padding:9px 10px;color:#2C2C2C;font-weight:700;">Total (fully installed)</td>
+                      <td style="padding:9px 10px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
                       <td align="right" style="padding:9px 10px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
 
                   </table>
+                  <p style="font-size:11px;color:#999999;margin:6px 10px 0;font-family:Arial,sans-serif;">*Excluding permit fee, if applicable</p>
 
                   ${inscription ? `<!-- Inscription -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
@@ -585,7 +588,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
         <!-- Footer -->
         <tr>
           <td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
+            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
           </td>
         </tr>
 
@@ -597,7 +600,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl, editToken }) {
   const totalPrice = parseFloat(product.price) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -714,10 +717,11 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
                     }).join("")}
 
                     <tr>
-                      <td style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;">Total (fully installed)</td>
+                      <td style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
                       <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
                   </table>
+                  <p style="font-size:11px;color:#999999;margin:6px 0 0;font-family:Arial,sans-serif;">*Excluding permit fee, if applicable</p>
 
                 </td>
               </tr>
@@ -756,6 +760,29 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
           </td>
         </tr>` : ""}
 
+        ${editToken ? `<!-- Edit quote link -->
+        <tr>
+          <td style="padding:0 28px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;border-radius:8px;">
+              <tr>
+                <td style="padding:14px 18px;font-family:Arial,sans-serif;">
+                  <p style="font-size:13px;color:#555555;margin:0 0 8px;line-height:1.5;">Changed your mind about colour, size, or extras? You can update your quote at any time:</p>
+                  <a href="https://searsmelvin.co.uk/quote.html?token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>` : ""}
+
+        <!-- Track quotes link -->
+        <tr>
+          <td style="padding:0 28px 16px;">
+            <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
+              <a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account
+            </p>
+          </td>
+        </tr>
+
         <!-- Contact / sign-off -->
         <tr>
           <td style="padding:0 28px 32px;">
@@ -767,7 +794,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
         <!-- Footer -->
         <tr>
           <td style="background-color:#1A1A1A;padding:16px 28px;text-align:center;border-radius:0 0 10px 10px;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; ${BUSINESS_EMAIL}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
           </td>
         </tr>
 
@@ -816,7 +843,7 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, submi
         </table>
       </td></tr>
       <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
+        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
       </td></tr>
     </table>
   </td></tr>
@@ -843,7 +870,7 @@ function enquiryCustomerEmail({ name }) {
         <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
       </td></tr>
       <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; ${BUSINESS_EMAIL}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
       </td></tr>
     </table>
   </td></tr>
@@ -881,7 +908,16 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product }) {
+function generateToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  for (const b of bytes) token += chars[b % chars.length];
+  return token;
+}
+
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
   const headers = {
     "apikey": env.SUPABASE_SERVICE_KEY,
@@ -896,6 +932,10 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     body: JSON.stringify({ first_name: parts[0], last_name: parts.slice(1).join(" ") || null, email, phone: phone || null }),
   });
   if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
+
+  // Generate an edit token for quote editing
+  const editToken = type === "quote" ? generateToken() : null;
+
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST", headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
@@ -903,6 +943,9 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
       order_type: type === "quote" ? "quote" : (enquiry_type || null),
       sku: product?.name || null, color: product?.colour || null,
       value: product?.price ? parseFloat(product.price) : null, location: location || null,
+      ...(editToken ? { edit_token: editToken } : {}),
+      ...(type === "quote" && product ? { product_config: JSON.stringify(product) } : {}),
+      ...(message ? { notes: message } : {}),
     }),
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
@@ -925,7 +968,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     });
     if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
-  return invoiceId ? { invoiceId } : undefined;
+  return { invoiceId: invoiceId || null, editToken };
 }
 
 // ═══════════════════════════════════════════════════════════════════

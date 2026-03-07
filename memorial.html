@@ -640,9 +640,10 @@
                         <span id="pricePermitFee">+£0</span>
                     </div>
                     <div class="price-row total">
-                        <span>Total (fully installed)</span>
+                        <span>Guide total (installed)*</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
+                    <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">*Excluding permit fee, if applicable</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -1552,15 +1553,17 @@
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
                         _quoteTotal = total;
+                        var editLink = result.editToken ? '<br><a href="quote.html?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
+                        var trackLink = '<br><a href="quote.html?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
                         if (pref === 'quote_only') {
                             document.getElementById('quoteSuccess').style.display = 'block';
-                            document.getElementById('quoteSuccessMsg').textContent =
-                                "Your quote request has been received. We'll email you a detailed quote within 24 hours — no payment is needed at this stage.";
+                            document.getElementById('quoteSuccessMsg').innerHTML =
+                                "Your quote request has been received. We'll email you a detailed quote within 24 hours — no payment is needed at this stage." + editLink + trackLink;
                         } else if (result.invoiceOnly) {
                             document.getElementById('quoteSuccess').style.display = 'block';
-                            document.getElementById('quoteSuccessMsg').textContent =
-                                'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.';
+                            document.getElementById('quoteSuccessMsg').innerHTML =
+                                'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.' + editLink + trackLink;
                         } else {
                             await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId);
                         }

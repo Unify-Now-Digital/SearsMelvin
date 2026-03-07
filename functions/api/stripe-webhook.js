@@ -272,7 +272,7 @@ function depositConfirmationEmail({ name, amountPaid, product, cemetery }) {
     </td></tr>
 
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a> &middot; 01268 208 559</span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
     </td></tr>
 
   </table>
@@ -307,7 +307,7 @@ function depositBusinessEmail({ name, email, amountPaid, product, cemetery, piId
       </table>
     </td></tr>
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL}</span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
     </td></tr>
   </table>
   </td></tr>

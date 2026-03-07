@@ -247,6 +247,19 @@
         .shortlist-actions button { flex: 1; padding: 0.75rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .shortlist-btn-copy { background: var(--color-warm); border: none; color: var(--color-stone); }
         .shortlist-btn-email { background: var(--color-accent); border: none; color: white; }
+        .shortlist-enquiry { border-top: 1px solid var(--color-border); padding-top: 0.75rem; margin-top: 0.75rem; }
+        .shortlist-enquiry h4 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--color-stone); }
+        .shortlist-enquiry input, .shortlist-enquiry textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; font-family: var(--font-body); margin-bottom: 0.5rem; box-sizing: border-box; }
+        .shortlist-enquiry textarea { resize: vertical; min-height: 60px; }
+        .shortlist-enquiry-btn { width: 100%; padding: 0.75rem; background: var(--color-stone); border: none; color: white; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .shortlist-enquiry-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .shortlist-enquiry-success { color: #4CAF50; font-size: 0.85rem; text-align: center; padding: 0.5rem; display: none; }
+        .save-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2C2C2C; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .save-toast.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+        .save-toast svg { width: 18px; height: 18px; stroke: #e8665a; fill: #e8665a; flex-shrink: 0; }
+        .save-toast a { color: #8B7355; text-decoration: underline; }
+        @keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        .save-btn.animate svg { animation: heartPop 0.4s ease; }
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
@@ -548,6 +561,18 @@
                 <button class="shortlist-btn-copy" onclick="copyShareLink()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Link</button>
                 <button class="shortlist-btn-email" onclick="emailShortlist()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
             </div>
+            <div class="shortlist-enquiry" id="shortlistEnquiry" style="display:none;">
+                <h4>Enquire about these memorials</h4>
+                <input type="text" id="slEnqName" placeholder="Your name" required>
+                <input type="email" id="slEnqEmail" placeholder="Your email" required>
+                <input type="tel" id="slEnqPhone" placeholder="Phone (optional)">
+                <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
+                <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    <span>Send Enquiry</span>
+                </button>
+                <div class="shortlist-enquiry-success" id="slEnqSuccess">Enquiry sent! We'll be in touch soon.</div>
+            </div>
         </div>
     </div>
 
@@ -830,14 +855,31 @@
         function viewComparison() { window.location.href = 'compare.html?items=' + state.compareList.join(','); }
 
         // ==================== SHORTLIST / SAVE ====================
+        var _saveToastTimer;
+        function showSaveToast(msg) {
+            var toast = document.getElementById('saveToast');
+            var msgEl = document.getElementById('saveToastMsg');
+            if (!toast || !msgEl) return;
+            clearTimeout(_saveToastTimer);
+            msgEl.innerHTML = msg;
+            toast.classList.add('visible');
+            _saveToastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 3000);
+        }
+
         function toggleSave(btn) {
             const card = btn.closest('.product-card');
             const id = card.dataset.id;
             const isActive = btn.classList.contains('active');
-            if (isActive) { state.shortlist = state.shortlist.filter(item => item.id !== id); btn.classList.remove('active'); }
-            else {
+            if (isActive) {
+                state.shortlist = state.shortlist.filter(item => item.id !== id);
+                btn.classList.remove('active');
+                showSaveToast('Removed from shortlist');
+            } else {
                 state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
                 btn.classList.add('active');
+                btn.classList.add('animate');
+                setTimeout(function() { btn.classList.remove('animate'); }, 500);
+                showSaveToast('Saved to shortlist — <a href="javascript:openShortlist()">view list</a>');
             }
             updateShortlistUI();
             saveShortlistToStorage();
@@ -862,6 +904,8 @@
                 const slugs = state.shortlist.map(i => i.slug || i.id).join(',');
                 document.getElementById('shareLink').value = window.location.origin + '/memorials.html?shortlist=' + slugs;
             }
+            var enqPanel = document.getElementById('shortlistEnquiry');
+            if (enqPanel) enqPanel.style.display = count > 0 ? 'block' : 'none';
         }
 
         function removeFromShortlist(id) {
@@ -895,10 +939,51 @@
         }
 
         function emailShortlist() {
-            const link = document.getElementById('shareLink').value;
-            const subject = encodeURIComponent('My Memorial Shortlist - Sears Melvin');
-            const body = encodeURIComponent('I\'ve saved some memorials I\'m considering:\n\n' + link + '\n\nWhat do you think?');
+            const items = state.shortlist.map(function(item) {
+                return item.name + ' — ' + item.price + '\n  View: https://searsmelvin.co.uk/memorial.html?slug=' + item.slug;
+            }).join('\n\n');
+            const subject = encodeURIComponent('My Memorial Shortlist — Sears Melvin Memorials');
+            const body = encodeURIComponent('Hi,\n\nI\'ve been looking at memorials on the Sears Melvin website and would like to share my shortlist:\n\n' + items + '\n\nView full shortlist: ' + document.getElementById('shareLink').value + '\n\nKind regards');
             window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+        }
+
+        async function submitShortlistEnquiry() {
+            var name = document.getElementById('slEnqName').value.trim();
+            var email = document.getElementById('slEnqEmail').value.trim();
+            var phone = document.getElementById('slEnqPhone').value.trim();
+            var note = document.getElementById('slEnqNote').value.trim();
+            if (!name || !email) return;
+            var btn = document.getElementById('slEnqBtn');
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Sending…';
+            var memorialList = state.shortlist.map(function(item) {
+                return item.name + ' (' + item.price + ')';
+            }).join(', ');
+            try {
+                var res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'enquiry',
+                        name: name,
+                        email: email,
+                        phone: phone || null,
+                        enquiry_type: 'shortlist-enquiry',
+                        message: 'Enquiry about multiple memorials:\n\n' + state.shortlist.map(function(item) {
+                            return '• ' + item.name + ' — ' + item.price + (item.slug ? ' (https://searsmelvin.co.uk/memorial.html?slug=' + item.slug + ')' : '');
+                        }).join('\n') + (note ? '\n\nCustomer note: ' + note : '')
+                    })
+                });
+                var result = await res.json();
+                if (result.ok) {
+                    document.getElementById('slEnqSuccess').style.display = 'block';
+                    btn.style.display = 'none';
+                } else { throw new Error(result.error); }
+            } catch (e) {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = 'Send Enquiry';
+                alert('Sorry, something went wrong. Please try again.');
+            }
         }
 
         function saveShortlistToStorage() { localStorage.setItem('sm_shortlist', JSON.stringify(state.shortlist)); }
@@ -1042,6 +1127,12 @@
             <p style="font-size: 0.8rem;">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Save Toast Notification -->
+    <div class="save-toast" id="saveToast">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span id="saveToastMsg">Saved to shortlist</span>
+    </div>
 
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" aria-label="Mobile navigation" style="display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08);">
