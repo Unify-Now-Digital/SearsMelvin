@@ -235,7 +235,7 @@ async function resendTracking(env, { email }) {
     }).join("");
 
     try {
-      await fetch("https://api.resend.com/emails", {
+      const emailRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -255,6 +255,10 @@ async function resendTracking(env, { email }) {
           </div>`,
         }),
       });
+      if (!emailRes.ok) {
+        const body = await emailRes.text();
+        console.error(`Resend error ${emailRes.status} sending tracking to ${email}: ${body}`);
+      }
     } catch (err) {
       console.error("Failed to send tracking email:", err);
     }
