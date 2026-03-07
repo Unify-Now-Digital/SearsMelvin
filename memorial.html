@@ -790,15 +790,15 @@
                         <div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin-top:0.3rem;">
                             <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:8px; cursor:pointer; background:rgba(139,115,85,0.04); transition:border-color 0.2s;">
                                 <input type="radio" name="paymentPref" value="quote_only" checked>
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Just send my quote</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">No payment needed — review the quote at your own pace</span></span>
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Submit quote</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">We'll email you deposit and full payment invoice options</span></span>
                             </label>
                             <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
                                 <input type="radio" name="paymentPref" value="deposit">
                                 <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay 50% deposit now</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Secure your order today, pay balance on completion</span></span>
                             </label>
                             <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
-                                <input type="radio" name="paymentPref" value="invoice_only">
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Request an invoice</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">We'll send a formal invoice when you're ready</span></span>
+                                <input type="radio" name="paymentPref" value="pay_full">
+                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay in full now</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Complete your payment today — no further balance due</span></span>
                             </label>
                         </div>
                     </div>
@@ -1415,7 +1415,7 @@
             document.querySelectorAll('input[name="paymentPref"]').forEach(function(radio) {
                 radio.addEventListener('change', function() {
                     const label = document.getElementById('quoteSubmitLabel');
-                    var labels = { quote_only: 'Send Quote Request', deposit: 'Continue to Deposit', invoice_only: 'Request Invoice' };
+                    var labels = { quote_only: 'Submit Quote', deposit: 'Continue to Deposit', pay_full: 'Continue to Payment' };
                     if (label) label.textContent = labels[this.value] || 'Send Quote Request';
                     document.querySelectorAll('input[name="paymentPref"]').forEach(function(r) {
                         const lbl = r.closest('label');
@@ -1502,18 +1502,41 @@
             }
         };
 
-        async function showPaymentStep(deposit, name, email, cemetery, product, invoiceId) {
+        var _isFullPayment = false;
+
+        async function showPaymentStep(amount, name, email, cemetery, product, invoiceId, isFullPayment) {
             _quoteName     = name;
             _quoteEmail    = email;
             _quoteCemetery = cemetery;
             _quoteProduct  = product;
+            _isFullPayment = !!isFullPayment;
 
             const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
-            const balance = _quoteTotal - deposit;
-            document.getElementById('qDepositAmount').textContent = fmt(deposit);
-            document.getElementById('qBalanceDue').textContent    = fmt(balance);
-            document.getElementById('qOrderTotal').textContent    = fmt(_quoteTotal);
-            document.getElementById('qDepositTotal').textContent  = fmt(deposit);
+            const balance = _quoteTotal - amount;
+
+            // Update UI labels based on payment type
+            var headerTitle = document.querySelector('#quotePayStep .quote-deposit-header h3');
+            var headerDesc = document.querySelector('#quotePayStep .quote-deposit-header p');
+            var payBtnLabel = document.querySelector('#quotePayBtn span');
+
+            if (isFullPayment) {
+                if (headerTitle) headerTitle.textContent = 'Complete your payment';
+                if (headerDesc) headerDesc.textContent = 'Pay the full amount today — no further balance due';
+                document.getElementById('qDepositAmount').textContent = fmt(amount);
+                document.getElementById('qBalanceDue').textContent = '£0';
+                document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
+                document.getElementById('qDepositTotal').textContent = fmt(amount);
+                if (payBtnLabel) payBtnLabel.textContent = 'Pay in full';
+            } else {
+                if (headerTitle) headerTitle.textContent = 'Secure your order';
+                if (headerDesc) headerDesc.textContent = 'A 50% deposit confirms your order and reserves your slot';
+                document.getElementById('qDepositAmount').textContent = fmt(amount);
+                document.getElementById('qBalanceDue').textContent = fmt(balance);
+                document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
+                document.getElementById('qDepositTotal').textContent = fmt(amount);
+                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit';
+            }
+
             document.getElementById('quotePayStep').style.display = 'block';
 
             if (!_stripePK) {
@@ -1525,7 +1548,7 @@
                 const piRes = await fetch('/api/stripe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: deposit, name, email, cemetery, product, invoiceId }),
+                    body: JSON.stringify({ amount, name, email, cemetery, product, invoiceId }),
                 });
                 const { clientSecret, error } = await piRes.json();
                 if (error || !clientSecret) throw new Error(error || 'No client secret');
@@ -1605,13 +1628,11 @@
                         if (pref === 'quote_only') {
                             document.getElementById('quoteSuccess').style.display = 'block';
                             document.getElementById('quoteSuccessMsg').innerHTML =
-                                "Your quote request has been received. We'll email you a detailed quote within 24 hours — no payment is needed at this stage." + editLink + trackLink;
-                        } else if (result.invoiceOnly) {
-                            document.getElementById('quoteSuccess').style.display = 'block';
-                            document.getElementById('quoteSuccessMsg').innerHTML =
-                                'Your invoice request has been received. Check your email — your Sears Melvin invoice includes a link to view and pay at your convenience.' + editLink + trackLink;
+                                "Your quote has been submitted. Check your email — we've sent your quote summary with deposit and full payment options." + editLink + trackLink;
+                        } else if (pref === 'pay_full') {
+                            await showPaymentStep(total, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
                         } else {
-                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId);
+                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
                         }
                     } else {
                         throw new Error(result.error || 'Submission failed');
@@ -1637,11 +1658,11 @@
                 });
                 if (error) {
                     btn.disabled = false;
-                    btn.querySelector('span').textContent = 'Pay deposit';
+                    btn.querySelector('span').textContent = _isFullPayment ? 'Pay in full' : 'Pay deposit';
                     errEl.textContent = error.message;
                     errEl.style.display = 'block';
                 } else {
-                    showQuoteSuccess(true);
+                    showQuoteSuccess(true, _isFullPayment);
                 }
             });
 
@@ -1650,12 +1671,16 @@
             });
         });
 
-        function showQuoteSuccess(depositPaid) {
+        function showQuoteSuccess(paid, isFullPayment) {
             document.getElementById('quotePayStep').style.display = 'none';
             document.getElementById('quoteSuccess').style.display = 'block';
-            document.getElementById('quoteSuccessMsg').textContent = depositPaid
-                ? 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.'
-                : 'We\'ve sent a confirmation to your email and will be in touch within 24 hours.';
+            if (paid && isFullPayment) {
+                document.getElementById('quoteSuccessMsg').textContent = 'Your payment is confirmed. We\'ll be in touch within 24 hours to discuss your order.';
+            } else if (paid) {
+                document.getElementById('quoteSuccessMsg').textContent = 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.';
+            } else {
+                document.getElementById('quoteSuccessMsg').textContent = 'We\'ve sent a confirmation to your email and will be in touch within 24 hours.';
+            }
         }
     </script>
 
