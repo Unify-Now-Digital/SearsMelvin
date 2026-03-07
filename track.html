@@ -39,9 +39,13 @@
 
         /* Loading / Error */
         .loading-state { text-align: center; padding: 4rem 2rem; color: var(--color-text-muted); }
+        .loading-spinner { width: 36px; height: 36px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .error-state { text-align: center; padding: 4rem 2rem; }
         .error-state h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .error-state p { color: var(--color-text-muted); }
+        .retry-btn { margin-top: 1.25rem; padding: 0.6rem 1.5rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+        .retry-btn:hover { background: var(--color-stone-light); }
 
         /* Order header */
         .order-header { margin-bottom: 2rem; }
@@ -124,6 +128,9 @@
         .contact-card a { color: var(--color-accent); font-weight: 500; text-decoration: underline; }
 
         @media (max-width: 600px) {
+            .track-header { padding: 0.75rem 1rem; }
+            .track-header h1 { font-size: 1rem; }
+            .track-header-logo { font-size: 1rem; }
             .track-main { padding: 1rem 1rem 3rem; }
             .progress-label { font-size: 0.55rem; }
             .progress-dot { width: 22px; height: 22px; }
@@ -142,11 +149,13 @@
 
 <main class="track-main">
     <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
         <p>Loading your order...</p>
     </div>
     <div id="errorState" class="error-state" style="display:none;">
         <h2>Order Not Found</h2>
         <p id="errorMsg">Please check your tracking link and try again.</p>
+        <button class="retry-btn" onclick="retryLoad()">Try Again</button>
     </div>
 
     <!-- Lookup form (shown when no token provided) -->
@@ -225,7 +234,10 @@
 
     async function loadOrder() {
         try {
-            var res = await fetch('/api/customer-order?token=' + encodeURIComponent(trackingToken));
+            var controller = new AbortController();
+            var timeout = setTimeout(function() { controller.abort(); }, 15000);
+            var res = await fetch('/api/customer-order?token=' + encodeURIComponent(trackingToken), { signal: controller.signal });
+            clearTimeout(timeout);
             var data = await res.json();
             if (!data.ok) {
                 showError(data.error || 'Order not found.');
@@ -234,8 +246,19 @@
             orderData = data;
             renderOrder(data.order, data.inscriptionHistory);
         } catch (err) {
-            showError('Failed to load order. Please try again later.');
+            if (err.name === 'AbortError') {
+                showError('The request timed out. Please check your connection and try again.');
+            } else {
+                showError('Failed to load order. Please try again.');
+            }
         }
+    }
+
+    function retryLoad() {
+        if (!trackingToken) return;
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'block';
+        loadOrder();
     }
 
     function showError(msg) {
