@@ -194,6 +194,7 @@ async function handleRequest(env, { email, password, name, company, phone, messa
           active: true,
         }),
       });
+      await sendPartnerRequestEmails(env, { name, email, company, phone, message });
       return json({ ok: true, message: "Your request has been resubmitted and is pending approval." });
     }
   }
@@ -222,6 +223,7 @@ async function handleRequest(env, { email, password, name, company, phone, messa
     return json({ ok: false, error: "Failed to submit request" }, 500);
   }
 
+  await sendPartnerRequestEmails(env, { name, email, company, phone, message });
   return json({ ok: true, message: "Your request has been submitted. We'll review it and get back to you soon." });
 }
 
@@ -250,7 +252,11 @@ async function handleForgotPassword(env, { email }) {
     headers: { ...headers, "Prefer": "return=minimal" },
     body: JSON.stringify({ partner_id: partner.id, token, expires_at: expiresAt }),
   });
-  if (!insertRes.ok) return json({ ok: true, message: successMsg });
+  if (!insertRes.ok) {
+    const errBody = await insertRes.text();
+    console.error(`Failed to save reset token (${insertRes.status}): ${errBody}`);
+    return json({ ok: true, message: successMsg });
+  }
 
   // Send reset email via Resend
   if (!env.RESEND_API_KEY) {
@@ -385,6 +391,116 @@ function json(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", ...CORS },
   });
+}
+
+function esc(str) {
+  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function sendPartnerRequestEmails(env, { name, email, company, phone, message }) {
+  if (!env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not set — cannot send partner request emails");
+    return;
+  }
+
+  const firstName = (name || "").split(" ")[0] || "there";
+
+  // Notify the business
+  try {
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+        to: "info@searsmelvin.co.uk",
+        subject: `New Partner Request — ${name}${company ? ` (${company})` : ""}`,
+        html: `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <tr><td style="background:#2C2C2C;padding:18px 28px;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td><span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;">Memorials</span></span></td>
+      <td align="right"><span style="background:#8B7355;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Partner Request</span></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:24px 28px;">
+    <h2 style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;font-weight:normal;margin:0 0 16px;">New Partner Access Request</h2>
+    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:16px;">
+      <tr><td style="color:#999;padding:5px 0;width:100px;">Name</td><td style="color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
+      <tr><td style="color:#999;padding:5px 0;">Email</td><td><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
+      ${company ? `<tr><td style="color:#999;padding:5px 0;">Company</td><td style="color:#1A1A1A;">${esc(company)}</td></tr>` : ""}
+      ${phone ? `<tr><td style="color:#999;padding:5px 0;">Phone</td><td style="color:#1A1A1A;">${esc(phone)}</td></tr>` : ""}
+    </table>
+    ${message ? `<div style="background:#F5F3F0;border-radius:8px;padding:16px 20px;">
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:8px;">Message</div>
+      <p style="margin:0;font-size:13px;color:#1A1A1A;line-height:1.6;">${esc(message)}</p>
+    </div>` : ""}
+    <p style="margin-top:16px;font-size:13px;color:#555;">
+      <a href="https://searsmelvin.co.uk/admin.html" style="color:#8B7355;font-weight:600;">Review in Admin Panel &rarr;</a>
+    </p>
+  </td></tr>
+  <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;">
+    <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; Partner Portal</span>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`,
+      }),
+    });
+    if (!emailRes.ok) {
+      const body = await emailRes.text();
+      console.error(`Resend error ${emailRes.status} sending partner request business email: ${body}`);
+    }
+  } catch (err) {
+    console.error("Failed to send partner request business email:", err);
+  }
+
+  // Confirm to the requester
+  try {
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+        to: email,
+        subject: "Partner request received — Sears Melvin Memorials",
+        html: `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <tr><td style="background:#2C2C2C;padding:20px 28px;">
+    <span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;">Memorials</span></span>
+  </td></tr>
+  <tr><td style="padding:32px 28px;">
+    <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Request received, ${esc(firstName)}.</h2>
+    <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 20px;">
+      Thank you for requesting access to the Sears Melvin Partner Portal. Our team will review your application and get back to you shortly.
+    </p>
+    <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
+      Once approved, you'll be able to sign in at <a href="https://searsmelvin.co.uk/partner.html" style="color:#8B7355;font-weight:600;">searsmelvin.co.uk/partner.html</a> using the email and password you provided.
+    </p>
+    <p style="color:#555;font-size:14px;line-height:1.7;margin:20px 0 0;">
+      If you have any questions, please contact us at <a href="mailto:info@searsmelvin.co.uk" style="color:#8B7355;">info@searsmelvin.co.uk</a>.
+    </p>
+    <hr style="border:none;border-top:1px solid #E0DCD5;margin:24px 0 16px;">
+    <p style="color:#888;font-size:13px;margin:0;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
+  </td></tr>
+  <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
+    <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; <a href="mailto:info@searsmelvin.co.uk" style="color:#BBB;">info@searsmelvin.co.uk</a></span>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`,
+      }),
+    });
+    if (!emailRes.ok) {
+      const body = await emailRes.text();
+      console.error(`Resend error ${emailRes.status} sending partner request confirmation: ${body}`);
+    }
+  } catch (err) {
+    console.error("Failed to send partner request confirmation email:", err);
+  }
 }
 
 export { getPartnerFromToken, sbHeaders, json, CORS };
