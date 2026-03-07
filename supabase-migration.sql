@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS partners (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Permit fee (separate from product value)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS permit_fee NUMERIC(10,2) DEFAULT 0;
+
 -- Link orders to partners
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS partner_id INTEGER REFERENCES partners(id);
 CREATE INDEX IF NOT EXISTS idx_orders_partner ON orders (partner_id) WHERE partner_id IS NOT NULL;

@@ -673,10 +673,10 @@
                         <span id="pricePermitFee">+£0</span>
                     </div>
                     <div class="price-row total">
-                        <span>Guide total (installed)*</span>
+                        <span>Guide total (installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
-                    <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">*Excluding permit fee, if applicable</p>
+                    <p id="permitNote" style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">*Permit fee varies by cemetery — select a cemetery for an estimate</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -1588,6 +1588,7 @@
                                 font:        state.font || '',
                                 letterColour: state.letterColour || '',
                                 price:       String(total),
+                                permit_fee:  _selectedCemeteryFee || 0,
                                 image:       PRODUCT_IMAGE_URL,
                             }
                         })
@@ -1766,11 +1767,14 @@
         function updatePermitFeeRow() {
             var row = document.getElementById('qsPermitFeeRow');
             var totalEl = document.getElementById('qsTotal');
+            var noteEl = document.getElementById('permitNote');
             if (_selectedCemeteryFee > 0 && row) {
                 document.getElementById('qsPermitFee').textContent = '£' + _selectedCemeteryFee.toLocaleString();
                 row.style.display = '';
+                if (noteEl) noteEl.style.display = 'none';
             } else if (row) {
                 row.style.display = 'none';
+                if (noteEl) noteEl.style.display = '';
             }
             // Recalculate total with permit fee
             var memorialTotal = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;

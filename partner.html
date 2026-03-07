@@ -751,6 +751,7 @@
             + (order.colour ? row('Colour', order.colour) : '')
             + (order.location ? row('Location', order.location) : '')
             + row('Value', order.value ? formatPrice(order.value) : '—')
+            + (order.permit_fee && parseFloat(order.permit_fee) > 0 ? row('Permit Fee', formatPrice(order.permit_fee)) : '')
             + row('Submitted', formatDate(order.created_at))
             + (order.updated_at ? row('Updated', formatDate(order.updated_at)) : '')
             + '</div>';
