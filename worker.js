@@ -272,6 +272,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
   const invoiceOnly = payment_preference === "invoice_only";
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
+  const preEditToken = generateToken();
 
   // 0. Stripe Invoice — create if configured
   let stripeInvoiceUrl = null;
@@ -305,7 +306,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      email,
       subject: `Your quote request — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex }),
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, editToken: preEditToken, email }),
     });
   } catch (err) {
     console.error("Failed to send quote customer email:", err);
@@ -322,11 +323,13 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("Failed to create ClickUp quote task:", err);
   }
 
-  // 4. Supabase record (non-critical) — returns { invoiceId } for quotes
+  // 4. Supabase record (non-critical) — returns { invoiceId, editToken } for quotes
   let invoiceId = null;
+  let editToken = null;
   try {
-    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location });
+    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location, message, preEditToken });
     invoiceId = sbResult?.invoiceId || null;
+    editToken = sbResult?.editToken || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
   }
@@ -338,7 +341,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("GHL contact create failed:", err);
   }
 
-  return json({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl }, 200, corsHeaders);
+  return json({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl, editToken }, 200, corsHeaders);
 }
 
 
@@ -389,7 +392,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
       <div style="background:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;">${esc(message).replace(/\n/g, "<br>")}</div>
     </td></tr>
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
     </td></tr>
   </table>
   </td></tr>
@@ -423,7 +426,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
       <p style="color:#888;font-size:13px;margin:0;line-height:1.7;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
     </td></tr>
     <tr><td style="background:#1A1A1A;padding:14px 28px;text-align:center;">
-      <span style="font-size:11px;color:rgba(255,255,255,0.35);">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; ${BUSINESS_EMAIL}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,0.35);">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
     </td></tr>
   </table>
   </td></tr>
@@ -659,98 +662,120 @@ function arrayBufferToBase64Url(buffer) {
  *   A. Memorial Configuration  B. Customer  C. Customer Notes
  */
 function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
-  const addons      = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons.join(", ") : "";
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems
+    : Array.isArray(product.addons) && product.addons.length > 0
+      ? product.addons.map(n => ({ name: n, price: null }))
+      : [];
   const inscription = product.inscription ? product.inscription.trim() : "";
-  const priceFormatted = formatPrice(product.price);
+  const totalPrice = parseFloat(product.price) || 0;
+  const addonTotal = addonItems.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
+  const basePrice = Math.max(0, totalPrice - addonTotal);
+
+  const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
+  const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,'DM Sans',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F5F3F0;padding:24px 0;">
   <tr><td align="center">
-  <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;background:#fff;border-radius:10px;overflow:hidden;">
 
-    <!-- ── Header ── -->
     <tr><td style="background:#2C2C2C;padding:18px 28px;">
-      <table width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><span style="font-family:Georgia,serif;font-size:18px;color:#fff;font-weight:normal;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></span></td>
-        <td align="right"><span style="background:#8B7355;color:#fff;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">New Quote</span></td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
+        <td align="right"><span style="background:#8B7355;color:#fff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">New Quote</span></td>
       </tr></table>
     </td></tr>
 
-    <!-- ── Title ── -->
     <tr><td style="padding:26px 28px 4px;">
       <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px;">New Quote Request</h2>
       <p style="color:#AAA;font-size:12px;margin:0;">Received ${esc(submittedAt)}</p>
     </td></tr>
 
-    <!-- ══ SECTION A: Memorial Configuration ══ -->
     <tr><td style="padding:20px 28px 0;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E0DCD5;border-radius:8px;overflow:hidden;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E0DCD5;border-radius:8px;border-collapse:separate;">
         <tr>
-          <td width="8" style="background:${stoneHex};">&nbsp;</td>
+          <td width="6" style="background:${stoneHex};border-radius:8px 0 0 8px;">&nbsp;</td>
           <td style="padding:18px 20px;">
-            <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:6px;">Memorial Configuration</div>
-            <div style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;margin-bottom:14px;">${esc(product.name || "—")}</div>
-            <table cellpadding="0" cellspacing="0" style="font-size:13px;width:100%;">
-              <tr>
-                <td style="color:#999;padding:4px 0;width:110px;">Type</td>
-                <td style="color:#1A1A1A;padding:4px 0;">${esc(product.type || "—")}</td>
+            <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px;">Memorial Configuration</p>
+            <p style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;margin:0 0 14px;">${esc(product.name || "—")}</p>
+
+            ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+              <tr><td align="center" style="background:#F5F3F0;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
+                <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
+              </td></tr>
+            </table>` : ""}
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;margin-bottom:0;">
+              <tr><td width="130" style="color:#999;padding:4px 0;">Type</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.type || "—")}</td></tr>
+              <tr><td style="color:#999;padding:4px 0;">Stone colour</td><td style="color:#1A1A1A;padding:4px 0;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${stoneHex};vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,0.15);"></span>${esc(product.colour || "—")}
+              </td></tr>
+              ${product.size ? `<tr><td style="color:#999;padding:4px 0;">Size</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.size)}</td></tr>` : ""}
+              ${product.font ? `<tr><td style="color:#999;padding:4px 0;">Font</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td></tr>` : ""}
+              ${product.letterColour ? `<tr><td style="color:#999;padding:4px 0;">Lettering colour</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td></tr>` : ""}
+            </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;margin-top:14px;border-top:1px solid #E0DCD5;">
+              <tr style="background:#F5F3F0;">
+                <td style="padding:8px 10px;color:#999;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;">Item</td>
+                <td width="80" align="right" style="padding:8px 10px;color:#999;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;">Price</td>
               </tr>
               <tr>
-                <td style="color:#999;padding:4px 0;">Stone colour</td>
-                <td style="color:#1A1A1A;padding:4px 0;">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${stoneHex};vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,0.15);"></span>${esc(product.colour || "—")}
-                </td>
+                <td style="padding:8px 10px;color:#1A1A1A;border-bottom:1px solid #F0EDE8;">${esc(product.name || "Memorial")} (inc. installation)</td>
+                <td align="right" style="padding:8px 10px;color:#1A1A1A;border-bottom:1px solid #F0EDE8;white-space:nowrap;">£${basePrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
               </tr>
-              ${product.size ? `<tr>
-                <td style="color:#999;padding:4px 0;">Size</td>
-                <td style="color:#1A1A1A;padding:4px 0;">${esc(product.size)}</td>
-              </tr>` : ""}
-              ${addons ? `<tr>
-                <td style="color:#999;padding:4px 0;vertical-align:top;">Optional extras</td>
-                <td style="color:#1A1A1A;padding:4px 0;">${esc(addons)}</td>
-              </tr>` : ""}
-              ${inscription ? `<tr>
-                <td style="color:#999;padding:4px 0;vertical-align:top;">Inscription</td>
-                <td style="padding:4px 0;">
-                  <div style="background:#F5F3F0;border-left:3px solid #D4AF37;padding:8px 12px;font-family:Georgia,serif;font-style:italic;color:#2C2C2C;font-size:13px;line-height:1.6;">${esc(inscription).replace(/\n/g, "<br>")}</div>
-                </td>
-              </tr>` : ""}
-              <tr>
-                <td style="color:#999;padding:8px 0 4px;border-top:1px solid #E0DCD5;">Guide total</td>
-                <td style="padding:8px 0 4px;border-top:1px solid #E0DCD5;"><strong style="font-size:15px;color:#2C2C2C;">£${esc(priceFormatted)}</strong> <span style="color:#999;font-size:12px;">fully installed</span></td>
+              ${addonItems.filter(a => parseFloat(a.price) > 0).map(function(item) {
+                return `<tr>
+                <td style="padding:8px 10px;color:#555;border-bottom:1px solid #F0EDE8;">${esc(item.name)}</td>
+                <td align="right" style="padding:8px 10px;color:#555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">+£${parseFloat(item.price).toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+              </tr>`;
+              }).join("")}
+              ${addonItems.filter(a => !(parseFloat(a.price) > 0) && a.name).map(function(item) {
+                return `<tr>
+                <td style="padding:8px 10px;color:#555;border-bottom:1px solid #F0EDE8;">${esc(item.name)}</td>
+                <td align="right" style="padding:8px 10px;color:#555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">—</td>
+              </tr>`;
+              }).join("")}
+              <tr style="background:#F5F3F0;">
+                <td style="padding:9px 10px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
+                <td align="right" style="padding:9px 10px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
               </tr>
             </table>
+            <p style="font-size:11px;color:#999;margin:6px 0 0;">*Excluding permit fee, if applicable</p>
+
+            ${inscription ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
+              <tr><td style="background:#FAF8F5;border-left:3px solid #D4AF37;padding:8px 12px;font-family:Georgia,serif;font-style:italic;color:#2C2C2C;font-size:13px;line-height:1.6;">${esc(inscription).replace(/\n/g,"<br>")}</td></tr>
+            </table>` : ""}
           </td>
         </tr>
       </table>
     </td></tr>
 
-    <!-- ══ SECTION B: Customer ══ -->
-    <tr><td style="padding:20px 28px 0;"><hr style="border:none;border-top:1px solid #E0DCD5;margin:0;"></td></tr>
-    <tr><td style="padding:20px 28px ${message ? "0" : "28px"};">
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:12px;">Customer</div>
-      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
-        <tr><td style="padding:5px 0;color:#999;width:110px;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
+    <tr><td style="padding:16px 28px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #E0DCD5;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
+
+    <tr><td style="padding:16px 28px ${message ? "0" : "28px"};">
+      <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 12px;">Customer</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;">
+        <tr><td width="120" style="padding:5px 0;color:#999;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
         <tr><td style="padding:5px 0;color:#999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
         <tr><td style="padding:5px 0;color:#999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
         ${location ? `<tr><td style="padding:5px 0;color:#999;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>` : ""}
       </table>
     </td></tr>
 
-    <!-- ══ SECTION C: Customer Notes (only if provided) ══ -->
-    ${message ? `
-    <tr><td style="padding:16px 28px 28px;">
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:10px;">Customer Notes</div>
-      <div style="background:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;">${esc(message).replace(/\n/g, "<br>")}</div>
+    ${message ? `<tr><td style="padding:16px 28px 28px;">
+      <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px;">Customer Notes</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="background:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
+      </table>
     </td></tr>` : ""}
 
-    <!-- ── Footer ── -->
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
     </td></tr>
 
   </table>
@@ -759,22 +784,30 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </body></html>`;
 }
 
-/** Customer confirmation — warm and branded, with quote summary card */
-function quoteCustomerEmail({ firstName, product, stoneHex }) {
-  const priceFormatted = formatPrice(product.price);
-  const addons = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons.join(", ") : "";
+/** Customer confirmation — warm and branded, with quote summary card and line items */
+function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) {
+  const totalPrice = parseFloat(product.price) || 0;
+  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
+    ? product.addonLineItems
+    : Array.isArray(product.addons) && product.addons.length > 0
+      ? product.addons.map(n => ({ name: n, price: null }))
+      : [];
+  const addonTotal = addonItems.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
+  const basePrice = Math.max(0, totalPrice - addonTotal);
+
+  const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
+  const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,'DM Sans',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F5F3F0;padding:24px 0;">
   <tr><td align="center">
-  <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background:#fff;border-radius:10px;overflow:hidden;">
 
     <tr><td style="background:#2C2C2C;padding:20px 28px;">
-      <span style="font-family:Georgia,serif;font-size:18px;color:#fff;font-weight:normal;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></span>
+      <span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></span>
     </td></tr>
 
     <tr><td style="padding:30px 28px 0;">
@@ -782,34 +815,76 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 22px;">
         We've received your quote request for the
         <strong style="color:#2C2C2C;">${esc(product.name || "memorial")}</strong>
-        and our team will be in touch within 24 hours to discuss your requirements.
+        and our team will be in touch within 24 hours.
       </p>
     </td></tr>
 
-    <!-- Quote summary card -->
     <tr><td style="padding:0 28px 24px;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F5;border:1px solid #E0DCD5;border-radius:8px;overflow:hidden;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF8F5;border:1px solid #E0DCD5;border-radius:8px;border-collapse:separate;">
         <tr>
-          <td width="6" style="background:${stoneHex};">&nbsp;</td>
+          <td width="6" style="background:${stoneHex};border-radius:8px 0 0 8px;">&nbsp;</td>
           <td style="padding:16px 18px;">
-            <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:4px;">Your Quote Summary</div>
-            <div style="font-family:Georgia,serif;font-size:18px;color:#2C2C2C;margin-bottom:12px;">${esc(product.name || "—")}</div>
-            <table cellpadding="0" cellspacing="4" style="font-size:13px;">
-              <tr><td style="color:#999;width:100px;padding:3px 0;">Type</td><td style="color:#2C2C2C;">${esc(product.type || "—")}</td></tr>
-              <tr>
-                <td style="color:#999;padding:3px 0;">Stone colour</td>
-                <td style="color:#2C2C2C;">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${stoneHex};vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,0.15);"></span>${esc(product.colour || "—")}
-                </td>
-              </tr>
+            <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px;">Your Order Summary</p>
+            <p style="font-family:Georgia,serif;font-size:18px;color:#2C2C2C;margin:0 0 14px;">${esc(product.name || "—")}</p>
+
+            ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+              <tr><td align="center" style="background:#fff;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
+                <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
+              </td></tr>
+            </table>` : ""}
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;margin-bottom:12px;">
+              <tr><td width="110" style="color:#999;padding:3px 0;">Type</td><td style="color:#2C2C2C;">${esc(product.type || "—")}</td></tr>
+              <tr><td style="color:#999;padding:3px 0;">Stone colour</td><td style="color:#2C2C2C;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${stoneHex};vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,0.15);"></span>${esc(product.colour || "—")}
+              </td></tr>
               ${product.size ? `<tr><td style="color:#999;padding:3px 0;">Size</td><td style="color:#2C2C2C;">${esc(product.size)}</td></tr>` : ""}
-              ${addons ? `<tr><td style="color:#999;padding:3px 0;vertical-align:top;">Extras</td><td style="color:#2C2C2C;">${esc(addons)}</td></tr>` : ""}
-              <tr><td style="color:#999;padding:6px 0 3px;border-top:1px solid #E0DCD5;">Guide total</td><td style="color:#2C2C2C;font-weight:700;padding:6px 0 3px;border-top:1px solid #E0DCD5;">£${esc(priceFormatted)} <span style="font-weight:400;color:#999;">fully installed</span></td></tr>
+              ${product.font ? `<tr><td style="color:#999;padding:3px 0;">Font</td><td style="color:#2C2C2C;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td></tr>` : ""}
+              ${product.letterColour ? `<tr><td style="color:#999;padding:3px 0;">Lettering colour</td><td style="color:#2C2C2C;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td></tr>` : ""}
             </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;border-top:1px solid #E0DCD5;">
+              <tr>
+                <td style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;">${esc(product.name || "Memorial")} (inc. installation)</td>
+                <td align="right" style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">£${basePrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+              </tr>
+              ${addonItems.filter(a => parseFloat(a.price) > 0).map(function(item) {
+                return `<tr>
+                <td style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;">${esc(item.name)}</td>
+                <td align="right" style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">+£${parseFloat(item.price).toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+              </tr>`;
+              }).join("")}
+              ${addonItems.filter(a => !(parseFloat(a.price) > 0) && a.name).map(function(item) {
+                return `<tr>
+                <td style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;">${esc(item.name)}</td>
+                <td align="right" style="padding:8px 0;color:#555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">—</td>
+              </tr>`;
+              }).join("")}
+              <tr>
+                <td style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
+                <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+              </tr>
+            </table>
+            <p style="font-size:11px;color:#999;margin:6px 0 0;">*Excluding permit fee, if applicable</p>
           </td>
         </tr>
       </table>
     </td></tr>
+
+    ${editToken ? `<tr><td style="padding:0 28px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F5F3F0;border-radius:8px;">
+        <tr><td style="padding:14px 18px;">
+          <p style="font-size:13px;color:#555;margin:0 0 8px;line-height:1.5;">Changed your mind about colour, size, or extras? You can update your quote at any time:</p>
+          <a href="https://searsmelvin.co.uk/quote.html?token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
+        </td></tr>
+      </table>
+    </td></tr>` : ""}
+
+    ${email ? `<tr><td style="padding:0 28px 16px;">
+      <p style="font-size:12px;color:#999;margin:0;text-align:center;">
+        <a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a>
+      </p>
+    </td></tr>` : ""}
 
     <tr><td style="padding:0 28px 32px;">
       <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
@@ -821,7 +896,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex }) {
     </td></tr>
 
     <tr><td style="background:#1A1A1A;padding:16px 28px;text-align:center;border-radius:0 0 10px 10px;">
-      <span style="font-size:11px;color:rgba(255,255,255,0.35);">Sears Melvin Memorials &middot; South London &amp; Beyond &middot; ${BUSINESS_EMAIL}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,0.35);">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
     </td></tr>
 
   </table>
@@ -870,7 +945,16 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
  *   orders       — order details (sku, color, value, order_type, customer contact)
  *   inscriptions — inscription text (only if quote has inscription)
  */
-async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product }) {
+function generateToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  for (const b of bytes) token += chars[b % chars.length];
+  return token;
+}
+
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message, preEditToken }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
 
   const headers = {
@@ -882,6 +966,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
 
   const parts = name.trim().split(" ");
   const today = new Date().toISOString().split("T")[0];
+  const editToken = preEditToken || (type === "quote" ? generateToken() : null);
 
   // 1. customers table
   const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
@@ -909,6 +994,9 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
       color:          product?.colour || null,
       value:          product?.price  ? parseFloat(product.price) : null,
       location:       location || null,
+      ...(editToken ? { edit_token: editToken } : {}),
+      ...(type === "quote" && product ? { product_config: JSON.stringify(product) } : {}),
+      ...(message ? { notes: message } : {}),
     }),
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
@@ -952,7 +1040,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
 
-  return invoiceId ? { invoiceId } : undefined;
+  return { invoiceId: invoiceId || null, editToken };
 }
 
 
@@ -1197,7 +1285,7 @@ ${product  ? `<tr><td style="color:#999;padding:4px 0;width:120px;">Memorial</td
 ${cemetery ? `<tr><td style="color:#999;padding:4px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
 <tr><td style="color:#999;padding:8px 0 4px;border-top:1px solid #ddd;">Deposit paid</td><td style="color:#2C2C2C;font-weight:700;padding:8px 0 4px;border-top:1px solid #ddd;">£${esc(amountPaid)}</td></tr>
 </table></td></tr></table></td></tr>
-<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL} &middot; 01268 208 559</span></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span></td></tr>
 </table></td></tr></table></body></html>`;
 }
 
@@ -1220,7 +1308,7 @@ ${cemetery ? `<tr><td style="color:#999;padding:5px 0;">Cemetery</td><td style="
 <tr><td style="color:#999;padding:5px 0;">Amount</td><td style="color:#1A1A1A;font-weight:700;">£${esc(amountPaid)}</td></tr>
 <tr><td style="color:#999;padding:5px 0;font-size:11px;">Stripe PI</td><td style="color:#AAA;font-size:11px;">${esc(piId || "—")}</td></tr>
 </table></td></tr>
-<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; ${BUSINESS_EMAIL}</span></td></tr>
+<tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;"><span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span></td></tr>
 </table></td></tr></table></body></html>`;
 }
 
