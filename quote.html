@@ -118,11 +118,37 @@
         .edit-field label { display: block; font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 0.3rem; font-weight: 500; }
         .edit-field input, .edit-field textarea, .edit-field select { width: 100%; padding: 0.7rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.95rem; font-family: var(--font-body); }
         .edit-field textarea { resize: vertical; min-height: 80px; }
+        .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .edit-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
         .btn-save { padding: 0.85rem 2rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; cursor: pointer; }
         .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-secondary { padding: 0.85rem 2rem; background: var(--color-warm); color: var(--color-stone); border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; cursor: pointer; }
         .edit-success { color: var(--color-success); font-size: 0.9rem; padding: 0.5rem 0; display: none; }
+
+        /* Product image in quote */
+        .quote-product-image { width: 100%; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1.5rem; }
+        .quote-product-image img { display: block; width: 100%; border-radius: 8px; }
+
+        /* Colour swatches */
+        .colour-swatches { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .colour-swatch { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--color-border); cursor: pointer; transition: all 0.2s; position: relative; }
+        .colour-swatch:hover { transform: scale(1.1); }
+        .colour-swatch.selected { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
+        .colour-swatch-label { font-size: 0.75rem; text-align: center; margin-top: 0.25rem; color: var(--color-text-muted); max-width: 50px; line-height: 1.2; }
+        .colour-swatch-item { display: flex; flex-direction: column; align-items: center; }
+
+        /* Addon cards in quote edit */
+        .quote-addon-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 0.5rem; }
+        .quote-addon-card:hover { border-color: var(--color-stone); }
+        .quote-addon-card.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.05); }
+        .quote-addon-check { width: 20px; height: 20px; border: 2px solid var(--color-border); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .quote-addon-card.selected .quote-addon-check { background: var(--color-accent); border-color: var(--color-accent); color: white; }
+        .quote-addon-info { flex: 1; }
+        .quote-addon-name { font-weight: 600; font-size: 0.9rem; color: var(--color-stone); }
+        .quote-addon-price { color: var(--color-accent); font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+
+        /* Stone colour accent bar */
+        .quote-summary-bar { height: 6px; border-radius: 3px; margin-bottom: 1.5rem; }
 
         /* Quotes list */
         .quotes-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
@@ -150,6 +176,7 @@
             .email-lookup-form { flex-direction: column; }
             .quote-detail-grid { grid-template-columns: 1fr; }
             .quote-mini-card { flex-direction: column; align-items: flex-start; }
+            .edit-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -401,6 +428,15 @@
             }
         }
 
+        var STONE_COLOURS = {
+            'Black Galaxy': '#1a1a1a',
+            'Rustenberg Grey': '#6b6b6b',
+            'Vizag Blue': '#2c3e50',
+            'Indian Aurora': '#8B5A2B',
+            'Emerald Pearl': '#2d4a3e',
+            'Ruby Red': '#722F37'
+        };
+
         function renderSingleQuote(quote) {
             var view = document.getElementById('singleQuoteView');
             var product = quote.product || {};
@@ -414,24 +450,40 @@
                     : [];
             var addonTotal = addonItems.reduce(function(s, a) { return s + (parseFloat(a.price) || 0); }, 0);
             var basePrice = Math.max(0, totalPrice - addonTotal);
+            var stoneHex = STONE_COLOURS[product.colour] || '#8B7355';
 
             var statusClass = quote.status === 'partial' || quote.status === 'completed' ? 'partial' : 'pending';
             var statusLabel = quote.status === 'partial' ? 'Deposit Paid' : quote.status === 'completed' ? 'Completed' : 'Pending';
 
+            // Build image URL
+            var rawImage = product.image && product.image.trim() ? product.image.trim() : '';
+            var imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? (rawImage.startsWith('/') ? rawImage : '/' + rawImage) : '';
+
             var html = '<div class="quote-card">'
+                + '<div class="quote-summary-bar" style="background:' + stoneHex + ';"></div>'
                 + '<div class="quote-card-header">'
                 + '<h2>' + (product.name || 'Memorial') + '</h2>'
                 + '<span class="quote-status ' + statusClass + '">' + statusLabel + '</span>'
-                + '</div>'
-                + '<div class="quote-detail-grid">'
+                + '</div>';
+
+            // Product image
+            if (imageUrl) {
+                html += '<div class="quote-product-image">'
+                    + '<img src="' + imageUrl + '" alt="' + (product.name || 'Memorial') + '">'
+                    + '</div>';
+            }
+
+            // Spec details
+            html += '<div class="quote-detail-grid">'
                 + '<span class="quote-detail-label">Name</span><span class="quote-detail-value">' + (quote.name || '—') + '</span>'
                 + '<span class="quote-detail-label">Email</span><span class="quote-detail-value">' + (quote.email || '—') + '</span>'
                 + (quote.phone ? '<span class="quote-detail-label">Phone</span><span class="quote-detail-value">' + quote.phone + '</span>' : '')
                 + (quote.location ? '<span class="quote-detail-label">Cemetery</span><span class="quote-detail-value">' + quote.location + '</span>' : '')
-                + (product.colour ? '<span class="quote-detail-label">Stone colour</span><span class="quote-detail-value">' + product.colour + '</span>' : '')
+                + (product.type ? '<span class="quote-detail-label">Type</span><span class="quote-detail-value">' + product.type + '</span>' : '')
+                + (product.colour ? '<span class="quote-detail-label">Stone colour</span><span class="quote-detail-value"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + stoneHex + ';vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,0.15);"></span>' + product.colour + '</span>' : '')
                 + (product.size ? '<span class="quote-detail-label">Size</span><span class="quote-detail-value">' + product.size + '</span>' : '')
                 + (product.font ? '<span class="quote-detail-label">Font</span><span class="quote-detail-value">' + (product.font === 'script' ? 'Script' : 'Traditional') + '</span>' : '')
-                + (product.letterColour ? '<span class="quote-detail-label">Lettering</span><span class="quote-detail-value">' + product.letterColour + '</span>' : '')
+                + (product.letterColour ? '<span class="quote-detail-label">Lettering</span><span class="quote-detail-value">' + product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1) + '</span>' : '')
                 + '</div>';
 
             // Line items
@@ -463,46 +515,74 @@
             html += '<p class="quote-date">Submitted ' + formatDate(quote.created_at) + '</p>'
                 + '</div>';
 
-            // Edit section
+            // ==================== EDIT SECTION ====================
             html += '<div class="quote-edit-section">'
                 + '<h3>Update Your Quote</h3>'
-                + '<p style="margin-bottom:1rem;font-size:0.9rem;">Changed your mind? Update your preferences below and we\'ll adjust your quote.</p>';
+                + '<p style="margin-bottom:1.5rem;font-size:0.9rem;">Changed your mind about colour, size, or extras? Update your preferences below and we\'ll adjust your quote.</p>';
 
-            if (product.colour) {
-                html += '<div class="edit-field"><label>Stone colour</label>'
-                    + '<select id="editColour">'
-                    + ['Black Galaxy','Rustenberg Grey','Vizag Blue','Indian Aurora','Emerald Pearl','Ruby Red'].map(function(c) {
-                        return '<option value="' + c + '"' + (c === product.colour ? ' selected' : '') + '>' + c + '</option>';
-                    }).join('')
-                    + '</select></div>';
-            }
-            if (product.size) {
-                html += '<div class="edit-field"><label>Size</label>'
-                    + '<input type="text" id="editSize" value="' + (product.size || '') + '"></div>';
-            }
-            if (product.font) {
-                html += '<div class="edit-field"><label>Font</label>'
-                    + '<select id="editFont">'
-                    + '<option value="traditional"' + (product.font === 'traditional' ? ' selected' : '') + '>Traditional</option>'
-                    + '<option value="script"' + (product.font === 'script' ? ' selected' : '') + '>Script</option>'
-                    + '</select></div>';
-            }
-            if (product.letterColour !== undefined) {
-                html += '<div class="edit-field"><label>Lettering colour</label>'
-                    + '<select id="editLetterColour">'
-                    + ['gold','silver','white','black'].map(function(c) {
-                        return '<option value="' + c + '"' + (c === product.letterColour ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
-                    }).join('')
-                    + '</select></div>';
-            }
-            if (product.inscription !== undefined) {
-                html += '<div class="edit-field"><label>Inscription</label>'
-                    + '<textarea id="editInscription" placeholder="Inscription text...">' + (product.inscription || '') + '</textarea></div>';
-            }
+            // Stone colour swatches
+            html += '<div class="edit-field"><label>Stone Colour</label>'
+                + '<div class="colour-swatches" id="colourSwatches">';
+            Object.keys(STONE_COLOURS).forEach(function(name) {
+                var hex = STONE_COLOURS[name];
+                var selected = name === product.colour ? ' selected' : '';
+                html += '<div class="colour-swatch-item">'
+                    + '<div class="colour-swatch' + selected + '" style="background:' + hex + ';" data-colour="' + name + '" onclick="selectColour(this)" title="' + name + '"></div>'
+                    + '<span class="colour-swatch-label">' + name + '</span>'
+                    + '</div>';
+            });
+            html += '</div></div>';
 
-            html += '<div class="edit-field"><label>Notes / special requests</label>'
-                + '<textarea id="editNotes" placeholder="Any changes or additional requirements...">' + (quote.notes || '') + '</textarea></div>'
-                + '<div class="edit-actions">'
+            // Size & Font side by side
+            html += '<div class="edit-row">';
+            html += '<div class="edit-field"><label>Size</label>'
+                + '<input type="text" id="editSize" value="' + (product.size || '') + '" placeholder="e.g. 2\'6 x 2\'0"></div>';
+            html += '<div class="edit-field"><label>Font Style</label>'
+                + '<select id="editFont">'
+                + '<option value="traditional"' + (product.font === 'traditional' ? ' selected' : '') + '>Traditional</option>'
+                + '<option value="script"' + (product.font === 'script' ? ' selected' : '') + '>Script</option>'
+                + '</select></div>';
+            html += '</div>';
+
+            // Lettering colour
+            html += '<div class="edit-field"><label>Lettering Colour</label>'
+                + '<select id="editLetterColour">'
+                + ['gold','silver','white','black'].map(function(c) {
+                    return '<option value="' + c + '"' + (c === product.letterColour ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+                }).join('')
+                + '</select></div>';
+
+            // Addons
+            var selectedAddons = {};
+            addonItems.forEach(function(a) { selectedAddons[a.name] = true; });
+            var availableAddons = [
+                { name: 'Photo Plaque', price: 175, desc: 'Ceramic photo plaque set into the memorial.' },
+                { name: 'Flower Vase', price: 95, desc: 'Built-in granite flower vase with drainage.' },
+                { name: 'Garden Kerb Surround', price: 350, desc: 'Granite kerb border with white chippings.' },
+                { name: 'Extra Lettering', price: 0, desc: 'Additional inscription text (priced per letter).' }
+            ];
+
+            html += '<div class="edit-field"><label>Additional Options</label>';
+            availableAddons.forEach(function(addon) {
+                var isSelected = selectedAddons[addon.name] ? ' selected' : '';
+                html += '<div class="quote-addon-card' + isSelected + '" onclick="toggleQuoteAddon(this)" data-addon="' + addon.name + '" data-price="' + addon.price + '">'
+                    + '<span class="quote-addon-check">' + (isSelected ? '&#10003;' : '') + '</span>'
+                    + '<div class="quote-addon-info"><div class="quote-addon-name">' + addon.name + '</div>'
+                    + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + addon.desc + '</div></div>'
+                    + '<span class="quote-addon-price">' + (addon.price > 0 ? '+£' + addon.price : 'Variable') + '</span>'
+                    + '</div>';
+            });
+            html += '</div>';
+
+            // Inscription
+            html += '<div class="edit-field"><label>Inscription</label>'
+                + '<textarea id="editInscription" placeholder="Enter your inscription text..." rows="3">' + (product.inscription || '') + '</textarea></div>';
+
+            // Notes
+            html += '<div class="edit-field"><label>Notes / Special Requests</label>'
+                + '<textarea id="editNotes" placeholder="Any changes or additional requirements...">' + (quote.notes || '') + '</textarea></div>';
+
+            html += '<div class="edit-actions">'
                 + '<button class="btn-save" id="editSaveBtn" onclick="saveQuoteChanges()">Save Changes</button>'
                 + '</div>'
                 + '<p class="edit-success" id="editSuccess">Your quote has been updated and the team has been notified.</p>'
@@ -511,12 +591,23 @@
             // Link to product page
             if (product.slug || product.name) {
                 html += '<div style="text-align:center;margin-top:1rem;">'
-                    + '<a href="memorial.html' + (product.slug ? '?slug=' + product.slug : '') + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View this memorial →</a>'
+                    + '<a href="memorial.html' + (product.slug ? '?slug=' + product.slug : '') + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View this memorial &rarr;</a>'
                     + '</div>';
             }
 
             view.innerHTML = html;
             view.style.display = 'block';
+        }
+
+        function selectColour(el) {
+            document.querySelectorAll('.colour-swatch').forEach(function(s) { s.classList.remove('selected'); });
+            el.classList.add('selected');
+        }
+
+        function toggleQuoteAddon(card) {
+            card.classList.toggle('selected');
+            var check = card.querySelector('.quote-addon-check');
+            check.innerHTML = card.classList.contains('selected') ? '&#10003;' : '';
         }
 
         async function saveQuoteChanges() {
@@ -528,16 +619,30 @@
             successEl.style.display = 'none';
 
             var product = Object.assign({}, currentQuote.product || {});
-            var colourEl = document.getElementById('editColour');
+
+            // Colour from swatch
+            var selectedSwatch = document.querySelector('.colour-swatch.selected');
+            if (selectedSwatch) product.colour = selectedSwatch.getAttribute('data-colour');
+
             var sizeEl = document.getElementById('editSize');
             var fontEl = document.getElementById('editFont');
             var letterEl = document.getElementById('editLetterColour');
             var inscEl = document.getElementById('editInscription');
-            if (colourEl) product.colour = colourEl.value;
             if (sizeEl) product.size = sizeEl.value.trim();
             if (fontEl) product.font = fontEl.value;
             if (letterEl) product.letterColour = letterEl.value;
             if (inscEl) product.inscription = inscEl.value.trim();
+
+            // Collect selected addons
+            var addonCards = document.querySelectorAll('.quote-addon-card.selected');
+            var selectedAddons = [];
+            addonCards.forEach(function(card) {
+                var name = card.getAttribute('data-addon');
+                var price = parseFloat(card.getAttribute('data-price')) || 0;
+                selectedAddons.push({ name: name, price: price });
+            });
+            product.addonLineItems = selectedAddons;
+            product.addons = selectedAddons.map(function(a) { return a.name; });
 
             try {
                 var res = await fetch('/api/quotes', {
