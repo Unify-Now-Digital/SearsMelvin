@@ -43,6 +43,8 @@ export async function onRequest(context) {
   const { action } = data;
 
   if (action === "login") return handleAdminLogin(env, data);
+  if (action === "send-magic-link") return handleSendMagicLink(env, request);
+  if (action === "verify-magic-link") return handleVerifyMagicLink(env, data);
   if (action === "verify") return handleAdminVerify(env, data);
   if (action === "logout") return handleAdminLogout(env, data);
 
@@ -98,6 +100,105 @@ async function handleAdminLogout(env, { token }) {
     headers,
   });
   return json({ ok: true });
+}
+
+const ADMIN_EMAIL = "info@searsmelvin.co.uk";
+
+async function handleSendMagicLink(env, request) {
+  if (!env.RESEND_API_KEY) return json({ ok: false, error: "Email not configured" }, 500);
+
+  const token = generateToken(48);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+
+  const headers = sbHeaders(env);
+  // Prefix token so we can identify magic links on verify
+  const magicTokenValue = "magic_" + token;
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ token: magicTokenValue, expires_at: expiresAt }),
+  });
+  if (!res.ok) return json({ ok: false, error: "Failed to create magic link" }, 500);
+
+  const origin = new URL(request.url).origin;
+  const magicUrl = `${origin}/admin.html?magic=${magicTokenValue}`;
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+      to: ADMIN_EMAIL,
+      subject: "Admin login link — Sears Melvin Memorials",
+      html: magicLinkEmail(magicUrl),
+    }),
+  });
+  if (!emailRes.ok) {
+    const errBody = await emailRes.text();
+    console.error("Magic link email failed:", errBody);
+    return json({ ok: false, error: "Failed to send email" }, 500);
+  }
+
+  return json({ ok: true });
+}
+
+async function handleVerifyMagicLink(env, { magicToken }) {
+  if (!magicToken) return json({ ok: false, error: "Token required" }, 400);
+  // Magic link tokens are prefixed with "magic_"
+  if (!magicToken.startsWith("magic_")) {
+    return json({ ok: false, error: "Invalid magic link" }, 401);
+  }
+
+  const headers = sbHeaders(env);
+  const now = new Date().toISOString();
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(magicToken)}&expires_at=gt.${now}&select=id&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) {
+    return json({ ok: false, error: "Invalid or expired magic link" }, 401);
+  }
+
+  // Delete the one-time magic link token
+  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions?id=eq.${rows[0].id}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  // Create a proper session token (24hr)
+  const sessionToken = generateToken(64);
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ token: sessionToken, expires_at: expiresAt }),
+  });
+
+  return json({ ok: true, token: sessionToken });
+}
+
+function magicLinkEmail(url) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <tr><td style="background:#2C2C2C;padding:20px 28px;">
+    <span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;">Memorials</span></span>
+  </td></tr>
+  <tr><td style="padding:32px 28px;">
+    <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Admin Login</h2>
+    <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">Click the button below to sign in to the admin dashboard. This link expires in 15 minutes.</p>
+    <a href="${url}" style="display:inline-block;background:#2C2C2C;color:#fff;padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;text-decoration:none;">Sign In to Dashboard</a>
+    <p style="color:#999;font-size:12px;margin-top:24px;">If you didn't request this, you can safely ignore this email.</p>
+  </td></tr>
+  <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
+    <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials</span>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
 }
 
 async function verifyAdminToken(env, token) {
