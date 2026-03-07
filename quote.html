@@ -403,6 +403,8 @@
             var view = document.getElementById('singleQuoteView');
             var product = quote.product || {};
             var totalPrice = parseFloat(product.price || quote.value) || 0;
+            var permitFee = parseFloat(product.permit_fee || quote.permit_fee) || 0;
+            var grandTotal = totalPrice + permitFee;
             var addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
                 ? product.addonLineItems
                 : Array.isArray(product.addons) && product.addons.length > 0
@@ -439,9 +441,15 @@
                 html += '<div class="quote-line-item"><span>' + item.name + '</span><span>' + (p > 0 ? '+' + formatPrice(p) : '—') + '</span></div>';
             });
 
-            html += '<div class="quote-line-item total"><span>Guide total (installed)*</span><span>' + formatPrice(totalPrice) + '</span></div>'
-                + '<p class="quote-permit-note">*Excluding permit fee, if applicable</p>'
-                + '</div>';
+            if (permitFee > 0) {
+                html += '<div class="quote-line-item"><span>Cemetery Permit Fee</span><span>+' + formatPrice(permitFee) + '</span></div>';
+            }
+
+            html += '<div class="quote-line-item total"><span>Guide total (installed)</span><span>' + formatPrice(grandTotal) + '</span></div>';
+            if (permitFee <= 0) {
+                html += '<p class="quote-permit-note">*Permit fee not yet determined — varies by cemetery</p>';
+            }
+            html += '</div>';
 
             if (product.inscription) {
                 html += '<div class="quote-notes"><strong>Inscription</strong>' + product.inscription + '</div>';

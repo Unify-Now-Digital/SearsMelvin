@@ -1,0 +1,443 @@
+/**
+ * Admin API — /api/admin
+ *
+ * All requests require admin authentication via PARTNER_ADMIN_KEY.
+ *
+ * POST { action: "login", adminKey }                    → get admin session token
+ * POST { action: "verify", token }                      → verify admin session
+ * POST { action: "logout", token }                      → end admin session
+ * POST { action: "list-partners", token }               → list all partners with stats
+ * POST { action: "approve-partner", token, partnerId }  → approve a pending partner
+ * POST { action: "decline-partner", token, partnerId }  → decline a pending partner
+ * POST { action: "dashboard", token }                   → get overview stats
+ * POST { action: "list-orders", token }                 → list all orders with tracking info
+ * POST { action: "update-order", token, orderId, ... }  → update order stage, inscription, proof, dates
+ * POST { action: "generate-tracking", token, orderId }  → generate tracking token for customer
+ * POST { action: "list-inscription-requests", token }   → list pending inscription change requests
+ * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
+ */
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: CORS });
+}
+
+export async function onRequest(context) {
+  const { request, env } = context;
+  if (request.method !== "POST") {
+    return json({ ok: false, error: "Method not allowed" }, 405);
+  }
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.PARTNER_ADMIN_KEY) {
+    return json({ ok: false, error: "Server config error" }, 500);
+  }
+
+  let data;
+  try { data = await request.json(); }
+  catch { return json({ ok: false, error: "Invalid JSON" }, 400); }
+
+  const { action } = data;
+
+  if (action === "login") return handleAdminLogin(env, data);
+  if (action === "verify") return handleAdminVerify(env, data);
+  if (action === "logout") return handleAdminLogout(env, data);
+
+  // All other actions require valid admin session
+  const valid = await verifyAdminToken(env, data.token);
+  if (!valid) return json({ ok: false, error: "Unauthorized" }, 401);
+
+  if (action === "list-partners") return listPartners(env, data);
+  if (action === "approve-partner") return approvePartner(env, data);
+  if (action === "decline-partner") return declinePartner(env, data);
+  if (action === "dashboard") return getDashboard(env);
+  if (action === "list-orders") return listOrders(env, data);
+  if (action === "update-order") return updateOrder(env, data);
+  if (action === "generate-tracking") return generateTracking(env, data);
+  if (action === "list-inscription-requests") return listInscriptionRequests(env);
+  if (action === "resolve-inscription") return resolveInscription(env, data);
+
+  return json({ ok: false, error: "Unknown action" }, 400);
+}
+
+// ==================== ADMIN AUTH ====================
+async function handleAdminLogin(env, { adminKey }) {
+  if (!adminKey || adminKey !== env.PARTNER_ADMIN_KEY) {
+    return json({ ok: false, error: "Invalid admin key" }, 401);
+  }
+
+  const token = generateToken(64);
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+
+  const headers = sbHeaders(env);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ token, expires_at: expiresAt }),
+  });
+  if (!res.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  return json({ ok: true, token });
+}
+
+async function handleAdminVerify(env, { token }) {
+  if (!token) return json({ ok: false, error: "Token required" }, 400);
+  const valid = await verifyAdminToken(env, token);
+  if (!valid) return json({ ok: false, error: "Invalid or expired session" }, 401);
+  return json({ ok: true });
+}
+
+async function handleAdminLogout(env, { token }) {
+  if (!token) return json({ ok: true });
+  const headers = sbHeaders(env);
+  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(token)}`, {
+    method: "DELETE",
+    headers,
+  });
+  return json({ ok: true });
+}
+
+async function verifyAdminToken(env, token) {
+  if (!token) return false;
+  const headers = sbHeaders(env);
+  const now = new Date().toISOString();
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${now}&select=id&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return false;
+  const rows = await res.json();
+  return rows.length > 0;
+}
+
+// ==================== LIST PARTNERS ====================
+async function listPartners(env, { filter }) {
+  const headers = sbHeaders(env);
+
+  let url = `${env.SUPABASE_URL}/rest/v1/partners?select=id,email,name,company,phone,status,active,notes,created_at,approved_at,declined_at&order=created_at.desc`;
+  if (filter && filter !== "all") {
+    url += `&status=eq.${encodeURIComponent(filter)}`;
+  }
+
+  const res = await fetch(url, { headers });
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  const partners = await res.json();
+
+  // Get order counts per partner
+  const orderRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?partner_id=not.is.null&select=partner_id,id,value,status`,
+    { headers },
+  );
+  let ordersByPartner = {};
+  if (orderRes.ok) {
+    const orders = await orderRes.json();
+    orders.forEach(o => {
+      if (!ordersByPartner[o.partner_id]) {
+        ordersByPartner[o.partner_id] = { count: 0, value: 0, pending: 0, completed: 0 };
+      }
+      const stats = ordersByPartner[o.partner_id];
+      stats.count++;
+      stats.value += parseFloat(o.value) || 0;
+      if (o.status === "completed") stats.completed++;
+      else if (!o.status || o.status === "pending") stats.pending++;
+    });
+  }
+
+  const enriched = partners.map(p => ({
+    ...p,
+    orders: ordersByPartner[p.id] || { count: 0, value: 0, pending: 0, completed: 0 },
+  }));
+
+  return json({ ok: true, partners: enriched });
+}
+
+// ==================== APPROVE PARTNER ====================
+async function approvePartner(env, { partnerId }) {
+  if (!partnerId) return json({ ok: false, error: "Partner ID required" }, 400);
+
+  const headers = sbHeaders(env);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({
+      status: "approved",
+      active: true,
+      approved_at: new Date().toISOString(),
+    }),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to approve partner" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: false, error: "Partner not found" }, 404);
+
+  return json({ ok: true, partner: rows[0] });
+}
+
+// ==================== DECLINE PARTNER ====================
+async function declinePartner(env, { partnerId }) {
+  if (!partnerId) return json({ ok: false, error: "Partner ID required" }, 400);
+
+  const headers = sbHeaders(env);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({
+      status: "declined",
+      active: false,
+      declined_at: new Date().toISOString(),
+    }),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to decline partner" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: false, error: "Partner not found" }, 404);
+
+  return json({ ok: true, partner: rows[0] });
+}
+
+// ==================== DASHBOARD STATS ====================
+async function getDashboard(env) {
+  const headers = sbHeaders(env);
+
+  // Get all partners
+  const partRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?select=id,status,created_at`,
+    { headers },
+  );
+  let partnerStats = { total: 0, pending: 0, approved: 0, declined: 0 };
+  let recentRequests = [];
+  if (partRes.ok) {
+    const partners = await partRes.json();
+    partnerStats.total = partners.length;
+    partners.forEach(p => {
+      if (p.status === "pending") partnerStats.pending++;
+      else if (p.status === "approved") partnerStats.approved++;
+      else if (p.status === "declined") partnerStats.declined++;
+    });
+  }
+
+  // Get all orders with partner_id
+  const orderRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?select=id,partner_id,value,status,created_at&order=created_at.desc&limit=200`,
+    { headers },
+  );
+  let orderStats = { total: 0, partnerOrders: 0, totalValue: 0, partnerValue: 0, pending: 0, completed: 0 };
+  let recentOrders = [];
+  if (orderRes.ok) {
+    const orders = await orderRes.json();
+    orderStats.total = orders.length;
+    orders.forEach(o => {
+      const val = parseFloat(o.value) || 0;
+      orderStats.totalValue += val;
+      if (o.partner_id) {
+        orderStats.partnerOrders++;
+        orderStats.partnerValue += val;
+      }
+      if (!o.status || o.status === "pending") orderStats.pending++;
+      if (o.status === "completed") orderStats.completed++;
+    });
+    recentOrders = orders.slice(0, 10);
+  }
+
+  return json({
+    ok: true,
+    partners: partnerStats,
+    orders: orderStats,
+    recentOrders,
+  });
+}
+
+// ==================== LIST ORDERS ====================
+async function listOrders(env, { filter, search }) {
+  const headers = sbHeaders(env);
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,permit_fee,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
+
+  if (filter && filter !== "all") {
+    url += `&stage=eq.${encodeURIComponent(filter)}`;
+  }
+
+  const res = await fetch(url, { headers });
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  let orders = await res.json();
+
+  if (search) {
+    const q = search.toLowerCase();
+    orders = orders.filter(o =>
+      (o.customer_name || "").toLowerCase().includes(q) ||
+      (o.customer_email || "").toLowerCase().includes(q) ||
+      (o.sku || "").toLowerCase().includes(q)
+    );
+  }
+
+  return json({ ok: true, orders });
+}
+
+// ==================== UPDATE ORDER ====================
+async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+
+  const headers = sbHeaders(env);
+  const updates = {};
+
+  if (stage !== undefined) updates.stage = stage;
+  if (inscriptionText !== undefined) updates.inscription_text = inscriptionText;
+  if (inscriptionStatus !== undefined) updates.inscription_status = inscriptionStatus;
+  if (proofUrl !== undefined) {
+    updates.proof_url = proofUrl;
+    updates.proof_uploaded_at = new Date().toISOString();
+  }
+  if (proofNotes !== undefined) updates.proof_notes = proofNotes;
+  if (estimatedCompletion !== undefined) updates.estimated_completion = estimatedCompletion;
+  if (installationDate !== undefined) updates.installation_date = installationDate;
+  updates.updated_at = new Date().toISOString();
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify(updates),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to update order" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
+
+  return json({ ok: true, order: rows[0] });
+}
+
+// ==================== GENERATE TRACKING TOKEN ====================
+async function generateTracking(env, { orderId }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+
+  const headers = sbHeaders(env);
+
+  // Check if order already has a tracking token
+  const checkRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,tracking_token&limit=1`,
+    { headers },
+  );
+  if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const rows = await checkRes.json();
+  if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
+
+  if (rows[0].tracking_token) {
+    return json({ ok: true, trackingToken: rows[0].tracking_token, alreadyExists: true });
+  }
+
+  const token = generateToken(32);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({ tracking_token: token }),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to generate token" }, 500);
+
+  return json({ ok: true, trackingToken: token });
+}
+
+// ==================== LIST INSCRIPTION REQUESTS ====================
+async function listInscriptionRequests(env) {
+  const headers = sbHeaders(env);
+
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?status=eq.pending&select=id,order_id,requested_text,reason,created_at&order=created_at.desc&limit=50`,
+    { headers },
+  );
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  const requests = await res.json();
+
+  // Enrich with order info
+  const enriched = [];
+  for (const req of requests) {
+    const orderRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,customer_name,customer_email,sku,inscription_text&limit=1`,
+      { headers },
+    );
+    let orderInfo = null;
+    if (orderRes.ok) {
+      const orderRows = await orderRes.json();
+      if (orderRows.length > 0) orderInfo = orderRows[0];
+    }
+    enriched.push({ ...req, order: orderInfo });
+  }
+
+  return json({ ok: true, requests: enriched });
+}
+
+// ==================== RESOLVE INSCRIPTION REQUEST ====================
+async function resolveInscription(env, { requestId, accept }) {
+  if (!requestId) return json({ ok: false, error: "Request ID required" }, 400);
+
+  const headers = sbHeaders(env);
+
+  // Get the request
+  const reqRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${encodeURIComponent(requestId)}&select=id,order_id,requested_text&limit=1`,
+    { headers },
+  );
+  if (!reqRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const reqRows = await reqRes.json();
+  if (reqRows.length === 0) return json({ ok: false, error: "Request not found" }, 404);
+
+  const inscReq = reqRows[0];
+
+  // Update request status
+  await fetch(`${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${requestId}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      status: accept ? "accepted" : "declined",
+      resolved_at: new Date().toISOString(),
+    }),
+  });
+
+  // If accepted, update the order's inscription text
+  if (accept) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({
+        inscription_text: inscReq.requested_text,
+        inscription_status: "awaiting_approval",
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } else {
+    // Declined — revert to previous status
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({
+        inscription_status: "awaiting_approval",
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  }
+
+  return json({ ok: true });
+}
+
+// ==================== HELPERS ====================
+function generateToken(length = 64) {
+  const arr = new Uint8Array(length);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function sbHeaders(env) {
+  return {
+    "apikey": env.SUPABASE_SERVICE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    "Content-Type": "application/json",
+  };
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS },
+  });
+}

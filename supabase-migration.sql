@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS partners (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Permit fee (separate from product value)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS permit_fee NUMERIC(10,2) DEFAULT 0;
+
 -- Link orders to partners
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS partner_id INTEGER REFERENCES partners(id);
 CREATE INDEX IF NOT EXISTS idx_orders_partner ON orders (partner_id) WHERE partner_id IS NOT NULL;
@@ -57,16 +60,92 @@ CREATE TABLE IF NOT EXISTS partner_sessions (
 CREATE INDEX IF NOT EXISTS idx_partner_sessions_token ON partner_sessions (token);
 
 -- ============================================================
--- 3. CREATE AN INITIAL PARTNER ACCOUNT (update email/password)
+-- 3. PARTNER REQUEST STATUS (for self-service registration)
 -- ============================================================
--- To create a partner, run this separately after the migration:
---
--- INSERT INTO partners (email, password_hash, name, company)
--- VALUES (
---   'partner@example.com',
---   -- Use the /api/partner-auth endpoint with action=hash to generate a hash,
---   -- or insert a known hash. The portal uses SHA-256 for simplicity.
---   'SET_VIA_API',
---   'John Smith',
---   'Smith Funeral Directors'
--- );
+
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'approved';
+-- Existing partners default to 'approved'. New requests will be 'pending'.
+-- Values: 'pending', 'approved', 'declined'
+
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS declined_at TIMESTAMPTZ;
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- ============================================================
+-- 4. ADMIN SESSIONS (separate from partner sessions)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id SERIAL PRIMARY KEY,
+    token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions (token);
+
+-- ============================================================
+-- 5. CUSTOMER ORDER TRACKING
+-- ============================================================
+
+-- Tracking token for customers (separate from edit_token for quotes)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_token TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_token ON orders (tracking_token) WHERE tracking_token IS NOT NULL;
+
+-- Granular order stage for customer-facing progress
+-- Values: quote_received, deposit_paid, design_in_progress, proof_ready,
+--         inscription_approved, in_production, installation_scheduled, completed
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'quote_received';
+
+-- Inscription tracking (on the order itself)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS inscription_text TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS inscription_status TEXT DEFAULT 'pending';
+-- Values: pending, awaiting_approval, approved, change_requested
+
+-- Proof image (uploaded by admin)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_url TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_uploaded_at TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_notes TEXT;
+
+-- Estimated dates for customer visibility
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS estimated_completion TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS installation_date TEXT;
+
+-- Inscription change requests from customers
+CREATE TABLE IF NOT EXISTS inscription_requests (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id),
+    requested_text TEXT NOT NULL,
+    reason TEXT,
+    status TEXT DEFAULT 'pending',  -- pending, accepted, declined
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_inscription_requests_order ON inscription_requests (order_id);
+
+-- Customer activity log (view history, for your reference)
+CREATE TABLE IF NOT EXISTS customer_activity (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id),
+    action TEXT NOT NULL,  -- viewed, inscription_change, proof_viewed
+    detail TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_activity_order ON customer_activity (order_id);
+
+-- ============================================================
+-- 6. PASSWORD RESET TOKENS (for partners)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    partner_id INTEGER NOT NULL REFERENCES partners(id),
+    token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens (token);

@@ -382,8 +382,10 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
       : [];
   const inscription = product.inscription ? product.inscription.trim() : "";
   const totalPrice = parseFloat(product.price) || 0;
+  const permitFee = parseFloat(product.permit_fee) || 0;
   const addonTotal = addonItems.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
   const basePrice = Math.max(0, totalPrice - addonTotal);
+  const grandTotal = totalPrice + permitFee;
 
   // Product image: must be a full absolute URL for email clients
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
@@ -486,7 +488,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
                     <!-- Base memorial row -->
                     <tr>
-                      <td style="padding:8px 10px;color:#1A1A1A;border-bottom:1px solid #F0EDE8;">${esc(product.name || "Memorial")} (inc. installation &amp; permit)</td>
+                      <td style="padding:8px 10px;color:#1A1A1A;border-bottom:1px solid #F0EDE8;">${esc(product.name || "Memorial")} (inc. installation)</td>
                       <td align="right" style="padding:8px 10px;color:#1A1A1A;border-bottom:1px solid #F0EDE8;font-weight:500;white-space:nowrap;">£${basePrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
 
@@ -504,14 +506,20 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                     </tr>`;
                     }).join("")}
 
+                    ${permitFee > 0 ? `<!-- Permit fee row -->
+                    <tr>
+                      <td style="padding:8px 10px;color:#555555;border-bottom:1px solid #F0EDE8;">Cemetery Permit Fee</td>
+                      <td align="right" style="padding:8px 10px;color:#555555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">+£${permitFee.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+                    </tr>` : ""}
+
                     <!-- Total row -->
                     <tr style="background-color:#F5F3F0;">
-                      <td style="padding:9px 10px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
-                      <td align="right" style="padding:9px 10px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+                      <td style="padding:9px 10px;color:#2C2C2C;font-weight:700;">Guide total (installed)</td>
+                      <td align="right" style="padding:9px 10px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${grandTotal.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
 
                   </table>
-                  <p style="font-size:11px;color:#999999;margin:6px 10px 0;font-family:Arial,sans-serif;">*Excluding permit fee, if applicable</p>
+                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 10px 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
 
                   ${inscription ? `<!-- Inscription -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
@@ -602,6 +610,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
 function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl, editToken }) {
   const totalPrice = parseFloat(product.price) || 0;
+  const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
     : Array.isArray(product.addons) && product.addons.length > 0
@@ -609,6 +618,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
       : [];
   const addonTotal = addonItems.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
   const basePrice = Math.max(0, totalPrice - addonTotal);
+  const grandTotal = totalPrice + permitFee;
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
   const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
@@ -716,12 +726,17 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
                     </tr>`;
                     }).join("")}
 
+                    ${permitFee > 0 ? `<tr>
+                      <td style="padding:8px 0;color:#555555;border-bottom:1px solid #F0EDE8;">Cemetery Permit Fee</td>
+                      <td align="right" style="padding:8px 0;color:#555555;border-bottom:1px solid #F0EDE8;white-space:nowrap;">+£${permitFee.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+                    </tr>` : ""}
+
                     <tr>
-                      <td style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;">Guide total (installed)*</td>
-                      <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${totalPrice.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
+                      <td style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;">Guide total (installed)</td>
+                      <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${grandTotal.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
                   </table>
-                  <p style="font-size:11px;color:#999999;margin:6px 0 0;font-family:Arial,sans-serif;">*Excluding permit fee, if applicable</p>
+                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 0 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
 
                 </td>
               </tr>
@@ -925,13 +940,8 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
   };
-  const parts = name.trim().split(" ");
   const today = new Date().toISOString().split("T")[0];
-  const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
-    method: "POST", headers,
-    body: JSON.stringify({ first_name: parts[0], last_name: parts.slice(1).join(" ") || null, email, phone: phone || null }),
-  });
-  if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
+  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
   // Generate an edit token for quote editing
   const editToken = type === "quote" ? generateToken() : null;
@@ -942,7 +952,9 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
       customer_name: name, customer_email: email, customer_phone: phone || null,
       order_type: type === "quote" ? "quote" : (enquiry_type || null),
       sku: product?.name || null, color: product?.colour || null,
-      value: product?.price ? parseFloat(product.price) : null, location: location || null,
+      value: product?.price ? parseFloat(product.price) : null,
+      permit_fee: product?.permit_fee ? parseFloat(product.permit_fee) : null,
+      location: location || null,
       ...(editToken ? { edit_token: editToken } : {}),
       ...(type === "quote" && product ? { product_config: JSON.stringify(product) } : {}),
       ...(message ? { notes: message } : {}),
@@ -953,20 +965,21 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   const orderId = orderRows[0]?.id || null;
   let invoiceId = null;
   if (type === "quote" && product?.price) {
-    const fullAmount = parseFloat(product.price);
+    const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
     const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
       method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({ order_id: orderId, customer_name: name, amount: fullAmount, status: "pending", issue_date: today, due_date: today }),
+      body: JSON.stringify({ order_id: orderId, customer_name: name, amount: fullAmount, status: "pending", issue_date: today, due_date: dueDate }),
     });
     if (!invRes.ok) { console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`); }
     else { const invRows = await invRes.json(); invoiceId = invRows[0]?.id || null; }
   }
-  if (product?.inscription) {
-    const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
-      method: "POST", headers,
+  // Set inscription_text on the order itself (used by tracking system)
+  if (product?.inscription && orderId) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({ inscription_text: product.inscription }),
     });
-    if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
   return { invoiceId: invoiceId || null, editToken };
 }
@@ -1029,6 +1042,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   }
 
   const totalPricePence = Math.round(parseFloat(product.price || 0) * 100);
+  const permitFeePence = Math.round(parseFloat(product.permit_fee || 0) * 100);
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems : [];
   const addonTotalPence = addonItems.reduce((sum, a) => sum + Math.round(parseFloat(a.price || 0) * 100), 0);
@@ -1063,8 +1077,23 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   await stripePost("/invoiceitems", {
     customer: customerId,
     price: basePrice.id,
-    description: productDescription + " (inc. installation & permit)" + label,
+    description: productDescription + " (inc. installation)" + label,
   });
+
+  // Create permit fee line item (if applicable)
+  if (permitFeePence > 0) {
+    const permitProduct = await findOrCreateStripeProduct("Cemetery Permit Fee", "permit");
+    const permitPrice = await stripePost("/prices", {
+      product: permitProduct.id,
+      unit_amount: String(Math.round(permitFeePence * multiplier)),
+      currency: "gbp",
+    });
+    await stripePost("/invoiceitems", {
+      customer: customerId,
+      price: permitPrice.id,
+      description: "Cemetery Permit Fee" + label,
+    });
+  }
 
   // Create Stripe Products + Prices for each addon line item
   for (const addon of addonItems) {

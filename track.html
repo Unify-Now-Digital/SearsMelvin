@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order | Sears Melvin Memorials</title>
+    <meta name="description" content="Track the progress of your memorial order with Sears Melvin Memorials.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --color-error: #c0392b;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: #f5f3f0; color: var(--color-text); line-height: 1.6; min-height: 100vh; }
+        h1, h2, h3 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+
+        /* Header */
+        .track-header { background: var(--color-stone); color: white; padding: 1.25rem 2rem; text-align: center; }
+        .track-header h1 { font-size: 1.5rem; color: white; font-weight: 300; }
+        .track-header a { color: rgba(255,255,255,0.6); font-size: 0.8rem; }
+
+        /* Main */
+        .track-main { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+        /* Loading / Error */
+        .loading-state { text-align: center; padding: 4rem 2rem; color: var(--color-text-muted); }
+        .error-state { text-align: center; padding: 4rem 2rem; }
+        .error-state h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .error-state p { color: var(--color-text-muted); }
+
+        /* Order header */
+        .order-header { margin-bottom: 2rem; }
+        .order-ref { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 600; margin-bottom: 0.25rem; }
+        .order-header h2 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+        .order-meta { font-size: 0.85rem; color: var(--color-text-muted); }
+
+        /* Progress tracker */
+        .progress-section { margin-bottom: 2rem; }
+        .progress-bar { display: flex; align-items: flex-start; gap: 0; margin-bottom: 0.5rem; }
+        .progress-step { flex: 1; text-align: center; position: relative; }
+        .progress-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--color-border); background: white; margin: 0 auto 0.4rem; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
+        .progress-dot svg { width: 14px; height: 14px; display: none; }
+        .progress-step.done .progress-dot { background: var(--color-success); border-color: var(--color-success); }
+        .progress-step.done .progress-dot svg { display: block; fill: white; }
+        .progress-step.current .progress-dot { background: var(--color-accent); border-color: var(--color-accent); box-shadow: 0 0 0 4px rgba(139,115,85,0.2); }
+        .progress-step.current .progress-dot svg { display: block; fill: white; }
+        .progress-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted); line-height: 1.3; }
+        .progress-step.current .progress-label { color: var(--color-accent); font-weight: 600; }
+        .progress-step.done .progress-label { color: var(--color-success); }
+        .progress-line { position: absolute; top: 14px; left: 50%; right: -50%; height: 2px; background: var(--color-border); z-index: 1; }
+        .progress-step:last-child .progress-line { display: none; }
+        .progress-step.done .progress-line { background: var(--color-success); }
+
+        /* Cards */
+        .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .card h3 { font-size: 1.15rem; margin-bottom: 0.75rem; }
+        .card-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; margin-bottom: 0.15rem; }
+        .card-value { font-size: 0.95rem; margin-bottom: 0.75rem; }
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+        /* Inscription */
+        .inscription-box { background: var(--color-cream); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+        .inscription-text { font-family: var(--font-display); font-size: 1.2rem; line-height: 1.5; color: var(--color-stone); white-space: pre-line; text-align: center; }
+        .inscription-status { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+        .inscription-status.pending { background: #FFF3CD; color: #856404; }
+        .inscription-status.awaiting_approval { background: #D1ECF1; color: #0C5460; }
+        .inscription-status.approved { background: #D4EDDA; color: #155724; }
+        .inscription-status.change_requested { background: #F8D7DA; color: #721C24; }
+        .inscription-actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-primary { padding: 0.5rem 1.25rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); }
+        .btn-primary:hover { background: var(--color-stone-light); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline { padding: 0.5rem 1.25rem; background: white; color: var(--color-stone); border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); }
+        .btn-outline:hover { border-color: var(--color-stone); }
+        .btn-success { padding: 0.5rem 1.25rem; background: var(--color-success); color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Edit inscription form */
+        .edit-form { display: none; margin-top: 1rem; }
+        .edit-form textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.95rem; font-family: var(--font-body); min-height: 80px; resize: vertical; }
+        .edit-form input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; font-family: var(--font-body); margin-top: 0.5rem; }
+        .edit-form .form-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+        .form-msg { font-size: 0.85rem; margin-top: 0.75rem; display: none; }
+        .form-msg.success { color: var(--color-success); }
+        .form-msg.error { color: var(--color-error); }
+
+        /* Proof */
+        .proof-image { width: 100%; border-radius: 8px; border: 1px solid var(--color-border); }
+        .proof-date { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem; }
+        .proof-notes { background: var(--color-cream); border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem; }
+
+        /* History */
+        .history-item { padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.85rem; }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-size: 0.75rem; color: var(--color-text-muted); }
+        .history-status { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; }
+        .history-status.pending { color: #856404; }
+        .history-status.accepted { color: var(--color-success); }
+        .history-status.declined { color: var(--color-error); }
+
+        /* Dates card */
+        .date-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+        .date-row + .date-row { border-top: 1px solid var(--color-border); }
+
+        /* Contact */
+        .contact-card { background: var(--color-cream); border-radius: 10px; padding: 1.25rem 1.5rem; text-align: center; margin-top: 1.5rem; }
+        .contact-card p { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.5rem; }
+        .contact-card a { color: var(--color-accent); font-weight: 500; text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .track-main { padding: 1rem 1rem 3rem; }
+            .progress-label { font-size: 0.55rem; }
+            .progress-dot { width: 22px; height: 22px; }
+            .progress-dot svg { width: 11px; height: 11px; }
+            .progress-line { top: 11px; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="track-header">
+    <a href="/">searsmelvin.co.uk</a>
+    <h1>Order Tracking</h1>
+</header>
+
+<main class="track-main">
+    <div id="loadingState" class="loading-state">
+        <p>Loading your order...</p>
+    </div>
+    <div id="errorState" class="error-state" style="display:none;">
+        <h2>Order Not Found</h2>
+        <p id="errorMsg">Please check your tracking link and try again.</p>
+    </div>
+
+    <!-- Lookup form (shown when no token provided) -->
+    <div id="lookupState" style="display:none;">
+        <div class="card" style="max-width:420px;margin:2rem auto;text-align:center;">
+            <h3 style="margin-bottom:0.5rem;">Find Your Order</h3>
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1.25rem;">Enter the email address you used when placing your order. We'll send your tracking link(s) to your inbox.</p>
+            <form onsubmit="handleResendTracking(event)">
+                <div style="text-align:left;margin-bottom:1rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);margin-bottom:0.25rem;">Email Address</label>
+                    <input type="email" id="lookupEmail" required style="width:100%;padding:0.7rem 0.9rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.95rem;font-family:var(--font-body);">
+                </div>
+                <button type="submit" class="btn-primary" id="lookupBtn" style="width:100%;padding:0.75rem;">Send Tracking Link</button>
+                <p id="lookupSuccess" class="form-msg success" style="display:none;margin-top:0.75rem;"></p>
+                <p id="lookupError" class="form-msg error" style="display:none;margin-top:0.75rem;"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="orderView" style="display:none;"></div>
+</main>
+
+<script>
+    var trackingToken = null;
+    var orderData = null;
+
+    var STAGES = [
+        { key: 'quote_received', label: 'Quote Received' },
+        { key: 'deposit_paid', label: 'Deposit Paid' },
+        { key: 'design_in_progress', label: 'Design' },
+        { key: 'proof_ready', label: 'Proof Ready' },
+        { key: 'inscription_approved', label: 'Approved' },
+        { key: 'in_production', label: 'Production' },
+        { key: 'installation_scheduled', label: 'Installation' },
+        { key: 'completed', label: 'Complete' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        trackingToken = params.get('token');
+        if (!trackingToken) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('lookupState').style.display = 'block';
+            return;
+        }
+        loadOrder();
+    });
+
+    async function handleResendTracking(e) {
+        e.preventDefault();
+        var email = document.getElementById('lookupEmail').value.trim();
+        var btn = document.getElementById('lookupBtn');
+        var successEl = document.getElementById('lookupSuccess');
+        var errorEl = document.getElementById('lookupError');
+        successEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'resend-tracking', email: email })
+            });
+            var data = await res.json();
+            successEl.textContent = data.message || 'If we have orders for that email, tracking links have been sent.';
+            successEl.style.display = 'block';
+        } catch (err) {
+            errorEl.textContent = 'Something went wrong. Please try again.';
+            errorEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Send Tracking Link';
+    }
+
+    async function loadOrder() {
+        try {
+            var res = await fetch('/api/customer-order?token=' + encodeURIComponent(trackingToken));
+            var data = await res.json();
+            if (!data.ok) {
+                showError(data.error || 'Order not found.');
+                return;
+            }
+            orderData = data;
+            renderOrder(data.order, data.inscriptionHistory);
+        } catch (err) {
+            showError('Failed to load order. Please try again later.');
+        }
+    }
+
+    function showError(msg) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('errorMsg').textContent = msg;
+    }
+
+    function renderOrder(order, history) {
+        document.getElementById('loadingState').style.display = 'none';
+        var container = document.getElementById('orderView');
+        container.style.display = 'block';
+        document.title = order.ref + ' | Order Tracking | Sears Melvin Memorials';
+
+        var html = '';
+
+        // Order header
+        html += '<div class="order-header">'
+            + '<div class="order-ref">' + esc(order.ref) + '</div>'
+            + '<h2>Your Memorial Order</h2>'
+            + '<div class="order-meta">For ' + esc(order.customerName) + ' &middot; Placed ' + formatDate(order.createdAt) + '</div>'
+            + '</div>';
+
+        // Progress bar
+        html += renderProgress(order.stage);
+
+        // Product details
+        html += '<div class="card"><h3>Memorial Details</h3><div class="card-grid">';
+        if (order.product) html += '<div><div class="card-label">Product</div><div class="card-value">' + esc(order.product) + '</div></div>';
+        if (order.colour) html += '<div><div class="card-label">Stone Colour</div><div class="card-value">' + esc(order.colour) + '</div></div>';
+        if (order.size) html += '<div><div class="card-label">Size</div><div class="card-value">' + esc(order.size) + '</div></div>';
+        if (order.location) html += '<div><div class="card-label">Cemetery / Location</div><div class="card-value">' + esc(order.location) + '</div></div>';
+        html += '</div></div>';
+
+        // Proof section
+        if (order.proof) {
+            html += '<div class="card"><h3>Your Proof</h3>'
+                + '<img class="proof-image" src="' + esc(order.proof.url) + '" alt="Memorial proof design">'
+                + '<div class="proof-date">Uploaded ' + formatDate(order.proof.uploadedAt) + '</div>';
+            if (order.proof.notes) {
+                html += '<div class="proof-notes">' + esc(order.proof.notes) + '</div>';
+            }
+            html += '</div>';
+        }
+
+        // Inscription section
+        var inscrText = order.inscription && order.inscription.text;
+        if (inscrText || order.stage !== 'quote_received') {
+            html += '<div class="card"><h3>Inscription</h3>';
+            if (inscrText) {
+                var statusLabel = { pending: 'Pending Review', awaiting_approval: 'Awaiting Your Approval', approved: 'Approved', change_requested: 'Change Requested' };
+                var inscrStatus = order.inscription.status || 'pending';
+                html += '<span class="inscription-status ' + inscrStatus + '">' + (statusLabel[inscrStatus] || inscrStatus) + '</span>';
+                html += '<div class="inscription-box"><div class="inscription-text">' + esc(inscrText) + '</div></div>';
+
+                // Actions
+                var canEdit = order.stage !== 'in_production' && order.stage !== 'installation_scheduled' && order.stage !== 'completed';
+                if (canEdit) {
+                    html += '<div class="inscription-actions">';
+                    if (inscrStatus === 'awaiting_approval' || inscrStatus === 'pending') {
+                        html += '<button class="btn-success" onclick="approveInscription(this)">Approve Inscription</button>';
+                    }
+                    html += '<button class="btn-outline" onclick="showEditForm()">Request Change</button>';
+                    html += '</div>';
+                }
+
+                // Edit form (hidden)
+                html += '<div class="edit-form" id="editForm">'
+                    + '<textarea id="newInscription" placeholder="Enter your revised inscription text...">' + esc(inscrText) + '</textarea>'
+                    + '<input type="text" id="changeReason" placeholder="Reason for change (optional)">'
+                    + '<div class="form-actions">'
+                    + '<button class="btn-primary" id="submitChangeBtn" onclick="submitChange()">Submit Change</button>'
+                    + '<button class="btn-outline" onclick="hideEditForm()">Cancel</button>'
+                    + '</div>'
+                    + '<div class="form-msg success" id="editSuccess"></div>'
+                    + '<div class="form-msg error" id="editError"></div>'
+                    + '</div>';
+            } else {
+                html += '<p style="color:var(--color-text-muted);font-size:0.9rem;">Your inscription details will appear here once confirmed.</p>';
+            }
+            html += '</div>';
+        }
+
+        // Inscription history
+        if (history && history.length > 0) {
+            html += '<div class="card"><h3>Change History</h3>';
+            history.forEach(function(h) {
+                html += '<div class="history-item">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+                    + '<span class="history-date">' + formatDate(h.created_at) + '</span>'
+                    + '<span class="history-status ' + (h.status || 'pending') + '">' + esc(h.status || 'pending') + '</span>'
+                    + '</div>'
+                    + '<div style="margin-top:0.25rem;font-style:italic;">"' + esc(h.requested_text) + '"</div>'
+                    + (h.reason ? '<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.15rem;">Reason: ' + esc(h.reason) + '</div>' : '')
+                    + '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Dates
+        if (order.estimatedCompletion || order.installationDate) {
+            html += '<div class="card"><h3>Key Dates</h3>';
+            if (order.estimatedCompletion) {
+                html += '<div class="date-row"><span class="card-label" style="margin:0;">Estimated Completion</span><span>' + esc(order.estimatedCompletion) + '</span></div>';
+            }
+            if (order.installationDate) {
+                html += '<div class="date-row"><span class="card-label" style="margin:0;">Installation Date</span><span>' + esc(order.installationDate) + '</span></div>';
+            }
+            html += '</div>';
+        }
+
+        // Contact
+        html += '<div class="contact-card">'
+            + '<p>Questions about your order?</p>'
+            + '<p><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a> &middot; <a href="tel:+441onal">Call us</a></p>'
+            + '</div>';
+
+        container.innerHTML = html;
+    }
+
+    function renderProgress(currentStage) {
+        var currentIdx = STAGES.findIndex(function(s) { return s.key === currentStage; });
+        if (currentIdx === -1) currentIdx = 0;
+
+        var checkSvg = '<svg viewBox="0 0 20 20"><path d="M8.5 14.5L4 10l1.4-1.4 3.1 3.1 6.1-6.1L16 7l-7.5 7.5z"/></svg>';
+        var dotSvg = '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg>';
+
+        var html = '<div class="progress-section"><div class="progress-bar">';
+        STAGES.forEach(function(stage, i) {
+            var cls = i < currentIdx ? 'done' : i === currentIdx ? 'current' : '';
+            html += '<div class="progress-step ' + cls + '">'
+                + '<div class="progress-line"></div>'
+                + '<div class="progress-dot">' + (i < currentIdx ? checkSvg : (i === currentIdx ? dotSvg : '')) + '</div>'
+                + '<div class="progress-label">' + stage.label + '</div>'
+                + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    // ==================== INSCRIPTION ACTIONS ====================
+    function showEditForm() {
+        document.getElementById('editForm').style.display = 'block';
+    }
+
+    function hideEditForm() {
+        document.getElementById('editForm').style.display = 'none';
+        document.getElementById('editSuccess').style.display = 'none';
+        document.getElementById('editError').style.display = 'none';
+    }
+
+    async function submitChange() {
+        var text = document.getElementById('newInscription').value.trim();
+        var reason = document.getElementById('changeReason').value.trim();
+        var btn = document.getElementById('submitChangeBtn');
+        var successEl = document.getElementById('editSuccess');
+        var errorEl = document.getElementById('editError');
+
+        successEl.style.display = 'none';
+        errorEl.style.display = 'none';
+
+        if (!text) {
+            errorEl.textContent = 'Please enter the new inscription text.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'request-inscription-change',
+                    token: trackingToken,
+                    text: text,
+                    reason: reason || null,
+                })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+
+            successEl.textContent = data.message || 'Change request submitted.';
+            successEl.style.display = 'block';
+            setTimeout(function() { loadOrder(); }, 2000);
+        } catch (err) {
+            errorEl.textContent = err.message;
+            errorEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Submit Change';
+    }
+
+    async function approveInscription(btn) {
+        if (!confirm('Are you happy with this inscription? Once approved, it will go into production.')) return;
+        btn.disabled = true;
+        btn.textContent = 'Approving...';
+
+        try {
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'approve-inscription', token: trackingToken })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            loadOrder();
+        } catch (err) {
+            alert('Failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Approve Inscription';
+        }
+    }
+
+    // ==================== HELPERS ====================
+    function formatDate(dateStr) {
+        if (!dateStr) return '\u2014';
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+</script>
+</body>
+</html>

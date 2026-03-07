@@ -113,15 +113,26 @@ async function handlePaymentSucceeded(env, pi) {
         // Invoice was created at quote time — update it to "partial" (deposit paid,
         // balance still outstanding) and record the payment against it.
         const patchRes = await fetch(
-          `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${invoiceId}`,
+          `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${invoiceId}&select=order_id`,
           {
             method:  "PATCH",
-            headers: { ...sbHeaders, "Prefer": "return=minimal" },
+            headers: { ...sbHeaders, "Prefer": "return=representation" },
             body: JSON.stringify({ status: "partial", payment_method: "Stripe" }),
           },
         );
         if (!patchRes.ok) {
           console.error(`Supabase invoices PATCH error ${patchRes.status}: ${await patchRes.text()}`);
+        } else {
+          // Also update orders.status to reflect deposit paid
+          const invRows = await patchRes.json();
+          const ordId = invRows[0]?.order_id;
+          if (ordId) {
+            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${ordId}`, {
+              method: "PATCH",
+              headers: { ...sbHeaders, "Prefer": "return=minimal" },
+              body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
+            });
+          }
         }
 
         const payRes = await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
@@ -187,6 +198,15 @@ async function handlePaymentSucceeded(env, pi) {
           });
           if (!payRes.ok) {
             console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+          }
+
+          // Update orders.status to reflect deposit paid
+          if (orderId) {
+            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+              method: "PATCH",
+              headers: { ...sbHeaders, "Prefer": "return=minimal" },
+              body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
+            });
           }
         }
       }

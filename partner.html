@@ -51,8 +51,14 @@
         .login-btn:hover { background: var(--color-stone-light); }
         .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
+        .login-success { color: var(--color-success); font-size: 0.85rem; margin-top: 1rem; display: none; }
         .login-logo { margin-bottom: 1.5rem; }
         .login-logo svg { width: 40px; height: 52px; fill: var(--color-accent); }
+
+        /* Login/Request tabs */
+        .login-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
+        .login-tab { flex: 1; padding: 0.6rem; background: none; border: none; font-family: var(--font-body); font-size: 0.9rem; color: var(--color-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .login-tab.active { color: var(--color-stone); border-bottom-color: var(--color-accent); font-weight: 600; }
 
         /* Dashboard layout */
         .dashboard { display: none; }
@@ -162,7 +168,14 @@
         </div>
         <h1>Partner Portal</h1>
         <p class="subtitle">Sears Melvin Memorials</p>
-        <form onsubmit="handleLogin(event)">
+
+        <div class="login-tabs">
+            <button class="login-tab active" onclick="showLoginTab('signin')">Sign In</button>
+            <button class="login-tab" onclick="showLoginTab('request')">Request Access</button>
+        </div>
+
+        <!-- Sign In form -->
+        <form id="signinForm" onsubmit="handleLogin(event)">
             <div class="login-field">
                 <label>Email</label>
                 <input type="email" id="loginEmail" required autocomplete="email">
@@ -173,6 +186,67 @@
             </div>
             <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
             <p class="login-error" id="loginError"></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showForgotForm(event)" style="color:var(--color-accent);font-size:0.85rem;">Forgot your password?</a></p>
+        </form>
+
+        <!-- Forgot Password form -->
+        <form id="forgotForm" style="display:none;" onsubmit="handleForgotPassword(event)">
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your email and we'll send you a link to reset your password.</p>
+            <div class="login-field">
+                <label>Email</label>
+                <input type="email" id="forgotEmail" required autocomplete="email">
+            </div>
+            <button type="submit" class="login-btn" id="forgotBtn">Send Reset Link</button>
+            <p class="login-error" id="forgotError"></p>
+            <p class="login-success" id="forgotSuccess"></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showLoginTab('signin');event.preventDefault();" style="color:var(--color-accent);font-size:0.85rem;">Back to Sign In</a></p>
+        </form>
+
+        <!-- Reset Password form (shown when arriving with ?reset=token) -->
+        <form id="resetForm" style="display:none;" onsubmit="handleResetPassword(event)">
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your new password below.</p>
+            <div class="login-field">
+                <label>New Password</label>
+                <input type="password" id="resetPassword" required autocomplete="new-password" minlength="6">
+            </div>
+            <div class="login-field">
+                <label>Confirm Password</label>
+                <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="6">
+            </div>
+            <button type="submit" class="login-btn" id="resetBtn">Set New Password</button>
+            <p class="login-error" id="resetError"></p>
+            <p class="login-success" id="resetSuccess"></p>
+        </form>
+
+        <!-- Request Access form -->
+        <form id="requestForm" style="display:none;" onsubmit="handleRequestAccess(event)">
+            <div class="login-field">
+                <label>Your Name *</label>
+                <input type="text" id="reqName" required>
+            </div>
+            <div class="login-field">
+                <label>Company / Business Name *</label>
+                <input type="text" id="reqCompany" required>
+            </div>
+            <div class="login-field">
+                <label>Email *</label>
+                <input type="email" id="reqEmail" required autocomplete="email">
+            </div>
+            <div class="login-field">
+                <label>Phone</label>
+                <input type="tel" id="reqPhone">
+            </div>
+            <div class="login-field">
+                <label>Password *</label>
+                <input type="password" id="reqPassword" required autocomplete="new-password">
+            </div>
+            <div class="login-field">
+                <label>Message (optional)</label>
+                <textarea id="reqMessage" style="width:100%;padding:0.8rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.9rem;font-family:var(--font-body);resize:vertical;min-height:60px;" placeholder="Tell us about your business..."></textarea>
+            </div>
+            <button type="submit" class="login-btn" id="reqBtn">Request Access</button>
+            <p class="login-error" id="reqError"></p>
+            <p class="login-success" id="reqSuccess"></p>
         </form>
     </div>
 </div>
@@ -330,12 +404,168 @@
     var currentFilter = 'all';
     var searchTimeout = null;
 
+    var resetToken = null;
+
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
+        // Check for password reset token in URL
+        var params = new URLSearchParams(window.location.search);
+        resetToken = params.get('reset');
+        if (resetToken) {
+            showResetForm();
+            return;
+        }
         if (sessionToken) {
             verifySession();
         }
     });
+
+    // ==================== TAB SWITCHING ====================
+    function showLoginTab(tab) {
+        var tabs = document.querySelectorAll('.login-tab');
+        tabs[0].classList.toggle('active', tab === 'signin');
+        tabs[1].classList.toggle('active', tab === 'request');
+        document.getElementById('signinForm').style.display = tab === 'signin' ? 'block' : 'none';
+        document.getElementById('requestForm').style.display = tab === 'request' ? 'block' : 'none';
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById('resetForm').style.display = 'none';
+        // Clear messages
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('reqError').style.display = 'none';
+        document.getElementById('reqSuccess').style.display = 'none';
+    }
+
+    function showForgotForm(e) {
+        if (e) e.preventDefault();
+        document.getElementById('signinForm').style.display = 'none';
+        document.getElementById('requestForm').style.display = 'none';
+        document.getElementById('forgotForm').style.display = 'block';
+        document.getElementById('resetForm').style.display = 'none';
+        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
+    }
+
+    function showResetForm() {
+        document.getElementById('signinForm').style.display = 'none';
+        document.getElementById('requestForm').style.display = 'none';
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById('resetForm').style.display = 'block';
+        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
+    }
+
+    // ==================== FORGOT PASSWORD ====================
+    async function handleForgotPassword(e) {
+        e.preventDefault();
+        var email = document.getElementById('forgotEmail').value.trim();
+        var btn = document.getElementById('forgotBtn');
+        var errEl = document.getElementById('forgotError');
+        var successEl = document.getElementById('forgotSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'forgot-password', email: email })
+            });
+            var data = await res.json();
+            successEl.textContent = data.message || 'If an account exists, a reset link has been sent.';
+            successEl.style.display = 'block';
+        } catch (err) {
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Send Reset Link';
+    }
+
+    // ==================== RESET PASSWORD ====================
+    async function handleResetPassword(e) {
+        e.preventDefault();
+        var pw = document.getElementById('resetPassword').value;
+        var pwConfirm = document.getElementById('resetPasswordConfirm').value;
+        var btn = document.getElementById('resetBtn');
+        var errEl = document.getElementById('resetError');
+        var successEl = document.getElementById('resetSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (pw !== pwConfirm) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (pw.length < 6) {
+            errEl.textContent = 'Password must be at least 6 characters.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Updating...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reset-password', token: resetToken, password: pw })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            successEl.textContent = data.message || 'Password updated! You can now sign in.';
+            successEl.style.display = 'block';
+            btn.style.display = 'none';
+            // Clean URL and show sign-in after delay
+            history.replaceState(null, '', '/partner.html');
+            setTimeout(function() { showLoginTab('signin'); }, 3000);
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Set New Password';
+    }
+
+    // ==================== REQUEST ACCESS ====================
+    async function handleRequestAccess(e) {
+        e.preventDefault();
+        var btn = document.getElementById('reqBtn');
+        var errEl = document.getElementById('reqError');
+        var successEl = document.getElementById('reqSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'request',
+                    name: document.getElementById('reqName').value.trim(),
+                    company: document.getElementById('reqCompany').value.trim(),
+                    email: document.getElementById('reqEmail').value.trim(),
+                    phone: document.getElementById('reqPhone').value.trim(),
+                    password: document.getElementById('reqPassword').value,
+                    message: document.getElementById('reqMessage').value.trim(),
+                })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Request failed');
+
+            successEl.textContent = data.message || 'Request submitted! We will review it and get back to you.';
+            successEl.style.display = 'block';
+            document.getElementById('requestForm').reset();
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Request Access';
+    }
 
     // ==================== AUTH ====================
     async function handleLogin(e) {
@@ -521,6 +751,7 @@
             + (order.colour ? row('Colour', order.colour) : '')
             + (order.location ? row('Location', order.location) : '')
             + row('Value', order.value ? formatPrice(order.value) : '—')
+            + (order.permit_fee && parseFloat(order.permit_fee) > 0 ? row('Permit Fee', formatPrice(order.permit_fee)) : '')
             + row('Submitted', formatDate(order.created_at))
             + (order.updated_at ? row('Updated', formatDate(order.updated_at)) : '')
             + '</div>';
