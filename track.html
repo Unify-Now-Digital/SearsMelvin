@@ -28,9 +28,11 @@
         h1, h2, h3 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
 
         /* Header */
-        .track-header { background: var(--color-stone); color: white; padding: 1.25rem 2rem; text-align: center; }
-        .track-header h1 { font-size: 1.5rem; color: white; font-weight: 300; }
-        .track-header a { color: rgba(255,255,255,0.6); font-size: 0.8rem; }
+        .track-header { background: var(--color-stone); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .track-header h1 { font-size: 1.25rem; color: white; font-weight: 300; }
+        .track-header-logo { font-family: var(--font-display); font-size: 1.15rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+        .track-header-logo span { font-weight: 300; opacity: 0.6; }
+        .track-header-logo:hover { opacity: 0.85; }
 
         /* Main */
         .track-main { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
@@ -134,7 +136,7 @@
 <body>
 
 <header class="track-header">
-    <a href="/">searsmelvin.co.uk</a>
+    <a href="/" class="track-header-logo">Sears Melvin <span>Memorials</span></a>
     <h1>Order Tracking</h1>
 </header>
 

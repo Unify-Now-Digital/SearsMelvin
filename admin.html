@@ -50,6 +50,8 @@
         .login-btn:hover { background: var(--color-stone-light); }
         .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
+        .login-home-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--color-text-muted); text-decoration: none; }
+        .login-home-link:hover { color: var(--color-accent); }
 
         /* Dashboard */
         .dashboard { display: none; }
@@ -149,6 +151,7 @@
 <!-- ==================== LOGIN ==================== -->
 <div id="loginScreen" class="login-wrapper">
     <div class="login-card">
+        <a href="/" class="login-home-link">&larr; Back to searsmelvin.co.uk</a>
         <h1>Admin Dashboard</h1>
         <p class="subtitle">Sears Melvin Memorials</p>
         <form onsubmit="adminLogin(event)">
@@ -170,10 +173,10 @@
 <!-- ==================== DASHBOARD ==================== -->
 <div id="dashboardScreen" class="dashboard">
     <nav class="admin-nav">
-        <div class="admin-nav-logo">
+        <a href="/" class="admin-nav-logo" style="text-decoration:none;color:inherit;">
             Sears Melvin <span>Memorials</span>
             <span class="admin-badge">Admin</span>
-        </div>
+        </a>
         <div class="admin-nav-right">
             <button class="admin-nav-btn" onclick="adminLogout()">Sign Out</button>
         </div>
