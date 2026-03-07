@@ -136,19 +136,6 @@ async function createOrder(env, partner, data) {
   const headers = sbHeaders(env);
   const today = new Date().toISOString().split("T")[0];
 
-  // Create customer record
-  const nameParts = customerName.trim().split(" ");
-  await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({
-      first_name: nameParts[0],
-      last_name: nameParts.slice(1).join(" ") || null,
-      email: customerEmail,
-      phone: customerPhone || null,
-    }),
-  });
-
   // Create order linked to partner
   const orderBody = {
     customer_name: customerName,

@@ -253,7 +253,7 @@ async function getDashboard(env) {
 // ==================== LIST ORDERS ====================
 async function listOrders(env, { filter, search }) {
   const headers = sbHeaders(env);
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,permit_fee,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
 
   if (filter && filter !== "all") {
     url += `&stage=eq.${encodeURIComponent(filter)}`;

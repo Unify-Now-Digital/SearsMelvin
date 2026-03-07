@@ -952,10 +952,9 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
 //  SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
 /**
- * Writes to three Supabase tables:
- *   customers    — contact info (first_name, last_name, email, phone)
- *   orders       — order details (sku, color, value, order_type, customer contact)
- *   inscriptions — inscription text (only if quote has inscription)
+ * Creates Supabase records for a new quote/enquiry:
+ *   orders   — order details (sku, color, value, order_type, customer contact, inscription_text)
+ *   invoices — invoice with full order value (only for quotes with pricing)
  */
 function generateToken() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -976,24 +975,11 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     "Prefer":        "return=minimal",
   };
 
-  const parts = name.trim().split(" ");
   const today = new Date().toISOString().split("T")[0];
+  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
   const editToken = preEditToken || (type === "quote" ? generateToken() : null);
 
-  // 1. customers table
-  const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      first_name: parts[0],
-      last_name:  parts.slice(1).join(" ") || null,
-      email,
-      phone: phone || null,
-    }),
-  });
-  if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
-
-  // 2. orders table — return=representation so we get the new row's id
+  // orders table — return=representation so we get the new row's id
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
@@ -1016,7 +1002,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   const orderRows = await orderRes.json();
   const orderId   = orderRows[0]?.id || null;
 
-  // 3. invoices table — created at quote time with the FULL order value so that
+  // invoices table — created at quote time with the FULL order value so that
   //    outstanding balance = invoice.amount − SUM(payments.amount) at any point.
   let invoiceId = null;
   if (type === "quote" && product?.price) {
@@ -1030,7 +1016,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
         amount:        fullAmount,
         status:        "pending",
         issue_date:    today,
-        due_date:      today,
+        due_date:      dueDate,
       }),
     });
     if (!invRes.ok) {
@@ -1041,16 +1027,13 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     }
   }
 
-  // 4. inscriptions table (only for quotes with inscription text)
-  if (product?.inscription) {
-    const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        inscription_text: product.inscription,
-      }),
+  // Set inscription_text on the order itself (used by tracking system)
+  if (product?.inscription && orderId) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({ inscription_text: product.inscription }),
     });
-    if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
 
   return { invoiceId: invoiceId || null, editToken };

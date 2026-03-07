@@ -940,13 +940,8 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
   };
-  const parts = name.trim().split(" ");
   const today = new Date().toISOString().split("T")[0];
-  const custRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
-    method: "POST", headers,
-    body: JSON.stringify({ first_name: parts[0], last_name: parts.slice(1).join(" ") || null, email, phone: phone || null }),
-  });
-  if (!custRes.ok) throw new Error(`Supabase customers error ${custRes.status}: ${await custRes.text()}`);
+  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
   // Generate an edit token for quote editing
   const editToken = type === "quote" ? generateToken() : null;
@@ -973,17 +968,18 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
     const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
     const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
       method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({ order_id: orderId, customer_name: name, amount: fullAmount, status: "pending", issue_date: today, due_date: today }),
+      body: JSON.stringify({ order_id: orderId, customer_name: name, amount: fullAmount, status: "pending", issue_date: today, due_date: dueDate }),
     });
     if (!invRes.ok) { console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`); }
     else { const invRows = await invRes.json(); invoiceId = invRows[0]?.id || null; }
   }
-  if (product?.inscription) {
-    const inscRes = await fetch(`${env.SUPABASE_URL}/rest/v1/inscriptions`, {
-      method: "POST", headers,
+  // Set inscription_text on the order itself (used by tracking system)
+  if (product?.inscription && orderId) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({ inscription_text: product.inscription }),
     });
-    if (!inscRes.ok) throw new Error(`Supabase inscriptions error ${inscRes.status}: ${await inscRes.text()}`);
   }
   return { invoiceId: invoiceId || null, editToken };
 }
