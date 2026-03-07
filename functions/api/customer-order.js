@@ -205,66 +205,74 @@ async function approveInscription(env, { token }) {
 
 // ==================== RESEND TRACKING LINK ====================
 async function resendTracking(env, { email }) {
-  // Always return success to prevent email enumeration
-  const successMsg = "If we have orders for that email, we've sent the tracking link(s).";
-  if (!email) return json({ ok: true, message: successMsg });
+  const safeMsg = "If we have orders for that email, we've sent the tracking link(s).";
+  if (!email || !email.trim()) return json({ ok: true, message: safeMsg });
 
+  const cleanEmail = email.trim().toLowerCase();
   const headers = sbHeaders(env);
 
-  // Find orders with tracking tokens for this email
+  // Find orders with tracking tokens for this email (case-insensitive)
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email.toLowerCase())}&tracking_token=not.is.null&select=id,customer_name,sku,tracking_token,stage&order=created_at.desc&limit=10`,
+    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=ilike.${encodeURIComponent(cleanEmail)}&tracking_token=not.is.null&select=id,customer_name,sku,tracking_token,stage&order=created_at.desc&limit=10`,
     { headers },
   );
-  if (!res.ok) return json({ ok: true, message: successMsg });
+  if (!res.ok) {
+    console.error("Supabase error looking up orders for tracking resend:", res.status, await res.text());
+    return json({ ok: false, error: "Something went wrong. Please try again." }, 500);
+  }
   const orders = await res.json();
-  if (orders.length === 0) return json({ ok: true, message: successMsg });
+  if (orders.length === 0) return json({ ok: true, message: safeMsg });
 
   // Send email with tracking links
-  if (env.RESEND_API_KEY) {
-    const firstName = (orders[0].customer_name || "").split(" ")[0] || "there";
-    const orderLinks = orders.map(o => {
-      const ref = "SM-" + String(o.id).padStart(4, "0");
-      const product = o.sku || "Memorial";
-      return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #E0DCD5;font-size:0.9rem;">${ref} — ${product}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #E0DCD5;text-align:right;">
-          <a href="https://searsmelvin.co.uk/track?token=${o.tracking_token}" style="color:#8B7355;font-weight:500;">Track Order</a>
-        </td>
-      </tr>`;
-    }).join("");
-
-    try {
-      const emailRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
-          to: email.toLowerCase(),
-          subject: "Your Order Tracking Links — Sears Melvin Memorials",
-          html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
-            <h2 style="font-family:Georgia,serif;color:#2C2C2C;font-weight:400;">Your Tracking Links</h2>
-            <p>Hi ${firstName},</p>
-            <p>Here are the tracking links for your order${orders.length > 1 ? "s" : ""}:</p>
-            <table style="width:100%;border-collapse:collapse;margin:1.5rem 0;">
-              ${orderLinks}
-            </table>
-            <p style="color:#666;font-size:0.85rem;">Click any link above to view your order progress, proof designs, and inscription details.</p>
-            <hr style="border:none;border-top:1px solid #E0DCD5;margin:2rem 0;">
-            <p style="color:#999;font-size:0.75rem;">Sears Melvin Memorials</p>
-          </div>`,
-        }),
-      });
-      if (!emailRes.ok) {
-        const body = await emailRes.text();
-        console.error(`Resend error ${emailRes.status} sending tracking to ${email}: ${body}`);
-      }
-    } catch (err) {
-      console.error("Failed to send tracking email:", err);
-    }
+  if (!env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not configured — cannot send tracking email");
+    return json({ ok: false, error: "Email service is temporarily unavailable. Please contact us directly." }, 500);
   }
 
-  return json({ ok: true, message: successMsg });
+  const firstName = (orders[0].customer_name || "").split(" ")[0] || "there";
+  const orderLinks = orders.map(o => {
+    const ref = "SM-" + String(o.id).padStart(4, "0");
+    const product = o.sku || "Memorial";
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #E0DCD5;font-size:0.9rem;">${ref} — ${product}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #E0DCD5;text-align:right;">
+        <a href="https://searsmelvin.co.uk/track?token=${o.tracking_token}" style="color:#8B7355;font-weight:500;">Track Order</a>
+      </td>
+    </tr>`;
+  }).join("");
+
+  try {
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+        to: cleanEmail,
+        subject: "Your Order Tracking Links — Sears Melvin Memorials",
+        html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
+          <h2 style="font-family:Georgia,serif;color:#2C2C2C;font-weight:400;">Your Tracking Links</h2>
+          <p>Hi ${firstName},</p>
+          <p>Here are the tracking links for your order${orders.length > 1 ? "s" : ""}:</p>
+          <table style="width:100%;border-collapse:collapse;margin:1.5rem 0;">
+            ${orderLinks}
+          </table>
+          <p style="color:#666;font-size:0.85rem;">Click any link above to view your order progress, proof designs, and inscription details.</p>
+          <hr style="border:none;border-top:1px solid #E0DCD5;margin:2rem 0;">
+          <p style="color:#999;font-size:0.75rem;">Sears Melvin Memorials</p>
+        </div>`,
+      }),
+    });
+    if (!emailRes.ok) {
+      const body = await emailRes.text();
+      console.error(`Resend error ${emailRes.status} sending tracking to ${cleanEmail}: ${body}`);
+      return json({ ok: false, error: "Failed to send email. Please try again or contact us directly." }, 500);
+    }
+  } catch (err) {
+    console.error("Failed to send tracking email:", err);
+    return json({ ok: false, error: "Failed to send email. Please try again or contact us directly." }, 500);
+  }
+
+  return json({ ok: true, message: "We've sent your tracking link(s) to " + cleanEmail + ". Please check your inbox and spam folder." });
 }
 
 // ==================== HELPERS ====================
