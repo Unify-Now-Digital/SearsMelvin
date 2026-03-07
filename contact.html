@@ -93,15 +93,15 @@
         .contact-intro p { line-height: 1.8; font-size: 1.05rem; }
 
         .contact-methods { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-        .contact-method { display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem 1.5rem; background: white; border-radius: 12px; border: 1.5px solid var(--color-border); transition: all 0.3s; cursor: pointer; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .contact-method { display: flex; flex-direction: row; align-items: center; gap: 1.25rem; padding: 1.25rem 1.5rem; background: white; border-radius: 12px; border: 1.5px solid var(--color-border); transition: all 0.3s; cursor: pointer; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        a.contact-method { display: flex; }
         .contact-method:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.1); border-color: var(--color-accent); }
         .contact-method-icon { width: 48px; height: 48px; background: var(--color-accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.3s; }
         .contact-method:hover .contact-method-icon { background: var(--color-stone); }
         .contact-method-icon svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 1.5; }
         .contact-method-content { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
         .contact-method-content h4 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem; color: var(--color-stone); }
-        .contact-method-content p { font-size: 0.95rem; margin-bottom: 0.1rem; }
-        .contact-method-content a { color: var(--color-accent); font-weight: 600; }
+        .contact-method-content p { font-size: 0.95rem; margin-bottom: 0.1rem; color: var(--color-accent); font-weight: 600; }
         .contact-method-content small { font-size: 0.8rem; color: var(--color-text-muted); }
 
         /* Reassurance */
@@ -322,18 +322,18 @@
                         </div>
                         <div class="contact-method-content">
                             <h4>Call us</h4>
-                            <p><a href="tel:01268208559">01268 208 559</a></p>
+                            <p>01268 208 559</p>
                             <small>Mon-Fri 9am-5pm, Sat 10am-2pm</small>
                         </div>
                     </a>
 
-                    <a href="/cdn-cgi/l/email-protection#ee87808881ae9d8b8f9c9d838b82988780c08d81c09b85" class="contact-method">
+                    <a href="mailto:info@searsmelvin.co.uk" class="contact-method">
                         <div class="contact-method-icon">
                             <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         </div>
                         <div class="contact-method-content">
                             <h4>Email us</h4>
-                            <p><a href="/cdn-cgi/l/email-protection#4b22252d240b382e2a3938262e273d2225652824653e20"><span class="__cf_email__" data-cfemail="86efe8e0e9c6f5e3e7f4f5ebe3eaf0efe8a8e5e9a8f3ed">[email&#160;protected]</span></a></p>
+                            <p>info@searsmelvin.co.uk</p>
                             <small>We reply within 24 hours</small>
                         </div>
                     </a>
