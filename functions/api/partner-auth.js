@@ -253,11 +253,13 @@ async function handleForgotPassword(env, { email }) {
   if (!insertRes.ok) return json({ ok: true, message: successMsg });
 
   // Send reset email via Resend
-  if (env.RESEND_API_KEY) {
+  if (!env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not set — cannot send password reset email");
+  } else {
     const resetUrl = `https://searsmelvin.co.uk/partner.html?reset=${token}`;
     const firstName = (partner.name || "").split(" ")[0] || "there";
     try {
-      await fetch("https://api.resend.com/emails", {
+      const emailRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -277,6 +279,10 @@ async function handleForgotPassword(env, { email }) {
           </div>`,
         }),
       });
+      if (!emailRes.ok) {
+        const body = await emailRes.text();
+        console.error(`Resend error ${emailRes.status} sending reset to ${partner.email}: ${body}`);
+      }
     } catch (err) {
       console.error("Failed to send reset email:", err);
     }
