@@ -131,3 +131,18 @@ CREATE TABLE IF NOT EXISTS customer_activity (
 );
 
 CREATE INDEX IF NOT EXISTS idx_customer_activity_order ON customer_activity (order_id);
+
+-- ============================================================
+-- 6. PASSWORD RESET TOKENS (for partners)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    partner_id INTEGER NOT NULL REFERENCES partners(id),
+    token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens (token);

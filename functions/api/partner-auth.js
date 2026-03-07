@@ -6,6 +6,8 @@
  * POST { action: "logout", token }           → invalidate session
  * POST { action: "register", email, password, name, company, adminKey } → create partner (admin only)
  * POST { action: "request", email, password, name, company, phone, message } → self-service request (pending approval)
+ * POST { action: "forgot-password", email }      → send password reset email
+ * POST { action: "reset-password", token, password } → set new password using reset token
  */
 
 const CORS = {
@@ -38,6 +40,8 @@ export async function onRequest(context) {
   if (action === "logout") return handleLogout(env, data);
   if (action === "register") return handleRegister(env, data);
   if (action === "request") return handleRequest(env, data);
+  if (action === "forgot-password") return handleForgotPassword(env, data);
+  if (action === "reset-password") return handleResetPassword(env, data);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -219,6 +223,110 @@ async function handleRequest(env, { email, password, name, company, phone, messa
   }
 
   return json({ ok: true, message: "Your request has been submitted. We'll review it and get back to you soon." });
+}
+
+// ==================== FORGOT PASSWORD ====================
+async function handleForgotPassword(env, { email }) {
+  // Always return success to prevent email enumeration
+  const successMsg = "If an account with that email exists, we've sent a password reset link.";
+  if (!email) return json({ ok: true, message: successMsg });
+
+  const headers = sbHeaders(env);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,name,email&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return json({ ok: true, message: successMsg });
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: true, message: successMsg });
+
+  const partner = rows[0];
+  const token = generateToken(32);
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+  // Save reset token
+  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ partner_id: partner.id, token, expires_at: expiresAt }),
+  });
+  if (!insertRes.ok) return json({ ok: true, message: successMsg });
+
+  // Send reset email via Resend
+  if (env.RESEND_API_KEY) {
+    const resetUrl = `https://searsmelvin.co.uk/partner.html?reset=${token}`;
+    const firstName = (partner.name || "").split(" ")[0] || "there";
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+          to: partner.email,
+          subject: "Password Reset — Sears Melvin Partner Portal",
+          html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
+            <h2 style="font-family:Georgia,serif;color:#2C2C2C;font-weight:400;">Password Reset</h2>
+            <p>Hi ${firstName},</p>
+            <p>We received a request to reset your Partner Portal password. Click the button below to set a new password:</p>
+            <p style="text-align:center;margin:2rem 0;">
+              <a href="${resetUrl}" style="background:#2C2C2C;color:white;padding:0.75rem 2rem;border-radius:6px;text-decoration:none;font-size:1rem;display:inline-block;">Reset Password</a>
+            </p>
+            <p style="color:#666;font-size:0.85rem;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+            <hr style="border:none;border-top:1px solid #E0DCD5;margin:2rem 0;">
+            <p style="color:#999;font-size:0.75rem;">Sears Melvin Memorials &mdash; Partner Portal</p>
+          </div>`,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send reset email:", err);
+    }
+  }
+
+  return json({ ok: true, message: successMsg });
+}
+
+// ==================== RESET PASSWORD ====================
+async function handleResetPassword(env, { token, password }) {
+  if (!token || !password) return json({ ok: false, error: "Token and new password are required" }, 400);
+  if (password.length < 6) return json({ ok: false, error: "Password must be at least 6 characters" }, 400);
+
+  const headers = sbHeaders(env);
+  const now = new Date().toISOString();
+
+  // Find valid reset token
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&used=eq.false&expires_at=gt.${now}&select=id,partner_id&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
+
+  const resetRecord = rows[0];
+  const hash = await hashPassword(password);
+
+  // Update partner password
+  const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${resetRecord.partner_id}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ password_hash: hash }),
+  });
+  if (!updateRes.ok) return json({ ok: false, error: "Failed to update password" }, 500);
+
+  // Mark token as used
+  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ used: true }),
+  });
+
+  // Invalidate all existing sessions for this partner (security)
+  await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?partner_id=eq.${resetRecord.partner_id}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  return json({ ok: true, message: "Password updated successfully. You can now sign in with your new password." });
 }
 
 // ==================== HELPERS ====================

@@ -146,6 +146,24 @@
         <h2>Order Not Found</h2>
         <p id="errorMsg">Please check your tracking link and try again.</p>
     </div>
+
+    <!-- Lookup form (shown when no token provided) -->
+    <div id="lookupState" style="display:none;">
+        <div class="card" style="max-width:420px;margin:2rem auto;text-align:center;">
+            <h3 style="margin-bottom:0.5rem;">Find Your Order</h3>
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1.25rem;">Enter the email address you used when placing your order. We'll send your tracking link(s) to your inbox.</p>
+            <form onsubmit="handleResendTracking(event)">
+                <div style="text-align:left;margin-bottom:1rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);margin-bottom:0.25rem;">Email Address</label>
+                    <input type="email" id="lookupEmail" required style="width:100%;padding:0.7rem 0.9rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.95rem;font-family:var(--font-body);">
+                </div>
+                <button type="submit" class="btn-primary" id="lookupBtn" style="width:100%;padding:0.75rem;">Send Tracking Link</button>
+                <p id="lookupSuccess" class="form-msg success" style="display:none;margin-top:0.75rem;"></p>
+                <p id="lookupError" class="form-msg error" style="display:none;margin-top:0.75rem;"></p>
+            </form>
+        </div>
+    </div>
+
     <div id="orderView" style="display:none;"></div>
 </main>
 
@@ -168,11 +186,40 @@
         var params = new URLSearchParams(window.location.search);
         trackingToken = params.get('token');
         if (!trackingToken) {
-            showError('No tracking token provided. Please use the link from your email.');
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('lookupState').style.display = 'block';
             return;
         }
         loadOrder();
     });
+
+    async function handleResendTracking(e) {
+        e.preventDefault();
+        var email = document.getElementById('lookupEmail').value.trim();
+        var btn = document.getElementById('lookupBtn');
+        var successEl = document.getElementById('lookupSuccess');
+        var errorEl = document.getElementById('lookupError');
+        successEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'resend-tracking', email: email })
+            });
+            var data = await res.json();
+            successEl.textContent = data.message || 'If we have orders for that email, tracking links have been sent.';
+            successEl.style.display = 'block';
+        } catch (err) {
+            errorEl.textContent = 'Something went wrong. Please try again.';
+            errorEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Send Tracking Link';
+    }
 
     async function loadOrder() {
         try {

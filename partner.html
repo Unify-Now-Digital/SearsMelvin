@@ -186,6 +186,36 @@
             </div>
             <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
             <p class="login-error" id="loginError"></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showForgotForm(event)" style="color:var(--color-accent);font-size:0.85rem;">Forgot your password?</a></p>
+        </form>
+
+        <!-- Forgot Password form -->
+        <form id="forgotForm" style="display:none;" onsubmit="handleForgotPassword(event)">
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your email and we'll send you a link to reset your password.</p>
+            <div class="login-field">
+                <label>Email</label>
+                <input type="email" id="forgotEmail" required autocomplete="email">
+            </div>
+            <button type="submit" class="login-btn" id="forgotBtn">Send Reset Link</button>
+            <p class="login-error" id="forgotError"></p>
+            <p class="login-success" id="forgotSuccess"></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showLoginTab('signin');event.preventDefault();" style="color:var(--color-accent);font-size:0.85rem;">Back to Sign In</a></p>
+        </form>
+
+        <!-- Reset Password form (shown when arriving with ?reset=token) -->
+        <form id="resetForm" style="display:none;" onsubmit="handleResetPassword(event)">
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your new password below.</p>
+            <div class="login-field">
+                <label>New Password</label>
+                <input type="password" id="resetPassword" required autocomplete="new-password" minlength="6">
+            </div>
+            <div class="login-field">
+                <label>Confirm Password</label>
+                <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="6">
+            </div>
+            <button type="submit" class="login-btn" id="resetBtn">Set New Password</button>
+            <p class="login-error" id="resetError"></p>
+            <p class="login-success" id="resetSuccess"></p>
         </form>
 
         <!-- Request Access form -->
@@ -374,8 +404,17 @@
     var currentFilter = 'all';
     var searchTimeout = null;
 
+    var resetToken = null;
+
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
+        // Check for password reset token in URL
+        var params = new URLSearchParams(window.location.search);
+        resetToken = params.get('reset');
+        if (resetToken) {
+            showResetForm();
+            return;
+        }
         if (sessionToken) {
             verifySession();
         }
@@ -388,10 +427,105 @@
         tabs[1].classList.toggle('active', tab === 'request');
         document.getElementById('signinForm').style.display = tab === 'signin' ? 'block' : 'none';
         document.getElementById('requestForm').style.display = tab === 'request' ? 'block' : 'none';
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById('resetForm').style.display = 'none';
         // Clear messages
         document.getElementById('loginError').style.display = 'none';
         document.getElementById('reqError').style.display = 'none';
         document.getElementById('reqSuccess').style.display = 'none';
+    }
+
+    function showForgotForm(e) {
+        if (e) e.preventDefault();
+        document.getElementById('signinForm').style.display = 'none';
+        document.getElementById('requestForm').style.display = 'none';
+        document.getElementById('forgotForm').style.display = 'block';
+        document.getElementById('resetForm').style.display = 'none';
+        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
+    }
+
+    function showResetForm() {
+        document.getElementById('signinForm').style.display = 'none';
+        document.getElementById('requestForm').style.display = 'none';
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById('resetForm').style.display = 'block';
+        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
+    }
+
+    // ==================== FORGOT PASSWORD ====================
+    async function handleForgotPassword(e) {
+        e.preventDefault();
+        var email = document.getElementById('forgotEmail').value.trim();
+        var btn = document.getElementById('forgotBtn');
+        var errEl = document.getElementById('forgotError');
+        var successEl = document.getElementById('forgotSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'forgot-password', email: email })
+            });
+            var data = await res.json();
+            successEl.textContent = data.message || 'If an account exists, a reset link has been sent.';
+            successEl.style.display = 'block';
+        } catch (err) {
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Send Reset Link';
+    }
+
+    // ==================== RESET PASSWORD ====================
+    async function handleResetPassword(e) {
+        e.preventDefault();
+        var pw = document.getElementById('resetPassword').value;
+        var pwConfirm = document.getElementById('resetPasswordConfirm').value;
+        var btn = document.getElementById('resetBtn');
+        var errEl = document.getElementById('resetError');
+        var successEl = document.getElementById('resetSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (pw !== pwConfirm) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (pw.length < 6) {
+            errEl.textContent = 'Password must be at least 6 characters.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Updating...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reset-password', token: resetToken, password: pw })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            successEl.textContent = data.message || 'Password updated! You can now sign in.';
+            successEl.style.display = 'block';
+            btn.style.display = 'none';
+            // Clean URL and show sign-in after delay
+            history.replaceState(null, '', '/partner.html');
+            setTimeout(function() { showLoginTab('signin'); }, 3000);
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Set New Password';
     }
 
     // ==================== REQUEST ACCESS ====================
