@@ -47,20 +47,28 @@ export async function onRequestPost(context) {
 
 async function handleQuoteRequest(env, data, submittedAt) {
   const { name, email, phone, cemetery, message, product = {}, location, payment_preference } = data;
-  const invoiceOnly = payment_preference === 'invoice_only';
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
 
-  // 0. Stripe Deposit Invoice — always created so deposit link is available in emails
-  let stripeInvoiceUrl = null;
+  // 0. Stripe Invoices — always create both deposit and full payment invoices
+  let stripeDepositUrl = null;
+  let stripeFullUrl = null;
   if (env.STRIPE_SECRET_KEY) {
     try {
-      stripeInvoiceUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+      stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
         name, email, phone, product, location,
-        isFullInvoice: invoiceOnly,
+        isFullInvoice: false,
       });
     } catch (err) {
       console.error("Stripe deposit invoice creation failed:", err);
+    }
+    try {
+      stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location,
+        isFullInvoice: true,
+      });
+    } catch (err) {
+      console.error("Stripe full invoice creation failed:", err);
     }
   }
 
@@ -70,7 +78,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, location: cemetery, message, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }),
+      html:    quoteBusinessEmail({ name, email, phone, location: cemetery, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
@@ -83,7 +91,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: email,
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html: quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl, editToken }),
+      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }),
     });
   } catch (err) {
     console.error("Failed to send quote customer email:", err);
@@ -118,7 +126,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("GHL contact create failed:", err);
   }
 
-  return jsonResponse({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl, editToken });
+  return jsonResponse({ ok: true, invoiceId, stripeDepositUrl, stripeFullUrl, editToken });
 }
 
 async function handleEnquiry(env, data, submittedAt) {
@@ -374,7 +382,7 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
 // EMAIL TEMPLATES
 // ═══════════════════════════════════════════════════════════════════
 
-function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, invoiceOnly, stripeInvoiceUrl }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
     : Array.isArray(product.addons) && product.addons.length > 0
@@ -413,7 +421,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                   Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span>
                 </td>
                 <td align="right">
-                  <span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">${invoiceOnly ? "Invoice Request" : "New Quote"}</span>
+                  <span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">New Quote</span>
                 </td>
               </tr>
             </table>
@@ -423,7 +431,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
         <!-- Title row -->
         <tr>
           <td style="padding:26px 28px 4px;">
-            <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">${invoiceOnly ? "Invoice Request" : "New Quote Request"}</h2>
+            <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">New Quote Request</h2>
             <p style="color:#AAAAAA;font-size:12px;margin:0;font-family:Arial,sans-serif;">Received ${esc(submittedAt)}</p>
           </td>
         </tr>
@@ -568,16 +576,29 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
           </td>
         </tr>
 
-        ${stripeInvoiceUrl ? `<!-- Invoice / Deposit CTA button — prominent coloured row -->
+        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment CTA buttons -->
         <tr>
-          <td style="padding:20px 28px;">
+          <td style="padding:20px 28px 10px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td align="center" style="background-color:#8B7355;border-radius:8px;padding:16px 20px;">
-                  <a href="${stripeInvoiceUrl}" style="font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;display:block;">${invoiceOnly ? "View &amp; Pay Invoice" : "View &amp; Pay 50% Deposit"} &rarr;</a>
+              ${stripeDepositUrl ? `<tr>
+                <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;margin-bottom:8px;">
+                  <a href="${stripeDepositUrl}" style="display:block;padding:14px 20px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">50% Deposit Invoice &rarr;</a>
                 </td>
               </tr>
+              <tr><td style="height:8px;"></td></tr>` : ""}
+              ${stripeFullUrl ? `<tr>
+                <td align="center" style="background-color:#2C2C2C;border-radius:8px;padding:0;">
+                  <a href="${stripeFullUrl}" style="display:block;padding:14px 20px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Full Payment Invoice &rarr;</a>
+                </td>
+              </tr>` : ""}
             </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 28px 10px;">
+            <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;line-height:1.5;">
+              <em>Note: Outstanding balance may be required if modifications are made to the memorial after deposit.</em>
+            </p>
           </td>
         </tr>` : ""}
 
@@ -608,7 +629,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeInvoiceUrl, editToken }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }) {
   const totalPrice = parseFloat(product.price) || 0;
   const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -645,7 +666,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
                   Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span>
                 </td>
                 <td align="right">
-                  <span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">${invoiceOnly ? "Invoice Request" : "Quote Request"}</span>
+                  <span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">Quote Request</span>
                 </td>
               </tr>
             </table>
@@ -656,7 +677,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
         <tr>
           <td style="padding:30px 28px 0;">
             <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
-            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your ${invoiceOnly ? "invoice request" : "quote request"} for the <strong style="color:#2C2C2C;">${esc(product.name || "memorial")}</strong> and our team will be in touch within 24 hours.</p>
+            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for the <strong style="color:#2C2C2C;">${esc(product.name || "memorial")}</strong> and our team will be in touch within 24 hours.</p>
           </td>
         </tr>
 
@@ -744,31 +765,36 @@ function quoteCustomerEmail({ firstName, product, stoneHex, invoiceOnly, stripeI
           </td>
         </tr>
 
-        ${stripeInvoiceUrl ? `<!-- Deposit / Invoice CTA button -->
+        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment CTA buttons -->
         <tr>
-          <td style="padding:0 28px 24px;">
+          <td style="padding:0 28px 16px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
+              ${stripeDepositUrl ? `<tr>
                 <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;">
-                  <a href="${stripeInvoiceUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">${invoiceOnly ? "View &amp; Pay Invoice" : "View &amp; Pay 50% Deposit"} &rarr;</a>
+                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay 50% Deposit &rarr;</a>
                 </td>
               </tr>
+              <tr><td style="height:10px;"></td></tr>` : ""}
+              ${stripeFullUrl ? `<tr>
+                <td align="center" style="background-color:#2C2C2C;border-radius:8px;padding:0;">
+                  <a href="${stripeFullUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay in Full &rarr;</a>
+                </td>
+              </tr>` : ""}
               <tr>
-                <td style="padding:8px 0 0;text-align:center;">
-                  <span style="font-family:Arial,sans-serif;color:#888888;font-size:12px;">${invoiceOnly ? "Your invoice is ready. Pay at any time before the due date." : "No obligation — pay only when you're ready to proceed."}</span>
+                <td style="padding:10px 0 0;text-align:center;">
+                  <span style="font-family:Arial,sans-serif;color:#888888;font-size:12px;">No obligation — pay only when you're ready to proceed.</span>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-        <!-- Installation timeline note -->
+        <!-- Outstanding balance note -->
         <tr>
-          <td style="padding:0 28px 20px;">
+          <td style="padding:0 28px 16px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF8F5;border-radius:6px;border-left:3px solid #8B7355;">
               <tr>
                 <td style="padding:12px 14px;font-family:Arial,sans-serif;font-size:13px;color:#555555;line-height:1.6;">
-                  <strong style="color:#2C2C2C;">When does installation begin?</strong><br>
-                  Your installation timeline begins once the deposit is confirmed. We'll be in touch to discuss dates and next steps as soon as payment is received.
+                  <strong style="color:#2C2C2C;">Please note:</strong> Outstanding balance may be required if modifications are made to the memorial after deposit. Your installation timeline begins once payment is confirmed — we'll be in touch to discuss dates and next steps.
                 </td>
               </tr>
             </table>

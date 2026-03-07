@@ -269,21 +269,29 @@ export default {
 // ═══════════════════════════════════════════════════════════════════
 async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
   const { name, email, phone, message, product = {}, location, payment_preference } = data;
-  const invoiceOnly = payment_preference === "invoice_only";
   const firstName = name.split(" ")[0];
   const stoneHex  = STONE_COLOURS[product.colour] || "#8B7355";
   const preEditToken = generateToken();
 
-  // 0. Stripe Invoice — create if configured
-  let stripeInvoiceUrl = null;
+  // 0. Stripe Invoices — always create both deposit and full payment invoices
+  let stripeDepositUrl = null;
+  let stripeFullUrl = null;
   if (env.STRIPE_SECRET_KEY) {
     try {
-      stripeInvoiceUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+      stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
         name, email, phone, product, location,
-        isFullInvoice: invoiceOnly,
+        isFullInvoice: false,
       });
     } catch (err) {
-      console.error("Stripe invoice creation failed:", err);
+      console.error("Stripe deposit invoice creation failed:", err);
+    }
+    try {
+      stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location,
+        isFullInvoice: true,
+      });
+    } catch (err) {
+      console.error("Stripe full invoice creation failed:", err);
     }
   }
 
@@ -341,7 +349,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("GHL contact create failed:", err);
   }
 
-  return json({ ok: true, invoiceId, invoiceOnly, stripeInvoiceUrl, editToken }, 200, corsHeaders);
+  return json({ ok: true, invoiceId, stripeDepositUrl, stripeFullUrl, editToken }, 200, corsHeaders);
 }
 
 

@@ -54,6 +54,8 @@
         .login-success { color: var(--color-success); font-size: 0.85rem; margin-top: 1rem; display: none; }
         .login-logo { margin-bottom: 1.5rem; }
         .login-logo svg { width: 40px; height: 52px; fill: var(--color-accent); }
+        .login-home-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--color-text-muted); text-decoration: none; }
+        .login-home-link:hover { color: var(--color-accent); }
 
         /* Login/Request tabs */
         .login-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
@@ -160,6 +162,7 @@
 <!-- ==================== LOGIN SCREEN ==================== -->
 <div id="loginScreen" class="login-wrapper">
     <div class="login-card">
+        <a href="/" class="login-home-link">&larr; Back to searsmelvin.co.uk</a>
         <div class="login-logo">
             <svg viewBox="0 0 32 42">
                 <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
@@ -255,10 +258,10 @@
 <div id="dashboardScreen" class="dashboard">
     <!-- Portal navigation -->
     <nav class="portal-nav">
-        <div class="portal-nav-logo">
+        <a href="/" class="portal-nav-logo" style="text-decoration:none;color:inherit;">
             Sears Melvin <span>Memorials</span>
             <span class="portal-nav-badge">Partner</span>
-        </div>
+        </a>
         <div class="portal-nav-right">
             <span class="portal-nav-user" id="navUserName"></span>
             <button class="portal-nav-btn" onclick="handleLogout()">Sign Out</button>
