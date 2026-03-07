@@ -57,16 +57,26 @@ CREATE TABLE IF NOT EXISTS partner_sessions (
 CREATE INDEX IF NOT EXISTS idx_partner_sessions_token ON partner_sessions (token);
 
 -- ============================================================
--- 3. CREATE AN INITIAL PARTNER ACCOUNT (update email/password)
+-- 3. PARTNER REQUEST STATUS (for self-service registration)
 -- ============================================================
--- To create a partner, run this separately after the migration:
---
--- INSERT INTO partners (email, password_hash, name, company)
--- VALUES (
---   'partner@example.com',
---   -- Use the /api/partner-auth endpoint with action=hash to generate a hash,
---   -- or insert a known hash. The portal uses SHA-256 for simplicity.
---   'SET_VIA_API',
---   'John Smith',
---   'Smith Funeral Directors'
--- );
+
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'approved';
+-- Existing partners default to 'approved'. New requests will be 'pending'.
+-- Values: 'pending', 'approved', 'declined'
+
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS declined_at TIMESTAMPTZ;
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- ============================================================
+-- 4. ADMIN SESSIONS (separate from partner sessions)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id SERIAL PRIMARY KEY,
+    token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions (token);

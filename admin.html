@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Sears Melvin Memorials</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --color-error: #c0392b;
+            --color-warning: #856404;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: #f5f3f0; color: var(--color-text); line-height: 1.6; min-height: 100vh; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+
+        /* Nav */
+        .admin-nav { background: var(--color-stone); color: white; padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .admin-nav-logo { font-family: var(--font-display); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .admin-nav-logo span { font-weight: 300; opacity: 0.6; }
+        .admin-badge { background: var(--color-error); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .admin-nav-right { display: flex; align-items: center; gap: 1rem; }
+        .admin-nav-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-family: var(--font-body); }
+        .admin-nav-btn:hover { border-color: white; }
+
+        /* Login */
+        .login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
+        .login-card { background: white; border-radius: 12px; padding: 3rem 2.5rem; max-width: 400px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.08); text-align: center; }
+        .login-card h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+        .login-card .subtitle { color: var(--color-text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
+        .login-field { margin-bottom: 1rem; text-align: left; }
+        .login-field label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.3rem; }
+        .login-field input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 1rem; font-family: var(--font-body); }
+        .login-field input:focus { outline: none; border-color: var(--color-accent); }
+        .login-btn { width: 100%; padding: 0.9rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 1rem; font-family: var(--font-body); cursor: pointer; margin-top: 0.5rem; }
+        .login-btn:hover { background: var(--color-stone-light); }
+        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
+
+        /* Dashboard */
+        .dashboard { display: none; }
+        .dash-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        /* Stats row */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-card .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.25rem; }
+        .stat-card .stat-value { font-family: var(--font-display); font-size: 1.75rem; color: var(--color-stone); }
+        .stat-card.highlight { border-left: 3px solid var(--color-accent); }
+        .stat-card.alert { border-left: 3px solid var(--color-warning); background: #FFFEF5; }
+
+        /* Tabs */
+        .admin-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
+        .admin-tab { padding: 0.75rem 1.5rem; background: none; border: none; font-family: var(--font-body); font-size: 0.9rem; color: var(--color-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; position: relative; }
+        .admin-tab.active { color: var(--color-stone); border-bottom-color: var(--color-accent); font-weight: 600; }
+        .admin-tab .badge { background: var(--color-error); color: white; font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 10px; margin-left: 0.4rem; font-weight: 600; }
+
+        /* Section panels */
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+
+        /* Partner cards */
+        .partner-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .partner-card { background: white; border-radius: 10px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .partner-info { flex: 1; min-width: 200px; }
+        .partner-name { font-weight: 600; font-size: 1rem; color: var(--color-stone); }
+        .partner-company { font-size: 0.85rem; color: var(--color-accent); }
+        .partner-meta { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem; }
+        .partner-meta a { color: var(--color-accent); text-decoration: underline; }
+        .partner-stats { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
+        .partner-stat { text-align: center; }
+        .partner-stat .ps-value { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-stone); }
+        .partner-stat .ps-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); }
+        .partner-actions { display: flex; gap: 0.5rem; }
+        .btn-approve { padding: 0.4rem 1rem; background: var(--color-success); color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body); font-weight: 500; }
+        .btn-approve:hover { opacity: 0.9; }
+        .btn-approve:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-decline { padding: 0.4rem 1rem; background: white; color: var(--color-error); border: 1px solid var(--color-error); border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body); font-weight: 500; }
+        .btn-decline:hover { background: #FFF5F5; }
+        .btn-decline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Status badges */
+        .status { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+        .status.pending { background: #FFF3CD; color: #856404; }
+        .status.approved { background: #D4EDDA; color: #155724; }
+        .status.declined { background: #F8D7DA; color: #721C24; }
+
+        /* Message when partner has notes */
+        .partner-message { margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: var(--color-cream); border-radius: 6px; font-size: 0.8rem; color: var(--color-text); font-style: italic; }
+
+        /* Filter bar */
+        .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .filter-pill { padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 20px; background: white; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body); color: var(--color-text-muted); }
+        .filter-pill.active { background: var(--color-stone); color: white; border-color: var(--color-stone); }
+
+        /* Recent orders table */
+        .orders-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .orders-table th { background: var(--color-cream); padding: 0.65rem 1rem; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
+        .orders-table td { padding: 0.75rem 1rem; border-top: 1px solid var(--color-border); font-size: 0.85rem; }
+
+        .empty-state { text-align: center; padding: 3rem 2rem; color: var(--color-text-muted); background: white; border-radius: 10px; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 2rem; color: var(--color-text-muted); }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .admin-nav { padding: 0.75rem 1rem; }
+            .dash-content { padding: 1rem; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .partner-card { flex-direction: column; align-items: flex-start; }
+            .partner-stats { width: 100%; justify-content: flex-start; }
+            .partner-actions { width: 100%; }
+            .btn-approve, .btn-decline { flex: 1; text-align: center; }
+            .admin-tabs { overflow-x: auto; }
+            .orders-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginScreen" class="login-wrapper">
+    <div class="login-card">
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Sears Melvin Memorials</p>
+        <form onsubmit="adminLogin(event)">
+            <div class="login-field">
+                <label>Admin Key</label>
+                <input type="password" id="adminKeyInput" required autocomplete="current-password" placeholder="Enter your admin key">
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+            <p class="login-error" id="loginError"></p>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="dashboardScreen" class="dashboard">
+    <nav class="admin-nav">
+        <div class="admin-nav-logo">
+            Sears Melvin <span>Memorials</span>
+            <span class="admin-badge">Admin</span>
+        </div>
+        <div class="admin-nav-right">
+            <button class="admin-nav-btn" onclick="adminLogout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <div class="dash-content">
+        <!-- Overview stats -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card alert" id="statPendingCard">
+                <div class="stat-label">Pending Requests</div>
+                <div class="stat-value" id="statPendingRequests">-</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">Active Partners</div>
+                <div class="stat-value" id="statActivePartners">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-value" id="statTotalOrders">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Partner Orders</div>
+                <div class="stat-value" id="statPartnerOrders">-</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">Partner Revenue</div>
+                <div class="stat-value" id="statPartnerRevenue">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Orders Pending</div>
+                <div class="stat-value" id="statOrdersPending">-</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="switchTab('partners', this)">
+                Partner Accounts <span class="badge" id="pendingBadge" style="display:none;">0</span>
+            </button>
+            <button class="admin-tab" onclick="switchTab('activity', this)">Recent Activity</button>
+        </div>
+
+        <!-- Partners section -->
+        <div class="admin-section active" id="section-partners">
+            <div class="filter-bar">
+                <button class="filter-pill active" onclick="filterPartners('all', this)">All</button>
+                <button class="filter-pill" onclick="filterPartners('pending', this)">Pending</button>
+                <button class="filter-pill" onclick="filterPartners('approved', this)">Approved</button>
+                <button class="filter-pill" onclick="filterPartners('declined', this)">Declined</button>
+            </div>
+            <div id="partnerList" class="partner-list">
+                <div class="loading">Loading partners...</div>
+            </div>
+        </div>
+
+        <!-- Activity section -->
+        <div class="admin-section" id="section-activity">
+            <h3 style="font-size:1.2rem;margin-bottom:1rem;">Recent Orders</h3>
+            <div id="recentOrdersContainer">
+                <div class="loading">Loading activity...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var adminToken = localStorage.getItem('admin_token');
+    var allPartners = [];
+    var partnerFilter = 'all';
+
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        if (adminToken) verifyAdminSession();
+    });
+
+    // ==================== AUTH ====================
+    async function adminLogin(e) {
+        e.preventDefault();
+        var key = document.getElementById('adminKeyInput').value.trim();
+        var btn = document.getElementById('loginBtn');
+        var errEl = document.getElementById('loginError');
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        errEl.style.display = 'none';
+
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'login', adminKey: key })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Login failed');
+            adminToken = data.token;
+            localStorage.setItem('admin_token', data.token);
+            showDashboard();
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    }
+
+    async function verifyAdminSession() {
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'verify', token: adminToken })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error('Invalid');
+            showDashboard();
+        } catch (err) {
+            localStorage.removeItem('admin_token');
+            adminToken = null;
+        }
+    }
+
+    async function adminLogout() {
+        try {
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout', token: adminToken })
+            });
+        } catch (e) {}
+        localStorage.removeItem('admin_token');
+        adminToken = null;
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('dashboardScreen').style.display = 'none';
+    }
+
+    // ==================== DASHBOARD ====================
+    function showDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboardScreen').style.display = 'block';
+        loadDashboard();
+        loadPartners();
+    }
+
+    async function loadDashboard() {
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'dashboard', token: adminToken })
+            });
+            var data = await res.json();
+            if (!data.ok) { if (res.status === 401) return adminLogout(); return; }
+
+            document.getElementById('statPendingRequests').textContent = data.partners.pending;
+            document.getElementById('statActivePartners').textContent = data.partners.approved;
+            document.getElementById('statTotalOrders').textContent = data.orders.total;
+            document.getElementById('statPartnerOrders').textContent = data.orders.partnerOrders;
+            document.getElementById('statPartnerRevenue').textContent = formatPrice(data.orders.partnerValue);
+            document.getElementById('statOrdersPending').textContent = data.orders.pending;
+
+            // Pending badge
+            var badge = document.getElementById('pendingBadge');
+            if (data.partners.pending > 0) {
+                badge.textContent = data.partners.pending;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Highlight pending card
+            var pendingCard = document.getElementById('statPendingCard');
+            pendingCard.classList.toggle('alert', data.partners.pending > 0);
+
+            // Recent orders
+            renderRecentOrders(data.recentOrders || []);
+        } catch (err) {
+            console.error('Dashboard error:', err);
+        }
+    }
+
+    function renderRecentOrders(orders) {
+        var container = document.getElementById('recentOrdersContainer');
+        if (orders.length === 0) {
+            container.innerHTML = '<div class="empty-state">No recent orders.</div>';
+            return;
+        }
+
+        var html = '<table class="orders-table"><thead><tr>'
+            + '<th>Date</th><th>Partner</th><th>Value</th><th>Status</th>'
+            + '</tr></thead><tbody>';
+
+        orders.forEach(function(o) {
+            var statusClass = o.status === 'completed' ? 'approved' : o.status === 'partial' ? 'pending' : 'pending';
+            var statusLabel = o.status === 'completed' ? 'Completed' : o.status === 'partial' ? 'Deposit Paid' : 'Pending';
+            html += '<tr>'
+                + '<td style="white-space:nowrap;">' + formatDate(o.created_at) + '</td>'
+                + '<td>' + (o.partner_id ? 'Partner #' + o.partner_id : 'Direct') + '</td>'
+                + '<td style="font-family:var(--font-display);font-size:1.05rem;">' + (o.value ? formatPrice(o.value) : '\u2014') + '</td>'
+                + '<td><span class="status ' + statusClass + '">' + statusLabel + '</span></td>'
+                + '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    // ==================== PARTNERS ====================
+    async function loadPartners() {
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'list-partners', token: adminToken, filter: partnerFilter })
+            });
+            var data = await res.json();
+            if (!data.ok) { if (res.status === 401) return adminLogout(); return; }
+            allPartners = data.partners;
+            renderPartners(data.partners);
+        } catch (err) {
+            console.error('Load partners error:', err);
+            document.getElementById('partnerList').innerHTML = '<div class="empty-state">Failed to load partners.</div>';
+        }
+    }
+
+    function renderPartners(partners) {
+        var container = document.getElementById('partnerList');
+        if (partners.length === 0) {
+            container.innerHTML = '<div class="empty-state">No partner accounts found.</div>';
+            return;
+        }
+
+        container.innerHTML = partners.map(function(p) {
+            var statusClass = p.status || 'pending';
+            var statusLabel = p.status === 'approved' ? 'Approved' : p.status === 'declined' ? 'Declined' : 'Pending';
+            var stats = p.orders || { count: 0, value: 0, pending: 0, completed: 0 };
+
+            var html = '<div class="partner-card">'
+                + '<div class="partner-info">'
+                + '<div class="partner-name">' + esc(p.name) + ' <span class="status ' + statusClass + '">' + statusLabel + '</span></div>'
+                + '<div class="partner-company">' + esc(p.company || '') + '</div>'
+                + '<div class="partner-meta">'
+                + '<a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>'
+                + (p.phone ? ' &middot; ' + esc(p.phone) : '')
+                + ' &middot; Joined ' + formatDate(p.created_at)
+                + '</div>';
+
+            if (p.notes) {
+                html += '<div class="partner-message">"' + esc(p.notes) + '"</div>';
+            }
+
+            html += '</div>'
+                + '<div class="partner-stats">'
+                + '<div class="partner-stat"><div class="ps-value">' + stats.count + '</div><div class="ps-label">Orders</div></div>'
+                + '<div class="partner-stat"><div class="ps-value">' + formatPrice(stats.value) + '</div><div class="ps-label">Value</div></div>'
+                + '<div class="partner-stat"><div class="ps-value">' + stats.pending + '</div><div class="ps-label">Pending</div></div>'
+                + '<div class="partner-stat"><div class="ps-value">' + stats.completed + '</div><div class="ps-label">Completed</div></div>'
+                + '</div>'
+                + '<div class="partner-actions">';
+
+            if (p.status === 'pending') {
+                html += '<button class="btn-approve" onclick="approvePartner(' + p.id + ', this)">Approve</button>'
+                    + '<button class="btn-decline" onclick="declinePartner(' + p.id + ', this)">Decline</button>';
+            } else if (p.status === 'approved') {
+                html += '<button class="btn-decline" onclick="declinePartner(' + p.id + ', this)">Deactivate</button>';
+            } else if (p.status === 'declined') {
+                html += '<button class="btn-approve" onclick="approvePartner(' + p.id + ', this)">Re-approve</button>';
+            }
+
+            html += '</div></div>';
+            return html;
+        }).join('');
+    }
+
+    async function approvePartner(id, btn) {
+        if (!confirm('Approve this partner? They will be able to log in and place orders.')) return;
+        btn.disabled = true;
+        btn.textContent = 'Approving...';
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'approve-partner', token: adminToken, partnerId: id })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            loadPartners();
+            loadDashboard();
+        } catch (err) {
+            alert('Failed to approve: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Approve';
+        }
+    }
+
+    async function declinePartner(id, btn) {
+        if (!confirm('Decline/deactivate this partner? They will not be able to log in.')) return;
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'decline-partner', token: adminToken, partnerId: id })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            loadPartners();
+            loadDashboard();
+        } catch (err) {
+            alert('Failed to decline: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Decline';
+        }
+    }
+
+    function filterPartners(filter, btn) {
+        partnerFilter = filter;
+        document.querySelectorAll('.filter-pill').forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        loadPartners();
+    }
+
+    // ==================== TABS ====================
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.admin-section').forEach(function(s) { s.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        document.getElementById('section-' + tab).classList.add('active');
+    }
+
+    // ==================== HELPERS ====================
+    function formatDate(dateStr) {
+        if (!dateStr) return '\u2014';
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatPrice(val) {
+        var n = parseFloat(val);
+        if (isNaN(n) || n === 0) return '\u00A30';
+        return '\u00A3' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+</script>
+</body>
+</html>

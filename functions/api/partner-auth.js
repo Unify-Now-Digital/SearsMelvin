@@ -5,6 +5,7 @@
  * POST { action: "verify", token }           → verify session token, return partner info
  * POST { action: "logout", token }           → invalidate session
  * POST { action: "register", email, password, name, company, adminKey } → create partner (admin only)
+ * POST { action: "request", email, password, name, company, phone, message } → self-service request (pending approval)
  */
 
 const CORS = {
@@ -36,6 +37,7 @@ export async function onRequest(context) {
   if (action === "verify") return handleVerify(env, data);
   if (action === "logout") return handleLogout(env, data);
   if (action === "register") return handleRegister(env, data);
+  if (action === "request") return handleRequest(env, data);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -46,12 +48,28 @@ async function handleLogin(env, { email, password }) {
 
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&active=eq.true&select=id,email,name,company,password_hash&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&active=eq.true&status=eq.approved&select=id,email,name,company,password_hash&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
   const rows = await res.json();
-  if (rows.length === 0) return json({ ok: false, error: "Invalid email or password" }, 401);
+  if (rows.length === 0) {
+    // Check if they exist but are pending/declined
+    const checkRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=status&limit=1`,
+      { headers },
+    );
+    if (checkRes.ok) {
+      const checkRows = await checkRes.json();
+      if (checkRows.length > 0 && checkRows[0].status === "pending") {
+        return json({ ok: false, error: "Your account is awaiting approval. We'll be in touch soon." }, 401);
+      }
+      if (checkRows.length > 0 && checkRows[0].status === "declined") {
+        return json({ ok: false, error: "Your account request was not approved. Please contact us for more information." }, 401);
+      }
+    }
+    return json({ ok: false, error: "Invalid email or password" }, 401);
+  }
 
   const partner = rows[0];
 
@@ -134,6 +152,75 @@ async function handleRegister(env, { email, password, name, company, adminKey })
   return json({ ok: true, partner: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
 }
 
+// ==================== REQUEST (self-service, pending approval) ====================
+async function handleRequest(env, { email, password, name, company, phone, message }) {
+  if (!email || !password || !name) {
+    return json({ ok: false, error: "Name, email, and password are required" }, 400);
+  }
+
+  const headers = sbHeaders(env);
+
+  // Check if email already exists
+  const checkRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,status&limit=1`,
+    { headers },
+  );
+  if (checkRes.ok) {
+    const existing = await checkRes.json();
+    if (existing.length > 0) {
+      if (existing[0].status === "pending") {
+        return json({ ok: false, error: "A request with this email is already pending approval." }, 409);
+      }
+      if (existing[0].status === "approved") {
+        return json({ ok: false, error: "An account with this email already exists. Please sign in." }, 409);
+      }
+      // If declined, allow re-request by updating
+      const hash = await hashPassword(password);
+      await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${existing[0].id}`, {
+        method: "PATCH",
+        headers: { ...headers, "Prefer": "return=minimal" },
+        body: JSON.stringify({
+          password_hash: hash,
+          name,
+          company: company || null,
+          phone: phone || null,
+          notes: message || null,
+          status: "pending",
+          declined_at: null,
+          active: true,
+        }),
+      });
+      return json({ ok: true, message: "Your request has been resubmitted and is pending approval." });
+    }
+  }
+
+  const hash = await hashPassword(password);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({
+      email: email.toLowerCase(),
+      password_hash: hash,
+      name,
+      company: company || null,
+      phone: phone || null,
+      notes: message || null,
+      status: "pending",
+      active: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    if (errText.includes("duplicate")) {
+      return json({ ok: false, error: "A request with this email already exists." }, 409);
+    }
+    return json({ ok: false, error: "Failed to submit request" }, 500);
+  }
+
+  return json({ ok: true, message: "Your request has been submitted. We'll review it and get back to you soon." });
+}
+
 // ==================== HELPERS ====================
 async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
@@ -149,7 +236,7 @@ async function getPartnerFromToken(env, token) {
 
   const partnerId = sessRows[0].partner_id;
   const partRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${partnerId}&active=eq.true&select=id,email,name,company&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${partnerId}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
     { headers },
   );
   if (!partRes.ok) return null;

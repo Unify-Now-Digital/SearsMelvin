@@ -51,8 +51,14 @@
         .login-btn:hover { background: var(--color-stone-light); }
         .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
+        .login-success { color: var(--color-success); font-size: 0.85rem; margin-top: 1rem; display: none; }
         .login-logo { margin-bottom: 1.5rem; }
         .login-logo svg { width: 40px; height: 52px; fill: var(--color-accent); }
+
+        /* Login/Request tabs */
+        .login-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
+        .login-tab { flex: 1; padding: 0.6rem; background: none; border: none; font-family: var(--font-body); font-size: 0.9rem; color: var(--color-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .login-tab.active { color: var(--color-stone); border-bottom-color: var(--color-accent); font-weight: 600; }
 
         /* Dashboard layout */
         .dashboard { display: none; }
@@ -162,7 +168,14 @@
         </div>
         <h1>Partner Portal</h1>
         <p class="subtitle">Sears Melvin Memorials</p>
-        <form onsubmit="handleLogin(event)">
+
+        <div class="login-tabs">
+            <button class="login-tab active" onclick="showLoginTab('signin')">Sign In</button>
+            <button class="login-tab" onclick="showLoginTab('request')">Request Access</button>
+        </div>
+
+        <!-- Sign In form -->
+        <form id="signinForm" onsubmit="handleLogin(event)">
             <div class="login-field">
                 <label>Email</label>
                 <input type="email" id="loginEmail" required autocomplete="email">
@@ -173,6 +186,37 @@
             </div>
             <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
             <p class="login-error" id="loginError"></p>
+        </form>
+
+        <!-- Request Access form -->
+        <form id="requestForm" style="display:none;" onsubmit="handleRequestAccess(event)">
+            <div class="login-field">
+                <label>Your Name *</label>
+                <input type="text" id="reqName" required>
+            </div>
+            <div class="login-field">
+                <label>Company / Business Name *</label>
+                <input type="text" id="reqCompany" required>
+            </div>
+            <div class="login-field">
+                <label>Email *</label>
+                <input type="email" id="reqEmail" required autocomplete="email">
+            </div>
+            <div class="login-field">
+                <label>Phone</label>
+                <input type="tel" id="reqPhone">
+            </div>
+            <div class="login-field">
+                <label>Password *</label>
+                <input type="password" id="reqPassword" required autocomplete="new-password">
+            </div>
+            <div class="login-field">
+                <label>Message (optional)</label>
+                <textarea id="reqMessage" style="width:100%;padding:0.8rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.9rem;font-family:var(--font-body);resize:vertical;min-height:60px;" placeholder="Tell us about your business..."></textarea>
+            </div>
+            <button type="submit" class="login-btn" id="reqBtn">Request Access</button>
+            <p class="login-error" id="reqError"></p>
+            <p class="login-success" id="reqSuccess"></p>
         </form>
     </div>
 </div>
@@ -336,6 +380,58 @@
             verifySession();
         }
     });
+
+    // ==================== TAB SWITCHING ====================
+    function showLoginTab(tab) {
+        var tabs = document.querySelectorAll('.login-tab');
+        tabs[0].classList.toggle('active', tab === 'signin');
+        tabs[1].classList.toggle('active', tab === 'request');
+        document.getElementById('signinForm').style.display = tab === 'signin' ? 'block' : 'none';
+        document.getElementById('requestForm').style.display = tab === 'request' ? 'block' : 'none';
+        // Clear messages
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('reqError').style.display = 'none';
+        document.getElementById('reqSuccess').style.display = 'none';
+    }
+
+    // ==================== REQUEST ACCESS ====================
+    async function handleRequestAccess(e) {
+        e.preventDefault();
+        var btn = document.getElementById('reqBtn');
+        var errEl = document.getElementById('reqError');
+        var successEl = document.getElementById('reqSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'request',
+                    name: document.getElementById('reqName').value.trim(),
+                    company: document.getElementById('reqCompany').value.trim(),
+                    email: document.getElementById('reqEmail').value.trim(),
+                    phone: document.getElementById('reqPhone').value.trim(),
+                    password: document.getElementById('reqPassword').value,
+                    message: document.getElementById('reqMessage').value.trim(),
+                })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Request failed');
+
+            successEl.textContent = data.message || 'Request submitted! We will review it and get back to you.';
+            successEl.style.display = 'block';
+            document.getElementById('requestForm').reset();
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Request Access';
+    }
 
     // ==================== AUTH ====================
     async function handleLogin(e) {
