@@ -7,7 +7,7 @@
  */
 
 const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
@@ -65,9 +65,9 @@ async function getQuoteByToken(env, token) {
       email: order.customer_email,
       phone: order.customer_phone,
       location: order.location,
-      product: order.product_config ? JSON.parse(order.product_config) : null,
+      product: order.product_config ? safeParse(order.product_config) : null,
       value: order.value,
-      notes: order.notes,
+      notes: order.notes || null,
       status: order.status || "pending",
       created_at: order.created_at,
     },
@@ -76,27 +76,43 @@ async function getQuoteByToken(env, token) {
 
 async function getQuotesByEmail(env, email) {
   const headers = sbHeaders(env);
+  // Select only core columns that always exist — use select=* to be resilient
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&order_type=eq.quote&select=id,customer_name,customer_email,sku,color,value,location,status,notes,created_at,product_config&order=created_at.desc&limit=20`,
+    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&order_type=eq.quote&select=*&order=created_at.desc&limit=20`,
     { headers },
   );
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  if (!res.ok) {
+    // If query fails, try without order_type filter (column may not exist or no quotes)
+    const fallbackRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&select=*&order=created_at.desc&limit=20`,
+      { headers },
+    );
+    if (!fallbackRes.ok) {
+      const errText = await fallbackRes.text();
+      return json({ ok: false, error: "Database error", detail: errText }, 500);
+    }
+    const allRows = await fallbackRes.json();
+    // Filter to quotes client-side
+    const rows = allRows.filter(r => r.order_type === "quote");
+    return json({ ok: true, quotes: rows.map(mapOrderToQuote) });
+  }
   const rows = await res.json();
-  return json({
-    ok: true,
-    quotes: rows.map(order => ({
-      id: order.id,
-      name: order.customer_name,
-      product: order.sku,
-      colour: order.color,
-      value: order.value,
-      location: order.location,
-      status: order.status || "pending",
-      notes: order.notes,
-      created_at: order.created_at,
-      config: order.product_config ? JSON.parse(order.product_config) : null,
-    })),
-  });
+  return json({ ok: true, quotes: rows.map(mapOrderToQuote) });
+}
+
+function mapOrderToQuote(order) {
+  return {
+    id: order.id,
+    name: order.customer_name,
+    product: order.sku || null,
+    colour: order.color || null,
+    value: order.value,
+    location: order.location || null,
+    status: order.status || "pending",
+    notes: order.notes || null,
+    created_at: order.created_at,
+    config: order.product_config ? safeParse(order.product_config) : null,
+  };
 }
 
 async function updateQuote(env, data) {
@@ -144,6 +160,11 @@ function sbHeaders(env) {
     "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
     "Content-Type": "application/json",
   };
+}
+
+function safeParse(str) {
+  try { return JSON.parse(str); }
+  catch { return null; }
 }
 
 function json(data, status = 200) {

@@ -323,11 +323,12 @@
 
             try {
                 var res = await fetch('/api/quotes?email=' + encodeURIComponent(email));
+                if (!res.ok) throw new Error('Server returned ' + res.status);
                 var data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                if (!data.ok) throw new Error(data.error || 'Unknown error');
 
-                if (data.quotes.length === 0) {
-                    errEl.textContent = 'No quotes found for this email address.';
+                if (!data.quotes || data.quotes.length === 0) {
+                    errEl.textContent = 'No quotes found for this email address. Quotes appear here after you submit a quote request.';
                     errEl.style.display = 'block';
                     btn.disabled = false;
                     btn.textContent = 'Find Quotes';
@@ -337,7 +338,8 @@
                 document.getElementById('emailLookup').style.display = 'none';
                 renderQuotesList(data.quotes, email);
             } catch (e) {
-                errEl.textContent = 'Sorry, something went wrong. Please try again.';
+                console.error('Quote lookup error:', e);
+                errEl.textContent = 'Sorry, something went wrong (' + e.message + '). Please try again.';
                 errEl.style.display = 'block';
             }
             btn.disabled = false;
