@@ -10,6 +10,11 @@
  * POST { action: "approve-partner", token, partnerId }  → approve a pending partner
  * POST { action: "decline-partner", token, partnerId }  → decline a pending partner
  * POST { action: "dashboard", token }                   → get overview stats
+ * POST { action: "list-orders", token }                 → list all orders with tracking info
+ * POST { action: "update-order", token, orderId, ... }  → update order stage, inscription, proof, dates
+ * POST { action: "generate-tracking", token, orderId }  → generate tracking token for customer
+ * POST { action: "list-inscription-requests", token }   → list pending inscription change requests
+ * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
  */
 
 const CORS = {
@@ -49,6 +54,11 @@ export async function onRequest(context) {
   if (action === "approve-partner") return approvePartner(env, data);
   if (action === "decline-partner") return declinePartner(env, data);
   if (action === "dashboard") return getDashboard(env);
+  if (action === "list-orders") return listOrders(env, data);
+  if (action === "update-order") return updateOrder(env, data);
+  if (action === "generate-tracking") return generateTracking(env, data);
+  if (action === "list-inscription-requests") return listInscriptionRequests(env);
+  if (action === "resolve-inscription") return resolveInscription(env, data);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -238,6 +248,176 @@ async function getDashboard(env) {
     orders: orderStats,
     recentOrders,
   });
+}
+
+// ==================== LIST ORDERS ====================
+async function listOrders(env, { filter, search }) {
+  const headers = sbHeaders(env);
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
+
+  if (filter && filter !== "all") {
+    url += `&stage=eq.${encodeURIComponent(filter)}`;
+  }
+
+  const res = await fetch(url, { headers });
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  let orders = await res.json();
+
+  if (search) {
+    const q = search.toLowerCase();
+    orders = orders.filter(o =>
+      (o.customer_name || "").toLowerCase().includes(q) ||
+      (o.customer_email || "").toLowerCase().includes(q) ||
+      (o.sku || "").toLowerCase().includes(q)
+    );
+  }
+
+  return json({ ok: true, orders });
+}
+
+// ==================== UPDATE ORDER ====================
+async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+
+  const headers = sbHeaders(env);
+  const updates = {};
+
+  if (stage !== undefined) updates.stage = stage;
+  if (inscriptionText !== undefined) updates.inscription_text = inscriptionText;
+  if (inscriptionStatus !== undefined) updates.inscription_status = inscriptionStatus;
+  if (proofUrl !== undefined) {
+    updates.proof_url = proofUrl;
+    updates.proof_uploaded_at = new Date().toISOString();
+  }
+  if (proofNotes !== undefined) updates.proof_notes = proofNotes;
+  if (estimatedCompletion !== undefined) updates.estimated_completion = estimatedCompletion;
+  if (installationDate !== undefined) updates.installation_date = installationDate;
+  updates.updated_at = new Date().toISOString();
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify(updates),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to update order" }, 500);
+  const rows = await res.json();
+  if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
+
+  return json({ ok: true, order: rows[0] });
+}
+
+// ==================== GENERATE TRACKING TOKEN ====================
+async function generateTracking(env, { orderId }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+
+  const headers = sbHeaders(env);
+
+  // Check if order already has a tracking token
+  const checkRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,tracking_token&limit=1`,
+    { headers },
+  );
+  if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const rows = await checkRes.json();
+  if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
+
+  if (rows[0].tracking_token) {
+    return json({ ok: true, trackingToken: rows[0].tracking_token, alreadyExists: true });
+  }
+
+  const token = generateToken(32);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({ tracking_token: token }),
+  });
+
+  if (!res.ok) return json({ ok: false, error: "Failed to generate token" }, 500);
+
+  return json({ ok: true, trackingToken: token });
+}
+
+// ==================== LIST INSCRIPTION REQUESTS ====================
+async function listInscriptionRequests(env) {
+  const headers = sbHeaders(env);
+
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?status=eq.pending&select=id,order_id,requested_text,reason,created_at&order=created_at.desc&limit=50`,
+    { headers },
+  );
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  const requests = await res.json();
+
+  // Enrich with order info
+  const enriched = [];
+  for (const req of requests) {
+    const orderRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,customer_name,customer_email,sku,inscription_text&limit=1`,
+      { headers },
+    );
+    let orderInfo = null;
+    if (orderRes.ok) {
+      const orderRows = await orderRes.json();
+      if (orderRows.length > 0) orderInfo = orderRows[0];
+    }
+    enriched.push({ ...req, order: orderInfo });
+  }
+
+  return json({ ok: true, requests: enriched });
+}
+
+// ==================== RESOLVE INSCRIPTION REQUEST ====================
+async function resolveInscription(env, { requestId, accept }) {
+  if (!requestId) return json({ ok: false, error: "Request ID required" }, 400);
+
+  const headers = sbHeaders(env);
+
+  // Get the request
+  const reqRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${encodeURIComponent(requestId)}&select=id,order_id,requested_text&limit=1`,
+    { headers },
+  );
+  if (!reqRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const reqRows = await reqRes.json();
+  if (reqRows.length === 0) return json({ ok: false, error: "Request not found" }, 404);
+
+  const inscReq = reqRows[0];
+
+  // Update request status
+  await fetch(`${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${requestId}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      status: accept ? "accepted" : "declined",
+      resolved_at: new Date().toISOString(),
+    }),
+  });
+
+  // If accepted, update the order's inscription text
+  if (accept) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({
+        inscription_text: inscReq.requested_text,
+        inscription_status: "awaiting_approval",
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } else {
+    // Declined — revert to previous status
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({
+        inscription_status: "awaiting_approval",
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  }
+
+  return json({ ok: true });
 }
 
 // ==================== HELPERS ====================

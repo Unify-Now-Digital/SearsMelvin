@@ -114,6 +114,19 @@
 
         .empty-state { text-align: center; padding: 3rem 2rem; color: var(--color-text-muted); background: white; border-radius: 10px; }
 
+        /* Modal overlay */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .edit-field { margin-bottom: 1rem; }
+        .edit-field label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin-bottom: 0.25rem; }
+        .edit-field input, .edit-field select, .edit-field textarea { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; font-family: var(--font-body); }
+        .edit-field textarea { resize: vertical; min-height: 60px; }
+        .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .tracking-link { background: var(--color-cream); border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.8rem; word-break: break-all; margin-top: 0.5rem; }
+        .btn-copy { padding: 0.3rem 0.75rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-family: var(--font-body); margin-left: 0.5rem; }
+        .edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+        .search-input { margin-bottom: 1rem; }
+
         /* Loading */
         .loading { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 
@@ -195,6 +208,9 @@
             <button class="admin-tab active" onclick="switchTab('partners', this)">
                 Partner Accounts <span class="badge" id="pendingBadge" style="display:none;">0</span>
             </button>
+            <button class="admin-tab" onclick="switchTab('orders', this)">
+                Order Management <span class="badge" id="inscriptionBadge" style="display:none;">0</span>
+            </button>
             <button class="admin-tab" onclick="switchTab('activity', this)">Recent Activity</button>
         </div>
 
@@ -211,6 +227,30 @@
             </div>
         </div>
 
+        <!-- Orders section -->
+        <div class="admin-section" id="section-orders">
+            <!-- Inscription change requests -->
+            <div id="inscriptionAlerts" style="display:none;margin-bottom:1.5rem;">
+                <h3 style="font-size:1.1rem;margin-bottom:0.75rem;color:var(--color-warning);">Inscription Change Requests</h3>
+                <div id="inscriptionList" class="partner-list"></div>
+            </div>
+
+            <h3 style="font-size:1.2rem;margin-bottom:0.75rem;">All Orders</h3>
+            <div class="filter-bar">
+                <button class="filter-pill active" onclick="filterOrders('all', this)">All</button>
+                <button class="filter-pill" onclick="filterOrders('quote_received', this)">Quote</button>
+                <button class="filter-pill" onclick="filterOrders('deposit_paid', this)">Deposit</button>
+                <button class="filter-pill" onclick="filterOrders('design_in_progress', this)">Design</button>
+                <button class="filter-pill" onclick="filterOrders('proof_ready', this)">Proof</button>
+                <button class="filter-pill" onclick="filterOrders('in_production', this)">Production</button>
+                <button class="filter-pill" onclick="filterOrders('completed', this)">Completed</button>
+            </div>
+            <input type="text" class="search-input" id="orderSearchInput" placeholder="Search orders..." oninput="debounceOrderSearch()" style="width:100%;padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-bottom:1rem;">
+            <div id="orderList" class="partner-list">
+                <div class="loading">Loading orders...</div>
+            </div>
+        </div>
+
         <!-- Activity section -->
         <div class="admin-section" id="section-activity">
             <h3 style="font-size:1.2rem;margin-bottom:1rem;">Recent Orders</h3>
@@ -218,6 +258,17 @@
                 <div class="loading">Loading activity...</div>
             </div>
         </div>
+
+    <!-- Order Edit Modal -->
+    <div class="modal-overlay" id="orderEditModal">
+        <div class="modal-content" style="background:white;border-radius:12px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;margin:2rem;">
+            <div style="padding:1.5rem 1.5rem 0;display:flex;justify-content:space-between;align-items:center;">
+                <h2 style="font-family:var(--font-display);font-size:1.4rem;" id="editModalTitle">Edit Order</h2>
+                <button onclick="closeEditModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-text-muted);">&times;</button>
+            </div>
+            <div style="padding:1.5rem;" id="editModalBody"></div>
+        </div>
+    </div>
     </div>
 </div>
 
@@ -482,6 +533,289 @@
         document.querySelectorAll('.admin-section').forEach(function(s) { s.classList.remove('active'); });
         if (btn) btn.classList.add('active');
         document.getElementById('section-' + tab).classList.add('active');
+        if (tab === 'orders') { loadAdminOrders(); loadInscriptionRequests(); }
+    }
+
+    // ==================== ORDER MANAGEMENT ====================
+    var orderFilter = 'all';
+    var orderSearchTimeout = null;
+
+    function debounceOrderSearch() {
+        clearTimeout(orderSearchTimeout);
+        orderSearchTimeout = setTimeout(loadAdminOrders, 300);
+    }
+
+    function filterOrders(filter, btn) {
+        orderFilter = filter;
+        var pills = document.querySelectorAll('#section-orders .filter-pill');
+        pills.forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        loadAdminOrders();
+    }
+
+    async function loadAdminOrders() {
+        try {
+            var search = document.getElementById('orderSearchInput') ? document.getElementById('orderSearchInput').value.trim() : '';
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'list-orders', token: adminToken, filter: orderFilter, search: search })
+            });
+            var data = await res.json();
+            if (!data.ok) return;
+            renderAdminOrders(data.orders);
+        } catch (err) {
+            document.getElementById('orderList').innerHTML = '<div class="empty-state">Failed to load orders.</div>';
+        }
+    }
+
+    var STAGE_LABELS = {
+        quote_received: 'Quote Received', deposit_paid: 'Deposit Paid',
+        design_in_progress: 'Design', proof_ready: 'Proof Ready',
+        inscription_approved: 'Approved', in_production: 'Production',
+        installation_scheduled: 'Installation', completed: 'Completed'
+    };
+    var STAGE_CLASSES = {
+        quote_received: 'pending', deposit_paid: 'pending', design_in_progress: 'pending',
+        proof_ready: 'pending', inscription_approved: 'approved', in_production: 'approved',
+        installation_scheduled: 'approved', completed: 'approved'
+    };
+
+    function renderAdminOrders(orders) {
+        var container = document.getElementById('orderList');
+        if (orders.length === 0) {
+            container.innerHTML = '<div class="empty-state">No orders found.</div>';
+            return;
+        }
+
+        container.innerHTML = orders.map(function(o) {
+            var stage = o.stage || 'quote_received';
+            var stageLabel = STAGE_LABELS[stage] || stage;
+            var stageClass = STAGE_CLASSES[stage] || 'pending';
+            var ref = 'SM-' + String(o.id).padStart(4, '0');
+
+            return '<div class="partner-card" style="cursor:pointer;" onclick="openEditModal(' + o.id + ')">'
+                + '<div class="partner-info">'
+                + '<div class="partner-name">' + esc(ref) + ' &mdash; ' + esc(o.customer_name) + ' <span class="status ' + stageClass + '">' + esc(stageLabel) + '</span></div>'
+                + '<div class="partner-company">' + esc(o.sku || '') + (o.color ? ' &middot; ' + esc(o.color) : '') + '</div>'
+                + '<div class="partner-meta">' + esc(o.customer_email || '') + ' &middot; ' + formatDate(o.created_at)
+                + (o.tracking_token ? ' &middot; <span style="color:var(--color-success);">Tracking active</span>' : '')
+                + '</div>'
+                + '</div>'
+                + '<div class="partner-stats">'
+                + '<div class="partner-stat"><div class="ps-value">' + (o.value ? formatPrice(o.value) : '\u2014') + '</div><div class="ps-label">Value</div></div>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    // ==================== ORDER EDIT MODAL ====================
+    var editingOrderId = null;
+
+    async function openEditModal(orderId) {
+        editingOrderId = orderId;
+        var modal = document.getElementById('orderEditModal');
+        modal.classList.add('active');
+        document.getElementById('editModalTitle').textContent = 'SM-' + String(orderId).padStart(4, '0');
+        document.getElementById('editModalBody').innerHTML = '<div class="loading">Loading...</div>';
+
+        // Fetch order details
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'list-orders', token: adminToken, search: '' })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error('Failed');
+            var order = data.orders.find(function(o) { return o.id === orderId; });
+            if (!order) throw new Error('Order not found');
+            renderEditForm(order);
+        } catch (err) {
+            document.getElementById('editModalBody').innerHTML = '<p style="color:var(--color-error);">Failed to load order.</p>';
+        }
+    }
+
+    function closeEditModal() {
+        document.getElementById('orderEditModal').classList.remove('active');
+        editingOrderId = null;
+    }
+
+    function renderEditForm(order) {
+        var stages = ['quote_received','deposit_paid','design_in_progress','proof_ready','inscription_approved','in_production','installation_scheduled','completed'];
+        var inscStatuses = ['pending','awaiting_approval','approved','change_requested'];
+
+        var stageOptions = stages.map(function(s) {
+            return '<option value="' + s + '"' + (order.stage === s ? ' selected' : '') + '>' + (STAGE_LABELS[s] || s) + '</option>';
+        }).join('');
+
+        var inscOptions = inscStatuses.map(function(s) {
+            var labels = { pending: 'Pending', awaiting_approval: 'Awaiting Customer Approval', approved: 'Approved', change_requested: 'Change Requested' };
+            return '<option value="' + s + '"' + (order.inscription_status === s ? ' selected' : '') + '>' + (labels[s] || s) + '</option>';
+        }).join('');
+
+        var html = '<div class="edit-field"><label>Order Stage</label>'
+            + '<select id="editStage">' + stageOptions + '</select></div>'
+            + '<div class="edit-field"><label>Inscription Text</label>'
+            + '<textarea id="editInscription" placeholder="Enter inscription...">' + esc(order.inscription_text || '') + '</textarea></div>'
+            + '<div class="edit-row">'
+            + '<div class="edit-field"><label>Inscription Status</label><select id="editInscStatus">' + inscOptions + '</select></div>'
+            + '<div class="edit-field"><label>Proof Image URL</label><input type="url" id="editProofUrl" value="' + esc(order.proof_url || '') + '" placeholder="https://..."></div>'
+            + '</div>'
+            + '<div class="edit-field"><label>Proof Notes (visible to customer)</label>'
+            + '<input type="text" id="editProofNotes" value="' + esc(order.proof_notes || '') + '" placeholder="e.g. Please review the layout..."></div>'
+            + '<div class="edit-row">'
+            + '<div class="edit-field"><label>Estimated Completion</label><input type="text" id="editEstCompletion" value="' + esc(order.estimated_completion || '') + '" placeholder="e.g. Mid April 2026"></div>'
+            + '<div class="edit-field"><label>Installation Date</label><input type="text" id="editInstallDate" value="' + esc(order.installation_date || '') + '" placeholder="e.g. 20 April 2026"></div>'
+            + '</div>';
+
+        // Tracking link
+        html += '<div class="edit-field"><label>Customer Tracking Link</label>';
+        if (order.tracking_token) {
+            html += '<div class="tracking-link" id="trackingLink">' + location.origin + '/track?token=' + esc(order.tracking_token) + '<button class="btn-copy" onclick="copyTrackingLink()">Copy</button></div>';
+        } else {
+            html += '<button class="btn-approve" id="genTrackingBtn" onclick="generateTrackingToken(' + order.id + ')">Generate Tracking Link</button>';
+        }
+        html += '</div>';
+
+        html += '<div class="edit-actions">'
+            + '<button class="btn-decline" onclick="closeEditModal()">Cancel</button>'
+            + '<button class="btn-approve" id="saveOrderBtn" onclick="saveOrder()">Save Changes</button>'
+            + '</div>';
+
+        document.getElementById('editModalBody').innerHTML = html;
+    }
+
+    async function saveOrder() {
+        var btn = document.getElementById('saveOrderBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        try {
+            var body = {
+                action: 'update-order',
+                token: adminToken,
+                orderId: editingOrderId,
+                stage: document.getElementById('editStage').value,
+                inscriptionText: document.getElementById('editInscription').value,
+                inscriptionStatus: document.getElementById('editInscStatus').value,
+                proofUrl: document.getElementById('editProofUrl').value.trim() || null,
+                proofNotes: document.getElementById('editProofNotes').value.trim() || null,
+                estimatedCompletion: document.getElementById('editEstCompletion').value.trim() || null,
+                installationDate: document.getElementById('editInstallDate').value.trim() || null,
+            };
+
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            closeEditModal();
+            loadAdminOrders();
+            loadDashboard();
+        } catch (err) {
+            alert('Failed to save: ' + err.message);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    }
+
+    async function generateTrackingToken(orderId) {
+        var btn = document.getElementById('genTrackingBtn');
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'generate-tracking', token: adminToken, orderId: orderId })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+
+            var linkHtml = '<div class="tracking-link" id="trackingLink">' + location.origin + '/track?token=' + esc(data.trackingToken) + '<button class="btn-copy" onclick="copyTrackingLink()">Copy</button></div>';
+            btn.parentNode.innerHTML = '<label style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:0.25rem;">Customer Tracking Link</label>' + linkHtml;
+        } catch (err) {
+            alert('Failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Generate Tracking Link';
+        }
+    }
+
+    function copyTrackingLink() {
+        var el = document.getElementById('trackingLink');
+        var text = el.textContent.replace('Copy', '').trim();
+        navigator.clipboard.writeText(text).then(function() {
+            var btn = el.querySelector('.btn-copy');
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+        });
+    }
+
+    // ==================== INSCRIPTION REQUESTS ====================
+    async function loadInscriptionRequests() {
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'list-inscription-requests', token: adminToken })
+            });
+            var data = await res.json();
+            if (!data.ok) return;
+
+            var container = document.getElementById('inscriptionAlerts');
+            var list = document.getElementById('inscriptionList');
+            var badge = document.getElementById('inscriptionBadge');
+
+            if (data.requests.length === 0) {
+                container.style.display = 'none';
+                badge.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            badge.textContent = data.requests.length;
+            badge.style.display = 'inline';
+
+            list.innerHTML = data.requests.map(function(r) {
+                var orderInfo = r.order || {};
+                return '<div class="partner-card" style="border-left:3px solid #856404;">'
+                    + '<div class="partner-info">'
+                    + '<div class="partner-name">' + esc(orderInfo.customer_name || 'Unknown') + '</div>'
+                    + '<div class="partner-company">' + esc(orderInfo.sku || '') + '</div>'
+                    + '<div class="partner-meta">Current: "' + esc(orderInfo.inscription_text || 'None') + '"</div>'
+                    + '<div class="partner-message">Requested: "' + esc(r.requested_text) + '"'
+                    + (r.reason ? '<br>Reason: ' + esc(r.reason) : '') + '</div>'
+                    + '<div class="partner-meta" style="margin-top:0.25rem;">' + formatDate(r.created_at) + '</div>'
+                    + '</div>'
+                    + '<div class="partner-actions">'
+                    + '<button class="btn-approve" onclick="resolveInscription(' + r.id + ', true, this)">Accept</button>'
+                    + '<button class="btn-decline" onclick="resolveInscription(' + r.id + ', false, this)">Decline</button>'
+                    + '</div></div>';
+            }).join('');
+        } catch (err) {
+            console.error('Inscription requests error:', err);
+        }
+    }
+
+    async function resolveInscription(requestId, accept, btn) {
+        btn.disabled = true;
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'resolve-inscription', token: adminToken, requestId: requestId, accept: accept })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            loadInscriptionRequests();
+        } catch (err) {
+            alert('Failed: ' + err.message);
+            btn.disabled = false;
+        }
     }
 
     // ==================== HELPERS ====================

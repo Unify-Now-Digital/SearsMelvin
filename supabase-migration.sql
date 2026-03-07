@@ -80,3 +80,54 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions (token);
+
+-- ============================================================
+-- 5. CUSTOMER ORDER TRACKING
+-- ============================================================
+
+-- Tracking token for customers (separate from edit_token for quotes)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_token TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_token ON orders (tracking_token) WHERE tracking_token IS NOT NULL;
+
+-- Granular order stage for customer-facing progress
+-- Values: quote_received, deposit_paid, design_in_progress, proof_ready,
+--         inscription_approved, in_production, installation_scheduled, completed
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'quote_received';
+
+-- Inscription tracking (on the order itself)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS inscription_text TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS inscription_status TEXT DEFAULT 'pending';
+-- Values: pending, awaiting_approval, approved, change_requested
+
+-- Proof image (uploaded by admin)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_url TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_uploaded_at TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_notes TEXT;
+
+-- Estimated dates for customer visibility
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS estimated_completion TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS installation_date TEXT;
+
+-- Inscription change requests from customers
+CREATE TABLE IF NOT EXISTS inscription_requests (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id),
+    requested_text TEXT NOT NULL,
+    reason TEXT,
+    status TEXT DEFAULT 'pending',  -- pending, accepted, declined
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_inscription_requests_order ON inscription_requests (order_id);
+
+-- Customer activity log (view history, for your reference)
+CREATE TABLE IF NOT EXISTS customer_activity (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id),
+    action TEXT NOT NULL,  -- viewed, inscription_change, proof_viewed
+    detail TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_activity_order ON customer_activity (order_id);
