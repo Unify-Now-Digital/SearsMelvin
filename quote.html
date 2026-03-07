@@ -466,13 +466,46 @@
             // Edit section
             html += '<div class="quote-edit-section">'
                 + '<h3>Update Your Quote</h3>'
-                + '<p style="margin-bottom:1rem;font-size:0.9rem;">Changed your mind? Update your preferences below and we\'ll adjust your quote.</p>'
-                + '<div class="edit-field"><label>Notes / special requests</label>'
+                + '<p style="margin-bottom:1rem;font-size:0.9rem;">Changed your mind? Update your preferences below and we\'ll adjust your quote.</p>';
+
+            if (product.colour) {
+                html += '<div class="edit-field"><label>Stone colour</label>'
+                    + '<select id="editColour">'
+                    + ['Black Galaxy','Rustenberg Grey','Vizag Blue','Indian Aurora','Emerald Pearl','Ruby Red'].map(function(c) {
+                        return '<option value="' + c + '"' + (c === product.colour ? ' selected' : '') + '>' + c + '</option>';
+                    }).join('')
+                    + '</select></div>';
+            }
+            if (product.size) {
+                html += '<div class="edit-field"><label>Size</label>'
+                    + '<input type="text" id="editSize" value="' + (product.size || '') + '"></div>';
+            }
+            if (product.font) {
+                html += '<div class="edit-field"><label>Font</label>'
+                    + '<select id="editFont">'
+                    + '<option value="traditional"' + (product.font === 'traditional' ? ' selected' : '') + '>Traditional</option>'
+                    + '<option value="script"' + (product.font === 'script' ? ' selected' : '') + '>Script</option>'
+                    + '</select></div>';
+            }
+            if (product.letterColour !== undefined) {
+                html += '<div class="edit-field"><label>Lettering colour</label>'
+                    + '<select id="editLetterColour">'
+                    + ['gold','silver','white','black'].map(function(c) {
+                        return '<option value="' + c + '"' + (c === product.letterColour ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+                    }).join('')
+                    + '</select></div>';
+            }
+            if (product.inscription !== undefined) {
+                html += '<div class="edit-field"><label>Inscription</label>'
+                    + '<textarea id="editInscription" placeholder="Inscription text...">' + (product.inscription || '') + '</textarea></div>';
+            }
+
+            html += '<div class="edit-field"><label>Notes / special requests</label>'
                 + '<textarea id="editNotes" placeholder="Any changes or additional requirements...">' + (quote.notes || '') + '</textarea></div>'
                 + '<div class="edit-actions">'
                 + '<button class="btn-save" id="editSaveBtn" onclick="saveQuoteChanges()">Save Changes</button>'
                 + '</div>'
-                + '<p class="edit-success" id="editSuccess">Your quote has been updated. Our team will review the changes.</p>'
+                + '<p class="edit-success" id="editSuccess">Your quote has been updated and the team has been notified.</p>'
                 + '</div>';
 
             // Link to product page
@@ -487,12 +520,24 @@
         }
 
         async function saveQuoteChanges() {
-            if (!currentToken) return;
+            if (!currentToken || !currentQuote) return;
             var btn = document.getElementById('editSaveBtn');
             var successEl = document.getElementById('editSuccess');
             btn.disabled = true;
             btn.textContent = 'Saving…';
             successEl.style.display = 'none';
+
+            var product = Object.assign({}, currentQuote.product || {});
+            var colourEl = document.getElementById('editColour');
+            var sizeEl = document.getElementById('editSize');
+            var fontEl = document.getElementById('editFont');
+            var letterEl = document.getElementById('editLetterColour');
+            var inscEl = document.getElementById('editInscription');
+            if (colourEl) product.colour = colourEl.value;
+            if (sizeEl) product.size = sizeEl.value.trim();
+            if (fontEl) product.font = fontEl.value;
+            if (letterEl) product.letterColour = letterEl.value;
+            if (inscEl) product.inscription = inscEl.value.trim();
 
             try {
                 var res = await fetch('/api/quotes', {
@@ -500,12 +545,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         token: currentToken,
+                        product: product,
                         message: document.getElementById('editNotes').value.trim(),
                     })
                 });
                 var data = await res.json();
                 if (!data.ok) throw new Error(data.error);
                 successEl.style.display = 'block';
+                // Refresh the quote display with updated data
+                currentQuote.product = product;
+                currentQuote.notes = document.getElementById('editNotes').value.trim();
+                renderSingleQuote(currentQuote);
             } catch (e) {
                 alert('Failed to save changes. Please try again.');
             }

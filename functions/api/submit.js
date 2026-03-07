@@ -1067,6 +1067,22 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
     });
   }
 
+  const invoiceDescription = isFullInvoice
+    ? `Sears Melvin Memorials — ${productDescription}`
+    : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
+  const invoiceFooter = isFullInvoice
+    ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
+    : "Thank you for choosing Sears Melvin Memorials. This invoice is for a 50% deposit. The remaining balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
+
+  // Create invoice FIRST as a draft, then attach line items explicitly
+  const invoice = await stripePost("/invoices", {
+    customer: customerId, collection_method: "send_invoice", days_until_due: "30", auto_advance: "false",
+    description: invoiceDescription,
+    footer: invoiceFooter,
+    "metadata[customer_name]": name || "", "metadata[product]": product.name || "",
+    "metadata[cemetery]": location || "", "metadata[invoice_type]": isFullInvoice ? "full" : "deposit",
+  });
+
   // Create Stripe Product + one-time Price for the base memorial
   const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
   const basePrice = await stripePost("/prices", {
@@ -1076,6 +1092,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   });
   await stripePost("/invoiceitems", {
     customer: customerId,
+    invoice: invoice.id,
     price: basePrice.id,
     description: productDescription + " (inc. installation)" + label,
   });
@@ -1090,6 +1107,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
     });
     await stripePost("/invoiceitems", {
       customer: customerId,
+      invoice: invoice.id,
       price: permitPrice.id,
       description: "Cemetery Permit Fee" + label,
     });
@@ -1107,6 +1125,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
       });
       await stripePost("/invoiceitems", {
         customer: customerId,
+        invoice: invoice.id,
         price: addonPrice.id,
         description: (addon.name || "Add-on") + label,
       });
@@ -1122,24 +1141,9 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
         unit_amount: "0",
         currency: "gbp",
       });
-      await stripePost("/invoiceitems", { customer: customerId, price: zeroPrice.id, description: addonName });
+      await stripePost("/invoiceitems", { customer: customerId, invoice: invoice.id, price: zeroPrice.id, description: addonName });
     }
   }
-
-  const invoiceDescription = isFullInvoice
-    ? `Sears Melvin Memorials — ${productDescription}`
-    : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
-  const invoiceFooter = isFullInvoice
-    ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
-    : "Thank you for choosing Sears Melvin Memorials. This invoice is for a 50% deposit. The remaining balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
-
-  const invoice = await stripePost("/invoices", {
-    customer: customerId, collection_method: "send_invoice", days_until_due: "30", auto_advance: "false",
-    description: invoiceDescription,
-    footer: invoiceFooter,
-    "metadata[customer_name]": name || "", "metadata[product]": product.name || "",
-    "metadata[cemetery]": location || "", "metadata[invoice_type]": isFullInvoice ? "full" : "deposit",
-  });
 
   const finalised = await stripePost(`/invoices/${invoice.id}/finalize`, { auto_advance: "false" });
   return finalised.hosted_invoice_url || null;

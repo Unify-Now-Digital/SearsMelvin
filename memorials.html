@@ -1164,6 +1164,9 @@
                     if (checkCount > 100) { clearInterval(checkProducts); return; }
                     if (products.length > 0) {
                         clearInterval(checkProducts);
+                        // Clear existing shortlist so shared link shows exactly what was shared
+                        state.shortlist = [];
+                        document.querySelectorAll('.save-btn.active').forEach(btn => btn.classList.remove('active'));
                         shortlistIds.split(',').forEach(key => {
                             // Match by slug or id
                             const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
