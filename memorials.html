@@ -1000,11 +1000,11 @@
         }
 
         function emailShortlist() {
-            const items = state.shortlist.map(function(item) {
-                return item.name + ' — ' + item.price + '\n  View: https://searsmelvin.co.uk/memorial.html?slug=' + item.slug;
+            const items = state.shortlist.map(function(item, i) {
+                return (i + 1) + '. ' + item.name + ' — ' + item.price + '\nhttps://searsmelvin.co.uk/memorial.html?slug=' + item.slug;
             }).join('\n\n');
             const subject = encodeURIComponent('My Memorial Shortlist — Sears Melvin Memorials');
-            const body = encodeURIComponent('Hi,\n\nI\'ve been looking at memorials on the Sears Melvin website and would like to share my shortlist:\n\n' + items + '\n\nView full shortlist: ' + document.getElementById('shareLink').value + '\n\nKind regards');
+            const body = encodeURIComponent('Hi,\n\nI\'ve been looking at memorials on the Sears Melvin website and would like to share my shortlist:\n\n' + items + '\n\nView full shortlist:\n' + document.getElementById('shareLink').value + '\n\nKind regards');
             window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
         }
 
