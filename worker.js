@@ -430,7 +430,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
     <tr><td style="padding:30px 28px 24px;">
       <h2 style="font-family:Georgia,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px;">Thank you, ${esc(name.split(" ")[0])}.</h2>
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 16px;">We've received your enquiry and one of our team will be in contact within 24 hours.</p>
-      <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 24px;">If you have any urgent questions in the meantime, please call us on <strong style="color:#2C2C2C;">01268 208 559</strong>.</p>
+      <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 24px;">If you have any urgent questions in the meantime, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
       <p style="color:#888;font-size:13px;margin:0;line-height:1.7;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
     </td></tr>
     <tr><td style="background:#1A1A1A;padding:14px 28px;text-align:center;">
@@ -539,7 +539,7 @@ async function handleAppointment(env, data, submittedAt, corsHeaders) {
           <p style="margin:0.25rem 0 0;color:#666;">${esc(typeLabel)}</p>
         </div>
         <p style="color:#666;line-height:1.8;">We'll confirm your appointment within 24 hours. Once confirmed, you'll receive a calendar invite.</p>
-        <p style="color:#666;line-height:1.8;">To change or cancel, reply to this email or call <strong>01268 208 559</strong>.</p>
+        <p style="color:#666;line-height:1.8;">To change or cancel, reply to this email or call <strong>+44 20 3835 2548</strong>.</p>
         <p style="color:#666;line-height:1.8;margin-top:1.5rem;">Warm regards,<br><strong>Sears Melvin Memorials</strong></p>
       </div>`,
     });
@@ -908,7 +908,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) 
 
     <tr><td style="padding:0 28px 32px;">
       <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
-        If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">01268 208 559</strong>.
+        If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.
       </p>
       <p style="color:#888;font-size:13px;margin:0;line-height:1.7;">
         With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong>

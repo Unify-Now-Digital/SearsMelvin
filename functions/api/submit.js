@@ -373,7 +373,7 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
         <p style="margin:0.25rem 0 0;color:#666;">${typeLabel}</p>
       </div>
       <p style="color:#666;line-height:1.8;">We'll confirm your appointment within 24 hours. Once confirmed, you'll receive a calendar invite with all the details.</p>
-      <p style="color:#666;line-height:1.8;">If you need to change or cancel, just reply to this email or call us on <strong>01268 208 559</strong>.</p>
+      <p style="color:#666;line-height:1.8;">If you need to change or cancel, just reply to this email or call us on <strong>+44 20 3835 2548</strong>.</p>
       <p style="color:#666;line-height:1.8;margin-top:1.5rem;">Warm regards,<br><strong>Sears Melvin Memorials</strong></p>
     </div>`;
 }
@@ -827,7 +827,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
         <!-- Contact / sign-off -->
         <tr>
           <td style="padding:0 28px 32px;">
-            <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 10px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">01268 208 559</strong>.</p>
+            <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 10px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
             <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
           </td>
         </tr>
@@ -907,7 +907,7 @@ function enquiryCustomerEmail({ name }) {
       <tr><td style="padding:30px 28px 24px;">
         <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
         <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 16px 0;font-family:Arial,sans-serif;">We've received your enquiry and one of our team will be in contact within 24 hours.</p>
-        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,sans-serif;">If you have any urgent questions in the meantime, please call us on <strong style="color:#2C2C2C;">01268 208 559</strong>.</p>
+        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,sans-serif;">If you have any urgent questions in the meantime, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
         <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
       </td></tr>
       <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
