@@ -342,9 +342,30 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
     console.error("Supabase insert failed:", err);
   }
 
-  // 5. GoHighLevel contact (non-critical)
+  // 5. GoHighLevel contact + opportunity (non-critical)
   try {
-    await createGHLContact(env, { name, email, phone, type: "quote", product });
+    const ghlExtraFields = [
+      message              ? { key: "customer_message",   field_value: message } : null,
+      location             ? { key: "cemetery_location",  field_value: location } : null,
+      payment_preference   ? { key: "payment_preference", field_value: payment_preference } : null,
+      product.type         ? { key: "memorial_type",      field_value: product.type } : null,
+      product.font         ? { key: "font_style",         field_value: product.font } : null,
+      product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
+      product.inscription  ? { key: "inscription_text",   field_value: product.inscription } : null,
+      product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
+      product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
+      product.image        ? { key: "product_image_url",  field_value: product.image } : null,
+    ].filter(Boolean);
+    const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
+    try {
+      await createGHLOpportunity(env, {
+        contactId,
+        name: `${product.name || "Memorial"} — ${name}`,
+        monetaryValue: parseFloat(product.price) || 0,
+      });
+    } catch (err) {
+      console.error("GHL opportunity create failed:", err);
+    }
   } catch (err) {
     console.error("GHL contact create failed:", err);
   }
@@ -465,7 +486,12 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
 
   // 5. GoHighLevel contact (non-critical)
   try {
-    await createGHLContact(env, { name, email, phone, type: "enquiry" });
+    const ghlExtraFields = [
+      message      ? { key: "customer_message",  field_value: message } : null,
+      enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
+      location     ? { key: "cemetery_location", field_value: location } : null,
+    ].filter(Boolean);
+    await createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
   } catch (err) {
     console.error("GHL contact create failed:", err);
   }
@@ -567,7 +593,13 @@ async function handleAppointment(env, data, submittedAt, corsHeaders) {
 
   // 6. GHL
   try {
-    await createGHLContact(env, { name, email, phone, type: "appointment" });
+    const ghlExtraFields = [
+      appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
+      appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
+      appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
+      notes            ? { key: "appointment_notes", field_value: notes } : null,
+    ].filter(Boolean);
+    await createGHLContact(env, { name, email, phone, type: "appointment", extraFields: ghlExtraFields });
   } catch (err) {
     console.error("GHL contact create failed:", err);
   }
@@ -1058,8 +1090,8 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
 // ═══════════════════════════════════════════════════════════════════
 //  GOHIGHLEVEL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function createGHLContact(env, { name, email, phone, type, product }) {
-  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return;
+async function createGHLContact(env, { name, email, phone, type, product, extraFields }) {
+  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
 
   const parts     = name.trim().split(" ");
   const firstName = parts[0];
@@ -1069,10 +1101,12 @@ async function createGHLContact(env, { name, email, phone, type, product }) {
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
 
   const customFields = [
+    { key: "lead_type", field_value: type },
     product?.name   ? { key: "memorial_product", field_value: product.name }  : null,
     product?.colour ? { key: "stone_colour",     field_value: product.colour } : null,
     product?.size   ? { key: "memorial_size",    field_value: product.size }   : null,
     product?.price  ? { key: "guide_price",      field_value: `£${formatPrice(product.price)}` } : null,
+    ...(extraFields || []),
   ].filter(Boolean);
 
   const res = await fetch("https://services.leadconnectorhq.com/contacts/", {
@@ -1095,6 +1129,30 @@ async function createGHLContact(env, { name, email, phone, type, product }) {
   });
 
   if (!res.ok) throw new Error(`GHL error ${res.status}: ${await res.text()}`);
+  const body = await res.json();
+  return body.contact?.id || null;
+}
+
+async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
+  if (!env.GHL_API_KEY || !env.GHL_PIPELINE_ID || !env.GHL_PIPELINE_STAGE_ID || !contactId) return;
+  const res = await fetch("https://services.leadconnectorhq.com/opportunities/", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${env.GHL_API_KEY}`,
+      "Version":       "2021-07-28",
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify({
+      pipelineId: env.GHL_PIPELINE_ID,
+      pipelineStageId: env.GHL_PIPELINE_STAGE_ID,
+      locationId: env.GHL_LOCATION_ID,
+      contactId, name,
+      monetaryValue: monetaryValue || 0,
+      source: "Website",
+      status: "open",
+    }),
+  });
+  if (!res.ok) throw new Error(`GHL Opportunity error ${res.status}: ${await res.text()}`);
 }
 
 // ═══════════════════════════════════════════════════════════════════
