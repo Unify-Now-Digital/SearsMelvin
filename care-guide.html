@@ -35,13 +35,14 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
-        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); line-height: 1.2; }
         p { color: var(--color-text-muted); }
         a { color: inherit; text-decoration: none; }
 
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .reveal.visible { opacity: 1; transform: translateY(0); }
+        @keyframes revealFallback { to { opacity: 1; transform: translateY(0); } }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; animation: revealFallback 0s 2s forwards; }
+        .reveal.visible { opacity: 1; transform: translateY(0); animation: none; }
 
         /* Navigation */
         nav { position: fixed; top: 36px; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
@@ -83,7 +84,7 @@
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         /* Page Header */
         .page-header { padding: 9rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
-        .page-header h1 { font-size: 2.75rem; margin-bottom: 1rem; }
+        .page-header h1 { font-size: clamp(1.75rem, 5vw, 2.75rem); margin-bottom: 1rem; }
         .page-header p { font-size: 1.15rem; max-width: 600px; margin: 0 auto; }
 
         /* Content Layout */
@@ -118,7 +119,7 @@
 
         /* Content Section */
         .content-section { margin-bottom: 4rem; }
-        .content-section h2 { font-size: 1.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--color-border); display: flex; align-items: center; gap: 0.75rem; }
+        .content-section h2 { font-size: clamp(1.4rem, 3.5vw, 1.75rem); margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--color-border); display: flex; align-items: center; gap: 0.75rem; }
         .content-section h2 svg { width: 28px; height: 28px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
         .content-section h3 { font-size: 1.25rem; margin: 1.5rem 0 1rem; color: var(--color-stone); }
         .content-section p { font-size: 1rem; line-height: 1.8; margin-bottom: 1rem; }
@@ -188,6 +189,12 @@
         .cta-buttons .btn:hover { transform: translateY(-2px); }
         .cta-buttons .btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
 
+        /* Tablet */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .care-container { grid-template-columns: 200px 1fr; gap: 2rem; }
+            .season-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -215,7 +222,22 @@
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
         .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        /* Print */
+        @media print {
+            nav, .showroom-banner, .mobile-nav, .mobile-bottom-nav,
+            .back-to-top, .toc, .cta-section { display: none !important; }
+            .care-container { display: block; }
+            .care-main { max-width: 100%; }
+            .page-header { padding-top: 2rem; }
+            .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
+            body { padding-bottom: 0; }
+        }
     </style>
+    <noscript>
+        <style>
+            .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
+        </style>
+    </noscript>
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
