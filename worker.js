@@ -345,16 +345,10 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
   // 5. GoHighLevel contact + opportunity (non-critical)
   try {
     const ghlExtraFields = [
-      message              ? { key: "customer_message",   field_value: message } : null,
-      location             ? { key: "cemetery_location",  field_value: location } : null,
-      payment_preference   ? { key: "payment_preference", field_value: payment_preference } : null,
-      product.type         ? { key: "memorial_type",      field_value: product.type } : null,
-      product.font         ? { key: "font_style",         field_value: product.font } : null,
-      product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
-      product.inscription  ? { key: "inscription_text",   field_value: product.inscription } : null,
-      product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
-      product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
-      product.image        ? { key: "product_image_url",  field_value: product.image } : null,
+      message              ? { key: "customer_message",  field_value: message } : null,
+      location             ? { key: "cemetery_location", field_value: location } : null,
+      product.type         ? { key: "memorial_type",     field_value: product.type } : null,
+      product.inscription  ? { key: "inscription_text",  field_value: product.inscription } : null,
     ].filter(Boolean);
     const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
     try {
@@ -593,13 +587,7 @@ async function handleAppointment(env, data, submittedAt, corsHeaders) {
 
   // 6. GHL
   try {
-    const ghlExtraFields = [
-      appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
-      appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
-      appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
-      notes            ? { key: "appointment_notes", field_value: notes } : null,
-    ].filter(Boolean);
-    await createGHLContact(env, { name, email, phone, type: "appointment", extraFields: ghlExtraFields });
+    await createGHLContact(env, { name, email, phone, type: "appointment" });
   } catch (err) {
     console.error("GHL contact create failed:", err);
   }
