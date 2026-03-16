@@ -344,18 +344,15 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
 
   // 5. GoHighLevel contact + opportunity (non-critical)
   try {
-    const ghlExtraFields = [
-      message              ? { key: "customer_message",  field_value: message } : null,
-      location             ? { key: "cemetery_location", field_value: location } : null,
-      product.type         ? { key: "memorial_type",     field_value: product.type } : null,
-      product.inscription  ? { key: "inscription_text",  field_value: product.inscription } : null,
-    ].filter(Boolean);
-    const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
+    const contactId = await createGHLContact(env, { name, email, phone, type: "quote", cemetery: location });
     try {
       await createGHLOpportunity(env, {
         contactId,
         name: `${product.name || "Memorial"} — ${name}`,
         monetaryValue: parseFloat(product.price) || 0,
+        message: message || null,
+        productChoice: product.name || null,
+        colour: product.colour || null,
       });
     } catch (err) {
       console.error("GHL opportunity create failed:", err);
@@ -480,12 +477,7 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
 
   // 5. GoHighLevel contact (non-critical)
   try {
-    const ghlExtraFields = [
-      message      ? { key: "customer_message",  field_value: message } : null,
-      enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-      location     ? { key: "cemetery_location", field_value: location } : null,
-    ].filter(Boolean);
-    await createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
+    await createGHLContact(env, { name, email, phone, type: "enquiry", cemetery: location });
   } catch (err) {
     console.error("GHL contact create failed:", err);
   }
@@ -1078,7 +1070,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
 // ═══════════════════════════════════════════════════════════════════
 //  GOHIGHLEVEL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function createGHLContact(env, { name, email, phone, type, product, extraFields }) {
+async function createGHLContact(env, { name, email, phone, type, cemetery }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
 
   const parts     = name.trim().split(" ");
@@ -1086,16 +1078,7 @@ async function createGHLContact(env, { name, email, phone, type, product, extraF
   const lastName  = parts.slice(1).join(" ") || "";
 
   const tags = ["website-lead", type === "quote" ? "quote-request" : type];
-  if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
-
-  const customFields = [
-    { key: "lead_type", field_value: type },
-    product?.name   ? { key: "memorial_product", field_value: product.name }  : null,
-    product?.colour ? { key: "stone_colour",     field_value: product.colour } : null,
-    product?.size   ? { key: "memorial_size",    field_value: product.size }   : null,
-    product?.price  ? { key: "guide_price",      field_value: `£${formatPrice(product.price)}` } : null,
-    ...(extraFields || []),
-  ].filter(Boolean);
+  const customFields = cemetery ? [{ key: "cemetery", field_value: cemetery }] : [];
 
   const res = await fetch("https://services.leadconnectorhq.com/contacts/", {
     method:  "POST",
@@ -1121,8 +1104,13 @@ async function createGHLContact(env, { name, email, phone, type, product, extraF
   return body.contact?.id || null;
 }
 
-async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
+async function createGHLOpportunity(env, { contactId, name, monetaryValue, message, productChoice, colour }) {
   if (!env.GHL_API_KEY || !env.GHL_PIPELINE_ID || !env.GHL_PIPELINE_STAGE_ID || !contactId) return;
+  const customFields = [
+    message       ? { key: "message",        field_value: message } : null,
+    productChoice ? { key: "product_choice",  field_value: productChoice } : null,
+    colour        ? { key: "colour",          field_value: colour } : null,
+  ].filter(Boolean);
   const res = await fetch("https://services.leadconnectorhq.com/opportunities/", {
     method: "POST",
     headers: {
@@ -1138,6 +1126,7 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
       monetaryValue: monetaryValue || 0,
       source: "Website",
       status: "open",
+      customFields,
     }),
   });
   if (!res.ok) throw new Error(`GHL Opportunity error ${res.status}: ${await res.text()}`);
