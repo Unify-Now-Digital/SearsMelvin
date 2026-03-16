@@ -53,7 +53,7 @@ Edit `index.html` directly. Key sections are commented for easy navigation:
 
 ## 📞 Contact Details (Current)
 
-- **Phone:** 01268 208 559
+- **Phone:** +44 20 3835 2548
 - **Email:** info@searsmelvin.co.uk
 - **Location:** South London & Beyond
 
