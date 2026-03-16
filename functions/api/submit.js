@@ -242,6 +242,13 @@ async function handleAppointment(env, data, submittedAt) {
     console.error("Supabase appointment insert failed:", err);
   }
 
+  // 6. GHL
+  try {
+    await createGHLContact(env, { name, email, phone, type: "appointment" });
+  } catch (err) {
+    console.error("GHL contact create failed:", err);
+  }
+
   return jsonResponse({ ok: true });
 }
 
@@ -1016,7 +1023,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
 async function createGHLContact(env, { name, email, phone, type, product }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return;
   const parts = name.trim().split(" ");
-  const tags = ["website-lead", type === "quote" ? "quote-request" : "enquiry"];
+  const tags = ["website-lead", type === "quote" ? "quote-request" : type];
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
   const customFields = [
     product?.name ? { key: "memorial_product", field_value: product.name } : null,

@@ -565,6 +565,13 @@ async function handleAppointment(env, data, submittedAt, corsHeaders) {
     console.error("Supabase appointment insert failed:", err);
   }
 
+  // 6. GHL
+  try {
+    await createGHLContact(env, { name, email, phone, type: "appointment" });
+  } catch (err) {
+    console.error("GHL contact create failed:", err);
+  }
+
   return json({ ok: true }, 200, corsHeaders);
 }
 
@@ -1058,7 +1065,7 @@ async function createGHLContact(env, { name, email, phone, type, product }) {
   const firstName = parts[0];
   const lastName  = parts.slice(1).join(" ") || "";
 
-  const tags = ["website-lead", type === "quote" ? "quote-request" : "enquiry"];
+  const tags = ["website-lead", type === "quote" ? "quote-request" : type];
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
 
   const customFields = [
