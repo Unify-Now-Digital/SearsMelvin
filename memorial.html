@@ -119,11 +119,6 @@
         .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
         .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
         
-        .product-rating { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-        .stars { display: flex; gap: 0.15rem; }
-        .stars svg { width: 18px; height: 18px; fill: var(--color-accent); }
-        .rating-text { font-size: 0.9rem; color: var(--color-text-muted); }
-        .rating-text a { color: var(--color-accent); text-decoration: underline; }
 
         .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
 
@@ -413,7 +408,6 @@
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="memorials.html" class="active">Memorials</a></li>
-            <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="resources.html">Support</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
@@ -423,7 +417,6 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="index.html" onclick="toggleMobileMenu()">Home</a>
         <a href="memorials.html" class="active" onclick="toggleMobileMenu()">Memorials</a>
-        <a href="permit-checker.html" onclick="toggleMobileMenu()">Permit Checker</a>
         <a href="faq.html" onclick="toggleMobileMenu()">FAQ</a>
         <a href="care-guide.html" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="resources.html" onclick="toggleMobileMenu()">Support</a>
@@ -464,16 +457,6 @@
                 <span class="product-category animate-in" id="productCategory">Loading...</span>
                 <h1 class="animate-in animate-delay-1" id="productName">Loading...</h1>
                 
-                <div class="product-rating animate-in animate-delay-2">
-                    <div class="stars">
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </div>
-                    <span class="rating-text">4.9 average · <a href="#reviews">23 reviews</a></span>
-                </div>
 
                 <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
 
