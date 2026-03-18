@@ -336,6 +336,13 @@
             return '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
         }
 
+        function esc(str) {
+            if (!str) return '';
+            var d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', function() {
             var params = new URLSearchParams(window.location.search);
@@ -400,11 +407,11 @@
             quotes.forEach(function(q) {
                 var statusClass = q.status === 'partial' || q.status === 'completed' ? 'partial' : 'pending';
                 var statusLabel = q.status === 'partial' ? 'Deposit Paid' : q.status === 'completed' ? 'Completed' : 'Pending';
-                html += '<div class="quote-mini-card" onclick="window.location.href=\'memorial.html?slug=' + (q.config && q.config.slug ? q.config.slug : '') + '\'">'
+                html += '<div class="quote-mini-card" onclick="window.location.href=\'memorial.html?slug=' + encodeURIComponent(q.config && q.config.slug ? q.config.slug : '') + '\'">'
                     + '<div class="quote-mini-info">'
-                    + '<h4>' + (q.product || 'Memorial') + (q.colour ? ' · ' + q.colour : '') + '</h4>'
+                    + '<h4>' + esc(q.product || 'Memorial') + (q.colour ? ' · ' + esc(q.colour) : '') + '</h4>'
                     + '<p>' + formatDate(q.created_at) + ' · <span class="quote-status ' + statusClass + '">' + statusLabel + '</span></p>'
-                    + (q.location ? '<p style="font-size:0.8rem;">' + q.location + '</p>' : '')
+                    + (q.location ? '<p style="font-size:0.8rem;">' + esc(q.location) + '</p>' : '')
                     + '</div>'
                     + '<div class="quote-mini-price">' + (q.value ? formatPrice(q.value) : '—') + '</div>'
                     + '</div>';
@@ -473,37 +480,37 @@
             var html = '<div class="quote-card">'
                 + '<div class="quote-summary-bar" style="background:' + stoneHex + ';"></div>'
                 + '<div class="quote-card-header">'
-                + '<h2>' + (product.name || 'Memorial') + '</h2>'
+                + '<h2>' + esc(product.name || 'Memorial') + '</h2>'
                 + '<span class="quote-status ' + statusClass + '">' + statusLabel + '</span>'
                 + '</div>';
 
             // Product image
             if (imageUrl) {
                 html += '<div class="quote-product-image">'
-                    + '<img src="' + imageUrl + '" alt="' + (product.name || 'Memorial') + '">'
+                    + '<img src="' + esc(imageUrl) + '" alt="' + esc(product.name || 'Memorial') + '">'
                     + '</div>';
             }
 
             // Spec details
             html += '<div class="quote-detail-grid">'
-                + '<span class="quote-detail-label">Name</span><span class="quote-detail-value">' + (quote.name || '—') + '</span>'
-                + '<span class="quote-detail-label">Email</span><span class="quote-detail-value">' + (quote.email || '—') + '</span>'
-                + (quote.phone ? '<span class="quote-detail-label">Phone</span><span class="quote-detail-value">' + quote.phone + '</span>' : '')
-                + (quote.location ? '<span class="quote-detail-label">Cemetery</span><span class="quote-detail-value">' + quote.location + '</span>' : '')
-                + (product.type ? '<span class="quote-detail-label">Type</span><span class="quote-detail-value">' + product.type + '</span>' : '')
-                + (product.colour ? '<span class="quote-detail-label">Stone colour</span><span class="quote-detail-value"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + stoneHex + ';vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,0.15);"></span>' + product.colour + '</span>' : '')
-                + (product.size ? '<span class="quote-detail-label">Size</span><span class="quote-detail-value">' + product.size + '</span>' : '')
+                + '<span class="quote-detail-label">Name</span><span class="quote-detail-value">' + esc(quote.name || '—') + '</span>'
+                + '<span class="quote-detail-label">Email</span><span class="quote-detail-value">' + esc(quote.email || '—') + '</span>'
+                + (quote.phone ? '<span class="quote-detail-label">Phone</span><span class="quote-detail-value">' + esc(quote.phone) + '</span>' : '')
+                + (quote.location ? '<span class="quote-detail-label">Cemetery</span><span class="quote-detail-value">' + esc(quote.location) + '</span>' : '')
+                + (product.type ? '<span class="quote-detail-label">Type</span><span class="quote-detail-value">' + esc(product.type) + '</span>' : '')
+                + (product.colour ? '<span class="quote-detail-label">Stone colour</span><span class="quote-detail-value"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + stoneHex + ';vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,0.15);"></span>' + esc(product.colour) + '</span>' : '')
+                + (product.size ? '<span class="quote-detail-label">Size</span><span class="quote-detail-value">' + esc(product.size) + '</span>' : '')
                 + (product.font ? '<span class="quote-detail-label">Font</span><span class="quote-detail-value">' + (product.font === 'script' ? 'Script' : 'Traditional') + '</span>' : '')
-                + (product.letterColour ? '<span class="quote-detail-label">Lettering</span><span class="quote-detail-value">' + product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1) + '</span>' : '')
+                + (product.letterColour ? '<span class="quote-detail-label">Lettering</span><span class="quote-detail-value">' + esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1)) + '</span>' : '')
                 + '</div>';
 
             // Line items
             html += '<div class="quote-line-items">'
-                + '<div class="quote-line-item"><span>' + (product.name || 'Memorial') + ' (inc. installation)</span><span>' + formatPrice(basePrice) + '</span></div>';
+                + '<div class="quote-line-item"><span>' + esc(product.name || 'Memorial') + ' (inc. installation)</span><span>' + formatPrice(basePrice) + '</span></div>';
 
             addonItems.forEach(function(item) {
                 var p = parseFloat(item.price);
-                html += '<div class="quote-line-item"><span>' + item.name + '</span><span>' + (p > 0 ? '+' + formatPrice(p) : '—') + '</span></div>';
+                html += '<div class="quote-line-item"><span>' + esc(item.name) + '</span><span>' + (p > 0 ? '+' + formatPrice(p) : '—') + '</span></div>';
             });
 
             if (permitFee > 0) {
@@ -517,10 +524,10 @@
             html += '</div>';
 
             if (product.inscription) {
-                html += '<div class="quote-notes"><strong>Inscription</strong>' + product.inscription + '</div>';
+                html += '<div class="quote-notes"><strong>Inscription</strong>' + esc(product.inscription) + '</div>';
             }
             if (quote.notes) {
-                html += '<div class="quote-notes"><strong>Your Notes</strong>' + quote.notes + '</div>';
+                html += '<div class="quote-notes"><strong>Your Notes</strong>' + esc(quote.notes) + '</div>';
             }
 
             html += '<p class="quote-date">Submitted ' + formatDate(quote.created_at) + '</p>'
@@ -538,8 +545,8 @@
                 var hex = STONE_COLOURS[name];
                 var selected = name === product.colour ? ' selected' : '';
                 html += '<div class="colour-swatch-item">'
-                    + '<div class="colour-swatch' + selected + '" style="background:' + hex + ';" data-colour="' + name + '" onclick="selectColour(this)" title="' + name + '"></div>'
-                    + '<span class="colour-swatch-label">' + name + '</span>'
+                    + '<div class="colour-swatch' + selected + '" style="background:' + hex + ';" data-colour="' + esc(name) + '" onclick="selectColour(this)" title="' + esc(name) + '"></div>'
+                    + '<span class="colour-swatch-label">' + esc(name) + '</span>'
                     + '</div>';
             });
             html += '</div></div>';
@@ -547,7 +554,7 @@
             // Size & Font side by side
             html += '<div class="edit-row">';
             html += '<div class="edit-field"><label>Size</label>'
-                + '<input type="text" id="editSize" value="' + (product.size || '') + '" placeholder="e.g. 2\'6 x 2\'0"></div>';
+                + '<input type="text" id="editSize" value="' + esc(product.size || '') + '" placeholder="e.g. 2\'6 x 2\'0"></div>';
             html += '<div class="edit-field"><label>Font Style</label>'
                 + '<select id="editFont">'
                 + '<option value="traditional"' + (product.font === 'traditional' ? ' selected' : '') + '>Traditional</option>'
@@ -576,10 +583,10 @@
             html += '<div class="edit-field"><label>Additional Options</label>';
             availableAddons.forEach(function(addon) {
                 var isSelected = selectedAddons[addon.name] ? ' selected' : '';
-                html += '<div class="quote-addon-card' + isSelected + '" onclick="toggleQuoteAddon(this)" data-addon="' + addon.name + '" data-price="' + addon.price + '">'
+                html += '<div class="quote-addon-card' + isSelected + '" onclick="toggleQuoteAddon(this)" data-addon="' + esc(addon.name) + '" data-price="' + addon.price + '">'
                     + '<span class="quote-addon-check">' + (isSelected ? '&#10003;' : '') + '</span>'
-                    + '<div class="quote-addon-info"><div class="quote-addon-name">' + addon.name + '</div>'
-                    + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + addon.desc + '</div></div>'
+                    + '<div class="quote-addon-info"><div class="quote-addon-name">' + esc(addon.name) + '</div>'
+                    + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + esc(addon.desc) + '</div></div>'
                     + '<span class="quote-addon-price">' + (addon.price > 0 ? '+£' + addon.price : 'Variable') + '</span>'
                     + '</div>';
             });
@@ -587,11 +594,11 @@
 
             // Inscription
             html += '<div class="edit-field"><label>Inscription</label>'
-                + '<textarea id="editInscription" placeholder="Enter your inscription text..." rows="3">' + (product.inscription || '') + '</textarea></div>';
+                + '<textarea id="editInscription" placeholder="Enter your inscription text..." rows="3">' + esc(product.inscription || '') + '</textarea></div>';
 
             // Notes
             html += '<div class="edit-field"><label>Notes / Special Requests</label>'
-                + '<textarea id="editNotes" placeholder="Any changes or additional requirements...">' + (quote.notes || '') + '</textarea></div>';
+                + '<textarea id="editNotes" placeholder="Any changes or additional requirements...">' + esc(quote.notes || '') + '</textarea></div>';
 
             html += '<div class="edit-actions">'
                 + '<button class="btn-save" id="editSaveBtn" onclick="saveQuoteChanges()">Save Changes</button>'
@@ -602,7 +609,7 @@
             // Link to product page
             if (product.slug || product.name) {
                 html += '<div style="text-align:center;margin-top:1rem;">'
-                    + '<a href="memorial.html' + (product.slug ? '?slug=' + product.slug : '') + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View this memorial &rarr;</a>'
+                    + '<a href="memorial.html' + (product.slug ? '?slug=' + encodeURIComponent(product.slug) : '') + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View this memorial &rarr;</a>'
                     + '</div>';
             }
 
@@ -679,5 +686,39 @@
             btn.textContent = 'Save Changes';
         }
     </script>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+</script>
 </body>
 </html>

@@ -236,6 +236,18 @@
         .renovation-stat .number { font-family: var(--font-display); font-size: 2.5rem; color: var(--color-accent); }
         .renovation-stat .label { font-size: 0.85rem; color: var(--color-text-muted); }
 
+        /* Testimonials Section */
+        .testimonials { padding: 6rem 2rem; background: white; }
+        .testimonials-container { max-width: 1100px; margin: 0 auto; }
+        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+        .testimonial-card { background: var(--color-cream); border-radius: 8px; padding: 2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .testimonial-stars { display: flex; gap: 2px; margin-bottom: 1rem; }
+        .testimonial-quote { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); line-height: 1.6; font-style: italic; margin-bottom: 1.5rem; }
+        .testimonial-author { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 1rem; }
+        .testimonial-name { font-weight: 600; font-size: 0.9rem; color: var(--color-stone); }
+        .testimonial-location { font-size: 0.8rem; color: var(--color-text-muted); }
+
         /* FAQ Section */
         .faq { padding: 6rem 2rem; }
         .faq-container { max-width: 900px; margin: 0 auto; }
@@ -358,6 +370,7 @@
             .timeline { grid-template-columns: 1fr; }
             .timeline-detail-content { grid-template-columns: 1fr; }
             .renovation-stats { grid-template-columns: 1fr; }
+            .testimonials-grid { grid-template-columns: 1fr; }
             .faq-tabs { gap: 0.3rem; }
             .footer-container { flex-direction: column; text-align: center; }
             .footer-links { flex-wrap: wrap; justify-content: center; }
@@ -748,6 +761,61 @@
         </div>
     </section>
 
+    <!-- Testimonials Section -->
+    <section class="testimonials reveal" id="testimonials">
+        <div class="testimonials-container">
+            <div class="section-header">
+                <p class="section-label">Families We've Helped</p>
+                <h2>What Families Say</h2>
+            </div>
+            <div class="testimonials-grid">
+                <!-- REPLACE: Swap placeholder testimonials with real customer reviews -->
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"From our first call, Sears Melvin made what felt like an overwhelming process feel simple and caring. The memorial is absolutely beautiful — exactly what we wanted."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">Sarah M.</span>
+                        <span class="testimonial-location">Islington</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"They handled the cemetery permits and kept us informed at every step. The restoration of my grandparents' headstone brought it back to life. Highly recommended."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">David R.</span>
+                        <span class="testimonial-location">Barnet</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"We were nervous about choosing the right memorial but the team guided us through every option. The quality of the engraving and stonework exceeded our expectations."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">Angela K.</span>
+                        <span class="testimonial-location">Enfield</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FAQ Section -->
     <section class="faq reveal" id="faq">
         <div class="faq-container">
@@ -958,6 +1026,13 @@
                 <li><a href="partner.html">Partner Portal</a></li>
             </ul>
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <!-- Professional Memberships: Uncomment and add your registration numbers when ready
+            <div class="footer-accreditations" style="display:flex;align-items:center;gap:1.5rem;margin-top:1rem;justify-content:center;flex-wrap:wrap;">
+                <span style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;">Professional Memberships</span>
+                <span style="font-size:0.8rem;color:#aaa;">BRAMM Registered — No. XXXXX</span>
+                <span style="font-size:0.8rem;color:#aaa;">NAMM Member</span>
+            </div>
+            -->
         </div>
     </footer>
 
@@ -1160,5 +1235,39 @@
             if (dateInput) dateInput.min = tomorrow.toISOString().split('T')[0];
         });
     </script>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+</script>
 </body>
 </html>
