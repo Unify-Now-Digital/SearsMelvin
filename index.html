@@ -236,6 +236,18 @@
         .renovation-stat .number { font-family: var(--font-display); font-size: 2.5rem; color: var(--color-accent); }
         .renovation-stat .label { font-size: 0.85rem; color: var(--color-text-muted); }
 
+        /* Testimonials Section */
+        .testimonials { padding: 6rem 2rem; background: white; }
+        .testimonials-container { max-width: 1100px; margin: 0 auto; }
+        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+        .testimonial-card { background: var(--color-cream); border-radius: 8px; padding: 2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .testimonial-stars { display: flex; gap: 2px; margin-bottom: 1rem; }
+        .testimonial-quote { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); line-height: 1.6; font-style: italic; margin-bottom: 1.5rem; }
+        .testimonial-author { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 1rem; }
+        .testimonial-name { font-weight: 600; font-size: 0.9rem; color: var(--color-stone); }
+        .testimonial-location { font-size: 0.8rem; color: var(--color-text-muted); }
+
         /* FAQ Section */
         .faq { padding: 6rem 2rem; }
         .faq-container { max-width: 900px; margin: 0 auto; }
@@ -318,13 +330,17 @@
 
         /* Footer */
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
-        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a:hover { color: white; }
         .footer-links { display: flex; gap: 2rem; list-style: none; }
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
 
         /* Scroll to Top */
         .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
@@ -358,6 +374,7 @@
             .timeline { grid-template-columns: 1fr; }
             .timeline-detail-content { grid-template-columns: 1fr; }
             .renovation-stats { grid-template-columns: 1fr; }
+            .testimonials-grid { grid-template-columns: 1fr; }
             .faq-tabs { gap: 0.3rem; }
             .footer-container { flex-direction: column; text-align: center; }
             .footer-links { flex-wrap: wrap; justify-content: center; }
@@ -384,7 +401,6 @@
         <ul class="nav-links">
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="memorials.html">Memorials</a></li>
-            <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="resources.html">Support</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
@@ -396,19 +412,21 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="index.html" class="active" onclick="toggleMobileMenu()">Home</a>
         <a href="memorials.html" onclick="toggleMobileMenu()">Memorials</a>
-        <a href="permit-checker.html" onclick="toggleMobileMenu()">Permit Checker</a>
         <a href="faq.html" onclick="toggleMobileMenu()">FAQ</a>
         <a href="care-guide.html" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="resources.html" onclick="toggleMobileMenu()">Support</a>
         <a href="contact.html" onclick="toggleMobileMenu()">Contact</a>
     </div>
 
-    <!-- Showroom Banner -->
+    <!-- Top Banner -->
     <div class="showroom-banner">
         <div class="showroom-banner-inner">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
-            <a href="contact.html" class="showroom-banner-link">Book a visit &rarr;</a>
+            <span class="banner-divider">|</span>
+            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                020 3835 2548
+            </a>
         </div>
     </div>
 
@@ -748,6 +766,61 @@
         </div>
     </section>
 
+    <!-- Testimonials Section -->
+    <section class="testimonials reveal" id="testimonials">
+        <div class="testimonials-container">
+            <div class="section-header">
+                <p class="section-label">Families We've Helped</p>
+                <h2>What Families Say</h2>
+            </div>
+            <div class="testimonials-grid">
+                <!-- REPLACE: Swap placeholder testimonials with real customer reviews -->
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"From our first call, Sears Melvin made what felt like an overwhelming process feel simple and caring. The memorial is absolutely beautiful — exactly what we wanted."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">Sarah M.</span>
+                        <span class="testimonial-location">Islington</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"They handled the cemetery permits and kept us informed at every step. The restoration of my grandparents' headstone brought it back to life. Highly recommended."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">David R.</span>
+                        <span class="testimonial-location">Barnet</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="#D4AF37" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <blockquote class="testimonial-quote">"We were nervous about choosing the right memorial but the team guided us through every option. The quality of the engraving and stonework exceeded our expectations."</blockquote>
+                    <div class="testimonial-author">
+                        <span class="testimonial-name">Angela K.</span>
+                        <span class="testimonial-location">Enfield</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FAQ Section -->
     <section class="faq reveal" id="faq">
         <div class="faq-container">
@@ -945,7 +1018,14 @@
 
     <footer>
         <div class="footer-container">
-            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div>
+                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a><br>
+                    <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><br>
+                    North London — By appointment
+                </div>
+            </div>
             <ul class="footer-links">
                 <li><a href="#about">About</a></li>
                 <li><a href="memorials.html">Memorials</a></li>
@@ -957,7 +1037,14 @@
                 <li><a href="track.html">Track Order</a></li>
                 <li><a href="partner.html">Partner Portal</a></li>
             </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <!-- Professional Memberships: Uncomment and add your registration numbers when ready
+            <div class="footer-accreditations" style="display:flex;align-items:center;gap:1.5rem;margin-top:1rem;justify-content:center;flex-wrap:wrap;">
+                <span style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;">Professional Memberships</span>
+                <span style="font-size:0.8rem;color:#aaa;">BRAMM Registered — No. XXXXX</span>
+                <span style="font-size:0.8rem;color:#aaa;">NAMM Member</span>
+            </div>
+            -->
         </div>
     </footer>
 
@@ -1160,5 +1247,39 @@
             if (dateInput) dateInput.min = tomorrow.toISOString().split('T')[0];
         });
     </script>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+</script>
 </body>
 </html>

@@ -100,10 +100,6 @@
         .floating-actions { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
         .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
         .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
-        .floating-btn.compare { background: var(--color-accent); }
-        .floating-btn.compare svg { stroke: white; }
-        .floating-btn.compare:hover { transform: scale(1.1); }
-        .floating-btn.compare .badge { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; background: var(--color-stone); color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
         .floating-btn.shortlist { background: white; border: 2px solid var(--color-border); }
         .floating-btn.shortlist svg { stroke: var(--color-accent); }
         .floating-btn.shortlist:hover { border-color: var(--color-accent); }
@@ -181,9 +177,6 @@
         .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.3rem; display: block; }
         .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
         .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
-        .product-rating { display: flex; align-items: center; gap: 0.2rem; }
-        .product-rating svg { width: 14px; height: 14px; fill: var(--color-accent); }
-        .product-rating span { font-size: 0.8rem; color: var(--color-text-muted); }
         .product-colours { display: flex; gap: 0.25rem; }
         .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
@@ -234,24 +227,6 @@
         .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
         .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
         .wizard-result-match svg { width: 14px; height: 14px; stroke: currentColor; }
-        .compare-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--color-accent); padding: 1.5rem 2rem; z-index: 90; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); max-height: 50vh; overflow-y: auto; }
-        .compare-panel.active { transform: translateY(0); }
-        .compare-panel-inner { max-width: 1200px; margin: 0 auto; }
-        .compare-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .compare-panel-header h3 { font-size: 1.25rem; }
-        .compare-items { display: flex; gap: 1.5rem; }
-        .compare-item { flex: 1; max-width: 250px; display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--color-warm); border-radius: 6px; position: relative; }
-        .compare-item-empty { border: 2px dashed var(--color-border); background: transparent; justify-content: center; color: var(--color-text-muted); font-size: 0.9rem; min-height: 70px; }
-        .compare-item-image { width: 50px; height: 50px; background: var(--color-cream); border-radius: 4px; }
-        .compare-item-image svg, .compare-item-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .compare-item-info h4 { font-size: 0.9rem; line-height: 1.2; }
-        .compare-item-info p { font-size: 0.8rem; color: var(--color-text-muted); }
-        .compare-item-remove { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .compare-item-remove svg { width: 12px; height: 12px; stroke: white; }
-        .compare-actions { display: flex; gap: 1rem; margin-left: auto; }
-        .compare-actions button { padding: 0.75rem 1.25rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; }
-        .compare-btn-clear { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); }
-        .compare-btn-view { background: var(--color-accent); border: none; color: white; }
         .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px rgba(0,0,0,0.15); transition: right 0.4s ease; display: flex; flex-direction: column; }
         .shortlist-panel.active { right: 0; }
         .shortlist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
@@ -294,12 +269,17 @@
         @keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
         .save-btn.animate svg { animation: heartPop 0.4s ease; }
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
-        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; }
         .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a:hover { color: white; }
+        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
         .filters-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
         .filters-overlay.active { display: block; }
         @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -328,7 +308,6 @@
         }
         @media (max-width: 768px) {
             body { padding-bottom: 70px; }
-            .compare-panel.active { bottom: 70px; }
             .floating-actions { bottom: calc(70px + 1rem); }
             .product-actions { opacity: 1; transform: translateX(0); }
             .product-card:hover { transform: none; }
@@ -338,8 +317,6 @@
             .products-grid { grid-template-columns: 1fr; }
             .footer-container { flex-direction: column; text-align: center; }
             .wizard-options { grid-template-columns: 1fr; }
-            .compare-items { flex-direction: column; }
-            .compare-item { max-width: none; }
             .colour-swatches { grid-template-columns: repeat(2, 1fr); }
             .page-header h1 { font-size: 1.8rem; }
             .wizard-modal { max-height: 85vh; }
@@ -362,7 +339,6 @@
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="memorials.html" class="active">Memorials</a></li>
-            <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="resources.html">Support</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
@@ -374,18 +350,20 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="index.html" onclick="toggleMobileMenu()">Home</a>
         <a href="memorials.html" class="active" onclick="toggleMobileMenu()">Memorials</a>
-        <a href="permit-checker.html" onclick="toggleMobileMenu()">Permit Checker</a>
         <a href="faq.html" onclick="toggleMobileMenu()">FAQ</a>
         <a href="care-guide.html" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="resources.html" onclick="toggleMobileMenu()">Support</a>
         <a href="contact.html" onclick="toggleMobileMenu()">Contact</a>
     </div>
-    <!-- Showroom Banner -->
+    <!-- Top Banner -->
     <div class="showroom-banner">
         <div class="showroom-banner-inner">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span><strong>Showroom coming soon to North London</strong> &mdash; Visit us by appointment</span>
-            <a href="contact.html" class="showroom-banner-link">Book a visit &rarr;</a>
+            <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
+            <span class="banner-divider">|</span>
+            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                020 3835 2548
+            </a>
         </div>
     </div>
 
@@ -470,10 +448,6 @@
 
     <!-- Floating Actions -->
     <div class="floating-actions">
-        <button class="floating-btn compare" id="floatingCompare" onclick="openComparePanel()" style="display:none;">
-            <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-            <span class="badge" id="compareCount">0</span>
-        </button>
         <button class="floating-btn shortlist" onclick="openShortlist()">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
@@ -583,23 +557,6 @@
         </div>
     </div>
 
-    <!-- Compare Panel -->
-    <div class="compare-panel" id="comparePanel">
-        <div class="compare-panel-inner">
-            <div class="compare-panel-header">
-                <h3>Compare Memorials</h3>
-            </div>
-            <div class="compare-items" id="compareItems">
-                <div class="compare-item compare-item-empty">Select up to 3 memorials</div>
-                <div class="compare-item compare-item-empty">to compare side by side</div>
-                <div class="compare-item compare-item-empty"></div>
-            </div>
-            <div class="compare-actions">
-                <button class="compare-btn-clear" onclick="clearCompare()">Clear All</button>
-                <button class="compare-btn-view" onclick="viewComparison()">View Comparison</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Shortlist Panel -->
     <div class="shortlist-overlay" id="shortlistOverlay" onclick="closeShortlist()"></div>
@@ -661,7 +618,6 @@
         // ==================== STATE ====================
         const state = {
             filters: { type: [], colour: [], price: [] },
-            compareList: [],
             shortlist: [],
             wizard: { cemetery: null, budget: null, style: null, step: 1 },
             productsData: [],
@@ -760,11 +716,11 @@
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (price >= 3000) badge = '<span class="product-badge premium">Premium</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
-                const colourDots = state.colours.slice(0, 3).map(c =>
+                const colourDots = state.colours.map(c =>
                     '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
                 ).join('');
 
-                productsHTML += '<a href="memorial.html?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action compare-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>4.8</span></div><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="memorial.html?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -865,62 +821,6 @@
             grid.appendChild(document.getElementById('noResults'));
         }
 
-        // ==================== COMPARE ====================
-        function toggleCompare(btn) {
-            const card = btn.closest('.product-card');
-            const id = card.dataset.id;
-            const isActive = btn.classList.contains('active');
-            if (isActive) { state.compareList = state.compareList.filter(item => item.id !== id); btn.classList.remove('active'); }
-            else {
-                if (state.compareList.length >= 3) { alert('You can compare up to 3 memorials at a time.'); return; }
-                state.compareList.push({ id, name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
-                btn.classList.add('active');
-            }
-            updateCompareUI();
-        }
-
-        function updateCompareUI() {
-            const count = state.compareList.length;
-            const floatingBtn = document.getElementById('floatingCompare');
-            const countBadge = document.getElementById('compareCount');
-            const panel = document.getElementById('comparePanel');
-            floatingBtn.style.display = count > 0 ? 'flex' : 'none';
-            countBadge.textContent = count;
-            if (count > 0) {
-                panel.classList.add('active');
-                const container = document.getElementById('compareItems');
-                let html = '';
-                for (let i = 0; i < 3; i++) {
-                    if (state.compareList[i]) {
-                        const item = state.compareList[i];
-                        var cImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
-                        html += '<div class="compare-item"><div class="compare-item-image">' + cImg + '</div><div class="compare-item-info"><h4>' + item.name + '</h4><p>' + item.price + '</p></div><button class="compare-item-remove" onclick="removeFromCompare(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
-                    } else {
-                        html += '<div class="compare-item compare-item-empty">' + (i === 0 ? 'Add memorials to compare' : '') + '</div>';
-                    }
-                }
-                container.innerHTML = html;
-            } else { panel.classList.remove('active'); }
-        }
-
-        function removeFromCompare(id) {
-            state.compareList = state.compareList.filter(item => item.id !== id);
-            const btn = document.querySelector('.product-card[data-id="' + id + '"] .compare-btn');
-            if (btn) btn.classList.remove('active');
-            updateCompareUI();
-        }
-
-        function clearCompare() {
-            state.compareList.forEach(item => {
-                const btn = document.querySelector('.product-card[data-id="' + item.id + '"] .compare-btn');
-                if (btn) btn.classList.remove('active');
-            });
-            state.compareList = [];
-            updateCompareUI();
-        }
-
-        function openComparePanel() { document.getElementById('comparePanel').classList.add('active'); }
-        function viewComparison() { window.location.href = 'compare.html?items=' + state.compareList.join(','); }
 
         // ==================== SHORTLIST / SAVE ====================
         var _saveToastTimer;
@@ -1202,7 +1102,14 @@
     <!-- Footer -->
     <footer>
         <div class="footer-container">
-            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div>
+                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a><br>
+                    <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><br>
+                    North London — By appointment
+                </div>
+            </div>
             <ul class="footer-links">
                 <li><a href="index.html#about">About</a></li>
                 <li><a href="memorials.html">Memorials</a></li>
@@ -1213,7 +1120,7 @@
                 <li><a href="track.html">Track Order</a></li>
                 <li><a href="partner.html">Partner Portal</a></li>
             </ul>
-            <p style="font-size: 0.8rem;">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
     </footer>
 
@@ -1250,5 +1157,39 @@
             </a>
         </div>
     </nav>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+</script>
 </body>
 </html>

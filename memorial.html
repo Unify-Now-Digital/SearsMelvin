@@ -119,11 +119,6 @@
         .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
         .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
         
-        .product-rating { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-        .stars { display: flex; gap: 0.15rem; }
-        .stars svg { width: 18px; height: 18px; fill: var(--color-accent); }
-        .rating-text { font-size: 0.9rem; color: var(--color-text-muted); }
-        .rating-text a { color: var(--color-accent); text-decoration: underline; }
 
         .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
 
@@ -389,12 +384,17 @@
 
         /* Footer */
         footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
-        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-links { display: flex; gap: 2rem; list-style: none; }
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a:hover { color: white; }
+        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
     </style>
 </head>
 <body>
@@ -413,7 +413,6 @@
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="memorials.html" class="active">Memorials</a></li>
-            <li><a href="permit-checker.html">Permit Checker</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li><a href="resources.html">Support</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
@@ -423,18 +422,20 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="index.html" onclick="toggleMobileMenu()">Home</a>
         <a href="memorials.html" class="active" onclick="toggleMobileMenu()">Memorials</a>
-        <a href="permit-checker.html" onclick="toggleMobileMenu()">Permit Checker</a>
         <a href="faq.html" onclick="toggleMobileMenu()">FAQ</a>
         <a href="care-guide.html" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="resources.html" onclick="toggleMobileMenu()">Support</a>
         <a href="contact.html" onclick="toggleMobileMenu()">Contact</a>
     </div>
-    <!-- Showroom Banner -->
+    <!-- Top Banner -->
     <div class="showroom-banner">
         <div class="showroom-banner-inner">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span><strong>Showroom coming soon to North London</strong> &mdash; Visit us by appointment</span>
-            <a href="contact.html" class="showroom-banner-link">Book a visit &rarr;</a>
+            <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
+            <span class="banner-divider">|</span>
+            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                020 3835 2548
+            </a>
         </div>
     </div>
 
@@ -464,16 +465,6 @@
                 <span class="product-category animate-in" id="productCategory">Loading...</span>
                 <h1 class="animate-in animate-delay-1" id="productName">Loading...</h1>
                 
-                <div class="product-rating animate-in animate-delay-2">
-                    <div class="stars">
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </div>
-                    <span class="rating-text">4.9 average · <a href="#reviews">23 reviews</a></span>
-                </div>
 
                 <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
 
@@ -724,7 +715,14 @@
 
     <footer>
         <div class="footer-container">
-            <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div>
+                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a><br>
+                    <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><br>
+                    North London — By appointment
+                </div>
+            </div>
             <ul class="footer-links">
                 <li><a href="index.html#about">About</a></li>
                 <li><a href="memorials.html">Memorials</a></li>
@@ -1828,5 +1826,39 @@
         });
     </script>
     <script src="https://js.stripe.com/v3/"></script>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+</script>
 </body>
 </html>
