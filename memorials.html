@@ -335,7 +335,7 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <nav>
-        <a href="index.html" class="logo">
+        <a href="/" class="logo">
             <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
                 <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
                 <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
@@ -343,11 +343,11 @@
             Sears Melvin <span>Memorials</span>
         </a>
         <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="memorials.html" class="active">Memorials</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-            <li><a href="resources.html">Support</a></li>
-            <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/memorials" class="active">Memorials</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/resources">Support</a></li>
+            <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="shortlist-nav-btn" onclick="openShortlist()" id="shortlistNavBtn" style="display:none;">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -358,12 +358,12 @@
         </button>
     </nav>
     <div class="mobile-nav" id="mobileNav">
-        <a href="index.html" onclick="toggleMobileMenu()">Home</a>
-        <a href="memorials.html" class="active" onclick="toggleMobileMenu()">Memorials</a>
-        <a href="faq.html" onclick="toggleMobileMenu()">FAQ</a>
-        <a href="care-guide.html" onclick="toggleMobileMenu()">Care Guide</a>
-        <a href="resources.html" onclick="toggleMobileMenu()">Support</a>
-        <a href="contact.html" onclick="toggleMobileMenu()">Contact</a>
+        <a href="/" onclick="toggleMobileMenu()">Home</a>
+        <a href="/memorials" class="active" onclick="toggleMobileMenu()">Memorials</a>
+        <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
+        <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
+        <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
     <!-- Top Banner -->
     <div class="showroom-banner">
@@ -379,7 +379,7 @@
 
     <header class="page-header">
         <div class="breadcrumb">
-            <a href="index.html">Home</a><span>/</span><span>Memorials</span>
+            <a href="/">Home</a><span>/</span><span>Memorials</span>
         </div>
         <h1 class="reveal">Memorial Range</h1>
         <p class="reveal reveal-delay-1">Browse our collection of beautifully crafted memorials. Each piece is made to order with your personalisation.</p>
@@ -730,7 +730,7 @@
                     '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
                 ).join('');
 
-                productsHTML += '<a href="memorial.html?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -880,14 +880,14 @@
                 let html = '';
                 state.shortlist.forEach(item => {
                     var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
-                    var link = item.slug ? 'memorial.html?slug=' + item.slug : '#';
+                    var link = item.slug ? '/memorial?slug=' + item.slug : '#';
                     html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
             if (count > 0) {
                 const slugs = state.shortlist.map(i => i.slug || i.id).join(',');
-                document.getElementById('shareLink').value = window.location.origin + '/memorials.html?shortlist=' + slugs;
+                document.getElementById('shareLink').value = window.location.origin + '/memorials?shortlist=' + slugs;
             }
             var enqPanel = document.getElementById('shortlistEnquiry');
             if (enqPanel) enqPanel.style.display = count > 0 ? 'block' : 'none';
@@ -929,7 +929,7 @@
 
         function emailShortlist() {
             const items = state.shortlist.map(function(item, i) {
-                return (i + 1) + '. ' + item.name + ' — ' + item.price + '\nhttps://searsmelvin.co.uk/memorial.html?slug=' + item.slug;
+                return (i + 1) + '. ' + item.name + ' — ' + item.price + '\nhttps://searsmelvin.co.uk/memorial?slug=' + item.slug;
             }).join('\n\n');
             const subject = encodeURIComponent('My Memorial Shortlist — Sears Melvin Memorials');
             const body = encodeURIComponent('Hi,\n\nI\'ve been looking at memorials on the Sears Melvin website and would like to share my shortlist:\n\n' + items + '\n\nView full shortlist:\n' + document.getElementById('shareLink').value + '\n\nKind regards');
@@ -959,7 +959,7 @@
                         phone: phone || null,
                         enquiry_type: 'shortlist-enquiry',
                         message: 'Enquiry about multiple memorials:\n\n' + state.shortlist.map(function(item) {
-                            return '• ' + item.name + ' — ' + item.price + (item.slug ? ' (https://searsmelvin.co.uk/memorial.html?slug=' + item.slug + ')' : '');
+                            return '• ' + item.name + ' — ' + item.price + (item.slug ? ' (https://searsmelvin.co.uk/memorial?slug=' + item.slug + ')' : '');
                         }).join('\n') + (note ? '\n\nCustomer note: ' + note : '')
                     })
                 });
@@ -1033,7 +1033,7 @@
             let html = '<h3>We recommend these memorials for you</h3>';
             recommended.forEach(p => {
                 var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
-                html += '<a href="memorial.html?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
+                html += '<a href="/memorial?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
             });
             results.innerHTML = html;
         }
@@ -1128,14 +1128,14 @@
                 </div>
             </div>
             <ul class="footer-links">
-                <li><a href="index.html#about">About</a></li>
-                <li><a href="memorials.html">Memorials</a></li>
-                <li><a href="faq.html">FAQ</a></li>
-                <li><a href="care-guide.html">Care Guide</a></li>
-                <li><a href="resources.html">Support</a></li>
-                <li><a href="contact.html">Contact</a></li>
-                <li><a href="track.html">Track Order</a></li>
-                <li><a href="partner.html">Partner Portal</a></li>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/faq">FAQ</a></li>
+                <li><a href="/care-guide">Care Guide</a></li>
+                <li><a href="/resources">Support</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li><a href="/track">Track Order</a></li>
+                <li><a href="/partner">Partner Portal</a></li>
             </ul>
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
         </div>
@@ -1150,21 +1150,21 @@
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
         <div class="mobile-bottom-nav-inner">
-            <a href="index.html" class="mobile-nav-item">
+            <a href="/" class="mobile-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Home</span>
             </a>
-            <a href="memorials.html" class="mobile-nav-item active">
+            <a href="/memorials" class="mobile-nav-item active">
                 <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
                 <span>Browse</span>
             </a>
-            <a href="contact.html" class="mobile-nav-item primary">
+            <a href="/contact" class="mobile-nav-item primary">
                 <div class="nav-icon-bg">
                     <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                 </div>
                 <span>Enquire</span>
             </a>
-            <a href="faq.html" class="mobile-nav-item">
+            <a href="/faq" class="mobile-nav-item">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 <span>FAQ</span>
             </a>
@@ -1177,7 +1177,7 @@
 <!-- Cookie Consent Banner -->
 <div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="privacy.html" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
             <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
