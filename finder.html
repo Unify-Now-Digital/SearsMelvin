@@ -771,21 +771,6 @@
                     <div class="option-check"></div>
                 </div>
 
-                <div class="option-card" onclick="toggleMulti(this, 'features', 'flowers')">
-                    <div class="option-icon">
-                        <svg viewBox="0 0 80 80">
-                            <ellipse cx="40" cy="55" rx="12" ry="6" fill="#666"/>
-                            <path d="M40 55 L40 35" stroke="#5a8a5a" stroke-width="2"/>
-                            <circle cx="40" cy="28" r="8" fill="#c77"/>
-                            <circle cx="32" cy="32" r="6" fill="#e99"/>
-                            <circle cx="48" cy="32" r="6" fill="#faa"/>
-                        </svg>
-                    </div>
-                    <div class="option-title">Flower Vase</div>
-                    <div class="option-desc">Matching granite flower holder</div>
-                    <div class="option-check"></div>
-                </div>
-
                 <div class="option-card" onclick="toggleMulti(this, 'features', 'design')">
                     <div class="option-icon">
                         <svg viewBox="0 0 80 80">
@@ -982,7 +967,7 @@
             }
             
             selections.features.forEach(f => {
-                const labels = { photo: 'Photo Plaque', flowers: 'Flower Vase', design: 'Custom Motif', gold: 'Gold Lettering' };
+                const labels = { photo: 'Photo Plaque', design: 'Custom Motif', gold: 'Gold Lettering' };
                 summaryHTML += `<span class="summary-tag"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${labels[f]}</span>`;
             });
             
@@ -1043,7 +1028,7 @@
                 recs.push({
                     category: 'Kerb Set',
                     title: 'Kerb Set with Vase',
-                    reason: 'Includes built-in flower vase. Beautiful and practical.',
+                    reason: 'Full kerb surround with matching granite. Beautiful and practical.',
                     price: '£2,800',
                     svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="120" width="120" height="30" fill="#9ab094"/><g transform="translate(60,80)"><rect x="-50" y="10" width="100" height="40" fill="#2a2a2a"/><path d="M-22 10 L-22 -22 Q-22 -35 -12 -42 Q0 -50 12 -42 Q22 -35 22 -22 L22 10 Z" fill="#1a1a1a"/><ellipse cx="35" cy="8" rx="8" ry="4" fill="#252525"/><path d="M30 8 L33 -8 L37 -8 L40 8" fill="#2a2a2a"/></g></svg>`
                 });

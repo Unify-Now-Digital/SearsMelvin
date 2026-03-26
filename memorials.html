@@ -61,6 +61,12 @@
         .nav-links a.active { font-weight: 600; }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         .nav-cta:hover { background-color: var(--color-stone-light); }
+        .shortlist-nav-btn { display: none; align-items: center; gap: 0.4rem; background: none; border: 1.5px solid var(--color-accent); border-radius: 20px; padding: 0.4rem 0.85rem 0.4rem 0.65rem; cursor: pointer; font-family: var(--font-body); font-size: 0.8rem; font-weight: 600; color: var(--color-accent); transition: all 0.3s; margin-left: 0.5rem; }
+        .shortlist-nav-btn:hover { background: var(--color-accent); color: white; }
+        .shortlist-nav-btn:hover svg { fill: white; stroke: white; }
+        .shortlist-nav-btn.has-items { display: inline-flex; }
+        @keyframes shortlistPulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .shortlist-nav-btn.pulse { animation: shortlistPulse 0.4s ease; }
         .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
@@ -343,6 +349,10 @@
             <li><a href="resources.html">Support</a></li>
             <li><a href="contact.html" class="nav-cta">Get a Quote</a></li>
         </ul>
+        <button class="shortlist-nav-btn" onclick="openShortlist()" id="shortlistNavBtn" style="display:none;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="shortlistNavCount">0</span>
+        </button>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
             <span></span><span></span><span></span>
         </button>
@@ -856,6 +866,13 @@
         function updateShortlistUI() {
             const count = state.shortlist.length;
             document.getElementById('shortlistCount').textContent = count;
+            var navBtn = document.getElementById('shortlistNavBtn');
+            var navCount = document.getElementById('shortlistNavCount');
+            if (navBtn) {
+                navCount.textContent = count;
+                if (count > 0) { navBtn.classList.add('has-items'); navBtn.style.display = 'inline-flex'; navBtn.classList.remove('pulse'); void navBtn.offsetWidth; navBtn.classList.add('pulse'); }
+                else { navBtn.classList.remove('has-items'); navBtn.style.display = 'none'; }
+            }
             const content = document.getElementById('shortlistContent');
             if (count === 0) {
                 content.innerHTML = '<div class="shortlist-empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p></div>';

@@ -197,13 +197,6 @@
         .char-bar-fill.warning { background: #c9a227; }
         .char-bar-fill.over { background: #b44; }
 
-        .font-selector { display: flex; gap: 0.5rem; margin-top: 1rem; }
-        .font-option { padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; background: white; }
-        .font-option:hover { border-color: var(--color-stone); }
-        .font-option.active { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
-        .font-traditional { font-family: 'Times New Roman', serif; }
-        .font-modern { font-family: var(--font-body); }
-        .font-script { font-family: 'Brush Script MT', cursive; font-size: 1rem; }
 
         /* Add-ons */
         .addons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
@@ -220,21 +213,21 @@
         .addon-card.selected .addon-check::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
 
         /* Price Summary - Sticky */
-        .price-summary { 
+        .price-summary {
             position: sticky; bottom: 0; left: 0; right: 0;
-            background: white; 
+            background: white;
             border-top: 1px solid var(--color-border);
-            padding: 1.5rem 2rem;
+            padding: 0.6rem 2rem;
             margin: 2rem -2rem -2rem;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
             z-index: 50;
         }
-        .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
-        
+        .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+
         .price-breakdown { flex: 1; }
-        .price-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.35rem; }
-        .price-row.total { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem; }
-        .price-total-display { font-family: var(--font-display); font-size: 2rem; color: var(--color-stone); }
+        .price-row { display: none; }
+        .price-row.total { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; color: var(--color-stone); border-top: none; padding-top: 0; margin-top: 0; }
+        .price-total-display { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-stone); }
 
         .price-actions { display: flex; gap: 1rem; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 1.75rem; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.03em; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
@@ -502,12 +495,7 @@
                             <div class="char-bar">
                                 <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
                             </div>
-                            <span class="char-counter" id="charCounter">100 characters included, then £2.40 each</span>
-                        </div>
-                        <div class="font-selector">
-                            <button type="button" class="font-option font-traditional active" onclick="setFont('traditional', this)">Traditional</button>
-                            <button type="button" class="font-option font-modern" onclick="setFont('modern', this)">Modern</button>
-                            <button type="button" class="font-option font-script" onclick="setFont('script', this)">Script</button>
+                            <span class="char-counter" id="charCounter">100 characters included, then £1.95 each</span>
                         </div>
                     </div>
                 </div>
@@ -563,40 +551,40 @@
 
                     <!-- Photo size panel — sits BELOW the grid, never disrupts card positions -->
                     <div id="photoSubPanel" style="display:none; margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
-                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose photo plaque size</p>
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose photo plaque shape</p>
                         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem;">
-                            <!-- Small oval -->
-                            <div class="photo-size-tile" id="psTileSmall" onclick="selectPhotoSize(this, 160, 'small')" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; background:rgba(139,115,85,0.05); text-align:center;">
+                            <!-- Oval -->
+                            <div class="photo-size-tile" id="psTileSmall" onclick="selectPhotoSize(this, 160, 'oval')" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; background:rgba(139,115,85,0.05); text-align:center;">
                                 <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
                                     <svg width="46" height="36" viewBox="-23 -18 46 36">
                                         <ellipse cx="0" cy="0" rx="20" ry="14" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
                                         <ellipse cx="0" cy="0" rx="17" ry="11" fill="#555"/>
                                     </svg>
                                 </div>
-                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Small Oval</div>
-                                <div style="font-size:0.72rem; color:var(--color-text-muted);">3" · +£160</div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Oval</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">+£160</div>
                             </div>
-                            <!-- Medium oval -->
-                            <div class="photo-size-tile" id="psTileMedium" onclick="selectPhotoSize(this, 200, 'medium')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                            <!-- Rectangle -->
+                            <div class="photo-size-tile" id="psTileMedium" onclick="selectPhotoSize(this, 200, 'rectangle')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
                                 <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
-                                    <svg width="60" height="46" viewBox="-30 -23 60 46">
-                                        <ellipse cx="0" cy="0" rx="27" ry="19" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
-                                        <ellipse cx="0" cy="0" rx="24" ry="16" fill="#555"/>
+                                    <svg width="52" height="40" viewBox="-26 -20 52 40">
+                                        <rect x="-23" y="-16" width="46" height="32" rx="3" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <rect x="-20" y="-13" width="40" height="26" rx="2" fill="#555"/>
                                     </svg>
                                 </div>
-                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Medium Oval</div>
-                                <div style="font-size:0.72rem; color:var(--color-text-muted);">4" · +£200</div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Rectangle</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">+£200</div>
                             </div>
-                            <!-- Large rectangle -->
-                            <div class="photo-size-tile" id="psTileLarge" onclick="selectPhotoSize(this, 240, 'large')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                            <!-- Heart -->
+                            <div class="photo-size-tile" id="psTileLarge" onclick="selectPhotoSize(this, 240, 'heart')" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
                                 <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
-                                    <svg width="64" height="48" viewBox="-32 -24 64 48">
-                                        <rect x="-30" y="-20" width="60" height="40" rx="3" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
-                                        <rect x="-27" y="-17" width="54" height="34" rx="2" fill="#555"/>
+                                    <svg width="48" height="44" viewBox="0 0 48 44">
+                                        <path d="M24 40 C10 28 0 20 0 12 A12 12 0 0 1 24 8 A12 12 0 0 1 48 12 C48 20 38 28 24 40Z" fill="#888" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+                                        <path d="M24 36 C12 26 4 19 4 13 A10 10 0 0 1 24 10 A10 10 0 0 1 44 13 C44 19 36 26 24 36Z" fill="#555"/>
                                     </svg>
                                 </div>
-                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Large Rectangle</div>
-                                <div style="font-size:0.72rem; color:var(--color-text-muted);">6" · +£240</div>
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Heart</div>
+                                <div style="font-size:0.72rem; color:var(--color-text-muted);">+£240</div>
                             </div>
                         </div>
                     </div>
@@ -678,7 +666,7 @@
                         <span>Guide total (installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
-                    <p id="permitNote" style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">*Permit fee varies by cemetery — select a cemetery for an estimate</p>
+                    <p id="permitNote" style="font-size: 0.7rem; color: var(--color-text-muted); margin: 0.15rem 0 0; display: none;">*Permit fee varies by cemetery — select a cemetery for an estimate</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -885,7 +873,7 @@
         let PRODUCT_IMAGE_URL = '';
         let productData = null;
         let charsIncluded = 80;
-        let pricePerChar = 2.40;
+        let pricePerChar = 1.95;
 
         // ==================== STATE ====================
         const state = {
@@ -1191,12 +1179,6 @@
         }
 
         // ==================== FONT ====================
-        function setFont(fontType, btn) {
-            state.font = fontType;
-            document.querySelectorAll('.font-option').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
         // ==================== PHOTO PLAQUE ====================
         function togglePhotoAddon(card) {
             const isSelected = card.classList.toggle('selected');
