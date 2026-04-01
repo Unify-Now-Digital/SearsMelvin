@@ -275,6 +275,7 @@
             .size-visual { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
             .human-reference { display: none; }
             .addons-grid { grid-template-columns: 1fr; }
+            #infillTypeGrid { grid-template-columns: repeat(2, 1fr) !important; }
             .trust-badges { flex-direction: column; gap: 1rem; }
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
@@ -603,6 +604,97 @@
                     </div>
                 </div>
 
+                <!-- Kerb Infill Type — only shown for kerb-set products -->
+                <div class="option-group" id="infillOptionGroup" style="display:none;">
+                    <div class="option-header">
+                        <span class="option-label">Kerb Infill Type</span>
+                        <span class="option-value" id="selectedInfillName">Chippings — White</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem;" id="infillTypeGrid">
+                        <!-- None -->
+                        <div class="infill-type-tile" onclick="selectInfillType(this, 'none')" data-type="none" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                            <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#999" stroke-width="1.5"><rect x="4" y="4" width="28" height="28" rx="2"/><line x1="4" y1="4" x2="32" y2="32"/></svg>
+                            </div>
+                            <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">None</div>
+                            <div style="font-size:0.72rem; color:var(--color-text-muted);">Included</div>
+                        </div>
+                        <!-- Soil -->
+                        <div class="infill-type-tile" onclick="selectInfillType(this, 'soil')" data-type="soil" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                            <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#999" stroke-width="1.5"><rect x="4" y="4" width="28" height="28" rx="2"/><path d="M4 22 Q10 18 18 20 Q26 22 32 19 L32 32 L4 32 Z" fill="#8B6914" opacity="0.4" stroke="none"/><circle cx="12" cy="14" r="1.5" fill="#4A7C59"/><circle cx="18" cy="12" r="2" fill="#4A7C59"/><circle cx="24" cy="14" r="1.5" fill="#4A7C59"/></svg>
+                            </div>
+                            <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Soil</div>
+                            <div style="font-size:0.72rem; color:var(--color-text-muted);">Included</div>
+                        </div>
+                        <!-- Coverslab -->
+                        <div class="infill-type-tile" onclick="selectInfillType(this, 'coverslab')" data-type="coverslab" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
+                            <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#999" stroke-width="1.5"><rect x="4" y="4" width="28" height="28" rx="2"/><rect x="7" y="7" width="22" height="22" rx="1" fill="#bbb" opacity="0.35" stroke="none"/><line x1="7" y1="18" x2="29" y2="18" opacity="0.3"/><line x1="18" y1="7" x2="18" y2="29" opacity="0.3"/></svg>
+                            </div>
+                            <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Coverslab</div>
+                            <div style="font-size:0.72rem; color:var(--color-text-muted);">+£950</div>
+                        </div>
+                        <!-- Chippings (default selected) -->
+                        <div class="infill-type-tile" onclick="selectInfillType(this, 'chippings')" data-type="chippings" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; text-align:center; background:rgba(139,115,85,0.05);">
+                            <div style="display:flex; justify-content:center; align-items:center; height:40px; margin-bottom:0.5rem;">
+                                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#999" stroke-width="1.5"><rect x="4" y="4" width="28" height="28" rx="2"/><circle cx="12" cy="13" r="2.5" fill="#ddd" stroke="none"/><circle cx="20" cy="11" r="2" fill="#ccc" stroke="none"/><circle cx="16" cy="19" r="2.5" fill="#ddd" stroke="none"/><circle cx="24" cy="17" r="2" fill="#ccc" stroke="none"/><circle cx="10" cy="23" r="2" fill="#ddd" stroke="none"/><circle cx="20" cy="25" r="2.5" fill="#ccc" stroke="none"/><circle cx="27" cy="24" r="2" fill="#ddd" stroke="none"/></svg>
+                            </div>
+                            <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Chippings</div>
+                            <div style="font-size:0.72rem; color:var(--color-text-muted);">+£250</div>
+                        </div>
+                    </div>
+
+                    <!-- Chippings colour sub-panel -->
+                    <div id="chippingsColourPanel" style="margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose chippings colour</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.75rem;" id="chippingsColourGrid">
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'white')" style="cursor:pointer;">
+                                <div class="colour-wrapper" style="border:2px solid var(--color-accent); border-radius:6px; padding:0.25rem;">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #e8e4dc 0%, #ffffff 50%, #ddd9d0 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.08);"></span>
+                                    <span class="colour-name">White</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'black')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #1a1a1a 0%, #3a3a3a 50%, #1a1a1a 100%);"></span>
+                                    <span class="colour-name">Black</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'grey')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #6a6a6a 0%, #909090 50%, #6a6a6a 100%);"></span>
+                                    <span class="colour-name">Grey</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'green')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #3a6b47 0%, #5a9b67 50%, #3a6b47 100%);"></span>
+                                    <span class="colour-name">Green</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'golden')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #b8943f 0%, #d4a843 50%, #b8943f 100%);"></span>
+                                    <span class="colour-name">Golden</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'blue')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #3a5a8a 0%, #5a7ab0 50%, #3a5a8a 100%);"></span>
+                                    <span class="colour-name">Blue</span>
+                                </div>
+                            </label>
+                            <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'plum')" style="cursor:pointer;">
+                                <div class="colour-wrapper">
+                                    <span class="colour-swatch" style="background: linear-gradient(145deg, #6b2d4f 0%, #8b4d6f 50%, #6b2d4f 100%);"></span>
+                                    <span class="colour-name">Plum</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Trust Badges -->
                 <div class="trust-badges">
                     <div class="trust-badge">
@@ -743,6 +835,7 @@
                 <div class="quote-config-row" id="qsFontRow" style="display:none"><span>Font</span><span id="qsFont">—</span></div>
                 <div class="quote-config-row" id="qsLetterColourRow" style="display:none"><span>Lettering</span><span id="qsLetterColour">—</span></div>
                 <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
+                <div class="quote-config-row" id="qsInfillRow" style="display:none"><span>Kerb Infill</span><span id="qsInfill">—</span></div>
                 <div id="qsExtrasContainer"></div>
                 <div class="quote-config-row" id="qsPermitFeeRow" style="display:none"><span>Cemetery permit fee (est.)</span><span id="qsPermitFee">—</span></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
@@ -890,7 +983,10 @@
             font: 'traditional',
             inscription: '',
             colour: 'black',
-            selectedSize: 'standard'
+            selectedSize: 'standard',
+            infillType: 'chippings',
+            infillColour: 'white',
+            infillPrice: 250
         };
 
         // ==================== LOAD PRODUCT FROM SUPABASE ====================
@@ -951,6 +1047,12 @@
                 if (catSlug === 'kerb-sets' || catSlug === 'cremation') {
                     var kerbCard = document.getElementById('kerbAddonCard');
                     if (kerbCard) kerbCard.style.display = 'none';
+                }
+
+                // Show infill options for kerb-set products
+                if (catSlug === 'kerb-sets') {
+                    var infillGroup = document.getElementById('infillOptionGroup');
+                    if (infillGroup) infillGroup.style.display = '';
                 }
 
                 // Render features
@@ -1219,6 +1321,57 @@
             updateTotalPrice();
         }
 
+        // ==================== KERB INFILL TYPE ====================
+        var INFILL_PRICES = { none: 0, soil: 0, coverslab: 950, chippings: 250 };
+
+        function selectInfillType(tile, typeName) {
+            document.querySelectorAll('.infill-type-tile').forEach(function(t) {
+                t.style.border = '1.5px solid var(--color-border)';
+                t.style.background = 'transparent';
+            });
+            tile.style.border = '1.5px solid var(--color-accent)';
+            tile.style.background = 'rgba(139,115,85,0.05)';
+
+            state.infillType = typeName;
+            state.infillPrice = INFILL_PRICES[typeName] || 0;
+
+            var panel = document.getElementById('chippingsColourPanel');
+            if (typeName === 'chippings') {
+                panel.style.display = '';
+            } else {
+                panel.style.display = 'none';
+            }
+
+            updateInfillLabel();
+            updateAddonsTotal();
+            updateTotalPrice();
+        }
+
+        function selectChippingsColour(tile, colourName) {
+            document.querySelectorAll('.chippings-colour-tile .colour-wrapper').forEach(function(w) {
+                w.style.border = '';
+                w.style.borderRadius = '';
+                w.style.padding = '';
+            });
+            var wrapper = tile.querySelector('.colour-wrapper');
+            if (wrapper) {
+                wrapper.style.border = '2px solid var(--color-accent)';
+                wrapper.style.borderRadius = '6px';
+                wrapper.style.padding = '0.25rem';
+            }
+            state.infillColour = colourName;
+            updateInfillLabel();
+        }
+
+        function updateInfillLabel() {
+            var label = state.infillType.charAt(0).toUpperCase() + state.infillType.slice(1);
+            if (state.infillType === 'chippings' && state.infillColour) {
+                label += ' — ' + state.infillColour.charAt(0).toUpperCase() + state.infillColour.slice(1);
+            }
+            var el = document.getElementById('selectedInfillName');
+            if (el) el.textContent = label;
+        }
+
         // ==================== STANDARD ADD-ONS ====================
         function toggleAddon(card) {
             card.classList.toggle('selected');
@@ -1249,6 +1402,12 @@
             if (state.kerbActive) {
                 total += state.kerbPrice;
                 labels.push('garden-kerb');
+            }
+
+            // Kerb infill
+            if (state.infillPrice > 0) {
+                total += state.infillPrice;
+                labels.push('infill-' + state.infillType);
             }
 
             state.addonsPrice = total;
@@ -1345,6 +1504,11 @@
             if (state.kerbActive) {
                 items.push({ name: 'Garden Kerb Surround', price: 350 });
             }
+            if (state.infillPrice > 0) {
+                var infillName = 'Kerb Infill — ' + state.infillType.charAt(0).toUpperCase() + state.infillType.slice(1);
+                if (state.infillType === 'chippings') infillName += ' (' + state.infillColour.charAt(0).toUpperCase() + state.infillColour.slice(1) + ')';
+                items.push({ name: infillName, price: state.infillPrice });
+            }
             if (state.inscriptionPrice > 0) {
                 items.push({ name: 'Extra Lettering', price: state.inscriptionPrice });
             }
@@ -1381,6 +1545,19 @@
                 document.getElementById('qsInscription').textContent = state.inscription.substring(0, 80) + (state.inscription.length > 80 ? '…' : '');
                 insRow.style.display = '';
             } else { insRow.style.display = 'none'; }
+
+            // Infill type (kerb-sets only)
+            var infillRow = document.getElementById('qsInfillRow');
+            if (state.infillType && productData && productData.product_categories && productData.product_categories.slug === 'kerb-sets') {
+                var infillLabel = state.infillType.charAt(0).toUpperCase() + state.infillType.slice(1);
+                if (state.infillType === 'chippings' && state.infillColour) {
+                    infillLabel += ' — ' + state.infillColour.charAt(0).toUpperCase() + state.infillColour.slice(1);
+                }
+                document.getElementById('qsInfill').textContent = infillLabel;
+                infillRow.style.display = '';
+            } else {
+                infillRow.style.display = 'none';
+            }
 
             const addonItems = getAddonLineItems();
             document.getElementById('qsExtrasContainer').innerHTML = addonItems.map(function(item) {
@@ -1603,6 +1780,8 @@
                                 inscription: state.inscription ? state.inscription.substring(0, 120) : '',
                                 font:        state.font || '',
                                 letterColour: state.letterColour || '',
+                                infillType:  state.infillType || '',
+                                infillColour: state.infillColour || '',
                                 price:       String(total),
                                 permit_fee:  _selectedCemeteryFee || 0,
                                 image:       PRODUCT_IMAGE_URL,
