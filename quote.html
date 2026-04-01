@@ -582,6 +582,26 @@
                 }).join('')
                 + '</select></div>';
 
+            // Kerb Infill (only for kerb-set products)
+            if (product.type && product.type.toLowerCase().indexOf('kerb') !== -1) {
+                var infillTypes = ['none', 'soil', 'coverslab', 'chippings'];
+                html += '<div class="edit-field"><label>Kerb Infill Type</label>'
+                    + '<select id="editInfillType" onchange="toggleEditChippingsColour()">'
+                    + infillTypes.map(function(t) {
+                        return '<option value="' + t + '"' + (t === (product.infillType || 'chippings') ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + (t === 'coverslab' ? ' (+£950)' : t === 'chippings' ? ' (+£250)' : '') + '</option>';
+                    }).join('')
+                    + '</select></div>';
+
+                var chippingsColours = ['white', 'black', 'grey', 'green', 'golden', 'blue', 'plum'];
+                var showColour = (product.infillType || 'chippings') === 'chippings';
+                html += '<div class="edit-field" id="editChippingsColourField" style="' + (showColour ? '' : 'display:none;') + '"><label>Chippings Colour</label>'
+                    + '<select id="editInfillColour">'
+                    + chippingsColours.map(function(c) {
+                        return '<option value="' + c + '"' + (c === (product.infillColour || 'white') ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+                    }).join('')
+                    + '</select></div>';
+            }
+
             // Addons
             var selectedAddons = {};
             addonItems.forEach(function(a) { selectedAddons[a.name] = true; });
@@ -634,6 +654,14 @@
             el.classList.add('selected');
         }
 
+        function toggleEditChippingsColour() {
+            var sel = document.getElementById('editInfillType');
+            var colourField = document.getElementById('editChippingsColourField');
+            if (sel && colourField) {
+                colourField.style.display = sel.value === 'chippings' ? '' : 'none';
+            }
+        }
+
         function toggleQuoteAddon(card) {
             card.classList.toggle('selected');
             var check = card.querySelector('.quote-addon-check');
@@ -662,6 +690,12 @@
             if (fontEl) product.font = fontEl.value;
             if (letterEl) product.letterColour = letterEl.value;
             if (inscEl) product.inscription = inscEl.value.trim();
+
+            // Infill type
+            var infillEl = document.getElementById('editInfillType');
+            var infillColourEl = document.getElementById('editInfillColour');
+            if (infillEl) product.infillType = infillEl.value;
+            if (infillColourEl && infillEl && infillEl.value === 'chippings') product.infillColour = infillColourEl.value;
 
             // Collect selected addons
             var addonCards = document.querySelectorAll('.quote-addon-card.selected');

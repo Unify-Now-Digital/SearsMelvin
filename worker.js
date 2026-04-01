@@ -351,6 +351,7 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
       product.type         ? { key: "memorial_type",      field_value: product.type } : null,
       product.font         ? { key: "font_style",         field_value: product.font } : null,
       product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
+      product.infillType   ? { key: "kerb_infill",        field_value: product.infillType + (product.infillType === 'chippings' ? ' - ' + (product.infillColour || 'white') : '') } : null,
       product.inscription  ? { key: "inscription_text",   field_value: product.inscription } : null,
       product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
       product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
@@ -766,6 +767,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
               ${product.size ? `<tr><td style="color:#999;padding:4px 0;">Size</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.size)}</td></tr>` : ""}
               ${product.font ? `<tr><td style="color:#999;padding:4px 0;">Font</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td></tr>` : ""}
               ${product.letterColour ? `<tr><td style="color:#999;padding:4px 0;">Lettering colour</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td></tr>` : ""}
+              ${product.infillType ? `<tr><td style="color:#999;padding:4px 0;">Kerb infill</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product.infillType.charAt(0).toUpperCase() + product.infillType.slice(1))}${product.infillType === 'chippings' && product.infillColour ? ' — ' + esc(product.infillColour.charAt(0).toUpperCase() + product.infillColour.slice(1)) : ''}</td></tr>` : ""}
             </table>
 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;margin-top:14px;border-top:1px solid #E0DCD5;">
@@ -896,6 +898,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) 
               ${product.size ? `<tr><td style="color:#999;padding:3px 0;">Size</td><td style="color:#2C2C2C;">${esc(product.size)}</td></tr>` : ""}
               ${product.font ? `<tr><td style="color:#999;padding:3px 0;">Font</td><td style="color:#2C2C2C;">${esc(product.font === 'script' ? 'Script' : 'Traditional')}</td></tr>` : ""}
               ${product.letterColour ? `<tr><td style="color:#999;padding:3px 0;">Lettering colour</td><td style="color:#2C2C2C;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td></tr>` : ""}
+              ${product.infillType ? `<tr><td style="color:#999;padding:3px 0;">Kerb infill</td><td style="color:#2C2C2C;">${esc(product.infillType.charAt(0).toUpperCase() + product.infillType.slice(1))}${product.infillType === 'chippings' && product.infillColour ? ' — ' + esc(product.infillColour.charAt(0).toUpperCase() + product.infillColour.slice(1)) : ''}</td></tr>` : ""}
             </table>
 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;border-top:1px solid #E0DCD5;">
@@ -978,6 +981,7 @@ function buildQuoteClickUpDescription({ name, email, phone, message, product, su
     `• Stone:        ${product.colour  || "—"}`,
     `• Size:         ${product.size    || "—"}`,
     `• Extras:       ${addons}`,
+    product.infillType ? `• Kerb Infill:  ${product.infillType}${product.infillType === 'chippings' ? ' (' + (product.infillColour || 'white') + ')' : ''}` : "",
     product.inscription ? `• Inscription:  "${product.inscription}"` : "",
     `• Guide total:  £${formatPrice(product.price)}`,
     "",
