@@ -1271,7 +1271,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,base_price,image_url,categories(name)',
+                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,base_price,image_url,category_id',
                     {
                         headers: {
                             'apikey': SUPABASE_ANON_KEY,
@@ -1283,7 +1283,7 @@ function declineCookies() {
                 if (products.length > 0) {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
-                        var category = (product.categories && product.categories.name) || 'Memorial';
+                        var category = 'Memorial';
                         var imageHTML = product.image_url
                             ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
