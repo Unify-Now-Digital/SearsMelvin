@@ -726,9 +726,7 @@ function declineCookies() {
     pushConsent(false);
 }
 
-        // ==================== SITE SEARCH ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        // ==================== SITE SEARCH ==
 
         const searchFaqData = [
             { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
@@ -779,7 +777,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,base_price,image_url,categories(name)',
+                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,base_price,image_url,category_id',
                     {
                         headers: {
                             'apikey': SUPABASE_ANON_KEY,
@@ -791,7 +789,7 @@ function declineCookies() {
                 if (products.length > 0) {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
-                        var category = (product.categories && product.categories.name) || 'Memorial';
+                        var category = 'Memorial';
                         var imageHTML = product.image_url
                             ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
