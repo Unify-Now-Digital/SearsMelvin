@@ -343,7 +343,7 @@
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
-        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
         .search-modal .search-input::placeholder { color: #bbb; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
@@ -1354,7 +1354,7 @@ function declineCookies() {
                     }
                 );
                 var products = await response.json();
-                if (products.length > 0) {
+                if (Array.isArray(products) && products.length > 0) {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
