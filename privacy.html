@@ -144,6 +144,58 @@
             .footer-container { flex-direction: column; text-align: center; }
             .footer-links { justify-content: center; }
         }
+
+        /* Search Button in Nav */
+        .nav-search-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .nav-search-btn:hover { opacity: 0.7; }
+        .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
+
+        /* Search Overlay */
+        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay.active { opacity: 1; visibility: visible; }
+
+        /* Search Modal */
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal.active { transform: translateY(0); }
+        .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
+        .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
+        .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; }
+        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
+        .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .search-close-btn:hover svg { stroke: var(--color-stone); }
+
+        /* Search Results */
+        .search-results { max-height: 60vh; overflow-y: auto; border-top: 1px solid var(--color-border); }
+        .search-results:empty { display: none; }
+        .search-section { padding: 1rem 0; }
+        .search-section-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.75rem; padding: 0 0.5rem; }
+        .search-result { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; text-decoration: none; color: inherit; }
+        .search-result:hover { background: var(--color-warm); }
+        .search-result-image { width: 56px; height: 56px; border-radius: 6px; background: var(--color-warm); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .search-result-image img { width: 100%; height: 100%; object-fit: cover; }
+        .search-result-image svg { width: 28px; height: 28px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .search-result-content { flex: 1; min-width: 0; }
+        .search-result-title { font-weight: 500; color: var(--color-stone); margin-bottom: 0.15rem; }
+        .search-result-subtitle { font-size: 0.85rem; color: var(--color-text-muted); }
+        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent); white-space: nowrap; }
+
+        /* Quick Links */
+        .search-quick-links { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
+        .search-quick-link { padding: 0.5rem 1rem; background: var(--color-warm); border-radius: 20px; font-size: 0.85rem; color: var(--color-stone); text-decoration: none; transition: all 0.2s; }
+        .search-quick-link:hover { background: var(--color-accent); color: white; }
+
+        /* No Results */
+        .search-no-results { padding: 2rem; text-align: center; color: var(--color-text-muted); }
+        .search-no-results svg { width: 48px; height: 48px; stroke: var(--color-border); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
+        .search-no-results h4 { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-stone); margin-bottom: 0.5rem; }
+
+        /* Loading */
+        .search-loading { padding: 2rem; text-align: center; }
+        .search-spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: searchSpin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes searchSpin { to { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
@@ -165,6 +217,11 @@
             <li><a href="/memorials">Memorials</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
+            <li>
+                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
+            </li>
             <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -178,6 +235,35 @@
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-modal-inner">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
+                <button class="search-close-btn" onclick="closeSearch()">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-section" id="quickLinksSection">
+                    <div class="search-section-title">Quick Links</div>
+                    <div class="search-quick-links">
+                        <a href="memorials.html" class="search-quick-link">Browse Memorials</a>
+                        <a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a>
+                        <a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a>
+                        <a href="faq.html" class="search-quick-link">FAQs</a>
+                        <a href="contact.html" class="search-quick-link">Get a Quote</a>
+                        <a href="permit-checker.html" class="search-quick-link">Permit Info</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <!-- Top Banner -->
     <div class="showroom-banner">
@@ -298,10 +384,10 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <a href="/faq" class="mobile-nav-item">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>FAQ</span>
-            </a>
+            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <span>Search</span>
+            </button>
             <a href="tel:+442038352548" class="mobile-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
                 <span>Call</span>
@@ -357,6 +443,113 @@ function declineCookies() {
     document.getElementById('cookieConsent').style.display = 'none';
     pushConsent(false);
 }
-</script>
+
+        // ==================== SITE SEARCH ====================
+        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+
+        const searchFaqData = [
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "faq.html#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "faq.html#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "faq.html#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "contact.html" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "memorials.html" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "care-guide.html" },
+        ];
+
+        let searchTimeout;
+
+        function openSearch() {
+            document.getElementById('searchOverlay').classList.add('active');
+            document.getElementById('searchModal').classList.add('active');
+            document.getElementById('searchInput').focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearch() {
+            document.getElementById('searchOverlay').classList.remove('active');
+            document.getElementById('searchModal').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = getQuickLinksHTML();
+            document.body.style.overflow = '';
+        }
+
+        function getQuickLinksHTML() {
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="memorials.html" class="search-quick-link">Browse Memorials</a><a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a><a href="faq.html" class="search-quick-link">FAQs</a><a href="contact.html" class="search-quick-link">Get a Quote</a><a href="permit-checker.html" class="search-quick-link">Permit Info</a></div></div>';
+        }
+
+        function handleSearch(query) {
+            clearTimeout(searchTimeout);
+            var resultsContainer = document.getElementById('searchResults');
+            if (query.length < 2) {
+                resultsContainer.innerHTML = getQuickLinksHTML();
+                return;
+            }
+            resultsContainer.innerHTML = '<div class="search-loading"><div class="search-spinner"></div></div>';
+            searchTimeout = setTimeout(function() { performSearch(query); }, 300);
+        }
+
+        async function performSearch(query) {
+            var resultsContainer = document.getElementById('searchResults');
+            var lowerQuery = query.toLowerCase();
+            var html = '';
+
+            try {
+                var response = await fetch(
+                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,base_price,image_url,categories(name)',
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                        }
+                    }
+                );
+                var products = await response.json();
+                if (products.length > 0) {
+                    html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
+                    products.slice(0, 5).forEach(function(product) {
+                        var category = (product.categories && product.categories.name) || 'Memorial';
+                        var imageHTML = product.image_url
+                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
+                        html += '<a href="memorial.html?id=' + product.id + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                    });
+                    html += '</div>';
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+
+            var matchingFaqs = searchFaqData.filter(function(faq) {
+                return faq.q.toLowerCase().includes(lowerQuery) || faq.a.toLowerCase().includes(lowerQuery);
+            });
+
+            if (matchingFaqs.length > 0) {
+                html += '<div class="search-section"><div class="search-section-title">Help & FAQs</div>';
+                matchingFaqs.slice(0, 3).forEach(function(faq) {
+                    html += '<a href="' + faq.url + '" class="search-result"><div class="search-result-image"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="search-result-content"><div class="search-result-title">' + faq.q + '</div><div class="search-result-subtitle">' + faq.a + '</div></div></a>';
+                });
+                html += '</div>';
+            }
+
+            if (!html) {
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="memorials.html" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearch();
+            }
+            if (e.key === 'Escape') {
+                closeSearch();
+            }
+        });
+
+    </script>
 </body>
 </html>
