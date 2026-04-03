@@ -1276,10 +1276,11 @@
                     grid.innerHTML = html;
                 }
 
-                // Populate hero image with a featured product
+                // Populate hero image with The Westminster kerb set
                 var heroEl = document.getElementById('heroImage');
                 if (heroEl) {
-                    var featured = products.find(function(p) { return p.is_featured && p.image_url; })
+                    var featured = products.find(function(p) { return p.slug === 'the-westminster' && p.image_url; })
+                        || products.find(function(p) { return p.is_featured && p.image_url; })
                         || products.find(function(p) { return p.image_url; });
                     if (featured && featured.image_url) {
                         var img = document.createElement('img');
