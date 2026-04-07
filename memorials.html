@@ -175,7 +175,7 @@
         .product-action.active svg { stroke: white; fill: white; }
         .product-image { position: relative; aspect-ratio: 4/3; overflow: hidden; background: linear-gradient(145deg, #e8e4dd, #d4cfc6); }
         .product-image svg { width: 100%; height: 100%; }
-        .product-image img { width: 100%; height: 100%; object-fit: cover; }
+        .product-image img { width: 100%; height: 100%; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
         .product-badge.premium { background: var(--color-stone); }
         .product-badge.new { background: var(--color-success); }
@@ -228,7 +228,7 @@
         .wizard-result-card { display: flex; gap: 1.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 1rem; transition: all 0.2s; }
         .wizard-result-card:hover { border-color: var(--color-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .wizard-result-image { width: 120px; height: 100px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
-        .wizard-result-image svg, .wizard-result-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .wizard-result-image svg, .wizard-result-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
         .wizard-result-info h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
         .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
         .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
@@ -247,7 +247,7 @@
         .shortlist-empty svg { width: 48px; height: 48px; stroke: var(--color-border); margin-bottom: 1rem; }
         .shortlist-item { display: flex; gap: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 0.75rem; position: relative; }
         .shortlist-item-image { width: 70px; height: 60px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
-        .shortlist-item-image svg, .shortlist-item-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .shortlist-item-image svg, .shortlist-item-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
         .shortlist-item-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
         .shortlist-item-info p { font-size: 0.85rem; color: var(--color-accent); font-weight: 600; }
         .shortlist-item-remove { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; cursor: pointer; padding: 0.25rem; }
@@ -879,7 +879,7 @@
             } else {
                 let html = '';
                 state.shortlist.forEach(item => {
-                    var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
+                    var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
                     var link = item.slug ? '/memorial?slug=' + item.slug : '#';
                     html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
@@ -1032,7 +1032,7 @@
             if (recommended.length === 0) recommended = products.slice(0, 3);
             let html = '<h3>We recommend these memorials for you</h3>';
             recommended.forEach(p => {
-                var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : '';
+                var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
                 html += '<a href="/memorial?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
             });
             results.innerHTML = html;
