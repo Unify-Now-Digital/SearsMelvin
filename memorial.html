@@ -99,7 +99,7 @@
         /* Gallery */
         .product-gallery { position: sticky; top: 80px; height: fit-content; }
         .gallery-main { aspect-ratio: 4/5; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.1); background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
-        .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-main img { width: 100%; height: 100%; object-fit: contain; }
         .gallery-badge { position: absolute; top: 1.5rem; left: 1.5rem; padding: 0.5rem 1rem; background: var(--color-accent); color: white; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 3px; }
         
         /* Live Preview Indicator */
@@ -503,7 +503,7 @@
             <!-- Gallery with Product Image -->
             <div class="product-gallery animate-in">
                 <div class="gallery-main" id="galleryMain">
-                    <img id="galleryMainImg" src="" alt="Memorial" style="width:100%;height:100%;object-fit:cover;display:none;">
+                    <img id="galleryMainImg" src="" alt="Memorial" style="width:100%;height:100%;object-fit:contain;display:none;">
                     <span class="gallery-badge" id="galleryBadge" style="display:none;"></span>
                 </div>
 
