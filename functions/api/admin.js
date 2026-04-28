@@ -16,6 +16,7 @@
  * POST { action: "list-inscription-requests", token }   → list pending inscription change requests
  * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
  * POST { action: "list-products", token }                → list all products incl. hidden (bypasses RLS)
+ * POST { action: "get-product", token, slug }             → fetch one product (with sizes) by slug, incl. hidden
  */
 
 const CORS = {
@@ -63,6 +64,7 @@ export async function onRequest(context) {
   if (action === "list-inscription-requests") return listInscriptionRequests(env);
   if (action === "resolve-inscription") return resolveInscription(env, data);
   if (action === "list-products") return listProducts(env);
+  if (action === "get-product") return getProduct(env, data);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -385,6 +387,27 @@ async function listProducts(env) {
   const res = await fetch(url, { headers });
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
   return json({ ok: true, products: await res.json() });
+}
+
+// ==================== GET PRODUCT (admin, by slug, includes hidden) ====================
+async function getProduct(env, { slug }) {
+  if (!slug) return json({ ok: false, error: "Slug required" }, 400);
+  const headers = sbHeaders(env);
+  const productRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&select=*,product_categories(name,slug)&limit=1`,
+    { headers }
+  );
+  if (!productRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const products = await productRes.json();
+  const product = products[0];
+  if (!product) return json({ ok: false, error: "Not found" }, 404);
+
+  const sizesRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/product_sizes?product_id=eq.${encodeURIComponent(product.id)}&select=*&order=display_order.asc`,
+    { headers }
+  );
+  const sizes = sizesRes.ok ? await sizesRes.json() : [];
+  return json({ ok: true, product, sizes });
 }
 
 // ==================== UPDATE ORDER ====================

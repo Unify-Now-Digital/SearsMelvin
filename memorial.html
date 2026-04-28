@@ -1040,6 +1040,7 @@
         const SUPABASE_URL  = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
         const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
         const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
+        const ADMIN_TOKEN = localStorage.getItem('admin_token');
 
         async function supabaseFetch(table, params) {
             const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
@@ -1075,6 +1076,21 @@
             infillPrice: 250
         };
 
+        // ==================== ADMIN PREVIEW BANNER ====================
+        function showAdminPreviewBanner(product) {
+            if (document.getElementById('adminPreviewBanner')) return;
+            const isHidden = product && product.is_active === false;
+            const banner = document.createElement('div');
+            banner.id = 'adminPreviewBanner';
+            banner.style.cssText = 'background:#2C2C2C;color:#fff;padding:0.6rem 1.25rem;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;font-size:0.85rem;position:sticky;top:0;z-index:1000;flex-wrap:wrap;gap:0.5rem;';
+            banner.innerHTML =
+                '<span><strong style="background:' + (isHidden ? '#c0392b' : '#4A7C59') + ';padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>'
+                + (isHidden ? 'Previewing a HIDDEN product (is_active = false)' : 'Previewing as admin')
+                + '</span>'
+                + '<a href="/admin-products.html" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to All Products</a>';
+            document.body.insertBefore(banner, document.body.firstChild);
+        }
+
         // ==================== LOAD PRODUCT FROM SUPABASE ====================
         async function loadProduct() {
             const params = new URLSearchParams(window.location.search);
@@ -1082,9 +1098,27 @@
             if (!slug) { document.getElementById('productName').textContent = 'Product not found'; return; }
 
             try {
-                // Fetch product with category
-                const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true' });
-                const product = products[0];
+                let product;
+                let adminSizes = null;
+                if (ADMIN_TOKEN) {
+                    // Admin context: fetch via /api/admin so RLS doesn't hide inactive products/sizes
+                    const adminRes = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get-product', slug: slug, token: ADMIN_TOKEN })
+                    }).then(r => r.json());
+                    if (adminRes && adminRes.ok) {
+                        product = adminRes.product;
+                        adminSizes = adminRes.sizes || [];
+                        showAdminPreviewBanner(product);
+                    } else if (adminRes && adminRes.error === 'Unauthorized') {
+                        localStorage.removeItem('admin_token');
+                    }
+                }
+                if (!product) {
+                    const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true' });
+                    product = products[0];
+                }
                 if (!product) { document.getElementById('productName').textContent = 'Product not found'; return; }
 
                 productData = product;
@@ -1093,9 +1127,11 @@
                 charsIncluded = product.inscription_chars_included || 80;
                 pricePerChar = parseFloat(product.inscription_price_per_char) || 2.40;
 
-                // Fetch sizes, colours, addons in parallel
+                // Fetch sizes (skip if admin endpoint already returned them), colours, addons in parallel
                 const [sizes, colours, addons] = await Promise.all([
-                    supabaseFetch('product_sizes', { select: '*', product_id: 'eq.' + product.id, order: 'display_order' }),
+                    adminSizes !== null
+                        ? Promise.resolve(adminSizes)
+                        : supabaseFetch('product_sizes', { select: '*', product_id: 'eq.' + product.id, order: 'display_order' }),
                     supabaseFetch('stone_colours', { select: '*', is_active: 'eq.true', order: 'display_order' }),
                     supabaseFetch('product_addons', { select: '*', is_active: 'eq.true', order: 'display_order' })
                 ]);
