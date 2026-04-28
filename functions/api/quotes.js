@@ -50,7 +50,7 @@ export async function onRequest(context) {
 async function getQuoteByToken(env, token) {
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(name,email,phone)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -61,9 +61,9 @@ async function getQuoteByToken(env, token) {
     ok: true,
     quote: {
       id: order.id,
-      name: order.customer_name,
-      email: order.customer_email,
-      phone: order.customer_phone,
+      name: order.people?.name || null,
+      email: order.people?.email || null,
+      phone: order.people?.phone || null,
       location: order.location,
       product: order.product_config ? safeParse(order.product_config) : null,
       value: order.value,
@@ -76,25 +76,15 @@ async function getQuoteByToken(env, token) {
 
 async function getQuotesByEmail(env, email) {
   const headers = sbHeaders(env);
-  // Select only core columns that always exist — use select=* to be resilient
+  const normalised = email.trim().toLowerCase();
+  // Filter on the embedded `people.email` via PostgREST resource embedding.
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&order_type=eq.quote&select=*&order=created_at.desc&limit=20`,
+    `${env.SUPABASE_URL}/rest/v1/orders?order_type=eq.quote&select=*,people!inner(name,email,phone)&people.email=eq.${encodeURIComponent(normalised)}&order=created_at.desc&limit=20`,
     { headers },
   );
   if (!res.ok) {
-    // If query fails, try without order_type filter (column may not exist or no quotes)
-    const fallbackRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&select=*&order=created_at.desc&limit=20`,
-      { headers },
-    );
-    if (!fallbackRes.ok) {
-      const errText = await fallbackRes.text();
-      return json({ ok: false, error: "Database error", detail: errText }, 500);
-    }
-    const allRows = await fallbackRes.json();
-    // Filter to quotes client-side
-    const rows = allRows.filter(r => r.order_type === "quote");
-    return json({ ok: true, quotes: rows.map(mapOrderToQuote) });
+    const errText = await res.text();
+    return json({ ok: false, error: "Database error", detail: errText }, 500);
   }
   const rows = await res.json();
   return json({ ok: true, quotes: rows.map(mapOrderToQuote) });
@@ -103,7 +93,7 @@ async function getQuotesByEmail(env, email) {
 function mapOrderToQuote(order) {
   return {
     id: order.id,
-    name: order.customer_name,
+    name: order.people?.name || null,
     product: order.sku || null,
     colour: order.color || null,
     value: order.value,
@@ -123,7 +113,7 @@ async function updateQuote(env, data) {
 
   // Verify token exists and fetch full order for email notifications
   const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(name,email,phone)&limit=1`,
     { headers },
   );
   if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -169,8 +159,8 @@ async function updateQuote(env, data) {
 
   // Send notification emails about the update
   if (env.RESEND_API_KEY) {
-    const customerName = order.customer_name || "";
-    const customerEmail = order.customer_email || "";
+    const customerName = order.people?.name || "";
+    const customerEmail = order.people?.email || "";
     const productName = (product && product.name) || order.sku || "Memorial";
     const changes = buildChangesSummary(order, product, message);
 

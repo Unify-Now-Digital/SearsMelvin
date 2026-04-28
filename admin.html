@@ -666,12 +666,17 @@
             var stageLabel = STAGE_LABELS[stage] || stage;
             var stageClass = STAGE_CLASSES[stage] || 'pending';
             var ref = 'SM-' + String(o.id).padStart(4, '0');
+            var person = o.people || {};
+            var personName = person.name || '—';
+            var personEmail = person.email || '';
+            var badgeLabel = person.is_customer ? 'Customer' : 'Lead';
+            var badgeClass = person.is_customer ? 'partner-badge approved' : 'partner-badge pending';
 
             return '<div class="partner-card" style="cursor:pointer;" onclick="openEditModal(' + o.id + ')">'
                 + '<div class="partner-info">'
-                + '<div class="partner-name">' + esc(ref) + ' &mdash; ' + esc(o.customer_name) + ' <span class="status ' + stageClass + '">' + esc(stageLabel) + '</span></div>'
+                + '<div class="partner-name">' + esc(ref) + ' &mdash; ' + esc(personName) + ' <span class="' + badgeClass + '" style="margin-left:6px;">' + badgeLabel + '</span> <span class="status ' + stageClass + '">' + esc(stageLabel) + '</span></div>'
                 + '<div class="partner-company">' + esc(o.sku || '') + (o.color ? ' &middot; ' + esc(o.color) : '') + '</div>'
-                + '<div class="partner-meta">' + esc(o.customer_email || '') + ' &middot; ' + formatDate(o.created_at)
+                + '<div class="partner-meta">' + esc(personEmail) + ' &middot; ' + formatDate(o.created_at)
                 + (o.tracking_token ? ' &middot; <span style="color:var(--color-success);">Tracking active</span>' : '')
                 + '</div>'
                 + '</div>'
@@ -855,9 +860,10 @@
 
             list.innerHTML = data.requests.map(function(r) {
                 var orderInfo = r.order || {};
+                var orderPerson = orderInfo.people || {};
                 return '<div class="partner-card" style="border-left:3px solid #856404;">'
                     + '<div class="partner-info">'
-                    + '<div class="partner-name">' + esc(orderInfo.customer_name || 'Unknown') + '</div>'
+                    + '<div class="partner-name">' + esc(orderPerson.name || 'Unknown') + '</div>'
                     + '<div class="partner-company">' + esc(orderInfo.sku || '') + '</div>'
                     + '<div class="partner-meta">Current: "' + esc(orderInfo.inscription_text || 'None') + '"</div>'
                     + '<div class="partner-message">Requested: "' + esc(r.requested_text) + '"'

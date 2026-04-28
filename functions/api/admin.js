@@ -356,7 +356,7 @@ async function getDashboard(env) {
 // ==================== LIST ORDERS ====================
 async function listOrders(env, { filter, search }) {
   const headers = sbHeaders(env);
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,permit_fee,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,person_id,people(id,name,email,phone,is_customer),sku,color,value,permit_fee,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
 
   if (filter && filter !== "all") {
     url += `&stage=eq.${encodeURIComponent(filter)}`;
@@ -369,8 +369,8 @@ async function listOrders(env, { filter, search }) {
   if (search) {
     const q = search.toLowerCase();
     orders = orders.filter(o =>
-      (o.customer_name || "").toLowerCase().includes(q) ||
-      (o.customer_email || "").toLowerCase().includes(q) ||
+      (o.people?.name || "").toLowerCase().includes(q) ||
+      (o.people?.email || "").toLowerCase().includes(q) ||
       (o.sku || "").toLowerCase().includes(q)
     );
   }
@@ -465,7 +465,7 @@ async function listInscriptionRequests(env) {
   const enriched = [];
   for (const req of requests) {
     const orderRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,customer_name,customer_email,sku,inscription_text&limit=1`,
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,people(name,email),sku,inscription_text&limit=1`,
       { headers },
     );
     let orderInfo = null;

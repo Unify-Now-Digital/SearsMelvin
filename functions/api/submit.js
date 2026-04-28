@@ -997,16 +997,74 @@ function generateToken() {
   return token;
 }
 
-async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message }) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
-  const headers = {
+function supabaseHeaders(env) {
+  return {
     "apikey": env.SUPABASE_SERVICE_KEY,
     "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
   };
+}
+
+// Upsert a retail contact into `people`, deduped by email.
+// `is_customer` is sticky-true: once flipped on by a quote/order it never reverts.
+export async function upsertPerson(env, { name, email, phone, source, isCustomer }) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return null;
+  if (!email) return null;
+  const normalisedEmail = email.trim().toLowerCase();
+  const headers = supabaseHeaders(env);
+  const nowIso = new Date().toISOString();
+
+  const existingRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer`,
+    { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+  );
+  if (!existingRes.ok) throw new Error(`Supabase people lookup error ${existingRes.status}: ${await existingRes.text()}`);
+  const existing = (await existingRes.json())[0] || null;
+
+  if (existing) {
+    const patchBody = { last_seen_at: nowIso };
+    if (name) patchBody.name = name;
+    if (phone) patchBody.phone = phone;
+    if (isCustomer && !existing.is_customer) patchBody.is_customer = true;
+    const patchRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
+      { method: "PATCH", headers, body: JSON.stringify(patchBody) }
+    );
+    if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
+    return { id: existing.id, is_customer: existing.is_customer || !!isCustomer };
+  }
+
+  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people`, {
+    method: "POST",
+    headers: { ...headers, Prefer: "return=representation" },
+    body: JSON.stringify({
+      email: normalisedEmail,
+      name: name || null,
+      phone: phone || null,
+      is_customer: !!isCustomer,
+      first_source: source || null,
+      first_seen_at: nowIso,
+      last_seen_at: nowIso,
+    }),
+  });
+  if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
+  const inserted = (await insertRes.json())[0] || null;
+  return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
+}
+
+async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message }) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
+  const headers = supabaseHeaders(env);
   const today = new Date().toISOString().split("T")[0];
   const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+
+  const person = await upsertPerson(env, {
+    name, email, phone,
+    source: type,
+    isCustomer: type === "quote",
+  });
+  if (!person) throw new Error("Supabase person upsert returned no id");
 
   // Generate an edit token for quote editing
   const editToken = type === "quote" ? generateToken() : null;
@@ -1014,7 +1072,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST", headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      customer_name: name, customer_email: email, customer_phone: phone || null,
+      person_id: person.id,
       order_type: type === "quote" ? "quote" : (enquiry_type || null),
       sku: product?.name || null, color: product?.colour || null,
       value: product?.price ? parseFloat(product.price) : null,
@@ -1046,7 +1104,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
       body: JSON.stringify({ inscription_text: product.inscription }),
     });
   }
-  return { invoiceId: invoiceId || null, editToken };
+  return { invoiceId: invoiceId || null, editToken, personId: person.id };
 }
 
 // ═══════════════════════════════════════════════════════════════════
