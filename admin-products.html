@@ -704,6 +704,12 @@
     </div>
 
     <script>
+        // ==================== ADMIN AUTH GATE ====================
+        const ADMIN_TOKEN = localStorage.getItem('admin_token');
+        if (!ADMIN_TOKEN) {
+            window.location.href = '/admin.html';
+        }
+
         // ==================== SUPABASE CONFIG ====================
         const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
@@ -734,12 +740,26 @@
         // ==================== DATA LOADING ====================
         async function loadData() {
             try {
-                // Admin view: fetch ALL products including hidden/inactive ones
-                const [categories, colours, productsData] = await Promise.all([
+                // Admin view: products fetched via /api/admin so the service-role key
+                // bypasses RLS and returns hidden (is_active=false) rows.
+                const [categories, colours, productsRes] = await Promise.all([
                     supabaseFetch('product_categories', { select: '*', order: 'display_order' }),
                     supabaseFetch('stone_colours', { select: '*', order: 'display_order' }),
-                    supabaseFetch('products', { select: '*,product_categories(name,slug)', order: 'display_order' })
+                    fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'list-products', token: ADMIN_TOKEN })
+                    }).then(r => r.json())
                 ]);
+                if (!productsRes || !productsRes.ok) {
+                    if (productsRes && productsRes.error === 'Unauthorized') {
+                        localStorage.removeItem('admin_token');
+                        window.location.href = '/admin.html';
+                        return;
+                    }
+                    throw new Error((productsRes && productsRes.error) || 'Failed to load products');
+                }
+                const productsData = productsRes.products || [];
                 state.categories = categories;
                 state.colours = colours;
 

@@ -15,6 +15,7 @@
  * POST { action: "generate-tracking", token, orderId }  → generate tracking token for customer
  * POST { action: "list-inscription-requests", token }   → list pending inscription change requests
  * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
+ * POST { action: "list-products", token }                → list all products incl. hidden (bypasses RLS)
  */
 
 const CORS = {
@@ -61,6 +62,7 @@ export async function onRequest(context) {
   if (action === "generate-tracking") return generateTracking(env, data);
   if (action === "list-inscription-requests") return listInscriptionRequests(env);
   if (action === "resolve-inscription") return resolveInscription(env, data);
+  if (action === "list-products") return listProducts(env);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -374,6 +376,15 @@ async function listOrders(env, { filter, search }) {
   }
 
   return json({ ok: true, orders });
+}
+
+// ==================== LIST PRODUCTS (admin, includes hidden) ====================
+async function listProducts(env) {
+  const headers = sbHeaders(env);
+  const url = `${env.SUPABASE_URL}/rest/v1/products?select=*,product_categories(name,slug)&order=display_order.asc`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  return json({ ok: true, products: await res.json() });
 }
 
 // ==================== UPDATE ORDER ====================
