@@ -9,6 +9,8 @@
  * POST { action: "comment" } → add comment to an order
  */
 
+import { upsertPerson } from "./submit.js";
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -59,7 +61,7 @@ async function listOrders(env, partner, params) {
   const status = params.get("status");
   const search = params.get("search");
 
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?partner_id=eq.${partner.id}&select=*&order=created_at.desc&limit=50`;
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?partner_id=eq.${partner.id}&select=*,people(id,name,email,phone,is_customer)&order=created_at.desc&limit=50`;
   if (status && status !== "all") {
     url += `&status=eq.${encodeURIComponent(status)}`;
   }
@@ -72,8 +74,8 @@ async function listOrders(env, partner, params) {
   if (search) {
     const q = search.toLowerCase();
     rows = rows.filter(r =>
-      (r.customer_name || "").toLowerCase().includes(q) ||
-      (r.customer_email || "").toLowerCase().includes(q) ||
+      (r.people?.name || "").toLowerCase().includes(q) ||
+      (r.people?.email || "").toLowerCase().includes(q) ||
       (r.sku || "").toLowerCase().includes(q) ||
       (r.location || "").toLowerCase().includes(q)
     );
@@ -99,7 +101,7 @@ async function getOrderDetail(env, partner, orderId) {
 
   // Get order (verify it belongs to this partner)
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=*&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=*,people(id,name,email,phone,is_customer)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -134,13 +136,25 @@ async function createOrder(env, partner, data) {
   }
 
   const headers = sbHeaders(env);
-  const today = new Date().toISOString().split("T")[0];
 
-  // Create order linked to partner
+  // Upsert the retail customer into the unified `people` table first.
+  let person;
+  try {
+    person = await upsertPerson(env, {
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+      source: "quote",
+      isCustomer: true,
+    });
+  } catch (err) {
+    return json({ ok: false, error: "Failed to register customer", detail: String(err) }, 500);
+  }
+  if (!person) return json({ ok: false, error: "Failed to register customer" }, 500);
+
+  // Create order linked to partner AND to the person record.
   const orderBody = {
-    customer_name: customerName,
-    customer_email: customerEmail,
-    customer_phone: customerPhone || null,
+    person_id: person.id,
     order_type: "quote",
     sku: product || null,
     color: colour || null,
@@ -152,7 +166,7 @@ async function createOrder(env, partner, data) {
     product_config: product ? JSON.stringify({ name: product, colour, size, price: value }) : null,
   };
 
-  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
+  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,name,email,phone,is_customer)`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify(orderBody),
@@ -210,9 +224,10 @@ async function addComment(env, partner, data) {
 function mapOrder(row) {
   return {
     id: row.id,
-    customer_name: row.customer_name,
-    customer_email: row.customer_email,
-    customer_phone: row.customer_phone,
+    customer_name: row.people?.name || null,
+    customer_email: row.people?.email || null,
+    customer_phone: row.people?.phone || null,
+    is_customer: row.people?.is_customer || false,
     product: row.sku,
     colour: row.color,
     value: row.value,

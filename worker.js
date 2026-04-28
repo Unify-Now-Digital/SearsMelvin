@@ -168,8 +168,9 @@ export default {
               // create invoice and payment records.
               let orderId = null;
               if (custEmail) {
+                const normalisedEmail = custEmail.trim().toLowerCase();
                 const oRes = await fetch(
-                  `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=1&select=id`,
+                  `${env.SUPABASE_URL}/rest/v1/orders?select=id,people!inner(email)&people.email=eq.${encodeURIComponent(normalisedEmail)}&order=created_at.desc&limit=1`,
                   { headers: sbH },
                 );
                 if (oRes.ok) { const rows = await oRes.json(); orderId = rows[0]?.id || null; }
@@ -1016,6 +1017,51 @@ function generateToken() {
   return token;
 }
 
+async function upsertPersonWorker(env, { name, email, phone, source, isCustomer }) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !email) return null;
+  const normalisedEmail = email.trim().toLowerCase();
+  const baseHeaders = {
+    "apikey":        env.SUPABASE_SERVICE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    "Content-Type":  "application/json",
+  };
+  const nowIso = new Date().toISOString();
+  const lookupRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer`,
+    { headers: { apikey: baseHeaders.apikey, Authorization: baseHeaders.Authorization } },
+  );
+  if (!lookupRes.ok) throw new Error(`Supabase people lookup error ${lookupRes.status}: ${await lookupRes.text()}`);
+  const existing = (await lookupRes.json())[0] || null;
+  if (existing) {
+    const patchBody = { last_seen_at: nowIso };
+    if (name) patchBody.name = name;
+    if (phone) patchBody.phone = phone;
+    if (isCustomer && !existing.is_customer) patchBody.is_customer = true;
+    const patchRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
+      { method: "PATCH", headers: { ...baseHeaders, Prefer: "return=minimal" }, body: JSON.stringify(patchBody) },
+    );
+    if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
+    return { id: existing.id };
+  }
+  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people`, {
+    method: "POST",
+    headers: { ...baseHeaders, Prefer: "return=representation" },
+    body: JSON.stringify({
+      email: normalisedEmail,
+      name: name || null,
+      phone: phone || null,
+      is_customer: !!isCustomer,
+      first_source: source || null,
+      first_seen_at: nowIso,
+      last_seen_at: nowIso,
+    }),
+  });
+  if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
+  const inserted = (await insertRes.json())[0] || null;
+  return inserted ? { id: inserted.id } : null;
+}
+
 async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message, preEditToken }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
 
@@ -1030,14 +1076,19 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
   const editToken = preEditToken || (type === "quote" ? generateToken() : null);
 
+  const person = await upsertPersonWorker(env, {
+    name, email, phone,
+    source: type,
+    isCustomer: type === "quote",
+  });
+  if (!person) throw new Error("Supabase person upsert returned no id");
+
   // orders table — return=representation so we get the new row's id
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      customer_name:  name,
-      customer_email: email,
-      customer_phone: phone || null,
+      person_id:      person.id,
       order_type:     type === "quote" ? "quote" : (enquiry_type || null),
       sku:            product?.name   || null,
       color:          product?.colour || null,

@@ -758,13 +758,17 @@
             var stageLabel = STAGE_LABELS[stage] || stage;
             var ref = 'SM-' + String(o.id).padStart(4, '0');
             var partnerLabel = o.partners ? (o.partners.company || o.partners.name) : '';
+            var person = o.people || {};
+            var personName = person.name || '\u2014';
+            var personType = person.is_customer ? 'Customer' : 'Lead';
+            var personTypeColor = person.is_customer ? 'var(--color-success)' : 'var(--color-text-muted)';
             var isOpen = openOrderIds.has(o.id);
 
             return '<div class="order-card' + (isOpen ? ' open' : '') + '" id="ord-' + o.id + '">'
                 + '<div class="order-summary" onclick="toggleOrderExpand(' + o.id + ')">'
                 +   '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'
                 +   '<div class="order-summary-main">'
-                +     '<div><span class="order-ref">' + esc(ref) + '</span> <span class="order-cust">' + esc(o.customer_name || '\u2014') + '</span> <span class="stage-chip s-' + esc(stage) + '">' + esc(stageLabel) + '</span></div>'
+                +     '<div><span class="order-ref">' + esc(ref) + '</span> <span class="order-cust">' + esc(personName) + '</span> <span style="font-size:0.7rem;color:' + personTypeColor + ';text-transform:uppercase;letter-spacing:0.04em;margin-left:0.25rem;">' + personType + '</span> <span class="stage-chip s-' + esc(stage) + '">' + esc(stageLabel) + '</span></div>'
                 +     '<div class="order-sub">' + esc(o.sku || '') + (o.color ? ' &middot; ' + esc(o.color) : '') + (o.location ? ' &middot; ' + esc(o.location) : '') + (partnerLabel ? ' &middot; via ' + esc(partnerLabel) : '') + '</div>'
                 +   '</div>'
                 +   '<div class="order-summary-meta">'
@@ -808,11 +812,13 @@
         }).join('');
 
         // Customer panel
-        var custPhone = o.customer_phone ? '<p>' + esc(o.customer_phone) + '</p>' : '';
-        var custEmail = o.customer_email ? '<p><a href="mailto:' + esc(o.customer_email) + '">' + esc(o.customer_email) + '</a></p>' : '';
+        var p = o.people || {};
+        var custPhone = p.phone ? '<p>' + esc(p.phone) + '</p>' : '';
+        var custEmail = p.email ? '<p><a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></p>' : '';
         var locBlock = o.location ? '<p style="color:var(--color-text-muted);font-size:0.78rem;margin-top:0.4rem;">' + esc(o.location) + '</p>' : '';
+        var custTypeChip = p.is_customer ? '<span style="background:var(--color-success);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Customer</span>' : '<span style="background:var(--color-text-muted);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Lead</span>';
         var custBlock = '<div class="info-block"><h4>Customer</h4>'
-            + '<p style="font-weight:600;">' + esc(o.customer_name || '\u2014') + '</p>'
+            + '<p style="font-weight:600;">' + esc(p.name || '\u2014') + custTypeChip + '</p>'
             + custEmail + custPhone + locBlock
             + '</div>';
 
@@ -1101,7 +1107,7 @@
                 var orderInfo = r.order || {};
                 return '<div class="partner-card" style="border-left:3px solid #856404;">'
                     + '<div class="partner-info">'
-                    + '<div class="partner-name">' + esc(orderInfo.customer_name || 'Unknown') + '</div>'
+                    + '<div class="partner-name">' + esc((orderInfo.people && orderInfo.people.name) || 'Unknown') + '</div>'
                     + '<div class="partner-company">' + esc(orderInfo.sku || '') + '</div>'
                     + '<div class="partner-meta">Current: "' + esc(orderInfo.inscription_text || 'None') + '"</div>'
                     + '<div class="partner-message">Requested: "' + esc(r.requested_text) + '"'

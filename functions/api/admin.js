@@ -363,7 +363,7 @@ async function getDashboard(env) {
 async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) {
   const headers = sbHeaders(env);
   const select = [
-    "id", "customer_name", "customer_email", "customer_phone",
+    "id", "person_id", "people(id,name,email,phone,is_customer)",
     "sku", "color", "value", "permit_fee", "status", "stage",
     "location", "tracking_token", "inscription_text", "inscription_status",
     "proof_url", "proof_uploaded_at", "proof_notes",
@@ -403,8 +403,8 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
   if (search) {
     const q = search.toLowerCase();
     orders = orders.filter(o =>
-      (o.customer_name || "").toLowerCase().includes(q) ||
-      (o.customer_email || "").toLowerCase().includes(q) ||
+      (o.people?.name || "").toLowerCase().includes(q) ||
+      (o.people?.email || "").toLowerCase().includes(q) ||
       (o.sku || "").toLowerCase().includes(q) ||
       (o.location || "").toLowerCase().includes(q) ||
       String(o.id || "").includes(q)
@@ -561,7 +561,7 @@ async function listInscriptionRequests(env) {
   const enriched = [];
   for (const req of requests) {
     const orderRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,customer_name,customer_email,sku,inscription_text&limit=1`,
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,people(name,email),sku,inscription_text&limit=1`,
       { headers },
     );
     let orderInfo = null;
@@ -668,14 +668,16 @@ async function sendCustomerEmail(env, { orderId, kind }) {
 
   const headers = sbHeaders(env);
   const orderRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,customer_name,customer_email,sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,people(name,email),sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
     { headers }
   );
   if (!orderRes.ok) return json({ ok: false, error: "Database error" }, 500);
   const orders = await orderRes.json();
   const order = orders[0];
   if (!order) return json({ ok: false, error: "Order not found" }, 404);
-  if (!order.customer_email) return json({ ok: false, error: "Order has no customer email" }, 400);
+  const customerEmail = order.people?.email;
+  const customerName = order.people?.name;
+  if (!customerEmail) return json({ ok: false, error: "Order has no customer email" }, 400);
 
   // Generate a tracking token if one doesn't exist yet (used by tracking + proof emails).
   let trackingToken = order.tracking_token;
@@ -689,7 +691,7 @@ async function sendCustomerEmail(env, { orderId, kind }) {
   }
 
   const trackUrl = `https://searsmelvin.co.uk/track.html?token=${encodeURIComponent(trackingToken || "")}`;
-  const greeting = order.customer_name ? `Dear ${order.customer_name},` : "Hello,";
+  const greeting = customerName ? `Dear ${customerName},` : "Hello,";
 
   let subject, html;
   if (kind === "proof_ready") {
@@ -726,7 +728,7 @@ async function sendCustomerEmail(env, { orderId, kind }) {
   try {
     await sendResend(env.RESEND_API_KEY, {
       from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
-      to: order.customer_email,
+      to: customerEmail,
       subject,
       html,
     });
@@ -736,8 +738,8 @@ async function sendCustomerEmail(env, { orderId, kind }) {
 
   await logOrderEvents(env, orderId, [{
     event_type: "email_sent",
-    summary: `Sent "${subject}" to ${order.customer_email}`,
-    detail: { kind, to: order.customer_email },
+    summary: `Sent "${subject}" to ${customerEmail}`,
+    detail: { kind, to: customerEmail },
   }]);
 
   return json({ ok: true });

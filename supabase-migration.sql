@@ -151,7 +151,69 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens (token);
 
 -- ============================================================
--- 7. ADMIN ORDER ENHANCEMENTS (events log + admin notes)
+-- 7. PEOPLE (unified retail contact registry)
+-- ============================================================
+-- One row per retail contact, deduped by email.
+-- Every retail inbound (contact / quote / enquiry / appointment) upserts here.
+-- `is_customer` is sticky-true once the person has at least one quote or order.
+-- Partners are NOT stored here; they remain in the `partners` table.
+
+CREATE TABLE IF NOT EXISTS people (
+    id              SERIAL PRIMARY KEY,
+    email           TEXT UNIQUE NOT NULL,
+    name            TEXT,
+    phone           TEXT,
+    is_customer     BOOLEAN DEFAULT FALSE,
+    first_source    TEXT,                     -- 'contact' | 'quote' | 'enquiry' | 'appointment'
+    first_seen_at   TIMESTAMPTZ DEFAULT NOW(),
+    last_seen_at    TIMESTAMPTZ DEFAULT NOW(),
+    notes           TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_people_email ON people (lower(email));
+CREATE INDEX IF NOT EXISTS idx_people_is_customer ON people (is_customer);
+
+-- Link orders to people
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS person_id INTEGER REFERENCES people(id);
+CREATE INDEX IF NOT EXISTS idx_orders_person ON orders (person_id);
+
+-- ------------------------------------------------------------
+-- Backfill: one row per distinct email currently on orders
+-- ------------------------------------------------------------
+INSERT INTO people (email, name, phone, is_customer, first_source, first_seen_at, last_seen_at)
+SELECT
+    lower(customer_email)                    AS email,
+    MIN(customer_name)                       AS name,
+    MIN(customer_phone)                      AS phone,
+    bool_or(order_type IN ('quote','order')) AS is_customer,
+    MIN(order_type)                          AS first_source,
+    MIN(created_at)                          AS first_seen_at,
+    MAX(created_at)                          AS last_seen_at
+FROM orders
+WHERE customer_email IS NOT NULL
+GROUP BY lower(customer_email)
+ON CONFLICT (email) DO NOTHING;
+
+-- Link existing orders to their person row
+UPDATE orders o
+SET person_id = p.id
+FROM people p
+WHERE p.email = lower(o.customer_email)
+  AND o.person_id IS NULL;
+
+-- ------------------------------------------------------------
+-- VERIFICATION GATE (run manually before the DROP COLUMN block)
+--   SELECT COUNT(*) FROM orders
+--   WHERE customer_email IS NOT NULL AND person_id IS NULL;
+--   -- expected: 0
+-- ------------------------------------------------------------
+
+ALTER TABLE orders DROP COLUMN IF EXISTS customer_name;
+ALTER TABLE orders DROP COLUMN IF EXISTS customer_email;
+ALTER TABLE orders DROP COLUMN IF EXISTS customer_phone;
+
+-- ============================================================
+-- 8. ADMIN ORDER ENHANCEMENTS (events log + admin notes)
 -- ============================================================
 
 -- Internal admin-only notes on an order (separate from `notes` which may

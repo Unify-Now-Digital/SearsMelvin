@@ -155,8 +155,9 @@ async function handlePaymentSucceeded(env, pi) {
         // email and create both the invoice and payment records.
         let orderId = null;
         if (email) {
+          const normalisedEmail = email.trim().toLowerCase();
           const orderRes = await fetch(
-            `${env.SUPABASE_URL}/rest/v1/orders?customer_email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1&select=id`,
+            `${env.SUPABASE_URL}/rest/v1/orders?select=id,people!inner(email)&people.email=eq.${encodeURIComponent(normalisedEmail)}&order=created_at.desc&limit=1`,
             { headers: sbHeaders },
           );
           if (orderRes.ok) {
