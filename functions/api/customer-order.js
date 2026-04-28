@@ -78,17 +78,22 @@ async function getPortal(env, portalToken) {
   let quotes = [];
   if (quotesRes.ok) quotes = await quotesRes.json();
 
-  // Fetch orders — by customer_id OR by customer_email
-  let orderFilter = `customer_id=eq.${customer.id}`;
-  if (custEmail) {
-    orderFilter = `or=(customer_id.eq.${customer.id},customer_email.ilike.${encodeURIComponent(custEmail)})`;
-  }
-  const ordersRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?${orderFilter}&select=id,order_number,customer_name,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at&order=created_at.desc&limit=20`,
-    { headers },
-  );
+  // Fetch orders — match by legacy customer_id OR by the linked person's email.
   let orders = [];
-  if (ordersRes.ok) orders = await ordersRes.json();
+  if (custEmail) {
+    const ordersRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people!inner(name,email)&people.email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=20`,
+      { headers },
+    );
+    if (ordersRes.ok) orders = await ordersRes.json();
+  }
+  if (orders.length === 0) {
+    const ordersRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?customer_id=eq.${customer.id}&select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(name,email)&order=created_at.desc&limit=20`,
+      { headers },
+    );
+    if (ordersRes.ok) orders = await ordersRes.json();
+  }
 
   // Build customer-safe response
   return json({
@@ -120,7 +125,7 @@ async function getPortal(env, portalToken) {
       return {
         id: o.id,
         ref: "SM-" + String(o.order_number || "0000"),
-        customerName: o.customer_name,
+        customerName: o.people?.name || null,
         product: o.sku || (config && config.name) || null,
         colour: o.color || (config && config.colour) || null,
         location: o.location || null,
@@ -150,7 +155,7 @@ async function getOrderStatus(env, token) {
   const headers = sbHeaders(env);
 
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,customer_name,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config,people(name,email)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -179,7 +184,7 @@ async function getOrderStatus(env, token) {
     ok: true,
     order: {
       ref: "SM-" + String(order.order_number || "0000"),
-      customerName: order.customer_name,
+      customerName: order.people?.name || null,
       product: order.sku || (config && config.name) || null,
       colour: order.color || (config && config.colour) || null,
       size: config && config.size || null,
@@ -223,18 +228,27 @@ async function sendPortalLink(env, { email }) {
     if (rows.length > 0) customer = rows[0];
   }
 
-  // Also check if there are orders with this email (customer may not be in customers table)
-  const ordersRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?customer_email=ilike.${encodeURIComponent(cleanEmail)}&select=id,customer_name&limit=1`,
-    { headers },
-  );
+  // Also check if there's a person record with this email (and any linked orders).
   let hasOrders = false;
   let customerName = "";
-  if (ordersRes.ok) {
-    const rows = await ordersRes.json();
-    if (rows.length > 0) {
-      hasOrders = true;
-      customerName = rows[0].customer_name || "";
+  let personId = null;
+  const personRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,name&limit=1`,
+    { headers },
+  );
+  if (personRes.ok) {
+    const personRows = await personRes.json();
+    if (personRows.length > 0) {
+      personId = personRows[0].id;
+      customerName = personRows[0].name || "";
+      const ordersRes = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id&limit=1`,
+        { headers },
+      );
+      if (ordersRes.ok) {
+        const ordRows = await ordersRes.json();
+        if (ordRows.length > 0) hasOrders = true;
+      }
     }
   }
 
@@ -265,12 +279,14 @@ async function sendPortalLink(env, { email }) {
     const created = await createRes.json();
     customer = created[0];
 
-    // Link existing orders to this customer
-    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?customer_email=ilike.${encodeURIComponent(cleanEmail)}&customer_id=is.null`, {
-      method: "PATCH",
-      headers: { ...headers, "Prefer": "return=minimal" },
-      body: JSON.stringify({ customer_id: customer.id }),
-    }).catch(() => {});
+    // Link existing orders (matched via person_id) to this customer record.
+    if (personId) {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&customer_id=is.null`, {
+        method: "PATCH",
+        headers: { ...headers, "Prefer": "return=minimal" },
+        body: JSON.stringify({ customer_id: customer.id }),
+      }).catch(() => {});
+    }
   }
 
   // Generate portal token if missing
