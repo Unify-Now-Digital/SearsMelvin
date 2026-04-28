@@ -17,6 +17,8 @@
  * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
  * POST { action: "list-products", token }                → list all products incl. hidden (bypasses RLS)
  * POST { action: "get-product", token, slug }             → fetch one product (with sizes) by slug, incl. hidden
+ * POST { action: "list-order-events", token, orderId }    → fetch chronological event log for an order
+ * POST { action: "send-customer-email", token, orderId, kind } → email customer (proof_ready|tracking|inscription_confirm)
  */
 
 const CORS = {
@@ -65,6 +67,8 @@ export async function onRequest(context) {
   if (action === "resolve-inscription") return resolveInscription(env, data);
   if (action === "list-products") return listProducts(env);
   if (action === "get-product") return getProduct(env, data);
+  if (action === "list-order-events") return listOrderEvents(env, data);
+  if (action === "send-customer-email") return sendCustomerEmail(env, data);
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
@@ -356,24 +360,54 @@ async function getDashboard(env) {
 }
 
 // ==================== LIST ORDERS ====================
-async function listOrders(env, { filter, search }) {
+async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) {
   const headers = sbHeaders(env);
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=id,customer_name,customer_email,sku,color,value,permit_fee,status,stage,location,tracking_token,inscription_text,inscription_status,proof_url,estimated_completion,installation_date,partner_id,created_at,updated_at&order=created_at.desc&limit=100`;
+  const select = [
+    "id", "customer_name", "customer_email", "customer_phone",
+    "sku", "color", "value", "permit_fee", "status", "stage",
+    "location", "tracking_token", "inscription_text", "inscription_status",
+    "proof_url", "proof_uploaded_at", "proof_notes",
+    "estimated_completion", "installation_date",
+    "partner_id", "admin_notes", "product_config", "notes",
+    "edit_token", "order_type", "created_at", "updated_at",
+    "partners(id,name,company,email)"
+  ].join(",");
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=200`;
 
   if (filter && filter !== "all") {
     url += `&stage=eq.${encodeURIComponent(filter)}`;
+  }
+  if (partnerId) {
+    url += `&partner_id=eq.${encodeURIComponent(partnerId)}`;
+  }
+  if (dateFrom) {
+    url += `&created_at=gte.${encodeURIComponent(dateFrom)}`;
+  }
+  if (dateTo) {
+    url += `&created_at=lte.${encodeURIComponent(dateTo)}`;
   }
 
   const res = await fetch(url, { headers });
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
   let orders = await res.json();
 
+  // Decode product_config JSON for line items
+  orders = orders.map(o => {
+    let config = null;
+    if (o.product_config) {
+      try { config = JSON.parse(o.product_config); } catch { /* ignore */ }
+    }
+    return { ...o, product_config: config };
+  });
+
   if (search) {
     const q = search.toLowerCase();
     orders = orders.filter(o =>
       (o.customer_name || "").toLowerCase().includes(q) ||
       (o.customer_email || "").toLowerCase().includes(q) ||
-      (o.sku || "").toLowerCase().includes(q)
+      (o.sku || "").toLowerCase().includes(q) ||
+      (o.location || "").toLowerCase().includes(q) ||
+      String(o.id || "").includes(q)
     );
   }
 
@@ -411,12 +445,20 @@ async function getProduct(env, { slug }) {
 }
 
 // ==================== UPDATE ORDER ====================
-async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate }) {
+async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate, adminNotes }) {
   if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
 
   const headers = sbHeaders(env);
-  const updates = {};
 
+  // Fetch the row first so we can produce a meaningful audit trail.
+  const beforeRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=stage,inscription_text,inscription_status,proof_url,proof_notes,estimated_completion,installation_date,admin_notes&limit=1`,
+    { headers }
+  );
+  const beforeRows = beforeRes.ok ? await beforeRes.json() : [];
+  const before = beforeRows[0] || {};
+
+  const updates = {};
   if (stage !== undefined) updates.stage = stage;
   if (inscriptionText !== undefined) updates.inscription_text = inscriptionText;
   if (inscriptionStatus !== undefined) updates.inscription_status = inscriptionStatus;
@@ -427,6 +469,7 @@ async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionSt
   if (proofNotes !== undefined) updates.proof_notes = proofNotes;
   if (estimatedCompletion !== undefined) updates.estimated_completion = estimatedCompletion;
   if (installationDate !== undefined) updates.installation_date = installationDate;
+  if (adminNotes !== undefined) updates.admin_notes = adminNotes;
   updates.updated_at = new Date().toISOString();
 
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
@@ -438,6 +481,36 @@ async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionSt
   if (!res.ok) return json({ ok: false, error: "Failed to update order" }, 500);
   const rows = await res.json();
   if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
+
+  // Append events for any field that actually changed.
+  const events = [];
+  if (stage !== undefined && stage !== before.stage) {
+    events.push({ event_type: "stage_changed", summary: `Stage: ${before.stage || "—"} → ${stage}`, detail: { from: before.stage, to: stage } });
+  }
+  if (inscriptionText !== undefined && inscriptionText !== before.inscription_text) {
+    events.push({ event_type: "inscription_changed", summary: "Inscription text updated", detail: { from: before.inscription_text, to: inscriptionText } });
+  }
+  if (inscriptionStatus !== undefined && inscriptionStatus !== before.inscription_status) {
+    events.push({ event_type: "inscription_status", summary: `Inscription status: ${before.inscription_status || "—"} → ${inscriptionStatus}`, detail: { from: before.inscription_status, to: inscriptionStatus } });
+  }
+  if (proofUrl !== undefined && proofUrl !== before.proof_url) {
+    events.push({ event_type: "proof_uploaded", summary: proofUrl ? "Proof image uploaded" : "Proof image removed", detail: { url: proofUrl } });
+  }
+  if (proofNotes !== undefined && proofNotes !== before.proof_notes) {
+    events.push({ event_type: "proof_notes_updated", summary: "Proof notes updated", detail: { from: before.proof_notes, to: proofNotes } });
+  }
+  if (estimatedCompletion !== undefined && estimatedCompletion !== before.estimated_completion) {
+    events.push({ event_type: "dates_updated", summary: `Estimated completion: ${before.estimated_completion || "—"} → ${estimatedCompletion || "—"}`, detail: { field: "estimated_completion", from: before.estimated_completion, to: estimatedCompletion } });
+  }
+  if (installationDate !== undefined && installationDate !== before.installation_date) {
+    events.push({ event_type: "dates_updated", summary: `Installation date: ${before.installation_date || "—"} → ${installationDate || "—"}`, detail: { field: "installation_date", from: before.installation_date, to: installationDate } });
+  }
+  if (adminNotes !== undefined && adminNotes !== before.admin_notes) {
+    events.push({ event_type: "notes_updated", summary: "Admin notes updated", detail: { from: before.admin_notes, to: adminNotes } });
+  }
+  if (events.length > 0) {
+    await logOrderEvents(env, orderId, events);
+  }
 
   return json({ ok: true, order: rows[0] });
 }
@@ -553,6 +626,165 @@ async function resolveInscription(env, { requestId, accept }) {
   }
 
   return json({ ok: true });
+}
+
+// ==================== ORDER EVENTS LOG ====================
+async function logOrderEvents(env, orderId, events) {
+  if (!events || events.length === 0) return;
+  const headers = sbHeaders(env);
+  const rows = events.map(e => ({
+    order_id: orderId,
+    event_type: e.event_type,
+    summary: e.summary,
+    detail: e.detail || null,
+  }));
+  try {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/order_events`, {
+      method: "POST",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify(rows),
+    });
+  } catch (err) {
+    // Non-fatal: don't block the user-visible action if logging fails.
+    console.error("Failed to log order events:", err);
+  }
+}
+
+async function listOrderEvents(env, { orderId }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  const headers = sbHeaders(env);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/order_events?order_id=eq.${encodeURIComponent(orderId)}&select=*&order=created_at.desc&limit=200`,
+    { headers }
+  );
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  return json({ ok: true, events: await res.json() });
+}
+
+// ==================== SEND CUSTOMER EMAIL ====================
+async function sendCustomerEmail(env, { orderId, kind }) {
+  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  if (!env.RESEND_API_KEY) return json({ ok: false, error: "Email not configured" }, 500);
+
+  const headers = sbHeaders(env);
+  const orderRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,customer_name,customer_email,sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
+    { headers }
+  );
+  if (!orderRes.ok) return json({ ok: false, error: "Database error" }, 500);
+  const orders = await orderRes.json();
+  const order = orders[0];
+  if (!order) return json({ ok: false, error: "Order not found" }, 404);
+  if (!order.customer_email) return json({ ok: false, error: "Order has no customer email" }, 400);
+
+  // Generate a tracking token if one doesn't exist yet (used by tracking + proof emails).
+  let trackingToken = order.tracking_token;
+  if (!trackingToken && (kind === "tracking" || kind === "proof_ready" || kind === "inscription_confirm")) {
+    trackingToken = generateToken(32);
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({ tracking_token: trackingToken }),
+    });
+  }
+
+  const trackUrl = `https://searsmelvin.co.uk/track.html?token=${encodeURIComponent(trackingToken || "")}`;
+  const greeting = order.customer_name ? `Dear ${order.customer_name},` : "Hello,";
+
+  let subject, html;
+  if (kind === "proof_ready") {
+    subject = "Your memorial proof is ready to review";
+    html = adminEmailHtml(
+      "Your proof is ready",
+      `${greeting}<br><br>Your memorial proof is ready for review. Please follow the link below to view it and let us know if you'd like any changes before we begin production.`,
+      [{ label: "Review your proof", href: trackUrl }],
+      order.proof_notes ? `<p style="margin-top:1rem;color:#666;font-size:14px;"><em>Note from our team:</em> ${escapeHtml(order.proof_notes)}</p>` : ""
+    );
+  } else if (kind === "tracking") {
+    subject = "Your order tracking link";
+    html = adminEmailHtml(
+      "Track your order",
+      `${greeting}<br><br>You can follow the progress of your memorial at the link below.`,
+      [{ label: "Track my order", href: trackUrl }],
+      ""
+    );
+  } else if (kind === "inscription_confirm") {
+    subject = "Please confirm your inscription";
+    const inscBlock = order.inscription_text
+      ? `<div style="background:#FAF8F5;border-left:3px solid #8B7355;padding:1rem 1.25rem;margin:1.5rem 0;font-style:italic;white-space:pre-wrap;">${escapeHtml(order.inscription_text)}</div>`
+      : `<p style="color:#b44;">No inscription is currently on file.</p>`;
+    html = adminEmailHtml(
+      "Please confirm your inscription",
+      `${greeting}<br><br>Please review and confirm the inscription wording below before we engrave your memorial. If anything needs changing, you can reply to this email or request a change from your tracking page.`,
+      [{ label: "Open tracking page", href: trackUrl }],
+      inscBlock
+    );
+  } else {
+    return json({ ok: false, error: "Unknown email kind" }, 400);
+  }
+
+  try {
+    await sendResend(env.RESEND_API_KEY, {
+      from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+      to: order.customer_email,
+      subject,
+      html,
+    });
+  } catch (err) {
+    return json({ ok: false, error: "Email failed: " + err.message }, 500);
+  }
+
+  await logOrderEvents(env, orderId, [{
+    event_type: "email_sent",
+    summary: `Sent "${subject}" to ${order.customer_email}`,
+    detail: { kind, to: order.customer_email },
+  }]);
+
+  return json({ ok: true });
+}
+
+function adminEmailHtml(title, body, buttons, extraHtml) {
+  const buttonsHtml = (buttons || []).map(b =>
+    `<a href="${b.href}" style="display:inline-block;padding:0.85rem 1.75rem;background:#2C2C2C;color:#fff;text-decoration:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.02em;margin-right:0.5rem;">${b.label}</a>`
+  ).join("");
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#FAF8F5;font-family:'DM Sans',-apple-system,sans-serif;color:#1a1a1a;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F5;padding:2rem 1rem;">
+      <tr><td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;">
+          <tr><td style="padding:2rem 2rem 1rem;border-bottom:1px solid #E0DCD5;">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;color:#2C2C2C;">Sears Melvin <span style="color:#8B7355;font-weight:300;">Memorials</span></div>
+          </td></tr>
+          <tr><td style="padding:2rem;">
+            <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.75rem;color:#2C2C2C;margin:0 0 1rem;">${title}</h1>
+            <p style="font-size:15px;line-height:1.6;color:#1a1a1a;margin:0 0 1.5rem;">${body}</p>
+            ${extraHtml || ""}
+            <div style="margin-top:1.5rem;">${buttonsHtml}</div>
+          </td></tr>
+          <tr><td style="padding:1.5rem 2rem;background:#FAF8F5;border-top:1px solid #E0DCD5;font-size:12px;color:#666;">
+            Sears Melvin Memorials · 020 3835 2548 · info@searsmelvin.co.uk
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body></html>`;
+}
+
+async function sendResend(apiKey, { from, to, subject, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, subject, html }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // ==================== HELPERS ====================

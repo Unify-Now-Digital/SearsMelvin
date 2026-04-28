@@ -136,6 +136,52 @@
         .edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
         .search-input { margin-bottom: 1rem; }
 
+        /* Order list (expandable) */
+        .order-card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; }
+        .order-card + .order-card { margin-top: 0.6rem; }
+        .order-summary { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; cursor: pointer; flex-wrap: wrap; }
+        .order-summary:hover { background: var(--color-cream); }
+        .order-summary .chev { width: 16px; height: 16px; transition: transform 0.2s; flex-shrink: 0; color: var(--color-text-muted); }
+        .order-card.open .chev { transform: rotate(90deg); }
+        .order-ref { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; color: var(--color-stone); margin-right: 0.5rem; }
+        .order-cust { font-weight: 500; color: var(--color-stone); }
+        .order-sub { font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+        .order-summary-main { flex: 1; min-width: 200px; }
+        .order-summary-meta { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; font-size: 0.85rem; color: var(--color-text-muted); }
+        .order-summary-meta strong { color: var(--color-stone); font-family: var(--font-display); font-size: 1.05rem; font-weight: 500; }
+        .stage-chip { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .stage-chip.s-quote_received, .stage-chip.s-deposit_paid, .stage-chip.s-design_in_progress, .stage-chip.s-proof_ready { background: #FFF3CD; color: #856404; }
+        .stage-chip.s-inscription_approved, .stage-chip.s-in_production, .stage-chip.s-installation_scheduled { background: #D4EDDA; color: #155724; }
+        .stage-chip.s-completed { background: #2C2C2C; color: #fff; }
+        .order-detail { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--color-border); }
+        .order-card.open .order-detail { display: block; }
+        .order-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding-top: 1rem; }
+        .info-block { background: var(--color-cream); border-radius: 8px; padding: 0.85rem 1rem; }
+        .info-block h4 { font-family: var(--font-body); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.5rem; }
+        .info-block p { font-size: 0.85rem; color: var(--color-text); margin: 0.15rem 0; word-break: break-word; }
+        .info-block a { color: var(--color-accent); text-decoration: underline; }
+        .info-block .row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.85rem; padding: 0.15rem 0; }
+        .info-block .row.total { border-top: 1px solid var(--color-border); margin-top: 0.4rem; padding-top: 0.4rem; font-weight: 600; }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0.5rem; }
+        .qa-btn { padding: 0.4rem 0.85rem; background: white; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.78rem; cursor: pointer; font-family: var(--font-body); color: var(--color-stone); display: inline-flex; align-items: center; gap: 0.35rem; }
+        .qa-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+        .qa-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .qa-btn.primary { background: var(--color-stone); color: white; border-color: var(--color-stone); }
+        .qa-btn.primary:hover { background: var(--color-stone-light); color: white; }
+        .qa-btn.success { background: var(--color-success); color: white; border-color: var(--color-success); }
+        .qa-btn.success:hover { color: white; opacity: 0.9; }
+        .timeline { margin-top: 0.5rem; padding-left: 1rem; border-left: 2px solid var(--color-border); }
+        .timeline-event { position: relative; padding: 0.5rem 0 0.5rem 0.75rem; font-size: 0.82rem; }
+        .timeline-event::before { content: ""; position: absolute; left: -1.4rem; top: 0.85rem; width: 9px; height: 9px; border-radius: 50%; background: var(--color-accent); border: 2px solid white; }
+        .timeline-event .te-summary { color: var(--color-stone); }
+        .timeline-event .te-time { font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.1rem; }
+        .timeline-empty { color: var(--color-text-muted); font-size: 0.82rem; padding: 0.5rem 0; }
+        .order-filters-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; align-items: center; }
+        .order-filters-row label { font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .order-filters-row input, .order-filters-row select { padding: 0.4rem 0.6rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.8rem; font-family: var(--font-body); }
+        .save-status { font-size: 0.75rem; margin-left: 0.5rem; color: var(--color-success); }
+        .save-status.error { color: var(--color-error); }
+
         /* Loading */
         .loading { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 
@@ -147,6 +193,8 @@
             .partner-card { flex-direction: column; align-items: flex-start; }
             .partner-stats { width: 100%; justify-content: flex-start; }
             .partner-actions { width: 100%; }
+            .order-grid { grid-template-columns: 1fr; }
+            .order-summary-meta { width: 100%; justify-content: flex-start; }
             .btn-approve, .btn-decline { flex: 1; text-align: center; }
             .admin-tabs { overflow-x: auto; }
             .orders-table { display: block; overflow-x: auto; }
@@ -255,7 +303,7 @@
                 <div id="inscriptionList" class="partner-list"></div>
             </div>
 
-            <h3 style="font-size:1.2rem;margin-bottom:0.75rem;">All Orders</h3>
+            <h3 style="font-size:1.2rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;">All Orders<span id="ordersAutoRefreshDot" title="Auto-refreshes every 30s when this tab is active" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-success);opacity:0.6;"></span></h3>
             <div class="filter-bar">
                 <button class="filter-pill active" onclick="filterOrders('all', this)">All</button>
                 <button class="filter-pill" onclick="filterOrders('quote_received', this)">Quote</button>
@@ -265,8 +313,19 @@
                 <button class="filter-pill" onclick="filterOrders('in_production', this)">Production</button>
                 <button class="filter-pill" onclick="filterOrders('completed', this)">Completed</button>
             </div>
-            <input type="text" class="search-input" id="orderSearchInput" placeholder="Search orders..." oninput="debounceOrderSearch()" style="width:100%;padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-bottom:1rem;">
-            <div id="orderList" class="partner-list">
+            <div class="order-filters-row">
+                <label>Partner</label>
+                <select id="orderPartnerFilter" onchange="loadAdminOrders()">
+                    <option value="">All partners</option>
+                </select>
+                <label>From</label>
+                <input type="date" id="orderDateFrom" onchange="loadAdminOrders()">
+                <label>To</label>
+                <input type="date" id="orderDateTo" onchange="loadAdminOrders()">
+                <button class="qa-btn" onclick="resetOrderFilters()" style="margin-left:auto;">Reset</button>
+            </div>
+            <input type="text" class="search-input" id="orderSearchInput" placeholder="Search by name, email, SKU, location, or order #" oninput="debounceOrderSearch()" style="width:100%;padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-bottom:1rem;">
+            <div id="orderList">
                 <div class="loading">Loading orders...</div>
             </div>
         </div>
@@ -279,16 +338,6 @@
             </div>
         </div>
 
-    <!-- Order Edit Modal -->
-    <div class="modal-overlay" id="orderEditModal">
-        <div class="modal-content" style="background:white;border-radius:12px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;margin:2rem;">
-            <div style="padding:1.5rem 1.5rem 0;display:flex;justify-content:space-between;align-items:center;">
-                <h2 style="font-family:var(--font-display);font-size:1.4rem;" id="editModalTitle">Edit Order</h2>
-                <button onclick="closeEditModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-text-muted);">&times;</button>
-            </div>
-            <div style="padding:1.5rem;" id="editModalBody"></div>
-        </div>
-    </div>
     </div>
 </div>
 
@@ -420,6 +469,7 @@
         document.getElementById('dashboardScreen').style.display = 'block';
         loadDashboard();
         loadPartners();
+        startOrdersAutoRefresh();
     }
 
     async function loadDashboard() {
@@ -626,13 +676,37 @@
         loadAdminOrders();
     }
 
+    var STAGE_LABELS = {
+        quote_received: 'Quote Received', deposit_paid: 'Deposit Paid',
+        design_in_progress: 'Design', proof_ready: 'Proof Ready',
+        inscription_approved: 'Approved', in_production: 'Production',
+        installation_scheduled: 'Installation', completed: 'Completed'
+    };
+    var INSC_LABELS = {
+        pending: 'Pending', awaiting_approval: 'Awaiting Customer Approval',
+        approved: 'Approved', change_requested: 'Change Requested'
+    };
+    var STAGE_KEYS = ['quote_received','deposit_paid','design_in_progress','proof_ready','inscription_approved','in_production','installation_scheduled','completed'];
+
+    var ordersById = {};       // cached last-fetched orders by id
+    var openOrderIds = new Set(); // ids the user has expanded; preserved across reloads
+
     async function loadAdminOrders() {
         try {
+            populatePartnerFilter();
             var search = document.getElementById('orderSearchInput') ? document.getElementById('orderSearchInput').value.trim() : '';
+            var partnerSel = document.getElementById('orderPartnerFilter');
+            var partnerId = partnerSel ? partnerSel.value : '';
+            var dateFrom = document.getElementById('orderDateFrom').value;
+            var dateTo = document.getElementById('orderDateTo').value;
+            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search };
+            if (partnerId) body.partnerId = parseInt(partnerId, 10);
+            if (dateFrom) body.dateFrom = dateFrom;
+            if (dateTo) body.dateTo = dateTo + 'T23:59:59';
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'list-orders', token: adminToken, filter: orderFilter, search: search })
+                body: JSON.stringify(body)
             });
             var data = await res.json();
             if (!data.ok) return;
@@ -642,20 +716,38 @@
         }
     }
 
-    var STAGE_LABELS = {
-        quote_received: 'Quote Received', deposit_paid: 'Deposit Paid',
-        design_in_progress: 'Design', proof_ready: 'Proof Ready',
-        inscription_approved: 'Approved', in_production: 'Production',
-        installation_scheduled: 'Installation', completed: 'Completed'
-    };
-    var STAGE_CLASSES = {
-        quote_received: 'pending', deposit_paid: 'pending', design_in_progress: 'pending',
-        proof_ready: 'pending', inscription_approved: 'approved', in_production: 'approved',
-        installation_scheduled: 'approved', completed: 'approved'
-    };
+    function populatePartnerFilter() {
+        var sel = document.getElementById('orderPartnerFilter');
+        if (!sel || sel.dataset.populated === '1') return;
+        if (!allPartners || allPartners.length === 0) return;
+        var current = sel.value;
+        var html = '<option value="">All partners</option>';
+        allPartners.forEach(function(p) {
+            html += '<option value="' + p.id + '">' + esc(p.company || p.name || ('Partner #' + p.id)) + '</option>';
+        });
+        sel.innerHTML = html;
+        sel.value = current;
+        sel.dataset.populated = '1';
+    }
+
+    function resetOrderFilters() {
+        orderFilter = 'all';
+        document.querySelectorAll('#section-orders .filter-pill').forEach(function(b, i) {
+            b.classList.toggle('active', i === 0);
+        });
+        var partnerSel = document.getElementById('orderPartnerFilter');
+        if (partnerSel) partnerSel.value = '';
+        document.getElementById('orderDateFrom').value = '';
+        document.getElementById('orderDateTo').value = '';
+        document.getElementById('orderSearchInput').value = '';
+        loadAdminOrders();
+    }
 
     function renderAdminOrders(orders) {
         var container = document.getElementById('orderList');
+        ordersById = {};
+        orders.forEach(function(o) { ordersById[o.id] = o; });
+
         if (orders.length === 0) {
             container.innerHTML = '<div class="empty-state">No orders found.</div>';
             return;
@@ -664,142 +756,265 @@
         container.innerHTML = orders.map(function(o) {
             var stage = o.stage || 'quote_received';
             var stageLabel = STAGE_LABELS[stage] || stage;
-            var stageClass = STAGE_CLASSES[stage] || 'pending';
             var ref = 'SM-' + String(o.id).padStart(4, '0');
+            var partnerLabel = o.partners ? (o.partners.company || o.partners.name) : '';
+            var isOpen = openOrderIds.has(o.id);
 
-            return '<div class="partner-card" style="cursor:pointer;" onclick="openEditModal(' + o.id + ')">'
-                + '<div class="partner-info">'
-                + '<div class="partner-name">' + esc(ref) + ' &mdash; ' + esc(o.customer_name) + ' <span class="status ' + stageClass + '">' + esc(stageLabel) + '</span></div>'
-                + '<div class="partner-company">' + esc(o.sku || '') + (o.color ? ' &middot; ' + esc(o.color) : '') + '</div>'
-                + '<div class="partner-meta">' + esc(o.customer_email || '') + ' &middot; ' + formatDate(o.created_at)
-                + (o.tracking_token ? ' &middot; <span style="color:var(--color-success);">Tracking active</span>' : '')
+            return '<div class="order-card' + (isOpen ? ' open' : '') + '" id="ord-' + o.id + '">'
+                + '<div class="order-summary" onclick="toggleOrderExpand(' + o.id + ')">'
+                +   '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'
+                +   '<div class="order-summary-main">'
+                +     '<div><span class="order-ref">' + esc(ref) + '</span> <span class="order-cust">' + esc(o.customer_name || '\u2014') + '</span> <span class="stage-chip s-' + esc(stage) + '">' + esc(stageLabel) + '</span></div>'
+                +     '<div class="order-sub">' + esc(o.sku || '') + (o.color ? ' &middot; ' + esc(o.color) : '') + (o.location ? ' &middot; ' + esc(o.location) : '') + (partnerLabel ? ' &middot; via ' + esc(partnerLabel) : '') + '</div>'
+                +   '</div>'
+                +   '<div class="order-summary-meta">'
+                +     '<span>' + formatDate(o.created_at) + '</span>'
+                +     '<strong>' + (o.value ? formatPrice(o.value) : '\u2014') + '</strong>'
+                +   '</div>'
                 + '</div>'
-                + '</div>'
-                + '<div class="partner-stats">'
-                + '<div class="partner-stat"><div class="ps-value">' + (o.value ? formatPrice(o.value) : '\u2014') + '</div><div class="ps-label">Value</div></div>'
-                + '</div>'
+                + '<div class="order-detail" id="ord-detail-' + o.id + '">' + (isOpen ? renderOrderDetail(o) : '') + '</div>'
                 + '</div>';
         }).join('');
+
+        // Lazy-load events for any pre-opened cards (after a refresh)
+        openOrderIds.forEach(function(id) {
+            if (ordersById[id]) loadOrderEvents(id);
+        });
     }
 
-    // ==================== ORDER EDIT MODAL ====================
-    var editingOrderId = null;
+    function toggleOrderExpand(orderId) {
+        var card = document.getElementById('ord-' + orderId);
+        if (!card) return;
+        if (card.classList.contains('open')) {
+            card.classList.remove('open');
+            openOrderIds.delete(orderId);
+            return;
+        }
+        card.classList.add('open');
+        openOrderIds.add(orderId);
+        var order = ordersById[orderId];
+        if (!order) return;
+        document.getElementById('ord-detail-' + orderId).innerHTML = renderOrderDetail(order);
+        loadOrderEvents(orderId);
+    }
 
-    async function openEditModal(orderId) {
-        editingOrderId = orderId;
-        var modal = document.getElementById('orderEditModal');
-        modal.classList.add('active');
-        document.getElementById('editModalTitle').textContent = 'SM-' + String(orderId).padStart(4, '0');
-        document.getElementById('editModalBody').innerHTML = '<div class="loading">Loading...</div>';
+    function renderOrderDetail(o) {
+        var stage = o.stage || 'quote_received';
+        var stageOptions = STAGE_KEYS.map(function(s) {
+            return '<option value="' + s + '"' + (stage === s ? ' selected' : '') + '>' + (STAGE_LABELS[s] || s) + '</option>';
+        }).join('');
+        var inscOptions = Object.keys(INSC_LABELS).map(function(s) {
+            return '<option value="' + s + '"' + (o.inscription_status === s ? ' selected' : '') + '>' + INSC_LABELS[s] + '</option>';
+        }).join('');
 
-        // Fetch order details
+        // Customer panel
+        var custPhone = o.customer_phone ? '<p>' + esc(o.customer_phone) + '</p>' : '';
+        var custEmail = o.customer_email ? '<p><a href="mailto:' + esc(o.customer_email) + '">' + esc(o.customer_email) + '</a></p>' : '';
+        var locBlock = o.location ? '<p style="color:var(--color-text-muted);font-size:0.78rem;margin-top:0.4rem;">' + esc(o.location) + '</p>' : '';
+        var custBlock = '<div class="info-block"><h4>Customer</h4>'
+            + '<p style="font-weight:600;">' + esc(o.customer_name || '\u2014') + '</p>'
+            + custEmail + custPhone + locBlock
+            + '</div>';
+
+        // Partner panel
+        var partnerBlock;
+        if (o.partners) {
+            partnerBlock = '<div class="info-block"><h4>Partner</h4>'
+                + '<p style="font-weight:600;">' + esc(o.partners.company || o.partners.name || '\u2014') + '</p>'
+                + (o.partners.name && o.partners.company ? '<p style="font-size:0.78rem;color:var(--color-text-muted);">' + esc(o.partners.name) + '</p>' : '')
+                + (o.partners.email ? '<p><a href="mailto:' + esc(o.partners.email) + '">' + esc(o.partners.email) + '</a></p>' : '')
+                + '</div>';
+        } else {
+            partnerBlock = '<div class="info-block"><h4>Partner</h4><p style="color:var(--color-text-muted);">Direct customer</p></div>';
+        }
+
+        // Payment / line items panel
+        var configLines = '';
+        var cfg = o.product_config || {};
+        if (cfg.size) configLines += '<div class="row"><span>Size</span><span>' + esc(cfg.size) + '</span></div>';
+        if (Array.isArray(cfg.addons) && cfg.addons.length) {
+            cfg.addons.forEach(function(a) {
+                var label = typeof a === 'string' ? a : (a.name || a.slug || 'Add-on');
+                var price = (a && a.price != null) ? formatPrice(a.price) : '';
+                configLines += '<div class="row"><span>+ ' + esc(label) + '</span><span>' + price + '</span></div>';
+            });
+        }
+        if (cfg.inscription) {
+            configLines += '<div class="row"><span>Inscription</span><span style="font-size:0.75rem;color:var(--color-text-muted);">' + esc(String(cfg.inscription).slice(0, 24)) + (String(cfg.inscription).length > 24 ? '\u2026' : '') + '</span></div>';
+        }
+        var permitRow = (o.permit_fee && parseFloat(o.permit_fee) > 0) ? '<div class="row"><span>Permit fee</span><span>' + formatPrice(o.permit_fee) + '</span></div>' : '';
+        var paid = o.status === 'partial' || o.status === 'completed';
+        var fullyPaid = o.status === 'completed';
+        var depositRow = (paid && o.value) ? '<div class="row"><span>50% deposit</span><span>' + formatPrice(parseFloat(o.value) * 0.5) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
+        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(parseFloat(o.value) * 0.5 + parseFloat(o.permit_fee || 0)) + '</span></div>' : '';
+        var paymentBlock = '<div class="info-block"><h4>Payment ' + (fullyPaid ? '<span style="color:var(--color-success);font-size:0.7rem;">paid in full</span>' : paid ? '<span style="color:var(--color-success);font-size:0.7rem;">deposit paid</span>' : '<span style="color:var(--color-text-muted);font-size:0.7rem;">unpaid</span>') + '</h4>'
+            + '<div class="row"><span>Base</span><span>' + (o.value ? formatPrice(o.value) : '\u2014') + '</span></div>'
+            + configLines
+            + permitRow
+            + depositRow
+            + balanceRow
+            + '<div class="row total"><span>Total</span><span>' + (o.value ? formatPrice(parseFloat(o.value) + parseFloat(o.permit_fee || 0)) : '\u2014') + '</span></div>'
+            + '</div>';
+
+        // Quick actions
+        var nextStage = STAGE_KEYS[Math.min(STAGE_KEYS.indexOf(stage) + 1, STAGE_KEYS.length - 1)];
+        var nextStageLabel = STAGE_LABELS[nextStage];
+        var trackingLinkHtml = o.tracking_token
+            ? '<div class="tracking-link" id="trackingLink-' + o.id + '">' + location.origin + '/track?token=' + esc(o.tracking_token) + '<button class="btn-copy" onclick="copyTrackingLink(' + o.id + ')">Copy</button></div>'
+            : '<button class="qa-btn" id="genTrackingBtn-' + o.id + '" onclick="generateTrackingToken(' + o.id + ')">Generate tracking link</button>';
+
+        var quickActions = '<div class="quick-actions">'
+            + (nextStage !== stage ? '<button class="qa-btn primary" onclick="quickAdvanceStage(' + o.id + ',\'' + nextStage + '\', this)">Advance to ' + esc(nextStageLabel) + ' \u2192</button>' : '')
+            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'proof_ready\', this)" ' + (o.proof_url ? '' : 'disabled title="Add a proof URL first"') + '>Email proof to customer</button>'
+            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'tracking\', this)">Email tracking link</button>'
+            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'inscription_confirm\', this)" ' + (o.inscription_text ? '' : 'disabled title="Add inscription text first"') + '>Request inscription confirmation</button>'
+            + '</div>';
+
+        // Editable fields
+        var editForm = '<div class="edit-row" style="margin-top:0.5rem;">'
+            + '<div class="edit-field"><label>Stage</label><select id="ord-stage-' + o.id + '" onchange="inlineSaveOrder(' + o.id + ', \'stage\', this.value, this)">' + stageOptions + '</select></div>'
+            + '<div class="edit-field"><label>Inscription Status</label><select id="ord-inscstatus-' + o.id + '" onchange="inlineSaveOrder(' + o.id + ', \'inscriptionStatus\', this.value, this)">' + inscOptions + '</select></div>'
+            + '</div>'
+            + '<div class="edit-field"><label>Inscription Text</label>'
+            +   '<textarea id="ord-insc-' + o.id + '" onblur="inlineSaveOrder(' + o.id + ', \'inscriptionText\', this.value, this)" placeholder="Enter inscription...">' + esc(o.inscription_text || '') + '</textarea>'
+            + '</div>'
+            + '<div class="edit-row">'
+            +   '<div class="edit-field"><label>Proof Image URL</label><input type="url" id="ord-proofurl-' + o.id + '" value="' + esc(o.proof_url || '') + '" placeholder="https://..." onblur="inlineSaveOrder(' + o.id + ', \'proofUrl\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Proof Notes (visible to customer)</label><input type="text" id="ord-proofnotes-' + o.id + '" value="' + esc(o.proof_notes || '') + '" placeholder="e.g. Please review the layout..." onblur="inlineSaveOrder(' + o.id + ', \'proofNotes\', this.value, this)"></div>'
+            + '</div>'
+            + '<div class="edit-row">'
+            +   '<div class="edit-field"><label>Estimated Completion</label><input type="text" id="ord-estcomp-' + o.id + '" value="' + esc(o.estimated_completion || '') + '" placeholder="e.g. Mid April 2026" onblur="inlineSaveOrder(' + o.id + ', \'estimatedCompletion\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Installation Date</label><input type="text" id="ord-instdate-' + o.id + '" value="' + esc(o.installation_date || '') + '" placeholder="e.g. 20 April 2026" onblur="inlineSaveOrder(' + o.id + ', \'installationDate\', this.value, this)"></div>'
+            + '</div>'
+            + '<div class="edit-field"><label>Internal Admin Notes (not shown to customer)</label>'
+            +   '<textarea id="ord-adminnotes-' + o.id + '" onblur="inlineSaveOrder(' + o.id + ', \'adminNotes\', this.value, this)" placeholder="Notes for the admin team only...">' + esc(o.admin_notes || '') + '</textarea>'
+            + '</div>'
+            + '<div class="edit-field"><label>Customer Tracking Link</label><div id="trackWrap-' + o.id + '">' + trackingLinkHtml + '</div></div>';
+
+        return '<div class="order-grid">' + custBlock + partnerBlock + paymentBlock + '</div>'
+            + quickActions
+            + editForm
+            + '<h4 style="margin-top:1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);">Activity</h4>'
+            + '<div class="timeline" id="ord-timeline-' + o.id + '"><div class="timeline-empty">Loading\u2026</div></div>';
+    }
+
+    async function loadOrderEvents(orderId) {
         try {
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'list-orders', token: adminToken, search: '' })
+                body: JSON.stringify({ action: 'list-order-events', token: adminToken, orderId: orderId })
             });
             var data = await res.json();
-            if (!data.ok) throw new Error('Failed');
-            var order = data.orders.find(function(o) { return o.id === orderId; });
-            if (!order) throw new Error('Order not found');
-            renderEditForm(order);
+            var el = document.getElementById('ord-timeline-' + orderId);
+            if (!el) return;
+            if (!data.ok || !data.events || data.events.length === 0) {
+                el.innerHTML = '<div class="timeline-empty">No activity yet.</div>';
+                return;
+            }
+            el.innerHTML = data.events.map(function(ev) {
+                return '<div class="timeline-event"><div class="te-summary">' + esc(ev.summary) + '</div><div class="te-time">' + formatDateTime(ev.created_at) + '</div></div>';
+            }).join('');
         } catch (err) {
-            document.getElementById('editModalBody').innerHTML = '<p style="color:var(--color-error);">Failed to load order.</p>';
+            // silent
         }
     }
 
-    function closeEditModal() {
-        document.getElementById('orderEditModal').classList.remove('active');
-        editingOrderId = null;
+    var inlineSaveTimers = {};
+    async function inlineSaveOrder(orderId, field, value, el) {
+        var key = orderId + ':' + field;
+        clearTimeout(inlineSaveTimers[key]);
+        inlineSaveTimers[key] = setTimeout(async function() {
+            var body = { action: 'update-order', token: adminToken, orderId: orderId };
+            body[field] = (value === '' && field !== 'inscriptionText' && field !== 'adminNotes' && field !== 'proofNotes') ? null : value;
+            try {
+                var res = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                var data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Save failed');
+                if (data.order) {
+                    ordersById[orderId] = Object.assign({}, ordersById[orderId], data.order, { partners: ordersById[orderId] && ordersById[orderId].partners });
+                }
+                showFieldStatus(el, 'Saved', false);
+                loadOrderEvents(orderId);
+                // If stage changed, refresh the chip in the summary header.
+                if (field === 'stage') {
+                    var card = document.getElementById('ord-' + orderId);
+                    if (card) {
+                        var chip = card.querySelector('.stage-chip');
+                        if (chip) {
+                            chip.textContent = STAGE_LABELS[value] || value;
+                            chip.className = 'stage-chip s-' + value;
+                        }
+                    }
+                    loadDashboard();
+                }
+            } catch (err) {
+                showFieldStatus(el, err.message, true);
+            }
+        }, field === 'stage' || field === 'inscriptionStatus' ? 0 : 400);
     }
 
-    function renderEditForm(order) {
-        var stages = ['quote_received','deposit_paid','design_in_progress','proof_ready','inscription_approved','in_production','installation_scheduled','completed'];
-        var inscStatuses = ['pending','awaiting_approval','approved','change_requested'];
-
-        var stageOptions = stages.map(function(s) {
-            return '<option value="' + s + '"' + (order.stage === s ? ' selected' : '') + '>' + (STAGE_LABELS[s] || s) + '</option>';
-        }).join('');
-
-        var inscOptions = inscStatuses.map(function(s) {
-            var labels = { pending: 'Pending', awaiting_approval: 'Awaiting Customer Approval', approved: 'Approved', change_requested: 'Change Requested' };
-            return '<option value="' + s + '"' + (order.inscription_status === s ? ' selected' : '') + '>' + (labels[s] || s) + '</option>';
-        }).join('');
-
-        var html = '<div class="edit-field"><label>Order Stage</label>'
-            + '<select id="editStage">' + stageOptions + '</select></div>'
-            + '<div class="edit-field"><label>Inscription Text</label>'
-            + '<textarea id="editInscription" placeholder="Enter inscription...">' + esc(order.inscription_text || '') + '</textarea></div>'
-            + '<div class="edit-row">'
-            + '<div class="edit-field"><label>Inscription Status</label><select id="editInscStatus">' + inscOptions + '</select></div>'
-            + '<div class="edit-field"><label>Proof Image URL</label><input type="url" id="editProofUrl" value="' + esc(order.proof_url || '') + '" placeholder="https://..."></div>'
-            + '</div>'
-            + '<div class="edit-field"><label>Proof Notes (visible to customer)</label>'
-            + '<input type="text" id="editProofNotes" value="' + esc(order.proof_notes || '') + '" placeholder="e.g. Please review the layout..."></div>'
-            + '<div class="edit-row">'
-            + '<div class="edit-field"><label>Estimated Completion</label><input type="text" id="editEstCompletion" value="' + esc(order.estimated_completion || '') + '" placeholder="e.g. Mid April 2026"></div>'
-            + '<div class="edit-field"><label>Installation Date</label><input type="text" id="editInstallDate" value="' + esc(order.installation_date || '') + '" placeholder="e.g. 20 April 2026"></div>'
-            + '</div>';
-
-        // Tracking link
-        html += '<div class="edit-field"><label>Customer Tracking Link</label>';
-        if (order.tracking_token) {
-            html += '<div class="tracking-link" id="trackingLink">' + location.origin + '/track?token=' + esc(order.tracking_token) + '<button class="btn-copy" onclick="copyTrackingLink()">Copy</button></div>';
-        } else {
-            html += '<button class="btn-approve" id="genTrackingBtn" onclick="generateTrackingToken(' + order.id + ')">Generate Tracking Link</button>';
-        }
-        html += '</div>';
-
-        html += '<div class="edit-actions">'
-            + '<button class="btn-decline" onclick="closeEditModal()">Cancel</button>'
-            + '<button class="btn-approve" id="saveOrderBtn" onclick="saveOrder()">Save Changes</button>'
-            + '</div>';
-
-        document.getElementById('editModalBody').innerHTML = html;
+    function showFieldStatus(el, msg, isError) {
+        if (!el || !el.parentNode) return;
+        var existing = el.parentNode.querySelector('.save-status');
+        if (existing) existing.remove();
+        var span = document.createElement('span');
+        span.className = 'save-status' + (isError ? ' error' : '');
+        span.textContent = msg;
+        el.parentNode.appendChild(span);
+        setTimeout(function() { if (span.parentNode) span.remove(); }, 2000);
     }
 
-    async function saveOrder() {
-        var btn = document.getElementById('saveOrderBtn');
+    async function quickAdvanceStage(orderId, newStage, btn) {
         btn.disabled = true;
-        btn.textContent = 'Saving...';
-
+        var orig = btn.textContent;
+        btn.textContent = 'Saving\u2026';
         try {
-            var body = {
-                action: 'update-order',
-                token: adminToken,
-                orderId: editingOrderId,
-                stage: document.getElementById('editStage').value,
-                inscriptionText: document.getElementById('editInscription').value,
-                inscriptionStatus: document.getElementById('editInscStatus').value,
-                proofUrl: document.getElementById('editProofUrl').value.trim() || null,
-                proofNotes: document.getElementById('editProofNotes').value.trim() || null,
-                estimatedCompletion: document.getElementById('editEstCompletion').value.trim() || null,
-                installationDate: document.getElementById('editInstallDate').value.trim() || null,
-            };
-
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ action: 'update-order', token: adminToken, orderId: orderId, stage: newStage })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
-            closeEditModal();
-            loadAdminOrders();
+            await loadAdminOrders();
             loadDashboard();
         } catch (err) {
-            alert('Failed to save: ' + err.message);
+            alert('Failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = orig;
         }
-        btn.disabled = false;
-        btn.textContent = 'Save Changes';
+    }
+
+    async function quickSendEmail(orderId, kind, btn) {
+        btn.disabled = true;
+        var orig = btn.textContent;
+        btn.textContent = 'Sending\u2026';
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'send-customer-email', token: adminToken, orderId: orderId, kind: kind })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+            btn.textContent = 'Sent \u2713';
+            loadOrderEvents(orderId);
+            setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 1500);
+        } catch (err) {
+            alert('Failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
     }
 
     async function generateTrackingToken(orderId) {
-        var btn = document.getElementById('genTrackingBtn');
-        btn.disabled = true;
-        btn.textContent = 'Generating...';
-
+        var btn = document.getElementById('genTrackingBtn-' + orderId);
+        if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
         try {
             var res = await fetch('/api/admin', {
                 method: 'POST',
@@ -808,24 +1023,53 @@
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
-
-            var linkHtml = '<div class="tracking-link" id="trackingLink">' + location.origin + '/track?token=' + esc(data.trackingToken) + '<button class="btn-copy" onclick="copyTrackingLink()">Copy</button></div>';
-            btn.parentNode.innerHTML = '<label style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin-bottom:0.25rem;">Customer Tracking Link</label>' + linkHtml;
+            var wrap = document.getElementById('trackWrap-' + orderId);
+            if (wrap) {
+                wrap.innerHTML = '<div class="tracking-link" id="trackingLink-' + orderId + '">' + location.origin + '/track?token=' + esc(data.trackingToken) + '<button class="btn-copy" onclick="copyTrackingLink(' + orderId + ')">Copy</button></div>';
+            }
+            if (ordersById[orderId]) ordersById[orderId].tracking_token = data.trackingToken;
         } catch (err) {
             alert('Failed: ' + err.message);
-            btn.disabled = false;
-            btn.textContent = 'Generate Tracking Link';
+            if (btn) { btn.disabled = false; btn.textContent = 'Generate tracking link'; }
         }
     }
 
-    function copyTrackingLink() {
-        var el = document.getElementById('trackingLink');
+    function copyTrackingLink(orderId) {
+        var el = document.getElementById('trackingLink-' + orderId);
+        if (!el) return;
         var text = el.textContent.replace('Copy', '').trim();
         navigator.clipboard.writeText(text).then(function() {
             var btn = el.querySelector('.btn-copy');
             btn.textContent = 'Copied!';
             setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
         });
+    }
+
+    // ==================== ORDERS AUTO-REFRESH ====================
+    var ordersAutoRefreshTimer = null;
+    function startOrdersAutoRefresh() {
+        stopOrdersAutoRefresh();
+        ordersAutoRefreshTimer = setInterval(function() {
+            if (document.visibilityState !== 'visible') return;
+            var ordersTab = document.getElementById('section-orders');
+            if (!ordersTab || !ordersTab.classList.contains('active')) return;
+            loadAdminOrders();
+        }, 30000);
+    }
+    function stopOrdersAutoRefresh() {
+        if (ordersAutoRefreshTimer) { clearInterval(ordersAutoRefreshTimer); ordersAutoRefreshTimer = null; }
+    }
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            var ordersTab = document.getElementById('section-orders');
+            if (ordersTab && ordersTab.classList.contains('active')) loadAdminOrders();
+        }
+    });
+
+    function formatDateTime(s) {
+        if (!s) return '';
+        var d = new Date(s);
+        return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     // ==================== INSCRIPTION REQUESTS ====================

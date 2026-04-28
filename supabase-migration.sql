@@ -149,3 +149,25 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens (token);
+
+-- ============================================================
+-- 7. ADMIN ORDER ENHANCEMENTS (events log + admin notes)
+-- ============================================================
+
+-- Internal admin-only notes on an order (separate from `notes` which may
+-- carry quote-time customer notes).
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+
+-- Order activity log: append-only audit trail of admin-driven changes.
+-- event_type values: stage_changed, inscription_changed, proof_uploaded,
+-- dates_updated, notes_updated, email_sent, deposit_marked, comment_added
+CREATE TABLE IF NOT EXISTS order_events (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id),
+    event_type TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    detail JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events (order_id, created_at DESC);
