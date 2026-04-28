@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KRDX4BQ5');</script>
+    <!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Products (Admin) | Sears Melvin Memorials</title>
+    <meta name="description" content="Admin view of all products in the catalogue, including hidden items.">
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <!-- Supabase data loaded via REST API directly -->
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-light: #A69070;
+            --color-text: #1A1A1A;
+            --color-text-muted: #666666;
+            --color-border: #E0DCD5;
+            --color-success: #4A7C59;
+            --color-error: #b44;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background-color: var(--color-cream); color: var(--color-text); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
+        p { color: var(--color-text-muted); }
+        a { color: inherit; text-decoration: none; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }
+        .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.05s; }
+        .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.1s; }
+        .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.15s; }
+        .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
+        .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
+        .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
+        nav { position: fixed; top: 36px; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-accent); }
+        .nav-links a.active { font-weight: 600; }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta:hover { background-color: var(--color-stone-light); }
+        .shortlist-nav-btn { display: none; align-items: center; gap: 0.4rem; background: none; border: 1.5px solid var(--color-accent); border-radius: 20px; padding: 0.4rem 0.85rem 0.4rem 0.65rem; cursor: pointer; font-family: var(--font-body); font-size: 0.8rem; font-weight: 600; color: var(--color-accent); transition: all 0.3s; margin-left: 0.5rem; }
+        .shortlist-nav-btn:hover { background: var(--color-accent); color: white; }
+        .shortlist-nav-btn:hover svg { fill: white; stroke: white; }
+        .shortlist-nav-btn.has-items { display: inline-flex; }
+        @keyframes shortlistPulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .shortlist-nav-btn.pulse { animation: shortlistPulse 0.4s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent); font-weight: 500; }
+        .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
+        .mobile-menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+        .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+        /* Showroom Banner */
+        .showroom-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 101; background: var(--color-stone); color: white; font-size: 0.85rem; text-align: center; padding: 0.6rem 1rem; }
+        .showroom-banner-inner { display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
+        .showroom-banner-inner svg { flex-shrink: 0; }
+        .showroom-banner-link { color: var(--color-accent-light); font-weight: 600; margin-left: 0.5rem; transition: color 0.2s; text-decoration: none; }
+        .showroom-banner-link:hover { color: white; }
+        /* Mobile Bottom Navigation */
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
+        .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
+        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent); }
+        .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .mobile-nav-item span { font-size: 0.65rem; letter-spacing: 0.02em; text-transform: uppercase; }
+        .mobile-nav-item.primary { color: white; }
+        .mobile-nav-item.primary svg { stroke: white; }
+        .mobile-nav-item.primary span { color: var(--color-text-muted); }
+        .mobile-nav-item.primary.active span { color: var(--color-accent); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
+        .page-header { padding: 9rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
+        .breadcrumb { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--color-text-muted); }
+        .breadcrumb a { color: var(--color-accent); }
+        .page-header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .page-header p { font-size: 1.1rem; max-width: 600px; margin: 0 auto 1.5rem; }
+        .wizard-trigger { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; background: white; border: 2px solid var(--color-accent); color: var(--color-accent); border-radius: 30px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+        .wizard-trigger:hover { background: var(--color-accent); color: white; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(139,115,85,0.3); }
+        .wizard-trigger svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .floating-actions { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
+        .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
+        .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
+        .floating-btn.shortlist { background: white; border: 2px solid var(--color-border); }
+        .floating-btn.shortlist svg { stroke: var(--color-accent); }
+        .floating-btn.shortlist:hover { border-color: var(--color-accent); }
+        .floating-btn.scroll-top { background: var(--color-stone); opacity: 0; pointer-events: none; transform: translateY(20px); }
+        .floating-btn.scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .floating-btn.scroll-top svg { stroke: white; }
+        .catalogue { padding: 3rem 2rem; }
+        .catalogue-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; gap: 3rem; }
+        .filters-sidebar { position: sticky; top: 80px; height: fit-content; }
+        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
+        .filters-header h3 { font-family: var(--font-display); font-size: 1.5rem; }
+        .filters-clear { background: none; border: none; color: var(--color-accent); font-size: 0.875rem; cursor: pointer; }
+        .filters-clear:hover { text-decoration: underline; }
+        .filter-group { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+        .filter-group:last-child { border-bottom: none; }
+        .filter-title { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-stone); margin-bottom: 1rem; }
+        .filter-options { display: flex; flex-direction: column; gap: 0.75rem; }
+        .filter-option { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 0.9rem; transition: color 0.2s; }
+        .filter-option:hover { color: var(--color-stone); }
+        .filter-option input { display: none; }
+        .checkmark { width: 20px; height: 20px; border: 2px solid var(--color-border); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .filter-option:hover .checkmark { border-color: var(--color-accent); }
+        .filter-option input:checked + .checkmark { background-color: var(--color-accent); border-color: var(--color-accent); }
+        .filter-option input:checked + .checkmark::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
+        .filter-count { font-size: 0.8rem; color: var(--color-text-muted); margin-left: auto; }
+        .colour-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .colour-swatch { cursor: pointer; text-align: center; }
+        .colour-swatch input { display: none; }
+        .swatch-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+        .swatch { width: 48px; height: 48px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s; position: relative; }
+        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 50%, rgba(0,0,0,0.1)); }
+        .colour-swatch:hover .swatch { transform: scale(1.1); }
+        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 5px var(--color-accent); transform: scale(1.05); }
+        .swatch-name { font-size: 0.65rem; color: var(--color-text-muted); line-height: 1.2; max-width: 60px; }
+        .colour-swatch input:checked + .swatch-wrapper .swatch-name { color: var(--color-stone); font-weight: 600; }
+        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: 6px; margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
+        .active-filters.has-filters { display: flex; }
+        .active-filters-label { font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem; }
+        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: 20px; font-size: 0.8rem; color: var(--color-stone); }
+        .filter-tag button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; color: var(--color-text-muted); padding: 0; }
+        .filter-tag button:hover { color: var(--color-stone); }
+        .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .results-left { display: flex; align-items: center; gap: 1rem; }
+        .results-count { font-size: 0.95rem; color: var(--color-text-muted); }
+        .results-count span { font-weight: 600; color: var(--color-stone); }
+        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.875rem; cursor: pointer; }
+        .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
+        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
+        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
+        .product-card:nth-child(1) { animation-delay: 0s; }
+        .product-card:nth-child(2) { animation-delay: 0.05s; }
+        .product-card:nth-child(3) { animation-delay: 0.1s; }
+        .product-card:nth-child(4) { animation-delay: 0.15s; }
+        .product-card:nth-child(5) { animation-delay: 0.2s; }
+        .product-card:nth-child(6) { animation-delay: 0.25s; }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+        .product-card.hidden { display: none; }
+        .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
+        .product-card:hover .product-actions { opacity: 1; transform: translateX(0); }
+        .product-action { width: 36px; height: 36px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; }
+        .product-action svg { width: 18px; height: 18px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; transition: all 0.2s; }
+        .product-action:hover { transform: scale(1.1); }
+        .product-action:hover svg { stroke: var(--color-accent); }
+        .product-action.active { background: var(--color-accent); }
+        .product-action.active svg { stroke: white; fill: white; }
+        .product-image { position: relative; aspect-ratio: 1/1; overflow: hidden; background: linear-gradient(145deg, #e8e4dd, #d4cfc6); }
+        .product-image svg { width: 100%; height: 100%; }
+        .product-image img { width: 100%; height: 100%; object-fit: contain; }
+        .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
+        .product-badge.premium { background: var(--color-stone); }
+        .product-badge.new { background: var(--color-success); }
+        .product-info { padding: 1.25rem; }
+        .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.3rem; display: block; }
+        .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
+        .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
+        .product-colours { display: flex; gap: 0.25rem; }
+        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
+        .product-price strong { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); }
+        .no-results { display: none; grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 2px dashed var(--color-border); }
+        .no-results.visible { display: block; }
+        .no-results svg { width: 64px; height: 64px; stroke: var(--color-border); margin-bottom: 1rem; }
+        .no-results h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .no-results p { margin-bottom: 1.5rem; }
+        .no-results button { padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-body); }
+        .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(4px); }
+        .wizard-overlay.active { display: flex; }
+        .wizard-modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; animation: scaleIn 0.3s ease; }
+        .wizard-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+        .wizard-header h2 { font-size: 1.5rem; }
+        .wizard-close { background: none; border: none; cursor: pointer; padding: 0.5rem; }
+        .wizard-close svg { width: 24px; height: 24px; stroke: var(--color-text-muted); }
+        .wizard-progress { display: flex; padding: 1rem 2rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
+        .wizard-step-dot { flex: 1; height: 4px; background: var(--color-border); border-radius: 2px; transition: background 0.3s; }
+        .wizard-step-dot.active { background: var(--color-accent); }
+        .wizard-step-dot.complete { background: var(--color-success); }
+        .wizard-content { padding: 2rem; min-height: 350px; }
+        .wizard-step { display: none; animation: fadeIn 0.3s ease; }
+        .wizard-step.active { display: block; }
+        .wizard-step h3 { font-size: 1.3rem; margin-bottom: 0.5rem; text-align: center; }
+        .wizard-step > p { text-align: center; color: var(--color-text-muted); margin-bottom: 2rem; }
+        .wizard-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .wizard-option { padding: 1.25rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .wizard-option:hover { border-color: var(--color-accent); background: rgba(139,115,85,0.05); }
+        .wizard-option.selected { border-color: var(--color-accent); background: rgba(139,115,85,0.1); }
+        .wizard-option svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.75rem; }
+        .wizard-option h4 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .wizard-option p { font-size: 0.8rem; color: var(--color-text-muted); }
+        .wizard-footer { padding: 1rem 2rem; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; }
+        .wizard-btn { padding: 0.75rem 1.5rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+        .wizard-btn-back { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); }
+        .wizard-btn-back:hover { border-color: var(--color-stone); color: var(--color-stone); }
+        .wizard-btn-next { background: var(--color-accent); border: none; color: white; }
+        .wizard-btn-next:hover { background: var(--color-stone); }
+        .wizard-btn-next:disabled { background: var(--color-border); cursor: not-allowed; }
+        .wizard-results { text-align: left; }
+        .wizard-results h3 { text-align: center; margin-bottom: 1.5rem; }
+        .wizard-result-card { display: flex; gap: 1.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 1rem; transition: all 0.2s; }
+        .wizard-result-card:hover { border-color: var(--color-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .wizard-result-image { width: 120px; height: 100px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
+        .wizard-result-image svg, .wizard-result-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+        .wizard-result-info h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
+        .wizard-result-match svg { width: 14px; height: 14px; stroke: currentColor; }
+        .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px rgba(0,0,0,0.15); transition: right 0.4s ease; display: flex; flex-direction: column; }
+        .shortlist-panel.active { right: 0; }
+        .shortlist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
+        .shortlist-overlay.active { display: block; }
+        .shortlist-header { padding: 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+        .shortlist-header h3 { font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .shortlist-header h3 span { background: var(--color-accent); color: white; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-family: var(--font-body); }
+        .shortlist-close { background: none; border: none; cursor: pointer; }
+        .shortlist-close svg { width: 24px; height: 24px; stroke: var(--color-text-muted); }
+        .shortlist-content { flex: 1; overflow-y: auto; padding: 1rem; }
+        .shortlist-empty { text-align: center; padding: 3rem 1rem; color: var(--color-text-muted); }
+        .shortlist-empty svg { width: 48px; height: 48px; stroke: var(--color-border); margin-bottom: 1rem; }
+        .shortlist-item { display: flex; gap: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 0.75rem; position: relative; }
+        .shortlist-item-image { width: 70px; height: 60px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
+        .shortlist-item-image svg, .shortlist-item-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+        .shortlist-item-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .shortlist-item-info p { font-size: 0.85rem; color: var(--color-accent); font-weight: 600; }
+        .shortlist-item-remove { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; cursor: pointer; padding: 0.25rem; }
+        .shortlist-item-remove svg { width: 16px; height: 16px; stroke: var(--color-text-muted); }
+        .shortlist-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--color-border); }
+        .shortlist-share { width: 100%; margin-bottom: 0.75rem; }
+        .shortlist-share input { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; }
+        .shortlist-actions { display: flex; gap: 0.75rem; }
+        .shortlist-actions button { flex: 1; padding: 0.75rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .shortlist-btn-copy { background: var(--color-warm); border: none; color: var(--color-stone); }
+        .shortlist-btn-email { background: var(--color-accent); border: none; color: white; }
+        .shortlist-enquiry { border-top: 1px solid var(--color-border); padding-top: 0.75rem; margin-top: 0.75rem; }
+        .shortlist-enquiry-toggle { display: none; }
+        .shortlist-enquiry h4 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--color-stone); }
+        .shortlist-enquiry-fields { }
+        .shortlist-enquiry input, .shortlist-enquiry textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; font-family: var(--font-body); margin-bottom: 0.5rem; box-sizing: border-box; }
+        .shortlist-enquiry textarea { resize: vertical; min-height: 60px; }
+        .shortlist-enquiry-btn { width: 100%; padding: 0.75rem; background: var(--color-stone); border: none; color: white; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .shortlist-enquiry-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .shortlist-enquiry-success { color: #4CAF50; font-size: 0.85rem; text-align: center; padding: 0.5rem; display: none; }
+        .save-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2C2C2C; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .save-toast.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+        .save-toast svg { width: 18px; height: 18px; stroke: #e8665a; fill: #e8665a; flex-shrink: 0; }
+        .save-toast a { color: #8B7355; text-decoration: underline; }
+        @keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        .save-btn.animate svg { animation: heartPop 0.4s ease; }
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a:hover { color: white; }
+        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
+        .filters-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
+        .filters-overlay.active { display: block; }
+        @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 900px) {
+            .catalogue-container { grid-template-columns: 1fr; }
+            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: var(--color-cream); z-index: 200; padding: 2rem; overflow-y: auto; transition: left 0.3s ease; }
+            .filters-sidebar.open { left: 0; }
+            .mobile-filter-btn { display: flex; }
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: flex; }
+            .shortlist-overlay { z-index: 1001; }
+            .shortlist-panel { width: 100%; right: -100%; z-index: 1002; }
+            .shortlist-footer { padding: 0.75rem 1rem; padding-bottom: calc(0.75rem + 70px + env(safe-area-inset-bottom)); overflow-y: auto; max-height: 50vh; }
+            .shortlist-share input { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+            .shortlist-actions button { padding: 0.6rem; font-size: 0.8rem; }
+            .shortlist-enquiry { margin-top: 0.5rem; padding-top: 0; border-top: none; }
+            .shortlist-enquiry-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0.6rem 0; background: none; border: none; border-top: 1px solid var(--color-border); cursor: pointer; font-family: var(--font-body); font-size: 0.85rem; color: var(--color-stone); font-weight: 600; }
+            .shortlist-enquiry-toggle svg { width: 16px; height: 16px; stroke: var(--color-text-muted); transition: transform 0.2s; }
+            .shortlist-enquiry.open .shortlist-enquiry-toggle svg { transform: rotate(180deg); }
+            .shortlist-enquiry-fields { display: none; padding-top: 0.5rem; }
+            .shortlist-enquiry.open .shortlist-enquiry-fields { display: block; }
+            .shortlist-enquiry h4 { display: none; }
+            .shortlist-enquiry input, .shortlist-enquiry textarea { padding: 0.5rem; font-size: 0.8rem; margin-bottom: 0.4rem; }
+            .shortlist-enquiry textarea { min-height: 48px; }
+            .shortlist-enquiry-btn { padding: 0.6rem; font-size: 0.8rem; }
+        }
+        @media (max-width: 768px) {
+            body { padding-bottom: 70px; }
+            .floating-actions { bottom: calc(70px + 1rem); }
+            .product-actions { opacity: 1; transform: translateX(0); }
+            .product-card:hover { transform: none; }
+            .page-header { padding: 6rem 1rem 2rem; }
+        }
+        @media (max-width: 600px) {
+            .products-grid { grid-template-columns: 1fr; }
+            .footer-container { flex-direction: column; text-align: center; }
+            .wizard-options { grid-template-columns: 1fr; }
+            .colour-swatches { grid-template-columns: repeat(2, 1fr); }
+            .page-header h1 { font-size: 1.8rem; }
+            .wizard-modal { max-height: 85vh; }
+        }
+
+        /* Search Button in Nav */
+        .nav-search-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .nav-search-btn:hover { opacity: 0.7; }
+        .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
+
+        /* Search Overlay */
+        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay.active { opacity: 1; visibility: visible; }
+
+        /* Search Modal */
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal.active { transform: translateY(0); }
+        .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
+        .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
+        .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
+        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
+        .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .search-close-btn:hover svg { stroke: var(--color-stone); }
+
+        /* Search Results */
+        .search-results { max-height: 60vh; overflow-y: auto; border-top: 1px solid var(--color-border); }
+        .search-results:empty { display: none; }
+        .search-section { padding: 1rem 0; }
+        .search-section-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.75rem; padding: 0 0.5rem; }
+        .search-result { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; text-decoration: none; color: inherit; }
+        .search-result:hover { background: var(--color-warm); }
+        .search-result-image { width: 56px; height: 56px; border-radius: 6px; background: var(--color-warm); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .search-result-image img { width: 100%; height: 100%; object-fit: cover; }
+        .search-result-image svg { width: 28px; height: 28px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .search-result-content { flex: 1; min-width: 0; }
+        .search-result-title { font-weight: 500; color: var(--color-stone); margin-bottom: 0.15rem; }
+        .search-result-subtitle { font-size: 0.85rem; color: var(--color-text-muted); }
+        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent); white-space: nowrap; }
+
+        /* Quick Links */
+        .search-quick-links { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
+        .search-quick-link { padding: 0.5rem 1rem; background: var(--color-warm); border-radius: 20px; font-size: 0.85rem; color: var(--color-stone); text-decoration: none; transition: all 0.2s; }
+        .search-quick-link:hover { background: var(--color-accent); color: white; }
+
+        /* No Results */
+        .search-no-results { padding: 2rem; text-align: center; color: var(--color-text-muted); }
+        .search-no-results svg { width: 48px; height: 48px; stroke: var(--color-border); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
+        .search-no-results h4 { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-stone); margin-bottom: 0.5rem; }
+
+        /* Loading */
+        .search-loading { padding: 2rem; text-align: center; }
+        .search-spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: searchSpin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes searchSpin { to { transform: rotate(360deg); } }
+
+        /* Admin: hidden product styling */
+        .product-card.admin-hidden { opacity: 0.55; outline: 2px dashed #c0392b; outline-offset: -2px; }
+        .product-card.admin-hidden:hover { opacity: 0.85; }
+        .product-badge.admin-hidden-badge { background: #c0392b !important; color: #fff !important; }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <!-- Admin banner -->
+    <div style="background:#2C2C2C;color:#fff;padding:0.6rem 1.25rem;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;font-size:0.85rem;position:sticky;top:0;z-index:1000;flex-wrap:wrap;gap:0.5rem;">
+        <span><strong style="background:#c0392b;padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>All products view &mdash; includes hidden &amp; inactive items</span>
+        <a href="/admin.html" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to Admin Dashboard</a>
+    </div>
+    <nav>
+        <a href="/" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/memorials" class="active">Memorials</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/resources">Support</a></li>
+            <li>
+                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
+            </li>
+            <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
+        </ul>
+        <button class="shortlist-nav-btn" onclick="openShortlist()" id="shortlistNavBtn" style="display:none;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="shortlistNavCount">0</span>
+        </button>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="/" onclick="toggleMobileMenu()">Home</a>
+        <a href="/memorials" class="active" onclick="toggleMobileMenu()">Memorials</a>
+        <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
+        <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
+        <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
+    </div>
+    <!-- Top Banner -->
+    <div class="showroom-banner">
+        <div class="showroom-banner-inner">
+            <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
+            <span class="banner-divider">|</span>
+            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                020 3835 2548
+            </a>
+        </div>
+    </div>
+
+    <header class="page-header">
+        <div class="breadcrumb">
+            <a href="/admin.html">Admin</a><span>/</span><span>All Products</span>
+        </div>
+        <h1 class="reveal">All Products</h1>
+        <p class="reveal reveal-delay-1">Admin view of every product in the catalogue, including hidden and inactive items.</p>
+    </header>
+
+    <div class="filters-overlay" id="filtersOverlay" onclick="closeFilters()"></div>
+
+    <section class="catalogue">
+        <div class="catalogue-container">
+            <aside class="filters-sidebar reveal" id="filtersSidebar">
+                <div class="filters-header">
+                    <h3>Filters</h3>
+                    <button class="filters-clear" onclick="clearAllFilters()">Clear All</button>
+                </div>
+                <div class="filter-group">
+                    <h4 class="filter-title">Memorial Type</h4>
+                    <div class="filter-options" id="typeFilters">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <h4 class="filter-title">Stone Colour</h4>
+                    <div class="colour-swatches" id="colourFilters">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <h4 class="filter-title">Price Range</h4>
+                    <div class="filter-options" id="priceFilters">
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main>
+                <div class="active-filters" id="activeFilters">
+                    <span class="active-filters-label">Active filters:</span>
+                </div>
+                <div class="results-header">
+                    <div class="results-left">
+                        <button class="mobile-filter-btn" onclick="openFilters()">
+                            <svg viewBox="0 0 24 24" stroke-width="2" fill="none"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+                            Filters
+                        </button>
+                        <span class="results-count">Showing <span id="resultsCount">...</span> memorials</span>
+                    </div>
+                    <div class="sort-dropdown">
+                        <select id="sortSelect" onchange="sortProducts()">
+                            <option value="featured">Featured</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name-az">Name: A to Z</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="products-grid" id="productsGrid">
+                    <div id="productsLoading" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--color-accent); fill: none; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                        <p style="margin-top: 1rem; color: var(--color-text-muted);">Loading memorials...</p>
+                    </div>
+                    <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+                    <div class="no-results" id="noResults" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
+                        <h3>No memorials found</h3>
+                        <p>Try adjusting your filters or use our wizard to find the right memorial.</p>
+                        <button onclick="clearAllFilters()">Clear All Filters</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- Floating Actions -->
+    <div class="floating-actions">
+        <button class="floating-btn shortlist" onclick="openShortlist()">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="floating-btn scroll-top" id="scrollTopBtn" onclick="scrollToTop()">
+            <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-modal-inner">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
+                <button class="search-close-btn" onclick="closeSearch()">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-section" id="quickLinksSection">
+                    <div class="search-section-title">Quick Links</div>
+                    <div class="search-quick-links">
+                        <a href="memorials.html" class="search-quick-link">Browse Memorials</a>
+                        <a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a>
+                        <a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a>
+                        <a href="faq.html" class="search-quick-link">FAQs</a>
+                        <a href="contact.html" class="search-quick-link">Get a Quote</a>
+                        <a href="permit-checker.html" class="search-quick-link">Permit Info</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Modal -->
+    <div class="wizard-overlay" id="wizardOverlay" onclick="if(event.target===this)closeWizard()">
+        <div class="wizard-modal">
+            <div class="wizard-header">
+                <h2>Find Your Perfect Memorial</h2>
+                <button class="wizard-close" onclick="closeWizard()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="wizard-progress">
+                <div class="wizard-step-dot active" data-step="1"></div>
+                <div class="wizard-step-dot" data-step="2"></div>
+                <div class="wizard-step-dot" data-step="3"></div>
+                <div class="wizard-step-dot" data-step="4"></div>
+            </div>
+            <div class="wizard-content">
+                <div class="wizard-step active" data-step="1">
+                    <h3>What type of cemetery is it?</h3>
+                    <p>This helps us show memorials that are permitted at your cemetery.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'lawn')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M12 3v8"/></svg>
+                            <h4>Lawn Cemetery</h4>
+                            <p>Headstones only, no kerbs</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'kerb')">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="13" rx="1"/><rect x="7" y="3" width="10" height="8" rx="1"/></svg>
+                            <h4>Kerb Permitted</h4>
+                            <p>Full surrounds allowed</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'cremation')">
+                            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="8" ry="3"/><path d="M4 18V8c0-2.5 3.5-5 8-5s8 2.5 8 5v10"/></svg>
+                            <h4>Cremation Garden</h4>
+                            <p>Memorial tablets & plaques</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'unsure')">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <h4>I'm Not Sure</h4>
+                            <p>We'll help you find out</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <h3>What's your budget range?</h3>
+                    <p>All our prices include installation and a 30-year guarantee.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'under-1500')">
+                            <h4>Under £1,500</h4>
+                            <p>Simple, elegant memorials</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '1500-2500')">
+                            <h4>£1,500 - £2,500</h4>
+                            <p>Most popular range</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '2500-4000')">
+                            <h4>£2,500 - £4,000</h4>
+                            <p>Premium options</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'flexible')">
+                            <h4>Budget Flexible</h4>
+                            <p>Show me everything</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <h3>What style appeals to you?</h3>
+                    <p>Choose the look that feels right.</p>
+                    <div class="wizard-options">
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'traditional')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2L8 6v14a2 2 0 002 2h4a2 2 0 002-2V6l-4-4z"/></svg>
+                            <h4>Traditional</h4>
+                            <p>Classic, timeless designs</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'modern')">
+                            <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/></svg>
+                            <h4>Modern</h4>
+                            <p>Clean, contemporary lines</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'unique')">
+                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            <h4>Unique Shape</h4>
+                            <p>Hearts, books, angels</p>
+                        </div>
+                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'any')">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                            <h4>Open to Ideas</h4>
+                            <p>Surprise me</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="wizard-step" data-step="4">
+                    <div class="wizard-results" id="wizardResults">
+                        <h3>We recommend these memorials for you</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="wizard-footer">
+                <button class="wizard-btn wizard-btn-back" onclick="prevWizardStep()" id="wizardBack" style="visibility:hidden;">Back</button>
+                <button class="wizard-btn wizard-btn-next" onclick="nextWizardStep()" id="wizardNext" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Shortlist Panel -->
+    <div class="shortlist-overlay" id="shortlistOverlay" onclick="closeShortlist()"></div>
+    <div class="shortlist-panel" id="shortlistPanel">
+        <div class="shortlist-header">
+            <h3>My Shortlist <span id="shortlistCount">0</span></h3>
+            <button class="shortlist-close" onclick="closeShortlist()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="shortlist-content" id="shortlistContent">
+            <div class="shortlist-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p>
+            </div>
+        </div>
+        <div class="shortlist-footer">
+            <div class="shortlist-share">
+                <label for="shareLink" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Share link</label>
+                <input type="text" id="shareLink" value="" placeholder="Share link will appear here" readonly>
+            </div>
+            <div class="shortlist-actions">
+                <button class="shortlist-btn-copy" onclick="copyShareLink()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Link</button>
+                <button class="shortlist-btn-email" onclick="emailShortlist()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
+            </div>
+            <div class="shortlist-enquiry" id="shortlistEnquiry" style="display:none;">
+                <button class="shortlist-enquiry-toggle" onclick="toggleEnquiryForm()" type="button">
+                    Enquire about these memorials
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <h4>Enquire about these memorials</h4>
+                <div class="shortlist-enquiry-fields">
+                    <input type="text" id="slEnqName" placeholder="Your name" required>
+                    <input type="email" id="slEnqEmail" placeholder="Your email" required>
+                    <input type="tel" id="slEnqPhone" placeholder="Phone (optional)">
+                    <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
+                    <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <span>Send Enquiry</span>
+                    </button>
+                    <div class="shortlist-enquiry-success" id="slEnqSuccess">Enquiry sent! We'll be in touch soon.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== SUPABASE CONFIG ====================
+        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+        async function supabaseFetch(table, params) {
+            const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
+            Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+            const res = await fetch(url.toString(), { headers: SUPABASE_HEADERS });
+            if (!res.ok) throw new Error('Supabase query failed: ' + res.status + ' ' + (await res.text()));
+            return res.json();
+        }
+
+        // ==================== STATE ====================
+        const state = {
+            filters: { type: [], colour: [], price: [] },
+            shortlist: [],
+            wizard: { cemetery: null, budget: null, style: null, step: 1 },
+            productsData: [],
+            categories: [],
+            colours: []
+        };
+
+        let colourNames = {};
+        let categoryNames = {};
+        let products = [];
+
+        // ==================== DATA LOADING ====================
+        async function loadData() {
+            try {
+                // Admin view: fetch ALL products including hidden/inactive ones
+                const [categories, colours, productsData] = await Promise.all([
+                    supabaseFetch('product_categories', { select: '*', order: 'display_order' }),
+                    supabaseFetch('stone_colours', { select: '*', order: 'display_order' }),
+                    supabaseFetch('products', { select: '*,product_categories(name,slug)', order: 'display_order' })
+                ]);
+                state.categories = categories;
+                state.colours = colours;
+
+                colours.forEach(c => { colourNames[c.slug] = c.name; });
+                categories.forEach(c => { categoryNames[c.id] = c.name; });
+
+                state.productsData = productsData;
+
+                renderFilters();
+                renderProducts();
+                applyUrlFilters();
+                loadShortlistFromStorage();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                const loadingEl = document.getElementById('productsLoading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Error loading memorials. Please refresh the page.</p>';
+                }
+                document.getElementById('resultsCount').textContent = '0';
+            }
+            initScrollAnimations();
+        }
+
+        // ==================== RENDER FILTERS ====================
+        function renderFilters() {
+            const typeContainer = document.getElementById('typeFilters');
+            const categoriesWithProducts = state.categories.filter(cat =>
+                state.productsData.some(p => p.category_id === cat.id)
+            );
+            let typeHTML = '';
+            categoriesWithProducts.forEach(cat => {
+                const count = state.productsData.filter(p => p.category_id === cat.id).length;
+                typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + cat.slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + cat.name + '<span class="filter-count">(' + count + ')</span></label>';
+            });
+            typeContainer.innerHTML = typeHTML;
+
+            const colourContainer = document.getElementById('colourFilters');
+            let colourHTML = '';
+            state.colours.forEach(colour => {
+                const secondaryHex = colour.hex_secondary || colour.hex_primary;
+                colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + colour.slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + colour.hex_primary + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + colour.name + '</span></span></label>';
+            });
+            colourContainer.innerHTML = colourHTML;
+
+            const priceRanges = [
+                { value: 'under-1000', label: 'Under £1,000', test: p => parseFloat(p.base_price) < 1000 },
+                { value: '1000-1500', label: '£1,000 - £1,500', test: p => { const v = parseFloat(p.base_price); return v >= 1000 && v < 1500; } },
+                { value: '1500-2000', label: '£1,500 - £2,000', test: p => { const v = parseFloat(p.base_price); return v >= 1500 && v < 2000; } },
+                { value: '2000-3000', label: '£2,000 - £3,000', test: p => { const v = parseFloat(p.base_price); return v >= 2000 && v < 3000; } },
+                { value: 'over-3000', label: 'Over £3,000', test: p => parseFloat(p.base_price) >= 3000 }
+            ];
+            const priceContainer = document.getElementById('priceFilters');
+            let priceHTML = '';
+            priceRanges.forEach(range => {
+                const count = state.productsData.filter(range.test).length;
+                if (count > 0) {
+                    priceHTML += '<label class="filter-option"><input type="checkbox" data-filter="price" value="' + range.value + '" onchange="applyFilters()"><span class="checkmark"></span>' + range.label + '<span class="filter-count">(' + count + ')</span></label>';
+                }
+            });
+            priceContainer.innerHTML = priceHTML;
+        }
+
+        // ==================== RENDER PRODUCTS ====================
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            const loading = document.getElementById('productsLoading');
+            if (loading) loading.remove();
+
+            let productsHTML = '';
+            state.productsData.forEach((product, index) => {
+                const categorySlug = product.product_categories?.slug || 'default';
+                const categoryName = product.product_categories?.name || 'Memorial';
+                const price = parseFloat(product.base_price);
+                const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
+                const productImage = product.image_url ? '<img src="' + product.image_url + '" alt="' + product.name + '" loading="lazy">' : '';
+                let badge = '';
+                if (product.is_active === false) badge = '<span class="product-badge admin-hidden-badge">Hidden</span>';
+                else if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
+                else if (price >= 3000) badge = '<span class="product-badge premium">Premium</span>';
+                else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
+                const colourDots = state.colours.map(c =>
+                    '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
+                ).join('');
+                const adminClass = product.is_active === false ? ' admin-hidden' : '';
+
+                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+            });
+
+            const noResults = document.getElementById('noResults');
+            noResults.insertAdjacentHTML('beforebegin', productsHTML);
+            products = Array.from(document.querySelectorAll('.product-card[data-id]'));
+            document.getElementById('resultsCount').textContent = products.length;
+        }
+
+        // ==================== SCROLL ANIMATIONS ====================
+        function initScrollAnimations() {
+            const revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
+            // Immediately reveal elements already in the viewport
+            revealEls.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    el.classList.add('visible');
+                }
+            });
+            // Observe for elements that will scroll into view later
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+            revealEls.forEach(el => {
+                if (!el.classList.contains('visible')) observer.observe(el);
+            });
+        }
+
+        // ==================== SCROLL TO TOP ====================
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('scrollTopBtn');
+            if (window.scrollY > 500) btn.classList.add('visible');
+            else btn.classList.remove('visible');
+        });
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        // ==================== FILTERS ====================
+        function applyFilters() {
+            state.filters = { type: [], colour: [], price: [] };
+            document.querySelectorAll('input[data-filter]:checked').forEach(input => {
+                state.filters[input.dataset.filter].push(input.value);
+            });
+            let visibleCount = 0;
+            products.forEach(product => {
+                const type = product.dataset.type;
+                const colours = product.dataset.colours.split(',');
+                const price = product.dataset.price;
+                const matchesType = state.filters.type.length === 0 || state.filters.type.includes(type);
+                const matchesColour = state.filters.colour.length === 0 || state.filters.colour.some(c => colours.includes(c));
+                const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(price);
+                if (matchesType && matchesColour && matchesPrice) { product.classList.remove('hidden'); visibleCount++; }
+                else { product.classList.add('hidden'); }
+            });
+            document.getElementById('resultsCount').textContent = visibleCount;
+            document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+            updateActiveFiltersDisplay();
+        }
+
+        function updateActiveFiltersDisplay() {
+            const container = document.getElementById('activeFilters');
+            const hasFilters = state.filters.type.length > 0 || state.filters.colour.length > 0 || state.filters.price.length > 0;
+            container.classList.toggle('has-filters', hasFilters);
+            if (!hasFilters) { container.innerHTML = '<span class="active-filters-label">Active filters:</span>'; return; }
+            let html = '<span class="active-filters-label">Active filters:</span>';
+            state.filters.type.forEach(t => html += '<span class="filter-tag">' + t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
+            state.filters.colour.forEach(c => html += '<span class="filter-tag">' + (colourNames[c] || c) + '<button onclick="removeFilter(\'colour\', \'' + c + '\')">&times;</button></span>');
+            state.filters.price.forEach(p => {
+                let label = p === 'under-1000' ? 'Under £1,000' : p === 'over-3000' ? 'Over £3,000' : '£' + p.replace('-', ' - £');
+                html += '<span class="filter-tag">' + label + '<button onclick="removeFilter(\'price\', \'' + p + '\')">&times;</button></span>';
+            });
+            container.innerHTML = html;
+        }
+
+        function removeFilter(type, value) {
+            const checkbox = document.querySelector('input[data-filter="' + type + '"][value="' + value + '"]');
+            if (checkbox) { checkbox.checked = false; applyFilters(); }
+        }
+
+        function clearAllFilters() {
+            document.querySelectorAll('input[data-filter]').forEach(input => input.checked = false);
+            applyFilters();
+        }
+
+        // ==================== SORTING ====================
+        function sortProducts() {
+            const sortValue = document.getElementById('sortSelect').value;
+            const grid = document.getElementById('productsGrid');
+            const sorted = [...products].sort((a, b) => {
+                switch(sortValue) {
+                    case 'price-low': return parseFloat(a.dataset.priceValue) - parseFloat(b.dataset.priceValue);
+                    case 'price-high': return parseFloat(b.dataset.priceValue) - parseFloat(a.dataset.priceValue);
+                    case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
+                    default: return 0;
+                }
+            });
+            sorted.forEach(p => grid.appendChild(p));
+            grid.appendChild(document.getElementById('noResults'));
+        }
+
+
+        // ==================== SHORTLIST / SAVE ====================
+        var _saveToastTimer;
+        function showSaveToast(msg) {
+            var toast = document.getElementById('saveToast');
+            var msgEl = document.getElementById('saveToastMsg');
+            if (!toast || !msgEl) return;
+            clearTimeout(_saveToastTimer);
+            msgEl.innerHTML = msg;
+            toast.classList.add('visible');
+            _saveToastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 3000);
+        }
+
+        function toggleSave(btn) {
+            const card = btn.closest('.product-card');
+            const id = card.dataset.id;
+            const isActive = btn.classList.contains('active');
+            if (isActive) {
+                state.shortlist = state.shortlist.filter(item => item.id !== id);
+                btn.classList.remove('active');
+                showSaveToast('Removed from shortlist');
+            } else {
+                state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                btn.classList.add('active');
+                btn.classList.add('animate');
+                setTimeout(function() { btn.classList.remove('animate'); }, 500);
+                showSaveToast('Saved to shortlist — <a href="javascript:openShortlist()">view list</a>');
+            }
+            updateShortlistUI();
+            saveShortlistToStorage();
+        }
+
+        function updateShortlistUI() {
+            const count = state.shortlist.length;
+            document.getElementById('shortlistCount').textContent = count;
+            var navBtn = document.getElementById('shortlistNavBtn');
+            var navCount = document.getElementById('shortlistNavCount');
+            if (navBtn) {
+                navCount.textContent = count;
+                if (count > 0) { navBtn.classList.add('has-items'); navBtn.style.display = 'inline-flex'; navBtn.classList.remove('pulse'); void navBtn.offsetWidth; navBtn.classList.add('pulse'); }
+                else { navBtn.classList.remove('has-items'); navBtn.style.display = 'none'; }
+            }
+            const content = document.getElementById('shortlistContent');
+            if (count === 0) {
+                content.innerHTML = '<div class="shortlist-empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p></div>';
+            } else {
+                let html = '';
+                state.shortlist.forEach(item => {
+                    var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
+                    var link = item.slug ? '/memorial?slug=' + item.slug : '#';
+                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                });
+                content.innerHTML = html;
+            }
+            if (count > 0) {
+                const slugs = state.shortlist.map(i => i.slug || i.id).join(',');
+                document.getElementById('shareLink').value = window.location.origin + '/memorials?shortlist=' + slugs;
+            }
+            var enqPanel = document.getElementById('shortlistEnquiry');
+            if (enqPanel) enqPanel.style.display = count > 0 ? 'block' : 'none';
+        }
+
+        function removeFromShortlist(id) {
+            state.shortlist = state.shortlist.filter(item => item.id !== id);
+            const btn = document.querySelector('.product-card[data-id="' + id + '"] .save-btn');
+            if (btn) btn.classList.remove('active');
+            updateShortlistUI();
+            saveShortlistToStorage();
+        }
+
+        function openShortlist() {
+            document.getElementById('shortlistPanel').classList.add('active');
+            document.getElementById('shortlistOverlay').classList.add('active');
+        }
+        function closeShortlist() {
+            document.getElementById('shortlistPanel').classList.remove('active');
+            document.getElementById('shortlistOverlay').classList.remove('active');
+        }
+
+        function toggleEnquiryForm() {
+            document.getElementById('shortlistEnquiry').classList.toggle('open');
+        }
+
+        function copyShareLink() {
+            const input = document.getElementById('shareLink');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(input.value).then(function() {
+                    var btn = input.nextElementSibling;
+                    if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
+                });
+            } else {
+                input.select();
+                document.execCommand('copy');
+            }
+        }
+
+        function emailShortlist() {
+            const items = state.shortlist.map(function(item, i) {
+                return (i + 1) + '. ' + item.name + ' — ' + item.price + '\nhttps://searsmelvin.co.uk/memorial?slug=' + item.slug;
+            }).join('\n\n');
+            const subject = encodeURIComponent('My Memorial Shortlist — Sears Melvin Memorials');
+            const body = encodeURIComponent('Hi,\n\nI\'ve been looking at memorials on the Sears Melvin website and would like to share my shortlist:\n\n' + items + '\n\nView full shortlist:\n' + document.getElementById('shareLink').value + '\n\nKind regards');
+            window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+        }
+
+        async function submitShortlistEnquiry() {
+            var name = document.getElementById('slEnqName').value.trim();
+            var email = document.getElementById('slEnqEmail').value.trim();
+            var phone = document.getElementById('slEnqPhone').value.trim();
+            var note = document.getElementById('slEnqNote').value.trim();
+            if (!name || !email) return;
+            var btn = document.getElementById('slEnqBtn');
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Sending…';
+            var memorialList = state.shortlist.map(function(item) {
+                return item.name + ' (' + item.price + ')';
+            }).join(', ');
+            try {
+                var res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'enquiry',
+                        name: name,
+                        email: email,
+                        phone: phone || null,
+                        enquiry_type: 'shortlist-enquiry',
+                        message: 'Enquiry about multiple memorials:\n\n' + state.shortlist.map(function(item) {
+                            return '• ' + item.name + ' — ' + item.price + (item.slug ? ' (https://searsmelvin.co.uk/memorial?slug=' + item.slug + ')' : '');
+                        }).join('\n') + (note ? '\n\nCustomer note: ' + note : '')
+                    })
+                });
+                var result = await res.json();
+                if (result.ok) {
+                    document.getElementById('slEnqSuccess').style.display = 'block';
+                    btn.style.display = 'none';
+                } else { throw new Error(result.error); }
+            } catch (e) {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = 'Send Enquiry';
+                alert('Sorry, something went wrong. Please try again.');
+            }
+        }
+
+        function saveShortlistToStorage() { localStorage.setItem('sm_shortlist', JSON.stringify(state.shortlist)); }
+
+        function loadShortlistFromStorage() {
+            const saved = localStorage.getItem('sm_shortlist');
+            if (saved) {
+                state.shortlist = JSON.parse(saved);
+                state.shortlist.forEach(item => {
+                    const btn = document.querySelector('.product-card[data-id="' + item.id + '"] .save-btn');
+                    if (btn) btn.classList.add('active');
+                });
+                updateShortlistUI();
+            }
+        }
+
+        // ==================== WIZARD ====================
+        function openWizard() {
+            document.getElementById('wizardOverlay').classList.add('active');
+            state.wizard = { cemetery: null, budget: null, style: null, step: 1 };
+            updateWizardUI();
+        }
+        function closeWizard() { document.getElementById('wizardOverlay').classList.remove('active'); }
+
+        function selectWizardOption(option, field, value) {
+            option.parentElement.querySelectorAll('.wizard-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            state.wizard[field] = value;
+            document.getElementById('wizardNext').disabled = false;
+        }
+
+        function nextWizardStep() { if (state.wizard.step < 4) { state.wizard.step++; updateWizardUI(); } }
+        function prevWizardStep() { if (state.wizard.step > 1) { state.wizard.step--; updateWizardUI(); } }
+
+        function updateWizardUI() {
+            const step = state.wizard.step;
+            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+            document.querySelector('.wizard-step[data-step="' + step + '"]').classList.add('active');
+            document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
+                dot.classList.remove('active', 'complete');
+                if (i + 1 === step) dot.classList.add('active');
+                else if (i + 1 < step) dot.classList.add('complete');
+            });
+            document.getElementById('wizardBack').style.visibility = step > 1 ? 'visible' : 'hidden';
+            document.getElementById('wizardNext').textContent = step === 3 ? 'Show Results' : step === 4 ? 'Browse All' : 'Next';
+            const wizardFields = ['cemetery', 'budget', 'style'];
+            document.getElementById('wizardNext').disabled = step < 4 && !state.wizard[wizardFields[step-1]];
+            if (step === 4) {
+                generateWizardResults();
+                document.getElementById('wizardNext').onclick = () => { closeWizard(); clearAllFilters(); };
+            }
+        }
+
+        function generateWizardResults() {
+            const results = document.getElementById('wizardResults');
+            let recommended = products.filter(p => !p.classList.contains('hidden')).slice(0, 3);
+            if (recommended.length === 0) recommended = products.slice(0, 3);
+            let html = '<h3>We recommend these memorials for you</h3>';
+            recommended.forEach(p => {
+                var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
+                html += '<a href="/memorial?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
+            });
+            results.innerHTML = html;
+        }
+
+        // ==================== MOBILE ====================
+        function toggleMobileMenu() {
+            var nav = document.getElementById('mobileNav');
+            var btn = document.querySelector('.mobile-menu-btn');
+            nav.classList.toggle('active');
+            btn.classList.toggle('open');
+            if (nav.classList.contains('active')) {
+                nav.style.display = 'block';
+                requestAnimationFrame(function() { nav.style.maxHeight = '500px'; nav.style.padding = '1rem 2rem'; });
+            } else {
+                nav.style.maxHeight = '0'; nav.style.padding = '0 2rem';
+                setTimeout(function() { if (!nav.classList.contains('active')) nav.style.display = 'none'; }, 300);
+            }
+        }
+        function openFilters() {
+            document.getElementById('filtersSidebar').classList.add('open');
+            document.getElementById('filtersOverlay').classList.add('active');
+        }
+        function closeFilters() {
+            document.getElementById('filtersSidebar').classList.remove('open');
+            document.getElementById('filtersOverlay').classList.remove('active');
+        }
+
+        // ==================== URL PARAM FILTERS ====================
+        function applyUrlFilters() {
+            const params = new URLSearchParams(window.location.search);
+            const typeParam = params.get('type');
+            if (typeParam) {
+                const checkbox = document.querySelector('input[data-filter="type"][value="' + typeParam + '"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                    applyFilters();
+                }
+            }
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Loading timeout - show error if data doesn't load within 15s
+            const loadingTimeout = setTimeout(() => {
+                const loadingEl = document.getElementById('productsLoading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Loading timed out. Please refresh the page.</p>';
+                }
+            }, 15000);
+            loadData().finally(() => clearTimeout(loadingTimeout));
+            const params = new URLSearchParams(window.location.search);
+            const shortlistIds = params.get('shortlist');
+            if (shortlistIds) {
+                let checkCount = 0;
+                const checkProducts = setInterval(() => {
+                    checkCount++;
+                    if (checkCount > 100) { clearInterval(checkProducts); return; }
+                    if (products.length > 0) {
+                        clearInterval(checkProducts);
+                        // Clear existing shortlist so shared link shows exactly what was shared
+                        state.shortlist = [];
+                        document.querySelectorAll('.save-btn.active').forEach(btn => btn.classList.remove('active'));
+                        shortlistIds.split(',').forEach(key => {
+                            // Match by slug or id
+                            const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
+                            if (card) {
+                                const id = card.dataset.id;
+                                if (!state.shortlist.some(s => s.id === id)) {
+                                    state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                                    const btn = card.querySelector('.save-btn');
+                                    if (btn) btn.classList.add('active');
+                                }
+                            }
+                        });
+                        updateShortlistUI();
+                        openShortlist();
+                    }
+                }, 100);
+            }
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div>
+                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a><br>
+                    <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><br>
+                    North London — By appointment
+                </div>
+            </div>
+            <ul class="footer-links">
+                <li><a href="/#about">About</a></li>
+                <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/faq">FAQ</a></li>
+                <li><a href="/care-guide">Care Guide</a></li>
+                <li><a href="/resources">Support</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li><a href="/track">Track Order</a></li>
+                <li><a href="/partner">Partner Portal</a></li>
+            </ul>
+            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Save Toast Notification -->
+    <div class="save-toast" id="saveToast">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span id="saveToastMsg">Saved to shortlist</span>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div class="mobile-bottom-nav-inner">
+            <a href="/" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+            </a>
+            <a href="/memorials" class="mobile-nav-item active">
+                <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="14" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+                <span>Browse</span>
+            </a>
+            <a href="/contact" class="mobile-nav-item primary">
+                <div class="nav-icon-bg">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span>Enquire</span>
+            </a>
+            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <span>Search</span>
+            </button>
+            <a href="tel:+442038352548" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                <span>Call</span>
+            </a>
+        </div>
+    </nav>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+
+        // ==================== SITE SEARCH ==
+
+        const searchFaqData = [
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "faq.html#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "faq.html#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "faq.html#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "contact.html" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "memorials.html" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "care-guide.html" },
+        ];
+
+        let searchTimeout;
+
+        function openSearch() {
+            document.getElementById('searchOverlay').classList.add('active');
+            document.getElementById('searchModal').classList.add('active');
+            document.getElementById('searchInput').focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearch() {
+            document.getElementById('searchOverlay').classList.remove('active');
+            document.getElementById('searchModal').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = getQuickLinksHTML();
+            document.body.style.overflow = '';
+        }
+
+        function getQuickLinksHTML() {
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="memorials.html" class="search-quick-link">Browse Memorials</a><a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a><a href="faq.html" class="search-quick-link">FAQs</a><a href="contact.html" class="search-quick-link">Get a Quote</a><a href="permit-checker.html" class="search-quick-link">Permit Info</a></div></div>';
+        }
+
+        function handleSearch(query) {
+            clearTimeout(searchTimeout);
+            var resultsContainer = document.getElementById('searchResults');
+            if (query.length < 2) {
+                resultsContainer.innerHTML = getQuickLinksHTML();
+                return;
+            }
+            resultsContainer.innerHTML = '<div class="search-loading"><div class="search-spinner"></div></div>';
+            searchTimeout = setTimeout(function() { performSearch(query); }, 300);
+        }
+
+        async function performSearch(query) {
+            var resultsContainer = document.getElementById('searchResults');
+            var lowerQuery = query.toLowerCase();
+            var html = '';
+
+            try {
+                var response = await fetch(
+                    SUPABASE_URL + '/rest/v1/products?or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id,is_active',
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                        }
+                    }
+                );
+                var products = await response.json();
+                if (Array.isArray(products) && products.length > 0) {
+                    html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
+                    products.slice(0, 5).forEach(function(product) {
+                        var category = 'Memorial';
+                        var imageHTML = product.image_url
+                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
+                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                    });
+                    html += '</div>';
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+
+            var matchingFaqs = searchFaqData.filter(function(faq) {
+                return faq.q.toLowerCase().includes(lowerQuery) || faq.a.toLowerCase().includes(lowerQuery);
+            });
+
+            if (matchingFaqs.length > 0) {
+                html += '<div class="search-section"><div class="search-section-title">Help & FAQs</div>';
+                matchingFaqs.slice(0, 3).forEach(function(faq) {
+                    html += '<a href="' + faq.url + '" class="search-result"><div class="search-result-image"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="search-result-content"><div class="search-result-title">' + faq.q + '</div><div class="search-result-subtitle">' + faq.a + '</div></div></a>';
+                });
+                html += '</div>';
+            }
+
+            if (!html) {
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="memorials.html" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearch();
+            }
+            if (e.key === 'Escape') {
+                closeSearch();
+            }
+        });
+
+    </script>
+</body>
+</html>
