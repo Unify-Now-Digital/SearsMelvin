@@ -77,10 +77,23 @@ async function handleLogin(env, { email, password }) {
 
   const partner = rows[0];
 
-  // Verify password
-  const hash = await hashPassword(password);
-  if (hash !== partner.password_hash) {
+  const verified = await verifyPassword(password, partner.password_hash);
+  if (!verified) {
     return json({ ok: false, error: "Invalid email or password" }, 401);
+  }
+
+  // Opportunistically upgrade legacy unsalted SHA-256 hashes to PBKDF2 on next login.
+  if (isLegacyHash(partner.password_hash)) {
+    try {
+      const upgraded = await hashPassword(password);
+      await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${partner.id}`, {
+        method: "PATCH",
+        headers: { ...headers, "Prefer": "return=minimal" },
+        body: JSON.stringify({ password_hash: upgraded }),
+      });
+    } catch (err) {
+      console.error("Password hash upgrade failed:", err);
+    }
   }
 
   // Create session token
@@ -178,7 +191,7 @@ async function handleRequest(env, { email, password, name, company, phone, messa
       if (existing[0].status === "approved") {
         return json({ ok: false, error: "An account with this email already exists. Please sign in." }, 409);
       }
-      // If declined, allow re-request by updating
+      // If declined, allow re-request by updating. Preserve declined_at as audit history.
       const hash = await hashPassword(password);
       await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${existing[0].id}`, {
         method: "PATCH",
@@ -190,7 +203,6 @@ async function handleRequest(env, { email, password, name, company, phone, messa
           phone: phone || null,
           notes: message || null,
           status: "pending",
-          declined_at: null,
           active: true,
         }),
       });
@@ -364,12 +376,71 @@ async function getPartnerFromToken(env, token) {
   return partRows.length > 0 ? partRows[0] : null;
 }
 
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+// PBKDF2-SHA256 with a per-user random salt. Format:
+//   pbkdf2$<iterations>$<saltHex>$<hashHex>
+// Legacy unsalted SHA-256 hashes (64 hex chars, no '$') are still verified, then
+// transparently upgraded on the next successful login.
+const PBKDF2_ITERATIONS = 600000;
+const PBKDF2_KEYLEN_BITS = 256;
+const PBKDF2_SALT_BYTES = 16;
+
+async function hashPassword(password, saltHex = null, iterations = PBKDF2_ITERATIONS) {
+  const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_BYTES));
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const derived = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+    baseKey,
+    PBKDF2_KEYLEN_BITS,
+  );
+  return `pbkdf2$${iterations}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(derived))}`;
+}
+
+async function verifyPassword(password, stored) {
+  if (!stored) return false;
+  if (isLegacyHash(stored)) {
+    const legacy = await sha256Hex(password);
+    return timingSafeEqual(legacy, stored);
+  }
+  const parts = stored.split("$");
+  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
+  const iterations = parseInt(parts[1], 10);
+  if (!Number.isFinite(iterations) || iterations <= 0) return false;
+  const candidate = await hashPassword(password, parts[2], iterations);
+  return timingSafeEqual(candidate, stored);
+}
+
+function isLegacyHash(stored) {
+  return typeof stored === "string" && !stored.includes("$") && /^[0-9a-f]{64}$/i.test(stored);
+}
+
+async function sha256Hex(input) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return bytesToHex(new Uint8Array(buf));
+}
+
+function bytesToHex(bytes) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, "0");
+  return s;
+}
+
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+
+function timingSafeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 function generateToken(length = 64) {

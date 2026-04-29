@@ -212,6 +212,9 @@ function magicLinkEmail(url) {
 
 async function verifyAdminToken(env, token) {
   if (!token) return false;
+  // Magic-link tokens travel in URLs (referrer leakage, history). Force a one-time
+  // exchange via verify-magic-link instead of letting them act as session tokens.
+  if (typeof token === "string" && token.startsWith("magic_")) return false;
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
   const res = await fetch(
@@ -438,10 +441,21 @@ async function listEnquiries(env, { channel, status, limit }) {
   if (!res.ok) return json({ ok: false, error: "Database error", detail: await res.text() }, 500);
   const enquiries = await res.json();
 
-  // Generate signed URLs (1h expiry) for any photo paths.
+  // Sign every photo path across every enquiry in a single batch call, then redistribute.
+  const allPaths = [];
   for (const e of enquiries) {
-    if (Array.isArray(e.photo_urls) && e.photo_urls.length > 0) {
-      e.photo_signed_urls = await signPhotoPaths(env, e.photo_urls);
+    if (Array.isArray(e.photo_urls)) {
+      for (const p of e.photo_urls) if (p) allPaths.push(p);
+    }
+  }
+  if (allPaths.length > 0) {
+    const signed = await signPhotoPaths(env, allPaths);
+    const signedByPath = new Map();
+    allPaths.forEach((p, i) => { if (signed[i]) signedByPath.set(p, signed[i]); });
+    for (const e of enquiries) {
+      if (Array.isArray(e.photo_urls) && e.photo_urls.length > 0) {
+        e.photo_signed_urls = e.photo_urls.map(p => signedByPath.get(p)).filter(Boolean);
+      }
     }
   }
   return json({ ok: true, enquiries });
@@ -451,6 +465,8 @@ async function signPhotoPaths(env, paths) {
   // Supabase Storage supports a single batch sign endpoint:
   //   POST /storage/v1/object/sign/{bucket}
   //   body: { paths: [...], expiresIn: 3600 }
+  // Returns positional results — preserve null gaps so callers can zip back to the
+  // original paths array.
   const res = await fetch(`${env.SUPABASE_URL}/storage/v1/object/sign/enquiry-photos`, {
     method: "POST",
     headers: {
@@ -461,10 +477,10 @@ async function signPhotoPaths(env, paths) {
   });
   if (!res.ok) {
     console.error(`Storage sign failed ${res.status}: ${await res.text()}`);
-    return [];
+    return paths.map(() => null);
   }
   const rows = await res.json();
-  return rows.map(r => (r.signedURL ? `${env.SUPABASE_URL}/storage/v1${r.signedURL}` : null)).filter(Boolean);
+  return rows.map(r => (r.signedURL ? `${env.SUPABASE_URL}/storage/v1${r.signedURL}` : null));
 }
 
 // ==================== LIST PRODUCTS (admin, includes hidden) ====================
@@ -603,29 +619,19 @@ async function generateTracking(env, { orderId }) {
 async function listInscriptionRequests(env) {
   const headers = sbHeaders(env);
 
+  // PostgREST resource embedding pulls the parent order in one round-trip.
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/inscription_requests?status=eq.pending&select=id,order_id,requested_text,reason,created_at&order=created_at.desc&limit=50`,
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?status=eq.pending` +
+      `&select=id,order_id,requested_text,reason,created_at,` +
+      `orders(id,sku,inscription_text,people(first_name,last_name,email))` +
+      `&order=created_at.desc&limit=50`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
-  const requests = await res.json();
+  const rows = await res.json();
+  const requests = rows.map(({ orders, ...rest }) => ({ ...rest, order: orders || null }));
 
-  // Enrich with order info
-  const enriched = [];
-  for (const req of requests) {
-    const orderRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,people(first_name,last_name,email),sku,inscription_text&limit=1`,
-      { headers },
-    );
-    let orderInfo = null;
-    if (orderRes.ok) {
-      const orderRows = await orderRes.json();
-      if (orderRows.length > 0) orderInfo = orderRows[0];
-    }
-    enriched.push({ ...req, order: orderInfo });
-  }
-
-  return json({ ok: true, requests: enriched });
+  return json({ ok: true, requests });
 }
 
 // ==================== RESOLVE INSCRIPTION REQUEST ====================

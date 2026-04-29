@@ -136,33 +136,78 @@ export default {
             "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
             "Content-Type":  "application/json",
           };
+
+          // Distinguish a 50% deposit invoice from a paid-in-full invoice by
+          // reading the metadata `invoice_type` set when we created the Stripe
+          // invoice in handleQuoteRequest.
+          let invoiceType = "deposit";
+          if (pi.invoice && env.STRIPE_SECRET_KEY) {
+            try {
+              const invR = await fetch(`https://api.stripe.com/v1/invoices/${pi.invoice}`, {
+                headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+              });
+              if (invR.ok) {
+                const inv = await invR.json();
+                if (inv.metadata?.invoice_type === "full") invoiceType = "full";
+              }
+            } catch (e) { console.error("Stripe invoice lookup failed:", e); }
+          }
+          const isFull = invoiceType === "full";
+          const orderStatus = isFull ? "completed" : "partial";
+          const orderStage = "deposit_paid";
+          const paymentNote = isFull
+            ? (prodName ? `Full payment — ${prodName}` : "Full payment")
+            : (prodName ? `50% deposit — ${prodName}` : "50% deposit");
+
+          // Stripe retries delivery — dedupe by PaymentIntent id.
+          let alreadyRecorded = false;
+          try {
+            const dedupeRes = await fetch(
+              `${env.SUPABASE_URL}/rest/v1/payments?reference=eq.${encodeURIComponent(pi.id)}&select=id&limit=1`,
+              { headers: { apikey: sbH.apikey, Authorization: sbH.Authorization } },
+            );
+            if (dedupeRes.ok) alreadyRecorded = (await dedupeRes.json()).length > 0;
+          } catch {}
+
           try {
             if (piInvoiceId) {
-              // Invoice was created at quote time — update status to "partial" and record payment.
+              // Invoice was created at quote time — update status and record payment.
               const patchRes = await fetch(
-                `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${piInvoiceId}`,
+                `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${piInvoiceId}&select=order_id`,
                 {
                   method:  "PATCH",
-                  headers: { ...sbH, "Prefer": "return=minimal" },
-                  body: JSON.stringify({ status: "partial", payment_method: "Stripe" }),
+                  headers: { ...sbH, "Prefer": "return=representation" },
+                  body: JSON.stringify({ status: orderStatus, payment_method: "Stripe" }),
                 },
               );
               if (!patchRes.ok) {
                 console.error(`Supabase invoices PATCH error ${patchRes.status}: ${await patchRes.text()}`);
+              } else {
+                const invRows = await patchRes.json();
+                const ordId = invRows[0]?.order_id;
+                if (ordId) {
+                  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${ordId}`, {
+                    method: "PATCH",
+                    headers: { ...sbH, "Prefer": "return=minimal" },
+                    body: JSON.stringify({ status: orderStatus, stage: orderStage }),
+                  });
+                }
               }
 
-              await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
-                method:  "POST",
-                headers: { ...sbH, "Prefer": "return=minimal" },
-                body: JSON.stringify({
-                  invoice_id: piInvoiceId,
-                  amount:     parseFloat(amountPaid),
-                  date:       today,
-                  method:     "card",
-                  reference:  pi.id,
-                  notes:      prodName ? `50% deposit — ${prodName}` : "50% deposit",
-                }),
-              });
+              if (!alreadyRecorded) {
+                await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+                  method:  "POST",
+                  headers: { ...sbH, "Prefer": "return=minimal" },
+                  body: JSON.stringify({
+                    invoice_id: piInvoiceId,
+                    amount:     parseFloat(amountPaid),
+                    date:       today,
+                    method:     "card",
+                    reference:  pi.id,
+                    notes:      paymentNote,
+                  }),
+                });
+              }
             } else {
               // Fallback: no invoice_id in metadata — look up order by email,
               // create invoice and payment records.
@@ -183,7 +228,7 @@ export default {
                   order_id:       orderId,
                   customer_name:  custName || custEmail || "Unknown",
                   amount:         parseFloat(amountPaid),
-                  status:         "partial",
+                  status:         orderStatus,
                   issue_date:     today,
                   due_date:       today,
                   payment_method: "Stripe",
@@ -193,18 +238,28 @@ export default {
                 const invoices  = await invRes.json();
                 const invoiceId = invoices[0]?.id || null;
 
-                await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
-                  method:  "POST",
-                  headers: { ...sbH, "Prefer": "return=minimal" },
-                  body: JSON.stringify({
-                    invoice_id: invoiceId,
-                    amount:     parseFloat(amountPaid),
-                    date:       today,
-                    method:     "card",
-                    reference:  pi.id,
-                    notes:      prodName ? `50% deposit — ${prodName}` : "50% deposit",
-                  }),
-                });
+                if (!alreadyRecorded) {
+                  await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+                    method:  "POST",
+                    headers: { ...sbH, "Prefer": "return=minimal" },
+                    body: JSON.stringify({
+                      invoice_id: invoiceId,
+                      amount:     parseFloat(amountPaid),
+                      date:       today,
+                      method:     "card",
+                      reference:  pi.id,
+                      notes:      paymentNote,
+                    }),
+                  });
+                }
+
+                if (orderId) {
+                  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+                    method: "PATCH",
+                    headers: { ...sbH, "Prefer": "return=minimal" },
+                    body: JSON.stringify({ status: orderStatus, stage: orderStage }),
+                  });
+                }
               } else {
                 console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
               }
@@ -1405,7 +1460,14 @@ async function verifyStripeWebhookSig(rawBody, sigHeader, secret) {
   );
   const sigBytes    = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
   const computedSig = Array.from(new Uint8Array(sigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
-  return computedSig === givenSig;
+  return timingSafeEqualStr(computedSig, givenSig);
+}
+
+function timingSafeEqualStr(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 // ─── Deposit email templates (worker) ────────────────────────────────────────

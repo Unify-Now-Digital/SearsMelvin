@@ -887,8 +887,9 @@
         var custEmail = p.email ? '<p><a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></p>' : '';
         var locBlock = o.location ? '<p style="color:var(--color-text-muted);font-size:0.78rem;margin-top:0.4rem;">' + esc(o.location) + '</p>' : '';
         var custTypeChip = p.is_customer ? '<span style="background:var(--color-success);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Customer</span>' : '<span style="background:var(--color-text-muted);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Lead</span>';
+        var fullName = [p.first_name, p.last_name].filter(Boolean).join(' ') || '\u2014';
         var custBlock = '<div class="info-block"><h4>Customer</h4>'
-            + '<p style="font-weight:600;">' + esc(p.name || '\u2014') + custTypeChip + '</p>'
+            + '<p style="font-weight:600;">' + esc(fullName) + custTypeChip + '</p>'
             + custEmail + custPhone + locBlock
             + '</div>';
 
@@ -921,8 +922,10 @@
         var permitRow = (o.permit_fee && parseFloat(o.permit_fee) > 0) ? '<div class="row"><span>Permit fee</span><span>' + formatPrice(o.permit_fee) + '</span></div>' : '';
         var paid = o.status === 'partial' || o.status === 'completed';
         var fullyPaid = o.status === 'completed';
-        var depositRow = (paid && o.value) ? '<div class="row"><span>50% deposit</span><span>' + formatPrice(parseFloat(o.value) * 0.5) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
-        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(parseFloat(o.value) * 0.5 + parseFloat(o.permit_fee || 0)) + '</span></div>' : '';
+        var totalDue = (parseFloat(o.value) || 0) + (parseFloat(o.permit_fee) || 0);
+        var depositAmount = totalDue * 0.5;
+        var depositRow = (paid && o.value) ? '<div class="row"><span>50% deposit</span><span>' + formatPrice(depositAmount) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
+        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(totalDue - depositAmount) + '</span></div>' : '';
         var paymentBlock = '<div class="info-block"><h4>Payment ' + (fullyPaid ? '<span style="color:var(--color-success);font-size:0.7rem;">paid in full</span>' : paid ? '<span style="color:var(--color-success);font-size:0.7rem;">deposit paid</span>' : '<span style="color:var(--color-text-muted);font-size:0.7rem;">unpaid</span>') + '</h4>'
             + '<div class="row"><span>Base</span><span>' + (o.value ? formatPrice(o.value) : '\u2014') + '</span></div>'
             + configLines

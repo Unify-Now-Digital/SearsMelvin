@@ -55,6 +55,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
   const { name, email, phone, cemetery, message, product = {}, location, payment_preference } = data;
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
+  const cemeteryOrLocation = cemetery || location || null;
 
   // 0. Stripe Invoices — always create both deposit and full payment invoices
   let stripeDepositUrl = null;
@@ -62,7 +63,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
   if (env.STRIPE_SECRET_KEY) {
     try {
       stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location,
+        name, email, phone, product, location: cemeteryOrLocation,
         isFullInvoice: false,
       });
     } catch (err) {
@@ -70,7 +71,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     }
     try {
       stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location,
+        name, email, phone, product, location: cemeteryOrLocation,
         isFullInvoice: true,
       });
     } catch (err) {
@@ -78,43 +79,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     }
   }
 
-  // 1. Business notification email (critical)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to:      BUSINESS_EMAIL,
-      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, location: cemetery, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote business email:", err);
-    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
-  }
-
-  // 2. Customer confirmation email (non-critical)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
-      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote customer email:", err);
-  }
-
-  // 3. ClickUp
-  try {
-    await createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
-      description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
-      listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp quote task:", err);
-  }
-
-  // 4. Supabase — create the enquiry + order + invoice (critical: surface failures)
+  // 1. Supabase first — the customer email needs editToken, and the response needs invoiceId.
   let invoiceId = null;
   let editToken = null;
   try {
@@ -123,7 +88,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       name, email, phone,
       source_page: data.source_page || null,
       message,
-      location: cemetery || location || null,
+      location: cemeteryOrLocation,
       cemetery_id: data.cemetery_id || null,
       product,
     });
@@ -132,6 +97,42 @@ async function handleQuoteRequest(env, data, submittedAt) {
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
+  }
+
+  // 2. Business notification email (critical)
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to:      BUSINESS_EMAIL,
+      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
+      html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
+    });
+  } catch (err) {
+    console.error("Failed to send quote business email:", err);
+    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
+  }
+
+  // 3. Customer confirmation email (non-critical)
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
+      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }),
+    });
+  } catch (err) {
+    console.error("Failed to send quote customer email:", err);
+  }
+
+  // 4. ClickUp
+  try {
+    await createClickUpTask(env.CLICKUP_API_KEY, {
+      name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
+      description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
+      listId: CLICKUP_LIST_ID,
+    });
+  } catch (err) {
+    console.error("Failed to create ClickUp quote task:", err);
   }
 
   // 5. GHL
@@ -716,7 +717,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }) {
   const totalPrice = parseFloat(product.price) || 0;
   const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -906,7 +907,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
         <tr>
           <td style="padding:0 28px 16px;">
             <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
-              <a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account
+              ${email ? `<a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account` : ""}
             </p>
           </td>
         </tr>
