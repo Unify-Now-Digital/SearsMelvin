@@ -1803,7 +1803,9 @@
         let _stripePK = '';
         let _stripeInst = null;
         let _stripeElements = null;
-        let _quoteTotal = 0;
+        let _quoteTotal = 0;          // grand total — memorial value + permit fee
+        let _quoteMemorialTotal = 0;  // memorial value only (base + addons + lettering)
+        let _quotePermitFee = 0;      // cemetery permit fee, billed 100% on deposit
         let _quoteName  = '';
         let _quoteEmail = '';
         let _quoteCemetery = '';
@@ -1879,7 +1881,11 @@
             _isFullPayment = !!isFullPayment;
 
             const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
-            const balance = _quoteTotal - amount;
+            // Balance owed at completion = the remaining 50% of the memorial value.
+            // The permit fee is paid in full as part of the deposit, so it doesn't
+            // contribute to the balance. _quoteMemorialTotal is set on the prior
+            // step to (base + addons + lettering), excluding the permit.
+            const balance = isFullPayment ? 0 : Math.round((_quoteMemorialTotal || (_quoteTotal - (_quotePermitFee || 0))) * 0.5);
 
             // Update UI labels based on payment type
             var headerTitle = document.querySelector('#quotePayStep .quote-deposit-header h3');
@@ -1896,12 +1902,12 @@
                 if (payBtnLabel) payBtnLabel.textContent = 'Pay in full';
             } else {
                 if (headerTitle) headerTitle.textContent = 'Secure your order';
-                if (headerDesc) headerDesc.textContent = 'A 50% deposit confirms your order and reserves your slot';
+                if (headerDesc) headerDesc.textContent = 'Pay 50% of the memorial today plus the cemetery permit fee in full to secure your order';
                 document.getElementById('qDepositAmount').textContent = fmt(amount);
                 document.getElementById('qBalanceDue').textContent = fmt(balance);
                 document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
                 document.getElementById('qDepositTotal').textContent = fmt(amount);
-                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit';
+                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit + permit';
             }
 
             document.getElementById('quotePayStep').style.display = 'block';
@@ -1993,15 +1999,21 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        // Track grand total (incl. permit fee) so payment-step balance maths line up.
-                        _quoteTotal = total + (parseFloat(_selectedCemeteryFee) || 0);
+                        // Memorial value (base + addons + lettering) only — permit fee is
+                        // billed separately at 100% so it doesn't get split across deposit/balance.
+                        _quoteMemorialTotal = total;
+                        _quotePermitFee = parseFloat(_selectedCemeteryFee) || 0;
+                        _quoteTotal = _quoteMemorialTotal + _quotePermitFee;
                         var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
-                        // Deposit / full charge include permit fee — Stripe charges the
-                        // same calculation, so the modal display has to match or the
-                        // amount on Stripe surprises the customer.
-                        const grandTotal = total + (parseFloat(_selectedCemeteryFee) || 0);
+                        // Deposit = 50% of the memorial value (base + addons + lettering)
+                        // PLUS 100% of the cemetery permit fee. Balance owed at completion
+                        // = remaining 50% of the memorial value. Stripe charges this same
+                        // split, so the modal display has to mirror it.
+                        const memorialValue = total;
+                        const permit = parseFloat(_selectedCemeteryFee) || 0;
+                        const grandTotal = memorialValue + permit;
                         if (pref === 'quote_only') {
                             document.getElementById('quoteSuccess').style.display = 'block';
                             document.getElementById('quoteSuccessMsg').innerHTML =
@@ -2009,7 +2021,8 @@
                         } else if (pref === 'pay_full') {
                             await showPaymentStep(grandTotal, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
                         } else {
-                            await showPaymentStep(Math.round(grandTotal * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
+                            const depositAmount = Math.round(memorialValue * 0.5) + permit;
+                            await showPaymentStep(depositAmount, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
                         }
                     } else {
                         throw new Error(result.error || 'Submission failed');

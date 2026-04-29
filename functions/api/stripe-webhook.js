@@ -189,7 +189,7 @@ async function handlePaymentSucceeded(env, pi) {
     const orderStage = "deposit_paid"; // either payment level unblocks production
     const paymentNote = isFull
       ? (product ? `Full payment — ${product}` : "Full payment")
-      : (product ? `50% deposit — ${product}` : "50% deposit");
+      : (product ? `Deposit + permit — ${product}` : "Deposit + permit");
     const alreadyRecorded = await paymentAlreadyRecorded(env, sbHeaders, pi.id);
 
     try {

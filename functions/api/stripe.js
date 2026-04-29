@@ -38,7 +38,7 @@ export async function onRequestPost({ request, env }) {
     'metadata[cemetery]':                 cemetery   || '',
     'metadata[product]':                  product    || '',
     'metadata[invoice_id]':               invoiceId  || '',
-    description:                          `50% deposit — ${product || 'Memorial'} — ${name || ''}`,
+    description:                          `Deposit + permit — ${product || 'Memorial'} — ${name || ''}`,
   });
 
   const res = await fetch('https://api.stripe.com/v1/payment_intents', {

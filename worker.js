@@ -82,7 +82,7 @@ export default {
         "metadata[cemetery]":                 cemetery     || "",
         "metadata[product]":                  productName  || "",
         "metadata[invoice_id]":               invoiceId    || "",
-        description: `50% deposit — ${productName || "Memorial"} — ${name || ""}`,
+        description: `Deposit + permit — ${productName || "Memorial"} — ${name || ""}`,
       });
       const stripeRes = await fetch("https://api.stripe.com/v1/payment_intents", {
         method: "POST",
@@ -157,7 +157,7 @@ export default {
           const orderStage = "deposit_paid";
           const paymentNote = isFull
             ? (prodName ? `Full payment — ${prodName}` : "Full payment")
-            : (prodName ? `50% deposit — ${prodName}` : "50% deposit");
+            : (prodName ? `Deposit + permit — ${prodName}` : "Deposit + permit");
 
           // Stripe retries delivery — dedupe by PaymentIntent id.
           let alreadyRecorded = false;
@@ -1303,8 +1303,12 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   const basePricePence = Math.max(0, totalPricePence - addonTotalPence);
   const productDescription = [product.name || "Memorial", product.colour ? `· ${product.colour}` : "", product.size ? `· ${product.size}` : ""].filter(Boolean).join(" ");
 
-  // For deposit invoices, charge 50%. For full invoices, charge 100%.
-  const multiplier = isFullInvoice ? 1 : 0.5;
+  // Deposit structure:
+  //   • Memorial value (base + addons + lettering): 50% on deposit, 50% on completion.
+  //   • Cemetery permit fee: 100% on deposit (we pay it upfront to the cemetery).
+  // Full-payment invoice charges 100% of everything.
+  const memorialMultiplier = isFullInvoice ? 1 : 0.5;
+  const permitMultiplier = 1; // always full
   const label = isFullInvoice ? "" : " — 50% deposit";
 
   // Helper: find existing Stripe Product by metadata key, or create a new one
@@ -1323,10 +1327,10 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
 
   const invoiceDescription = isFullInvoice
     ? `Sears Melvin Memorials — ${productDescription}`
-    : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
+    : `Sears Melvin Memorials — Deposit + permit fee — ${productDescription}`;
   const invoiceFooter = isFullInvoice
     ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
-    : "Thank you for choosing Sears Melvin Memorials. This invoice is for a 50% deposit. The remaining balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
+    : "Thank you for choosing Sears Melvin Memorials. This invoice covers a 50% deposit on the memorial plus the cemetery permit fee in full. The remaining 50% memorial balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
 
   // Create invoice FIRST as a draft, then attach line items explicitly
   const invoice = await stripePost("/invoices", {
@@ -1341,7 +1345,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
   const basePrice = await stripePost("/prices", {
     product: memorialProduct.id,
-    unit_amount: String(Math.round(basePricePence * multiplier)),
+    unit_amount: String(Math.round(basePricePence * memorialMultiplier)),
     currency: "gbp",
   });
   await stripePost("/invoiceitems", {
@@ -1351,19 +1355,19 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
     description: productDescription + " (inc. installation)" + label,
   });
 
-  // Create permit fee line item (if applicable)
+  // Permit fee — always 100%, even on a deposit invoice.
   if (permitFeePence > 0) {
     const permitProduct = await findOrCreateStripeProduct("Cemetery Permit Fee", "permit");
     const permitPrice = await stripePost("/prices", {
       product: permitProduct.id,
-      unit_amount: String(Math.round(permitFeePence * multiplier)),
+      unit_amount: String(Math.round(permitFeePence * permitMultiplier)),
       currency: "gbp",
     });
     await stripePost("/invoiceitems", {
       customer: customerId,
       invoice: invoice.id,
       price: permitPrice.id,
-      description: "Cemetery Permit Fee" + label,
+      description: "Cemetery Permit Fee (paid in full)",
     });
   }
 
@@ -1374,7 +1378,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
       const addonProduct = await findOrCreateStripeProduct(addon.name || "Add-on", "addon");
       const addonPrice = await stripePost("/prices", {
         product: addonProduct.id,
-        unit_amount: String(Math.round(addonPence * multiplier)),
+        unit_amount: String(Math.round(addonPence * memorialMultiplier)),
         currency: "gbp",
       });
       await stripePost("/invoiceitems", {

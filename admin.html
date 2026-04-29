@@ -969,10 +969,14 @@
         var permitRow = (o.permit_fee && parseFloat(o.permit_fee) > 0) ? '<div class="row"><span>Permit fee</span><span>' + formatPrice(o.permit_fee) + '</span></div>' : '';
         var paid = o.status === 'partial' || o.status === 'completed';
         var fullyPaid = o.status === 'completed';
-        var totalDue = (parseFloat(o.value) || 0) + (parseFloat(o.permit_fee) || 0);
-        var depositAmount = totalDue * 0.5;
-        var depositRow = (paid && o.value) ? '<div class="row"><span>50% deposit</span><span>' + formatPrice(depositAmount) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
-        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(totalDue - depositAmount) + '</span></div>' : '';
+        var memorialValue = parseFloat(o.value) || 0;
+        var permitFee = parseFloat(o.permit_fee) || 0;
+        // Deposit = 50% of memorial value + 100% of permit fee.
+        // Balance owed at completion = remaining 50% of memorial value (permit is paid in full upfront).
+        var depositAmount = (memorialValue * 0.5) + permitFee;
+        var balanceAmount = memorialValue * 0.5;
+        var depositRow = (paid && o.value) ? '<div class="row"><span>Deposit + permit</span><span>' + formatPrice(depositAmount) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
+        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(balanceAmount) + '</span></div>' : '';
         var paymentBlock = '<div class="info-block"><h4>Payment ' + (fullyPaid ? '<span style="color:var(--color-success);font-size:0.7rem;">paid in full</span>' : paid ? '<span style="color:var(--color-success);font-size:0.7rem;">deposit paid</span>' : '<span style="color:var(--color-text-muted);font-size:0.7rem;">unpaid</span>') + '</h4>'
             + '<div class="row"><span>Base</span><span>' + (o.value ? formatPrice(o.value) : '\u2014') + '</span></div>'
             + configLines
