@@ -145,7 +145,6 @@ async function createOrder(env, partner, data) {
       name: customerName,
       email: customerEmail,
       phone: customerPhone,
-      isCustomer: true,
     });
   } catch (err) {
     return json({ ok: false, error: "Failed to register customer", detail: String(err) }, 500);
