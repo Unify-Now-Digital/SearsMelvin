@@ -83,7 +83,7 @@ async function getPortal(env, portalToken) {
   let personId = null;
   if (custEmail) {
     const personRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
+      `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
       { headers },
     );
     if (personRes.ok) {
@@ -265,14 +265,14 @@ async function sendPortalLink(env, { email }) {
   let customerName = "";
   let personId = null;
   const personRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,name&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name&limit=1`,
     { headers },
   );
   if (personRes.ok) {
     const personRows = await personRes.json();
     if (personRows.length > 0) {
       personId = personRows[0].id;
-      customerName = personRows[0].name || "";
+      customerName = [personRows[0].first_name, personRows[0].last_name].filter(Boolean).join(" ") || "";
       const ordersRes = await fetch(
         `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id&limit=1`,
         { headers },
