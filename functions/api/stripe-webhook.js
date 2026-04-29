@@ -92,6 +92,39 @@ export async function onRequestPost({ request, env }) {
   });
 }
 
+// Resolve the order's person_id and flip people.is_customer = TRUE. This is the
+// only code path allowed to set is_customer (the flag means "has paid at least
+// once"). Idempotent and isolated so a flip failure can't block invoice/payment
+// writes upstream.
+async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
+  if (!orderId) return;
+  try {
+    const orderRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}&select=person_id`,
+      { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
+    );
+    if (!orderRes.ok) {
+      console.error(`is_customer flip: orders lookup ${orderRes.status}: ${await orderRes.text()}`);
+      return;
+    }
+    const personId = (await orderRes.json())[0]?.person_id;
+    if (!personId) return;
+    const patchRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${personId}`,
+      {
+        method: "PATCH",
+        headers: { ...sbHeaders, Prefer: "return=minimal" },
+        body: JSON.stringify({ is_customer: true }),
+      },
+    );
+    if (!patchRes.ok) {
+      console.error(`is_customer flip: people PATCH ${patchRes.status}: ${await patchRes.text()}`);
+    }
+  } catch (err) {
+    console.error("is_customer flip failed:", err);
+  }
+}
+
 // ── Payment succeeded ───────────────────────────────────────────────────────────
 async function handlePaymentSucceeded(env, pi) {
   const { customer_name: name, customer_email: email, cemetery, product,
@@ -132,6 +165,7 @@ async function handlePaymentSucceeded(env, pi) {
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
               body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
             });
+            await markPersonAsPayingCustomer(env, sbHeaders, ordId);
           }
         }
 
@@ -208,6 +242,7 @@ async function handlePaymentSucceeded(env, pi) {
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
               body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
             });
+            await markPersonAsPayingCustomer(env, sbHeaders, orderId);
           }
         }
       }

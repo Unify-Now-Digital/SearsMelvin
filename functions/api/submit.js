@@ -1058,13 +1058,14 @@ function splitName(full) {
   const parts = (full || "").trim().split(/\s+/);
   return {
     first_name: parts[0] || null,
-    last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+    last_name: parts.length > 1 ? parts.slice(1).join(" ") : "-",
   };
 }
 
-// Upsert a retail contact into `people`, deduped by email.
-// `is_customer` is sticky-true: once flipped on by a quote it never reverts.
-export async function upsertPerson(env, { name, email, phone, isCustomer }) {
+// Upsert a retail contact into `people`, deduped by email. Never sets
+// is_customer — that flag means "has paid at least once" and is owned
+// exclusively by the Stripe webhook (handlePaymentSucceeded).
+export async function upsertPerson(env, { name, email, phone }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return null;
   if (!email) return null;
   const normalisedEmail = email.trim().toLowerCase();
@@ -1072,29 +1073,28 @@ export async function upsertPerson(env, { name, email, phone, isCustomer }) {
   const { first_name, last_name } = splitName(name);
 
   const existingRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(normalisedEmail)}&organization_id=eq.${env.SM_ORG_ID}&select=id,is_customer`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&organization_id=eq.${env.SM_ORG_ID}&select=id,is_customer`,
     { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
   );
-  if (!existingRes.ok) throw new Error(`Supabase customers lookup error ${existingRes.status}: ${await existingRes.text()}`);
+  if (!existingRes.ok) throw new Error(`Supabase people lookup error ${existingRes.status}: ${await existingRes.text()}`);
   const existing = (await existingRes.json())[0] || null;
 
   if (existing) {
     const patchBody = {};
     if (first_name) patchBody.first_name = first_name;
-    if (last_name) patchBody.last_name = last_name;
+    if (last_name && last_name !== "-") patchBody.last_name = last_name;
     if (phone) patchBody.phone = phone;
-    if (isCustomer && !existing.is_customer) patchBody.is_customer = true;
     if (Object.keys(patchBody).length > 0) {
       const patchRes = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/customers?id=eq.${existing.id}`,
+        `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
         { method: "PATCH", headers, body: JSON.stringify(patchBody) }
       );
-      if (!patchRes.ok) throw new Error(`Supabase customers update error ${patchRes.status}: ${await patchRes.text()}`);
+      if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
     }
-    return { id: existing.id, is_customer: existing.is_customer || !!isCustomer };
+    return { id: existing.id, is_customer: !!existing.is_customer };
   }
 
-  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
+  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people`, {
     method: "POST",
     headers: { ...headers, Prefer: "return=representation" },
     body: JSON.stringify({
@@ -1103,10 +1103,9 @@ export async function upsertPerson(env, { name, email, phone, isCustomer }) {
       first_name,
       last_name,
       phone: phone || null,
-      is_customer: !!isCustomer,
     }),
   });
-  if (!insertRes.ok) throw new Error(`Supabase customers insert error ${insertRes.status}: ${await insertRes.text()}`);
+  if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
   const inserted = (await insertRes.json())[0] || null;
   return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
 }
@@ -1171,7 +1170,6 @@ async function createEnquiry(env, payload) {
     name: payload.name,
     email: payload.email,
     phone: payload.phone,
-    isCustomer: payload.channel === "quote",
   });
   if (!person) throw new Error("Person upsert returned no id");
 

@@ -1017,7 +1017,7 @@ function generateToken() {
   return token;
 }
 
-async function upsertPersonWorker(env, { name, email, phone, source, isCustomer }) {
+async function upsertPersonWorker(env, { name, email, phone }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !email) return null;
   const normalisedEmail = email.trim().toLowerCase();
   const baseHeaders = {
@@ -1026,30 +1026,29 @@ async function upsertPersonWorker(env, { name, email, phone, source, isCustomer 
     "Content-Type":  "application/json",
   };
   const lookupRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(normalisedEmail)}${env.SM_ORG_ID ? `&organization_id=eq.${env.SM_ORG_ID}` : ""}&select=id,is_customer`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}${env.SM_ORG_ID ? `&organization_id=eq.${env.SM_ORG_ID}` : ""}&select=id,is_customer`,
     { headers: { apikey: baseHeaders.apikey, Authorization: baseHeaders.Authorization } },
   );
-  if (!lookupRes.ok) throw new Error(`Supabase customers lookup error ${lookupRes.status}: ${await lookupRes.text()}`);
+  if (!lookupRes.ok) throw new Error(`Supabase people lookup error ${lookupRes.status}: ${await lookupRes.text()}`);
   const existing = (await lookupRes.json())[0] || null;
   const parts = (name || "").trim().split(/\s+/);
   const first_name = parts[0] || null;
-  const last_name = parts.length > 1 ? parts.slice(1).join(" ") : null;
+  const last_name = parts.length > 1 ? parts.slice(1).join(" ") : "-";
   if (existing) {
     const patchBody = {};
     if (first_name) patchBody.first_name = first_name;
-    if (last_name) patchBody.last_name = last_name;
+    if (last_name && last_name !== "-") patchBody.last_name = last_name;
     if (phone) patchBody.phone = phone;
-    if (isCustomer && !existing.is_customer) patchBody.is_customer = true;
     if (Object.keys(patchBody).length > 0) {
       const patchRes = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/customers?id=eq.${existing.id}`,
+        `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
         { method: "PATCH", headers: { ...baseHeaders, Prefer: "return=minimal" }, body: JSON.stringify(patchBody) },
       );
-      if (!patchRes.ok) throw new Error(`Supabase customers update error ${patchRes.status}: ${await patchRes.text()}`);
+      if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
     }
     return { id: existing.id };
   }
-  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
+  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people`, {
     method: "POST",
     headers: { ...baseHeaders, Prefer: "return=representation" },
     body: JSON.stringify({
@@ -1058,10 +1057,9 @@ async function upsertPersonWorker(env, { name, email, phone, source, isCustomer 
       first_name,
       last_name,
       phone: phone || null,
-      is_customer: !!isCustomer,
     }),
   });
-  if (!insertRes.ok) throw new Error(`Supabase customers insert error ${insertRes.status}: ${await insertRes.text()}`);
+  if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
   const inserted = (await insertRes.json())[0] || null;
   return inserted ? { id: inserted.id } : null;
 }
@@ -1080,11 +1078,7 @@ async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_typ
   const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
   const editToken = preEditToken || (type === "quote" ? generateToken() : null);
 
-  const person = await upsertPersonWorker(env, {
-    name, email, phone,
-    source: type,
-    isCustomer: type === "quote",
-  });
+  const person = await upsertPersonWorker(env, { name, email, phone });
   if (!person) throw new Error("Supabase person upsert returned no id");
 
   // orders table — return=representation so we get the new row's id

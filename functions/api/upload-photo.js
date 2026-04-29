@@ -20,7 +20,6 @@ const ALLOWED_MIME = new Set([
   "image/png",
   "image/webp",
   "image/heic",
-  "image/heif",
 ]);
 
 export async function onRequestOptions() {

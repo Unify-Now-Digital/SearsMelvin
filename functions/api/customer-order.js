@@ -58,9 +58,9 @@ export async function onRequest(context) {
 async function getPortal(env, portalToken) {
   const headers = sbHeaders(env);
 
-  // Find customer by portal token
+  // Find person by portal token (covers leads + paying customers).
   const custRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,last_name,email&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,last_name,email&limit=1`,
     { headers },
   );
   if (!custRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -83,7 +83,7 @@ async function getPortal(env, portalToken) {
   let personId = null;
   if (custEmail) {
     const personRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
+      `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
       { headers },
     );
     if (personRes.ok) {
@@ -249,9 +249,10 @@ async function sendPortalLink(env, { email }) {
   const cleanEmail = email.trim().toLowerCase();
   const headers = sbHeaders(env);
 
-  // Check if customer exists by email (case-insensitive)
+  // Look up the person record (case-insensitive). Single source of truth — leads
+  // and paying customers both live in `people`.
   const custRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?email=ilike.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=ilike.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
     { headers },
   );
   let customer = null;
@@ -260,12 +261,12 @@ async function sendPortalLink(env, { email }) {
     if (rows.length > 0) customer = rows[0];
   }
 
-  // Also check if there's a person record with this email (and any linked orders).
+  // Also resolve the person id and any linked orders.
   let hasOrders = false;
   let customerName = "";
   let personId = null;
   const personRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name&limit=1`,
     { headers },
   );
   if (personRes.ok) {
@@ -287,17 +288,19 @@ async function sendPortalLink(env, { email }) {
   // If no customer record and no orders, return safe message
   if (!customer && !hasOrders) return json({ ok: true, message: safeMsg });
 
-  // Create customer record if it doesn't exist
+  // Create the person record if it doesn't exist. last_name is NOT NULL on
+  // people, so fall back to '-' when we don't have one.
   if (!customer) {
     const nameParts = customerName.split(" ");
     const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
+    const lastName = nameParts.slice(1).join(" ") || "-";
     const token = "cust-portal-" + crypto.randomUUID().replace(/-/g, "");
 
-    const createRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
+    const createRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people`, {
       method: "POST",
       headers: { ...headers, "Prefer": "return=representation" },
       body: JSON.stringify({
+        ...(env.SM_ORG_ID ? { organization_id: env.SM_ORG_ID } : {}),
         first_name: firstName,
         last_name: lastName,
         email: cleanEmail,
@@ -305,7 +308,7 @@ async function sendPortalLink(env, { email }) {
       }),
     });
     if (!createRes.ok) {
-      console.error("Failed to create customer:", await createRes.text());
+      console.error("Failed to create person:", await createRes.text());
       return json({ ok: false, error: "Something went wrong. Please try again." }, 500);
     }
     const created = await createRes.json();
@@ -324,7 +327,7 @@ async function sendPortalLink(env, { email }) {
   // Generate portal token if missing
   if (!customer.portal_token) {
     const token = "cust-portal-" + crypto.randomUUID().replace(/-/g, "");
-    await fetch(`${env.SUPABASE_URL}/rest/v1/customers?id=eq.${customer.id}`, {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/people?id=eq.${customer.id}`, {
       method: "PATCH",
       headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({ portal_token: token }),
@@ -509,7 +512,7 @@ async function approveInscription(env, { token }) {
 async function getCustomerByPortal(env, portalToken) {
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,email&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,email&limit=1`,
     { headers },
   );
   if (!res.ok) return null;
