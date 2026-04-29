@@ -58,9 +58,9 @@ export async function onRequest(context) {
 async function getPortal(env, portalToken) {
   const headers = sbHeaders(env);
 
-  // Find customer by portal token
+  // Find person by portal token (covers leads + paying customers).
   const custRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,last_name,email&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,last_name,email&limit=1`,
     { headers },
   );
   if (!custRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -78,21 +78,35 @@ async function getPortal(env, portalToken) {
   let quotes = [];
   if (quotesRes.ok) quotes = await quotesRes.json();
 
-  // Fetch orders — match by legacy customer_id OR by the linked person's email.
+  // Fetch orders — keyed off the linked person.
   let orders = [];
+  let personId = null;
   if (custEmail) {
+    const personRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
+      { headers },
+    );
+    if (personRes.ok) {
+      const rows = await personRes.json();
+      if (rows.length > 0) personId = rows[0].id;
+    }
+  }
+  if (personId) {
     const ordersRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people!inner(name,email)&people.email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=20`,
+      `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(first_name,last_name,email)&order=created_at.desc&limit=20`,
       { headers },
     );
     if (ordersRes.ok) orders = await ordersRes.json();
   }
-  if (orders.length === 0) {
-    const ordersRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?customer_id=eq.${customer.id}&select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(name,email)&order=created_at.desc&limit=20`,
+
+  // Fetch enquiries by person_id so the portal shows the full inbound history.
+  let enquiries = [];
+  if (personId) {
+    const enqRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/enquiries?person_id=eq.${personId}&select=id,channel,sub_type,message,appointment_at,appointment_kind,status,created_at&order=created_at.desc&limit=30`,
       { headers },
     );
-    if (ordersRes.ok) orders = await ordersRes.json();
+    if (enqRes.ok) enquiries = await enqRes.json();
   }
 
   // Build customer-safe response
@@ -122,10 +136,11 @@ async function getPortal(env, portalToken) {
     })),
     orders: orders.map(o => {
       const config = o.product_config ? safeParse(o.product_config) : null;
+      const personName = [o.people?.first_name, o.people?.last_name].filter(Boolean).join(" ") || null;
       return {
         id: o.id,
         ref: "SM-" + String(o.order_number || "0000"),
-        customerName: o.people?.name || null,
+        customerName: personName,
         product: o.sku || (config && config.name) || null,
         colour: o.color || (config && config.colour) || null,
         location: o.location || null,
@@ -147,6 +162,16 @@ async function getPortal(env, portalToken) {
         updatedAt: o.updated_at || null,
       };
     }),
+    enquiries: enquiries.map(e => ({
+      id: e.id,
+      channel: e.channel,
+      subType: e.sub_type || null,
+      message: e.message || null,
+      appointmentAt: e.appointment_at || null,
+      appointmentKind: e.appointment_kind || null,
+      status: e.status || "new",
+      createdAt: e.created_at,
+    })),
   });
 }
 
@@ -155,7 +180,7 @@ async function getOrderStatus(env, token) {
   const headers = sbHeaders(env);
 
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config,people(name,email)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config,people(first_name,last_name,email)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -184,7 +209,7 @@ async function getOrderStatus(env, token) {
     ok: true,
     order: {
       ref: "SM-" + String(order.order_number || "0000"),
-      customerName: order.people?.name || null,
+      customerName: [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ") || null,
       product: order.sku || (config && config.name) || null,
       colour: order.color || (config && config.colour) || null,
       size: config && config.size || null,
@@ -217,9 +242,10 @@ async function sendPortalLink(env, { email }) {
   const cleanEmail = email.trim().toLowerCase();
   const headers = sbHeaders(env);
 
-  // Check if customer exists by email (case-insensitive)
+  // Look up the person record (case-insensitive). Single source of truth — leads
+  // and paying customers both live in `people`.
   const custRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?email=ilike.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=ilike.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
     { headers },
   );
   let customer = null;
@@ -228,19 +254,19 @@ async function sendPortalLink(env, { email }) {
     if (rows.length > 0) customer = rows[0];
   }
 
-  // Also check if there's a person record with this email (and any linked orders).
+  // Also resolve the person id and any linked orders.
   let hasOrders = false;
   let customerName = "";
   let personId = null;
   const personRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,name&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name&limit=1`,
     { headers },
   );
   if (personRes.ok) {
     const personRows = await personRes.json();
     if (personRows.length > 0) {
       personId = personRows[0].id;
-      customerName = personRows[0].name || "";
+      customerName = [personRows[0].first_name, personRows[0].last_name].filter(Boolean).join(" ") || "";
       const ordersRes = await fetch(
         `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id&limit=1`,
         { headers },
@@ -252,47 +278,16 @@ async function sendPortalLink(env, { email }) {
     }
   }
 
-  // If no customer record and no orders, return safe message
-  if (!customer && !hasOrders) return json({ ok: true, message: safeMsg });
-
-  // Create customer record if it doesn't exist
-  if (!customer) {
-    const nameParts = customerName.split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
-    const token = "cust-portal-" + crypto.randomUUID().replace(/-/g, "");
-
-    const createRes = await fetch(`${env.SUPABASE_URL}/rest/v1/customers`, {
-      method: "POST",
-      headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        email: cleanEmail,
-        portal_token: token,
-      }),
-    });
-    if (!createRes.ok) {
-      console.error("Failed to create customer:", await createRes.text());
-      return json({ ok: false, error: "Something went wrong. Please try again." }, 500);
-    }
-    const created = await createRes.json();
-    customer = created[0];
-
-    // Link existing orders (matched via person_id) to this customer record.
-    if (personId) {
-      await fetch(`${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&customer_id=is.null`, {
-        method: "PATCH",
-        headers: { ...headers, "Prefer": "return=minimal" },
-        body: JSON.stringify({ customer_id: customer.id }),
-      }).catch(() => {});
-    }
-  }
+  // No matching person — bail with the safe message regardless of whether
+  // hasOrders is true. Both lookups above hit `people` directly, so if the
+  // case-insensitive ilike found nothing, the case-sensitive eq also found
+  // nothing — there is no person record to attach a portal token to.
+  if (!customer) return json({ ok: true, message: safeMsg });
 
   // Generate portal token if missing
   if (!customer.portal_token) {
     const token = "cust-portal-" + crypto.randomUUID().replace(/-/g, "");
-    await fetch(`${env.SUPABASE_URL}/rest/v1/customers?id=eq.${customer.id}`, {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/people?id=eq.${customer.id}`, {
       method: "PATCH",
       headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({ portal_token: token }),
@@ -477,7 +472,7 @@ async function approveInscription(env, { token }) {
 async function getCustomerByPortal(env, portalToken) {
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/customers?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,email&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?portal_token=eq.${encodeURIComponent(portalToken)}&select=id,first_name,email&limit=1`,
     { headers },
   );
   if (!res.ok) return null;

@@ -1035,18 +1035,27 @@
                 return item.name + ' (' + item.price + ')';
             }).join(', ');
             try {
+                var shortlistItems = state.shortlist.map(function(item) {
+                    return {
+                        name: item.name,
+                        price: item.price,
+                        slug: item.slug || null,
+                        url: item.slug ? ('https://searsmelvin.co.uk/memorial?slug=' + item.slug) : null
+                    };
+                });
                 var res = await fetch('/api/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        type: 'enquiry',
+                        channel: 'shortlist',
                         name: name,
                         email: email,
                         phone: phone || null,
+                        sub_type: 'shortlist-enquiry',
                         enquiry_type: 'shortlist-enquiry',
-                        message: 'Enquiry about multiple memorials:\n\n' + state.shortlist.map(function(item) {
-                            return '• ' + item.name + ' — ' + item.price + (item.slug ? ' (https://searsmelvin.co.uk/memorial?slug=' + item.slug + ')' : '');
-                        }).join('\n') + (note ? '\n\nCustomer note: ' + note : '')
+                        source_page: window.location.pathname,
+                        message: note || null,
+                        details: { items: shortlistItems }
                     })
                 });
                 var result = await res.json();

@@ -828,14 +828,25 @@
             `).join('');
         }
 
+        let selectedAppointment = null;
         function selectAppointment(el, date, time) {
             document.querySelectorAll('.appointment-slot').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
+            // The picker generates an ISO date with the local clock time appended.
+            // Build a single ISO timestamp combining the two for `appointment_at`.
+            const day = date.split('T')[0];
+            selectedAppointment = {
+                at: new Date(`${day}T${time}:00`).toISOString(),
+                kind: 'showroom',
+            };
         }
 
-        // File upload
+        // File upload — uploads each file to /api/upload-photo immediately and
+        // stores the returned storage path. Submission sends `photo_urls`
+        // as an array of those paths.
         const fileUploadZone = document.getElementById('fileUploadZone');
-        let uploadedFiles = [];
+        // Each entry: { name, status: 'uploading'|'done'|'error', path: string|null }
+        let uploadedPhotos = [];
 
         fileUploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -854,27 +865,50 @@
 
         function handleFileSelect(files) {
             Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/') && uploadedFiles.length < 5) {
-                    uploadedFiles.push(file);
-                }
+                if (!file.type.startsWith('image/')) return;
+                if (uploadedPhotos.length >= 5) return;
+                const entry = { name: file.name, status: 'uploading', path: null };
+                uploadedPhotos.push(entry);
+                renderFilePreviews();
+                uploadPhoto(file, entry);
             });
+        }
+
+        async function uploadPhoto(file, entry) {
+            try {
+                const fd = new FormData();
+                fd.append('file', file, file.name);
+                const res = await fetch('/api/upload-photo', { method: 'POST', body: fd });
+                const result = await res.json();
+                if (!result.ok) throw new Error(result.error || 'Upload failed');
+                entry.status = 'done';
+                entry.path = result.path;
+            } catch (err) {
+                entry.status = 'error';
+                console.error('Photo upload failed:', err);
+            }
             renderFilePreviews();
         }
 
         function renderFilePreviews() {
             const preview = document.getElementById('filePreview');
-            preview.innerHTML = uploadedFiles.map((file, i) => `
+            preview.innerHTML = uploadedPhotos.map((entry, i) => {
+                const label = entry.name.length > 20 ? entry.name.substring(0, 20) + '...' : entry.name;
+                const statusBadge = entry.status === 'uploading' ? ' (uploading…)'
+                                  : entry.status === 'error'     ? ' (failed)'
+                                  : '';
+                return `
                 <div class="file-preview-item">
-                    <span>${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}</span>
+                    <span>${label}${statusBadge}</span>
                     <button type="button" onclick="removeFile(${i})">
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         function removeFile(index) {
-            uploadedFiles.splice(index, 1);
+            uploadedPhotos.splice(index, 1);
             renderFilePreviews();
         }
 
@@ -900,18 +934,31 @@
             const message     = document.getElementById('message').value.trim();
             const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
             const cemetery    = document.getElementById('cemetery').value.trim();
+            const contactPref = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
+
+            // Wait for any in-flight photo uploads to complete (max 30s safety bound).
+            for (let i = 0; i < 30 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            const photoPaths = uploadedPhotos.filter(p => p.status === 'done' && p.path).map(p => p.path);
 
             try {
                 const res = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        channel: 'contact',
                         name: `${firstName} ${lastName}`.trim(),
                         email,
                         phone,
                         message,
-                        enquiry_type: enquiryType,
-                        location: cemetery || null
+                        sub_type: enquiryType || null,
+                        source_page: window.location.pathname,
+                        contact_pref: contactPref || null,
+                        location: cemetery || null,
+                        appointment_at: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.at : null,
+                        appointment_kind: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.kind : null,
+                        photo_urls: photoPaths.length > 0 ? photoPaths : null
                     })
                 });
 
