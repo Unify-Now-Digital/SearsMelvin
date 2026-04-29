@@ -383,6 +383,25 @@
         .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
 
+        /* Recent Installations Marquee */
+        .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; }
+        .installations .section-header { padding: 0 2rem; }
+        .installations-marquee { position: relative; width: 100%; overflow: hidden; mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); }
+        .installations-track { display: flex; gap: 1.5rem; width: max-content; animation: marqueeScroll 50s linear infinite; }
+        .installations-marquee:hover .installations-track { animation-play-state: paused; }
+        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .install-card { flex: 0 0 320px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; }
+        .install-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.1); }
+        .install-image { aspect-ratio: 4/3; background: linear-gradient(145deg, #d4cfc6, #e0dcd4); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .install-image img { width: 100%; height: 100%; object-fit: cover; }
+        .install-image .placeholder-icon { width: 56px; height: 56px; stroke: rgba(255,255,255,0.7); fill: none; stroke-width: 1.2; }
+        .install-image .placeholder-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(0,0,0,0.55); color: white; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 20px; }
+        .install-info { padding: 1.1rem 1.25rem 1.25rem; }
+        .install-customer { font-family: var(--font-display); font-size: 1.15rem; color: var(--color-stone); margin-bottom: 0.25rem; }
+        .install-cemetery { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-accent); }
+        .install-cemetery svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; flex-shrink: 0; }
+        @media (prefers-reduced-motion: reduce) { .installations-track { animation: none; } }
+
         /* Scroll to Top */
         .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -786,6 +805,142 @@
                     </div>
                     <a href="/contact" class="btn btn-primary" style="margin-top: 2rem;">Enquire About Restoration</a>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Installations -->
+    <section class="installations reveal" id="installations">
+        <div class="section-header">
+            <p class="section-label">Recent Work</p>
+            <h2>Memorials we've installed</h2>
+            <p>A glimpse of recent installations across North London cemeteries. Replace placeholders with real photos as installations are completed.</p>
+        </div>
+        <div class="installations-marquee" aria-label="Recent memorial installations">
+            <div class="installations-track" id="installationsTrack">
+                <!-- Placeholder cards (duplicated for seamless loop) -->
+                <!-- Set 1 -->
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Atkinson Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>New Southgate Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">Mr & Mrs Patel</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Hendon Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The O'Brien Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>East Finchley Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Williams Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Edmonton Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Cohen Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Bushey Jewish Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Murphy Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>St Pancras & Islington Cemetery</p>
+                    </div>
+                </article>
+                <!-- Set 2 (duplicate for seamless loop) -->
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Atkinson Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>New Southgate Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">Mr & Mrs Patel</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Hendon Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The O'Brien Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>East Finchley Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Williams Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Edmonton Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Cohen Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Bushey Jewish Cemetery</p>
+                    </div>
+                </article>
+                <article class="install-card" aria-hidden="true">
+                    <div class="install-image">
+                        <span class="placeholder-tag">Placeholder</span>
+                        <svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <div class="install-info">
+                        <p class="install-customer">The Murphy Family</p>
+                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>St Pancras & Islington Cemetery</p>
+                    </div>
+                </article>
             </div>
         </div>
     </section>
