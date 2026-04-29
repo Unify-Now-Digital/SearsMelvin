@@ -1,3 +1,19 @@
+-- ⚠️  STALE SNAPSHOT — DO NOT RUN.
+-- The authoritative schema for this project is now managed by the Supabase
+-- team and applied via their own migration pipeline. This file is kept only
+-- as a historical reference of the schema that existed before the
+-- multi-tenant + enquiries-table refactor. The current production schema
+-- includes (among other things):
+--   • UUID primary keys on all tables
+--   • An `organization_id` column on every table (multi-tenant isolation)
+--   • A `people` table with first_name/last_name/address/city/country
+--     and an `is_customer` flag
+--   • An `enquiries` inbox table (channel: quote/contact/appointment/call/shortlist)
+--   • `orders.order_type CHECK IN ('quote','order')`
+-- Apply schema changes through Supabase, not through this file.
+--
+-- Original (pre-refactor) migration content kept below for reference:
+--
 -- Migration: Add quote editing, tracking, and partner portal tables
 -- Run this in Supabase SQL Editor (Dashboard > SQL Editor)
 

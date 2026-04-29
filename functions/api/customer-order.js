@@ -80,19 +80,40 @@ async function getPortal(env, portalToken) {
 
   // Fetch orders — match by legacy customer_id OR by the linked person's email.
   let orders = [];
+  let personId = null;
   if (custEmail) {
+    const personRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
+      { headers },
+    );
+    if (personRes.ok) {
+      const rows = await personRes.json();
+      if (rows.length > 0) personId = rows[0].id;
+    }
+  }
+  if (personId) {
     const ordersRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people!inner(name,email)&people.email=eq.${encodeURIComponent(custEmail)}&order=created_at.desc&limit=20`,
+      `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(first_name,last_name,email)&order=created_at.desc&limit=20`,
       { headers },
     );
     if (ordersRes.ok) orders = await ordersRes.json();
   }
   if (orders.length === 0) {
     const ordersRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?customer_id=eq.${customer.id}&select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(name,email)&order=created_at.desc&limit=20`,
+      `${env.SUPABASE_URL}/rest/v1/orders?customer_id=eq.${customer.id}&select=id,order_number,customer_id,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(first_name,last_name,email)&order=created_at.desc&limit=20`,
       { headers },
     );
     if (ordersRes.ok) orders = await ordersRes.json();
+  }
+
+  // Fetch enquiries by person_id so the portal shows the full inbound history.
+  let enquiries = [];
+  if (personId) {
+    const enqRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/enquiries?person_id=eq.${personId}&select=id,channel,sub_type,message,appointment_at,appointment_kind,status,created_at&order=created_at.desc&limit=30`,
+      { headers },
+    );
+    if (enqRes.ok) enquiries = await enqRes.json();
   }
 
   // Build customer-safe response
@@ -122,10 +143,11 @@ async function getPortal(env, portalToken) {
     })),
     orders: orders.map(o => {
       const config = o.product_config ? safeParse(o.product_config) : null;
+      const personName = [o.people?.first_name, o.people?.last_name].filter(Boolean).join(" ") || null;
       return {
         id: o.id,
         ref: "SM-" + String(o.order_number || "0000"),
-        customerName: o.people?.name || null,
+        customerName: personName,
         product: o.sku || (config && config.name) || null,
         colour: o.color || (config && config.colour) || null,
         location: o.location || null,
@@ -147,6 +169,16 @@ async function getPortal(env, portalToken) {
         updatedAt: o.updated_at || null,
       };
     }),
+    enquiries: enquiries.map(e => ({
+      id: e.id,
+      channel: e.channel,
+      subType: e.sub_type || null,
+      message: e.message || null,
+      appointmentAt: e.appointment_at || null,
+      appointmentKind: e.appointment_kind || null,
+      status: e.status || "new",
+      createdAt: e.created_at,
+    })),
   });
 }
 
@@ -155,7 +187,7 @@ async function getOrderStatus(env, token) {
   const headers = sbHeaders(env);
 
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config,people(name,email)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?tracking_token=eq.${encodeURIComponent(token)}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,created_at,updated_at,product_config,people(first_name,last_name,email)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -184,7 +216,7 @@ async function getOrderStatus(env, token) {
     ok: true,
     order: {
       ref: "SM-" + String(order.order_number || "0000"),
-      customerName: order.people?.name || null,
+      customerName: [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ") || null,
       product: order.sku || (config && config.name) || null,
       colour: order.color || (config && config.colour) || null,
       size: config && config.size || null,

@@ -1885,11 +1885,12 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            type:     'quote',
+                            channel:  'quote',
                             name,
                             email,
                             phone,
                             message,
+                            source_page: window.location.pathname + window.location.search,
                             location: cemetery || null,
                             payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {

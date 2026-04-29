@@ -279,6 +279,7 @@
             <button class="admin-tab" onclick="switchTab('orders', this)">
                 Order Management <span class="badge" id="inscriptionBadge" style="display:none;">0</span>
             </button>
+            <button class="admin-tab" onclick="switchTab('enquiries', this)">Enquiries</button>
             <button class="admin-tab" onclick="switchTab('activity', this)">Recent Activity</button>
         </div>
 
@@ -327,6 +328,22 @@
             <input type="text" class="search-input" id="orderSearchInput" placeholder="Search by name, email, SKU, location, or order #" oninput="debounceOrderSearch()" style="width:100%;padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-bottom:1rem;">
             <div id="orderList">
                 <div class="loading">Loading orders...</div>
+            </div>
+        </div>
+
+        <!-- Enquiries section -->
+        <div class="admin-section" id="section-enquiries">
+            <h3 style="font-size:1.2rem;margin-bottom:0.75rem;">Inbound Enquiries</h3>
+            <div class="filter-bar">
+                <button class="filter-pill active" onclick="filterEnquiries('all', this)">All</button>
+                <button class="filter-pill" onclick="filterEnquiries('quote', this)">Quote</button>
+                <button class="filter-pill" onclick="filterEnquiries('contact', this)">Contact</button>
+                <button class="filter-pill" onclick="filterEnquiries('appointment', this)">Appointment</button>
+                <button class="filter-pill" onclick="filterEnquiries('call', this)">Call</button>
+                <button class="filter-pill" onclick="filterEnquiries('shortlist', this)">Shortlist</button>
+            </div>
+            <div id="enquiryList" class="partner-list">
+                <div class="loading">Loading enquiries...</div>
             </div>
         </div>
 
@@ -657,6 +674,58 @@
         if (btn) btn.classList.add('active');
         document.getElementById('section-' + tab).classList.add('active');
         if (tab === 'orders') { loadAdminOrders(); loadInscriptionRequests(); }
+        if (tab === 'enquiries') { loadEnquiries(); }
+    }
+
+    // ==================== ENQUIRIES ====================
+    var enquiryFilter = 'all';
+    function filterEnquiries(filter, btn) {
+        enquiryFilter = filter;
+        document.querySelectorAll('#section-enquiries .filter-pill').forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        loadEnquiries();
+    }
+    async function loadEnquiries() {
+        var list = document.getElementById('enquiryList');
+        list.innerHTML = '<div class="loading">Loading enquiries...</div>';
+        try {
+            var body = { action: 'list-enquiries', token: adminToken, limit: 100 };
+            if (enquiryFilter && enquiryFilter !== 'all') body.channel = enquiryFilter;
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            var data = await res.json();
+            if (!data.ok) { list.innerHTML = '<div class="empty">Failed to load enquiries</div>'; return; }
+            if (!data.enquiries || data.enquiries.length === 0) {
+                list.innerHTML = '<div class="empty">No enquiries yet.</div>';
+                return;
+            }
+            list.innerHTML = data.enquiries.map(function(e) {
+                var person = e.people || {};
+                var name = [person.first_name, person.last_name].filter(Boolean).join(' ') || person.email || 'Anonymous';
+                var badgeLabel = person.is_customer ? 'Customer' : 'Lead';
+                var badgeClass = person.is_customer ? 'partner-badge approved' : 'partner-badge pending';
+                var msg = e.message ? e.message.substring(0, 160) + (e.message.length > 160 ? '…' : '') : '';
+                var photoThumbs = (e.photo_signed_urls || []).slice(0, 4).map(function(u) {
+                    return '<img src="' + u + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:4px;margin-right:4px;">';
+                }).join('');
+                return '<div class="partner-card">'
+                    + '<div class="partner-info">'
+                    + '<div class="partner-name">' + esc(name) + ' <span class="' + badgeClass + '" style="margin-left:6px;">' + badgeLabel + '</span> <span class="status pending">' + esc(e.channel) + (e.sub_type ? ' · ' + esc(e.sub_type) : '') + '</span></div>'
+                    + '<div class="partner-company">' + esc(person.email || '') + (person.phone ? ' · ' + esc(person.phone) : '') + '</div>'
+                    + (msg ? '<div class="partner-message">' + esc(msg) + '</div>' : '')
+                    + (photoThumbs ? '<div style="margin-top:0.5rem;">' + photoThumbs + '</div>' : '')
+                    + '<div class="partner-meta">' + formatDate(e.created_at)
+                    + (e.appointment_at ? ' · Appointment: ' + formatDate(e.appointment_at) : '')
+                    + (e.source_page ? ' · ' + esc(e.source_page) : '')
+                    + '</div>'
+                    + '</div></div>';
+            }).join('');
+        } catch (err) {
+            list.innerHTML = '<div class="empty">Error: ' + esc(err.message) + '</div>';
+        }
     }
 
     // ==================== ORDER MANAGEMENT ====================
@@ -756,16 +825,17 @@
         container.innerHTML = orders.map(function(o) {
             var stage = o.stage || 'quote_received';
             var stageLabel = STAGE_LABELS[stage] || stage;
-            var ref = 'SM-' + String(o.id).padStart(4, '0');
+            var ref = 'SM-' + String(o.order_number || '').padStart(4, '0');
             var partnerLabel = o.partners ? (o.partners.company || o.partners.name) : '';
             var person = o.people || {};
-            var personName = person.name || '\u2014';
+            var personName = [person.first_name, person.last_name].filter(Boolean).join(' ') || '\u2014';
             var personType = person.is_customer ? 'Customer' : 'Lead';
             var personTypeColor = person.is_customer ? 'var(--color-success)' : 'var(--color-text-muted)';
             var isOpen = openOrderIds.has(o.id);
+            var idQ = esc(String(o.id));
 
-            return '<div class="order-card' + (isOpen ? ' open' : '') + '" id="ord-' + o.id + '">'
-                + '<div class="order-summary" onclick="toggleOrderExpand(' + o.id + ')">'
+            return '<div class="order-card' + (isOpen ? ' open' : '') + '" id="ord-' + idQ + '">'
+                + '<div class="order-summary" onclick="toggleOrderExpand(\'' + idQ + '\')">'
                 +   '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'
                 +   '<div class="order-summary-main">'
                 +     '<div><span class="order-ref">' + esc(ref) + '</span> <span class="order-cust">' + esc(personName) + '</span> <span style="font-size:0.7rem;color:' + personTypeColor + ';text-transform:uppercase;letter-spacing:0.04em;margin-left:0.25rem;">' + personType + '</span> <span class="stage-chip s-' + esc(stage) + '">' + esc(stageLabel) + '</span></div>'
@@ -1105,9 +1175,11 @@
 
             list.innerHTML = data.requests.map(function(r) {
                 var orderInfo = r.order || {};
+                var orderPerson = orderInfo.people || {};
+                var orderPersonName = [orderPerson.first_name, orderPerson.last_name].filter(Boolean).join(' ') || 'Unknown';
                 return '<div class="partner-card" style="border-left:3px solid #856404;">'
                     + '<div class="partner-info">'
-                    + '<div class="partner-name">' + esc((orderInfo.people && orderInfo.people.name) || 'Unknown') + '</div>'
+                    + '<div class="partner-name">' + esc(orderPersonName) + '</div>'
                     + '<div class="partner-company">' + esc(orderInfo.sku || '') + '</div>'
                     + '<div class="partner-meta">Current: "' + esc(orderInfo.inscription_text || 'None') + '"</div>'
                     + '<div class="partner-message">Requested: "' + esc(r.requested_text) + '"'
@@ -1115,8 +1187,8 @@
                     + '<div class="partner-meta" style="margin-top:0.25rem;">' + formatDate(r.created_at) + '</div>'
                     + '</div>'
                     + '<div class="partner-actions">'
-                    + '<button class="btn-approve" onclick="resolveInscription(' + r.id + ', true, this)">Accept</button>'
-                    + '<button class="btn-decline" onclick="resolveInscription(' + r.id + ', false, this)">Decline</button>'
+                    + '<button class="btn-approve" onclick="resolveInscription(\'' + esc(String(r.id)) + '\', true, this)">Accept</button>'
+                    + '<button class="btn-decline" onclick="resolveInscription(\'' + esc(String(r.id)) + '\', false, this)">Decline</button>'
                     + '</div></div>';
             }).join('');
         } catch (err) {

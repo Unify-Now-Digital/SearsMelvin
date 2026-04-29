@@ -1198,12 +1198,16 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        type: 'appointment',
+                        channel: type === 'phone' ? 'call' : 'appointment',
                         name, email, phone,
+                        sub_type: type,
+                        source_page: '/',
+                        message: notes || null,
                         appointment_type: type,
                         appointment_date: date,
                         appointment_time: time,
-                        notes,
+                        appointment_at: new Date(`${date}T${time}:00`).toISOString(),
+                        appointment_kind: type,
                     }),
                 });
                 const result = await res.json();

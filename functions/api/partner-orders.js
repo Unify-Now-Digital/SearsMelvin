@@ -61,7 +61,7 @@ async function listOrders(env, partner, params) {
   const status = params.get("status");
   const search = params.get("search");
 
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?partner_id=eq.${partner.id}&select=*,people(id,name,email,phone,is_customer)&order=created_at.desc&limit=50`;
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&order=created_at.desc&limit=50`;
   if (status && status !== "all") {
     url += `&status=eq.${encodeURIComponent(status)}`;
   }
@@ -73,12 +73,13 @@ async function listOrders(env, partner, params) {
   // Client-side search filter
   if (search) {
     const q = search.toLowerCase();
-    rows = rows.filter(r =>
-      (r.people?.name || "").toLowerCase().includes(q) ||
-      (r.people?.email || "").toLowerCase().includes(q) ||
-      (r.sku || "").toLowerCase().includes(q) ||
-      (r.location || "").toLowerCase().includes(q)
-    );
+    rows = rows.filter(r => {
+      const fullName = [r.people?.first_name, r.people?.last_name].filter(Boolean).join(" ");
+      return fullName.toLowerCase().includes(q) ||
+        (r.people?.email || "").toLowerCase().includes(q) ||
+        (r.sku || "").toLowerCase().includes(q) ||
+        (r.location || "").toLowerCase().includes(q);
+    });
   }
 
   const orders = rows.map(mapOrder);
@@ -101,7 +102,7 @@ async function getOrderDetail(env, partner, orderId) {
 
   // Get order (verify it belongs to this partner)
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=*,people(id,name,email,phone,is_customer)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -144,7 +145,6 @@ async function createOrder(env, partner, data) {
       name: customerName,
       email: customerEmail,
       phone: customerPhone,
-      source: "quote",
       isCustomer: true,
     });
   } catch (err) {
@@ -154,6 +154,7 @@ async function createOrder(env, partner, data) {
 
   // Create order linked to partner AND to the person record.
   const orderBody = {
+    organization_id: env.SM_ORG_ID,
     person_id: person.id,
     order_type: "quote",
     sku: product || null,
@@ -166,7 +167,7 @@ async function createOrder(env, partner, data) {
     product_config: product ? JSON.stringify({ name: product, colour, size, price: value }) : null,
   };
 
-  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,name,email,phone,is_customer)`, {
+  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,first_name,last_name,email,phone,is_customer)`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify(orderBody),
@@ -201,7 +202,7 @@ async function addComment(env, partner, data) {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      order_id: parseInt(orderId),
+      order_id: orderId,
       partner_id: partner.id,
       comment: comment.trim(),
     }),
@@ -224,7 +225,7 @@ async function addComment(env, partner, data) {
 function mapOrder(row) {
   return {
     id: row.id,
-    customer_name: row.people?.name || null,
+    customer_name: [row.people?.first_name, row.people?.last_name].filter(Boolean).join(" ") || null,
     customer_email: row.people?.email || null,
     customer_phone: row.people?.phone || null,
     is_customer: row.people?.is_customer || false,

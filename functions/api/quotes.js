@@ -50,7 +50,7 @@ export async function onRequest(context) {
 async function getQuoteByToken(env, token) {
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(name,email,phone)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(first_name,last_name,email,phone)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -61,7 +61,7 @@ async function getQuoteByToken(env, token) {
     ok: true,
     quote: {
       id: order.id,
-      name: order.people?.name || null,
+      name: [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ") || null,
       email: order.people?.email || null,
       phone: order.people?.phone || null,
       location: order.location,
@@ -79,7 +79,7 @@ async function getQuotesByEmail(env, email) {
   const normalised = email.trim().toLowerCase();
   // Filter on the embedded `people.email` via PostgREST resource embedding.
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?order_type=eq.quote&select=*,people!inner(name,email,phone)&people.email=eq.${encodeURIComponent(normalised)}&order=created_at.desc&limit=20`,
+    `${env.SUPABASE_URL}/rest/v1/orders?order_type=eq.quote&select=*,people!inner(first_name,last_name,email,phone)&people.email=eq.${encodeURIComponent(normalised)}&order=created_at.desc&limit=20`,
     { headers },
   );
   if (!res.ok) {
@@ -93,7 +93,7 @@ async function getQuotesByEmail(env, email) {
 function mapOrderToQuote(order) {
   return {
     id: order.id,
-    name: order.people?.name || null,
+    name: [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ") || null,
     product: order.sku || null,
     colour: order.color || null,
     value: order.value,
@@ -113,7 +113,7 @@ async function updateQuote(env, data) {
 
   // Verify token exists and fetch full order for email notifications
   const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(name,email,phone)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?edit_token=eq.${encodeURIComponent(token)}&order_type=eq.quote&select=*,people(first_name,last_name,email,phone)&limit=1`,
     { headers },
   );
   if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -159,7 +159,7 @@ async function updateQuote(env, data) {
 
   // Send notification emails about the update
   if (env.RESEND_API_KEY) {
-    const customerName = order.people?.name || "";
+    const customerName = [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ");
     const customerEmail = order.people?.email || "";
     const productName = (product && product.name) || order.sku || "Memorial";
     const changes = buildChangesSummary(order, product, message);

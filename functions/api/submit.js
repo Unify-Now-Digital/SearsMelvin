@@ -32,6 +32,10 @@ export async function onRequestPost(context) {
     console.error("RESEND_API_KEY is not set");
     return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
   }
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
+    console.error("Supabase / SM_ORG_ID env not configured");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
   let data;
   try { data = await request.json(); }
   catch { return jsonResponse({ ok: false, error: "Invalid JSON" }, 400); }
@@ -40,8 +44,10 @@ export async function onRequestPost(context) {
   const submittedAt = new Date().toLocaleString("en-GB", {
     timeZone: "Europe/London", dateStyle: "medium", timeStyle: "short",
   });
-  if (data.type === "quote") return handleQuoteRequest(env, data, submittedAt);
-  if (data.type === "appointment") return handleAppointment(env, data, submittedAt);
+  // Accept the new `channel` envelope or the legacy `type` field.
+  const channel = data.channel || data.type;
+  if (channel === "quote") return handleQuoteRequest(env, data, submittedAt);
+  if (channel === "appointment" || channel === "call") return handleAppointment(env, data, submittedAt);
   return handleEnquiry(env, data, submittedAt);
 }
 
@@ -108,15 +114,24 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("Failed to create ClickUp quote task:", err);
   }
 
-  // 4. Supabase
+  // 4. Supabase — create the enquiry + order + invoice (critical: surface failures)
   let invoiceId = null;
   let editToken = null;
   try {
-    const sbResult = await insertSupabaseRecord(env, { type: "quote", name, email, phone, product, location, message });
+    const sbResult = await createEnquiry(env, {
+      channel: "quote",
+      name, email, phone,
+      source_page: data.source_page || null,
+      message,
+      location: cemetery || location || null,
+      cemetery_id: data.cemetery_id || null,
+      product,
+    });
     invoiceId = sbResult?.invoiceId || null;
     editToken = sbResult?.editToken || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
+    return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
   }
 
   // 5. GHL
@@ -183,10 +198,29 @@ async function handleEnquiry(env, data, submittedAt) {
   } catch (err) {
     console.error("Failed to create ClickUp task:", err);
   }
+  // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
+  const isShortlist = enquiry_type === "shortlist-enquiry";
+  const channel = isShortlist ? "shortlist" : "contact";
   try {
-    await insertSupabaseRecord(env, { type: "enquiry", name, email, phone, enquiry_type, location });
+    await createEnquiry(env, {
+      channel,
+      name, email, phone,
+      sub_type: enquiry_type || null,
+      source_page: data.source_page || null,
+      message,
+      contact_pref: data.contact_pref || null,
+      location,
+      cemetery_id: data.cemetery_id || null,
+      appointment_at: data.appointment_at || null,
+      appointment_kind: data.appointment_kind || null,
+      photo_urls: Array.isArray(data.photo_urls) ? data.photo_urls : null,
+      details: isShortlist
+        ? { items: Array.isArray(data.details?.items) ? data.details.items : [] }
+        : (data.details || null),
+    });
   } catch (err) {
     console.error("Supabase insert failed:", err);
+    return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
   try {
     const ghlExtraFields = [
@@ -261,11 +295,25 @@ async function handleAppointment(env, data, submittedAt) {
     console.error("Failed to create ClickUp appointment task:", err);
   }
 
-  // 5. Supabase
+  // 5. Supabase — phone consults route to channel='call', everything else to 'appointment'.
+  const apptChannel = appointment_type === "phone" ? "call" : "appointment";
+  // Combine date+time into an ISO timestamp (Europe/London local clock).
+  const appointmentAtIso = appointment_date && appointment_time
+    ? new Date(`${appointment_date}T${appointment_time}:00`).toISOString()
+    : (data.appointment_at || null);
   try {
-    await insertSupabaseRecord(env, { type: "appointment", name, email, phone, enquiry_type: appointment_type });
+    await createEnquiry(env, {
+      channel: apptChannel,
+      name, email, phone,
+      sub_type: appointment_type || null,
+      source_page: data.source_page || null,
+      message: notes || null,
+      appointment_at: appointmentAtIso,
+      appointment_kind: appointment_type || null,
+    });
   } catch (err) {
     console.error("Supabase appointment insert failed:", err);
+    return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
   }
 
   // 6. GHL
@@ -1006,32 +1054,43 @@ function supabaseHeaders(env) {
   };
 }
 
+function splitName(full) {
+  const parts = (full || "").trim().split(/\s+/);
+  return {
+    first_name: parts[0] || null,
+    last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+  };
+}
+
 // Upsert a retail contact into `people`, deduped by email.
-// `is_customer` is sticky-true: once flipped on by a quote/order it never reverts.
-export async function upsertPerson(env, { name, email, phone, source, isCustomer }) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return null;
+// `is_customer` is sticky-true: once flipped on by a quote it never reverts.
+export async function upsertPerson(env, { name, email, phone, isCustomer }) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return null;
   if (!email) return null;
   const normalisedEmail = email.trim().toLowerCase();
   const headers = supabaseHeaders(env);
-  const nowIso = new Date().toISOString();
+  const { first_name, last_name } = splitName(name);
 
   const existingRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&organization_id=eq.${env.SM_ORG_ID}&select=id,is_customer`,
     { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
   );
   if (!existingRes.ok) throw new Error(`Supabase people lookup error ${existingRes.status}: ${await existingRes.text()}`);
   const existing = (await existingRes.json())[0] || null;
 
   if (existing) {
-    const patchBody = { last_seen_at: nowIso };
-    if (name) patchBody.name = name;
+    const patchBody = {};
+    if (first_name) patchBody.first_name = first_name;
+    if (last_name) patchBody.last_name = last_name;
     if (phone) patchBody.phone = phone;
     if (isCustomer && !existing.is_customer) patchBody.is_customer = true;
-    const patchRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
-      { method: "PATCH", headers, body: JSON.stringify(patchBody) }
-    );
-    if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
+    if (Object.keys(patchBody).length > 0) {
+      const patchRes = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
+        { method: "PATCH", headers, body: JSON.stringify(patchBody) }
+      );
+      if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
+    }
     return { id: existing.id, is_customer: existing.is_customer || !!isCustomer };
   }
 
@@ -1039,13 +1098,12 @@ export async function upsertPerson(env, { name, email, phone, source, isCustomer
     method: "POST",
     headers: { ...headers, Prefer: "return=representation" },
     body: JSON.stringify({
+      organization_id: env.SM_ORG_ID,
       email: normalisedEmail,
-      name: name || null,
+      first_name,
+      last_name,
       phone: phone || null,
       is_customer: !!isCustomer,
-      first_source: source || null,
-      first_seen_at: nowIso,
-      last_seen_at: nowIso,
     }),
   });
   if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
@@ -1053,58 +1111,112 @@ export async function upsertPerson(env, { name, email, phone, source, isCustomer
   return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
 }
 
-async function insertSupabaseRecord(env, { type, name, email, phone, enquiry_type, location, product, message }) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return;
+// Create the order + invoice rows for a product quote. Isolated so non-quote
+// channels never touch the orders table.
+async function createOrderForQuote(env, { personId, customerName, product, location, message }) {
   const headers = supabaseHeaders(env);
   const today = new Date().toISOString().split("T")[0];
   const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-
-  const person = await upsertPerson(env, {
-    name, email, phone,
-    source: type,
-    isCustomer: type === "quote",
-  });
-  if (!person) throw new Error("Supabase person upsert returned no id");
-
-  // Generate an edit token for quote editing
-  const editToken = type === "quote" ? generateToken() : null;
+  const editToken = generateToken();
 
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
     method: "POST", headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      person_id: person.id,
-      order_type: type === "quote" ? "quote" : (enquiry_type || null),
-      sku: product?.name || null, color: product?.colour || null,
+      organization_id: env.SM_ORG_ID,
+      person_id: personId,
+      order_type: "quote",
+      sku: product?.name || null,
+      color: product?.colour || null,
       value: product?.price ? parseFloat(product.price) : null,
       permit_fee: product?.permit_fee ? parseFloat(product.permit_fee) : null,
       location: location || null,
-      ...(editToken ? { edit_token: editToken } : {}),
-      ...(type === "quote" && product ? { product_config: JSON.stringify(product) } : {}),
+      edit_token: editToken,
+      ...(product ? { product_config: JSON.stringify(product) } : {}),
       ...(message ? { notes: message } : {}),
+      ...(product?.inscription ? { inscription_text: product.inscription } : {}),
     }),
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
-  const orderRows = await orderRes.json();
-  const orderId = orderRows[0]?.id || null;
+  const orderId = (await orderRes.json())[0]?.id || null;
+
   let invoiceId = null;
-  if (type === "quote" && product?.price) {
+  if (product?.price) {
     const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
     const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
       method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({ order_id: orderId, customer_name: name, amount: fullAmount, status: "pending", issue_date: today, due_date: dueDate }),
+      body: JSON.stringify({
+        organization_id: env.SM_ORG_ID,
+        order_id: orderId,
+        customer_name: customerName,
+        amount: fullAmount,
+        status: "pending",
+        issue_date: today,
+        due_date: dueDate,
+      }),
     });
-    if (!invRes.ok) { console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`); }
-    else { const invRows = await invRes.json(); invoiceId = invRows[0]?.id || null; }
+    if (!invRes.ok) {
+      console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+    } else {
+      invoiceId = (await invRes.json())[0]?.id || null;
+    }
   }
-  // Set inscription_text on the order itself (used by tracking system)
-  if (product?.inscription && orderId) {
-    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
-      method: "PATCH",
-      headers: { ...headers, "Prefer": "return=minimal" },
-      body: JSON.stringify({ inscription_text: product.inscription }),
-    });
+  return { orderId, editToken, invoiceId };
+}
+
+// Single source of truth for every inbound submission. Always creates a
+// `people` row (deduped by email) and an `enquiries` row. For `channel='quote'`
+// also creates the order + invoice and links the enquiry to it via order_id.
+async function createEnquiry(env, payload) {
+  const person = await upsertPerson(env, {
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    isCustomer: payload.channel === "quote",
+  });
+  if (!person) throw new Error("Person upsert returned no id");
+
+  let orderId = null, editToken = null, invoiceId = null;
+  if (payload.channel === "quote") {
+    ({ orderId, editToken, invoiceId } = await createOrderForQuote(env, {
+      personId: person.id,
+      customerName: payload.name,
+      product: payload.product,
+      location: payload.location,
+      message: payload.message,
+    }));
   }
-  return { invoiceId: invoiceId || null, editToken, personId: person.id };
+
+  const headers = supabaseHeaders(env);
+  const enqBody = {
+    organization_id: env.SM_ORG_ID,
+    person_id: person.id,
+    channel: payload.channel,
+    sub_type: payload.sub_type ?? null,
+    source_page: payload.source_page ?? null,
+    message: payload.message ?? null,
+    contact_pref: payload.contact_pref ?? null,
+    location: payload.location ?? null,
+    cemetery_id: payload.cemetery_id ?? null,
+    appointment_at: payload.appointment_at ?? null,
+    appointment_kind: payload.appointment_kind ?? null,
+    photo_urls: Array.isArray(payload.photo_urls) && payload.photo_urls.length > 0 ? payload.photo_urls : null,
+    details: payload.details ?? (payload.product || null),
+    order_id: orderId,
+  };
+  const enqRes = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify(enqBody),
+  });
+  if (!enqRes.ok) throw new Error(`Supabase enquiries error ${enqRes.status}: ${await enqRes.text()}`);
+  const enqRow = (await enqRes.json())[0] || null;
+  return {
+    personId: person.id,
+    enquiryId: enqRow?.id || null,
+    orderId,
+    editToken,
+    invoiceId,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════

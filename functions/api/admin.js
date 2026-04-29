@@ -61,6 +61,7 @@ export async function onRequest(context) {
   if (action === "decline-partner") return declinePartner(env, data);
   if (action === "dashboard") return getDashboard(env);
   if (action === "list-orders") return listOrders(env, data);
+  if (action === "list-enquiries") return listEnquiries(env, data);
   if (action === "update-order") return updateOrder(env, data);
   if (action === "generate-tracking") return generateTracking(env, data);
   if (action === "list-inscription-requests") return listInscriptionRequests(env);
@@ -363,7 +364,8 @@ async function getDashboard(env) {
 async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) {
   const headers = sbHeaders(env);
   const select = [
-    "id", "person_id", "people(id,name,email,phone,is_customer)",
+    "id", "order_number", "person_id",
+    "people(id,first_name,last_name,email,phone,is_customer)",
     "sku", "color", "value", "permit_fee", "status", "stage",
     "location", "tracking_token", "inscription_text", "inscription_status",
     "proof_url", "proof_uploaded_at", "proof_notes",
@@ -372,7 +374,8 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
     "edit_token", "order_type", "created_at", "updated_at",
     "partners(id,name,company,email)"
   ].join(",");
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=200`;
+  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${env.SM_ORG_ID}` : "";
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=200${orgFilter}`;
 
   if (filter && filter !== "all") {
     url += `&stage=eq.${encodeURIComponent(filter)}`;
@@ -403,7 +406,7 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
   if (search) {
     const q = search.toLowerCase();
     orders = orders.filter(o =>
-      (o.people?.name || "").toLowerCase().includes(q) ||
+      personFullName(o.people).toLowerCase().includes(q) ||
       (o.people?.email || "").toLowerCase().includes(q) ||
       (o.sku || "").toLowerCase().includes(q) ||
       (o.location || "").toLowerCase().includes(q) ||
@@ -412,6 +415,56 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
   }
 
   return json({ ok: true, orders });
+}
+
+function personFullName(p) {
+  if (!p) return "";
+  return [p.first_name, p.last_name].filter(Boolean).join(" ");
+}
+
+// ==================== LIST ENQUIRIES ====================
+async function listEnquiries(env, { channel, status, limit }) {
+  const headers = sbHeaders(env);
+  const params = new URLSearchParams({
+    select: "*,people(id,first_name,last_name,email,phone,is_customer),orders(id,order_number,stage,value)",
+    order: "created_at.desc",
+    limit: String(Math.min(parseInt(limit, 10) || 100, 200)),
+  });
+  if (env.SM_ORG_ID) params.append("organization_id", `eq.${env.SM_ORG_ID}`);
+  if (channel && channel !== "all") params.append("channel", `eq.${channel}`);
+  if (status && status !== "all") params.append("status", `eq.${status}`);
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?${params}`, { headers });
+  if (!res.ok) return json({ ok: false, error: "Database error", detail: await res.text() }, 500);
+  const enquiries = await res.json();
+
+  // Generate signed URLs (1h expiry) for any photo paths.
+  for (const e of enquiries) {
+    if (Array.isArray(e.photo_urls) && e.photo_urls.length > 0) {
+      e.photo_signed_urls = await signPhotoPaths(env, e.photo_urls);
+    }
+  }
+  return json({ ok: true, enquiries });
+}
+
+async function signPhotoPaths(env, paths) {
+  // Supabase Storage supports a single batch sign endpoint:
+  //   POST /storage/v1/object/sign/{bucket}
+  //   body: { paths: [...], expiresIn: 3600 }
+  const res = await fetch(`${env.SUPABASE_URL}/storage/v1/object/sign/enquiry-photos`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ expiresIn: 3600, paths }),
+  });
+  if (!res.ok) {
+    console.error(`Storage sign failed ${res.status}: ${await res.text()}`);
+    return [];
+  }
+  const rows = await res.json();
+  return rows.map(r => (r.signedURL ? `${env.SUPABASE_URL}/storage/v1${r.signedURL}` : null)).filter(Boolean);
 }
 
 // ==================== LIST PRODUCTS (admin, includes hidden) ====================
@@ -561,7 +614,7 @@ async function listInscriptionRequests(env) {
   const enriched = [];
   for (const req of requests) {
     const orderRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,people(name,email),sku,inscription_text&limit=1`,
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${req.order_id}&select=id,people(first_name,last_name,email),sku,inscription_text&limit=1`,
       { headers },
     );
     let orderInfo = null;
@@ -668,7 +721,7 @@ async function sendCustomerEmail(env, { orderId, kind }) {
 
   const headers = sbHeaders(env);
   const orderRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,people(name,email),sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,people(first_name,last_name,email),sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
     { headers }
   );
   if (!orderRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -676,7 +729,7 @@ async function sendCustomerEmail(env, { orderId, kind }) {
   const order = orders[0];
   if (!order) return json({ ok: false, error: "Order not found" }, 404);
   const customerEmail = order.people?.email;
-  const customerName = order.people?.name;
+  const customerName = personFullName(order.people);
   if (!customerEmail) return json({ ok: false, error: "Order has no customer email" }, 400);
 
   // Generate a tracking token if one doesn't exist yet (used by tracking + proof emails).
