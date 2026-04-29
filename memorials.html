@@ -855,8 +855,7 @@
                     '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
                 ).join('');
 
-                const inCompare = isInCompare(product.slug);
-                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button><button class="product-action compare-btn ' + (inCompare ? 'active' : '') + '" data-slug="' + product.slug + '" onclick="event.preventDefault(); event.stopPropagation(); toggleCompare(this)" title="Compare"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h2"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -969,54 +968,6 @@
             toast.classList.add('visible');
             _saveToastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 3000);
         }
-
-        // ==================== COMPARE LIST (max 3) ====================
-        function getCompareList() {
-            try { return JSON.parse(localStorage.getItem('smm_compare') || '[]') || []; }
-            catch (_) { return []; }
-        }
-        function setCompareList(list) {
-            localStorage.setItem('smm_compare', JSON.stringify(list.slice(0, 3)));
-            updateCompareTray();
-        }
-        function isInCompare(slug) {
-            return getCompareList().includes(slug);
-        }
-        function toggleCompare(btn) {
-            const slug = btn.dataset.slug;
-            if (!slug) return;
-            const list = getCompareList();
-            const idx = list.indexOf(slug);
-            if (idx >= 0) {
-                list.splice(idx, 1);
-                btn.classList.remove('active');
-                showSaveToast('Removed from comparison');
-            } else {
-                if (list.length >= 3) { showSaveToast('You can compare up to 3 memorials'); return; }
-                list.push(slug);
-                btn.classList.add('active');
-                showSaveToast('Added to comparison — <a href="/compare">view ' + list.length + '</a>');
-            }
-            setCompareList(list);
-        }
-        function updateCompareTray() {
-            const list = getCompareList();
-            let tray = document.getElementById('compareTray');
-            if (!tray) {
-                tray = document.createElement('a');
-                tray.id = 'compareTray';
-                tray.href = '/compare';
-                tray.style.cssText = 'position:fixed;bottom:5rem;right:1.25rem;z-index:200;background:#2C2C2C;color:#fff;border-radius:999px;padding:0.65rem 1.1rem;font-size:0.85rem;font-weight:600;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,0.18);display:none;';
-                document.body.appendChild(tray);
-            }
-            if (list.length > 0) {
-                tray.textContent = 'Compare (' + list.length + ') →';
-                tray.style.display = 'inline-block';
-            } else {
-                tray.style.display = 'none';
-            }
-        }
-        document.addEventListener('DOMContentLoaded', updateCompareTray);
 
         function toggleSave(btn) {
             const card = btn.closest('.product-card');
