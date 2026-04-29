@@ -55,14 +55,19 @@ async function handleQuoteRequest(env, data, submittedAt) {
   const { name, email, phone, cemetery, message, product = {}, location, payment_preference } = data;
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
+  const cemeteryOrLocation = cemetery || location || null;
 
-  // 0. Stripe Invoices — always create both deposit and full payment invoices
+  // 0. Stripe Invoices — only create them if the customer indicated they want
+  // to pay now (deposit or pay_full). 'quote_only' is the default selection on
+  // the quote modal, so without this gate every quote request would create two
+  // unrelated Stripe invoices that the customer never asked for.
   let stripeDepositUrl = null;
   let stripeFullUrl = null;
-  if (env.STRIPE_SECRET_KEY) {
+  const wantsInvoices = payment_preference === "deposit" || payment_preference === "pay_full";
+  if (env.STRIPE_SECRET_KEY && wantsInvoices) {
     try {
       stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location,
+        name, email, phone, product, location: cemeteryOrLocation,
         isFullInvoice: false,
       });
     } catch (err) {
@@ -70,7 +75,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     }
     try {
       stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location,
+        name, email, phone, product, location: cemeteryOrLocation,
         isFullInvoice: true,
       });
     } catch (err) {
@@ -78,43 +83,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     }
   }
 
-  // 1. Business notification email (critical)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to:      BUSINESS_EMAIL,
-      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, location: cemetery, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote business email:", err);
-    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
-  }
-
-  // 2. Customer confirmation email (non-critical)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
-      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote customer email:", err);
-  }
-
-  // 3. ClickUp
-  try {
-    await createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
-      description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
-      listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp quote task:", err);
-  }
-
-  // 4. Supabase — create the enquiry + order + invoice (critical: surface failures)
+  // 1. Supabase first — the customer email needs editToken, and the response needs invoiceId.
   let invoiceId = null;
   let editToken = null;
   try {
@@ -123,7 +92,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
       name, email, phone,
       source_page: data.source_page || null,
       message,
-      location: cemetery || location || null,
+      location: cemeteryOrLocation,
       cemetery_id: data.cemetery_id || null,
       product,
     });
@@ -132,6 +101,42 @@ async function handleQuoteRequest(env, data, submittedAt) {
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
+  }
+
+  // 2. Business notification email (critical)
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to:      BUSINESS_EMAIL,
+      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
+      html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
+    });
+  } catch (err) {
+    console.error("Failed to send quote business email:", err);
+    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
+  }
+
+  // 3. Customer confirmation email (non-critical)
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
+      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }),
+    });
+  } catch (err) {
+    console.error("Failed to send quote customer email:", err);
+  }
+
+  // 4. ClickUp
+  try {
+    await createClickUpTask(env.CLICKUP_API_KEY, {
+      name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
+      description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
+      listId: CLICKUP_LIST_ID,
+    });
+  } catch (err) {
+    console.error("Failed to create ClickUp quote task:", err);
   }
 
   // 5. GHL
@@ -166,14 +171,19 @@ async function handleQuoteRequest(env, data, submittedAt) {
 }
 
 async function handleEnquiry(env, data, submittedAt) {
-  const { name, email, phone, message, enquiry_type, location } = data;
+  const { name, email, phone, message, location } = data;
+  // Accept either `enquiry_type` (legacy / shortlist) or `sub_type` (contact form
+  // post-refactor) — the frontend wasn't always consistent and the business
+  // notification email used to silently say "Not specified" for half of them.
+  const enquiry_type = data.enquiry_type || data.sub_type || null;
+  const grave_number = data.grave_number ? String(data.grave_number).trim() : null;
   if (!message) return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
   try {
     await sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: BUSINESS_EMAIL,
       subject: `New Enquiry — ${name}`,
-      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, submittedAt }),
+      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send business notification email:", err);
@@ -190,9 +200,26 @@ async function handleEnquiry(env, data, submittedAt) {
     console.error("Failed to send customer confirmation email:", err);
   }
   try {
+    const clickupLines = [
+      "=== WEBSITE ENQUIRY ===",
+      "",
+      "CUSTOMER",
+      `• Name: ${name}`,
+      `• Email: ${email}`,
+      `• Phone: ${phone || "Not provided"}`,
+      `• Enquiry type: ${enquiry_type || "Not specified"}`,
+      grave_number ? `• Grave: ${grave_number}` : null,
+      location ? `• Cemetery: ${location}` : null,
+      "",
+      "MESSAGE",
+      message,
+      "",
+      "---",
+      `Submitted: ${submittedAt}`,
+    ].filter(l => l !== null);
     await createClickUpTask(env.CLICKUP_API_KEY, {
       name: `New Enquiry — ${name}`,
-      description: `=== WEBSITE ENQUIRY ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n• Enquiry type: ${enquiry_type || "Not specified"}\n\nMESSAGE\n${message}\n\n---\nSubmitted: ${submittedAt}`,
+      description: clickupLines.join("\n"),
       listId: CLICKUP_LIST_ID,
     });
   } catch (err) {
@@ -202,6 +229,14 @@ async function handleEnquiry(env, data, submittedAt) {
   const isShortlist = enquiry_type === "shortlist-enquiry";
   const channel = isShortlist ? "shortlist" : "contact";
   try {
+    // Merge any structured details payload with our own grave_number so reports
+    // can query it cleanly. For shortlist channels keep the items list shape.
+    const baseDetails = isShortlist
+      ? { items: Array.isArray(data.details?.items) ? data.details.items : [] }
+      : (data.details && typeof data.details === "object" ? { ...data.details } : null);
+    const mergedDetails = grave_number
+      ? { ...(baseDetails || {}), grave_number }
+      : baseDetails;
     await createEnquiry(env, {
       channel,
       name, email, phone,
@@ -211,16 +246,51 @@ async function handleEnquiry(env, data, submittedAt) {
       contact_pref: data.contact_pref || null,
       location,
       cemetery_id: data.cemetery_id || null,
-      appointment_at: data.appointment_at || null,
+      // Prefer the date+time pair; fall back to ISO for legacy callers. The
+      // stored ISO is built in the Worker (UTC) so it's stable and timezone-safe.
+      appointment_at: data.appointment_date && data.appointment_time
+        ? new Date(`${data.appointment_date}T${data.appointment_time}:00Z`).toISOString()
+        : (data.appointment_at || null),
       appointment_kind: data.appointment_kind || null,
       photo_urls: Array.isArray(data.photo_urls) ? data.photo_urls : null,
-      details: isShortlist
-        ? { items: Array.isArray(data.details?.items) ? data.details.items : [] }
-        : (data.details || null),
+      details: mergedDetails,
     });
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
+  }
+
+  // If the contact form picked a slot, create the calendar event too — otherwise
+  // the customer thinks they've booked but nothing reaches the calendar. Date+
+  // time pair is preferred (timezone-safe); ISO is a legacy fallback.
+  const apptDate = data.appointment_date || null;
+  const apptTime = data.appointment_time || null;
+  if (apptDate && apptTime) {
+    try {
+      const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+      const kind = data.appointment_kind || "showroom";
+      await createGoogleCalendarEvent(env, {
+        name, email, phone,
+        appointment_type: kind,
+        appointment_date: apptDate,
+        appointment_time: apptTime,
+        notes: message,
+        typeLabel: typeLabels[kind] || kind,
+      });
+    } catch (err) {
+      console.error("Contact-form calendar event creation failed:", err);
+    }
+  } else if (data.appointment_at) {
+    try {
+      await createCalendarEventFromIso(env, {
+        name, email, phone,
+        appointmentAtIso: data.appointment_at,
+        appointmentKind: data.appointment_kind || "consultation",
+        notes: message,
+      });
+    } catch (err) {
+      console.error("Contact-form calendar event creation failed:", err);
+    }
   }
   try {
     const ghlExtraFields = [
@@ -330,6 +400,30 @@ async function handleAppointment(env, data, submittedAt) {
   }
 
   return jsonResponse({ ok: true });
+}
+
+// Lightweight wrapper around createGoogleCalendarEvent for callers that already
+// have an ISO timestamp (e.g. the contact form's appointment picker, which sends
+// `appointment_at` rather than separate date/time fields).
+async function createCalendarEventFromIso(env, { name, email, phone, appointmentAtIso, appointmentKind, notes }) {
+  if (!appointmentAtIso) return null;
+  const d = new Date(appointmentAtIso);
+  if (isNaN(d.getTime())) return null;
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const min = String(d.getUTCMinutes()).padStart(2, "0");
+  const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+  const typeLabel = typeLabels[appointmentKind] || (appointmentKind || "Consultation");
+  return createGoogleCalendarEvent(env, {
+    name, email, phone,
+    appointment_type: appointmentKind || "consultation",
+    appointment_date: `${yyyy}-${mm}-${dd}`,
+    appointment_time: `${hh}:${min}`,
+    notes: notes || "",
+    typeLabel,
+  });
 }
 
 async function createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel }) {
@@ -716,7 +810,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }) {
   const totalPrice = parseFloat(product.price) || 0;
   const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -858,7 +952,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               ${stripeDepositUrl ? `<tr>
                 <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;">
-                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay 50% Deposit &rarr;</a>
+                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay Deposit + Permit Fee &rarr;</a>
                 </td>
               </tr>
               <tr><td style="height:10px;"></td></tr>` : ""}
@@ -906,7 +1000,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
         <tr>
           <td style="padding:0 28px 16px;">
             <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
-              <a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account
+              ${email ? `<a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account` : ""}
             </p>
           </td>
         </tr>
@@ -934,7 +1028,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
 </html>`;
 }
 
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, submittedAt }) {
+function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, submittedAt }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -962,6 +1056,7 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, submi
           <tr><td style="padding:5px 0;color:#999999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
           <tr><td style="padding:5px 0;color:#999999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
           ${enquiry_type ? `<tr><td style="padding:5px 0;color:#999999;">Enquiry type</td><td style="padding:5px 0;color:#1A1A1A;">${esc(enquiry_type.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()))}</td></tr>` : ""}
+          ${grave_number ? `<tr><td style="padding:5px 0;color:#999999;">Grave</td><td style="padding:5px 0;color:#1A1A1A;">${esc(grave_number)}</td></tr>` : ""}
         </table>
       </td></tr>
       <tr><td style="padding:12px 28px 28px;">
@@ -1304,8 +1399,12 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   const basePricePence = Math.max(0, totalPricePence - addonTotalPence);
   const productDescription = [product.name || "Memorial", product.colour ? `· ${product.colour}` : "", product.size ? `· ${product.size}` : ""].filter(Boolean).join(" ");
 
-  // For deposit invoices, charge 50%. For full invoices, charge 100%.
-  const multiplier = isFullInvoice ? 1 : 0.5;
+  // Deposit structure:
+  //   • Memorial value (base + addons + lettering): charged 50% on deposit, 50% on completion.
+  //   • Cemetery permit fee: charged 100% on deposit (we have to pay it upfront to the cemetery).
+  // Full-payment invoice charges 100% of everything.
+  const memorialMultiplier = isFullInvoice ? 1 : 0.5;
+  const permitMultiplier = 1; // always full
   const label = isFullInvoice ? "" : " — 50% deposit";
 
   // Helper: find existing Stripe Product by metadata key, or create a new one
@@ -1324,10 +1423,10 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
 
   const invoiceDescription = isFullInvoice
     ? `Sears Melvin Memorials — ${productDescription}`
-    : `Sears Melvin Memorials — 50% Deposit — ${productDescription}`;
+    : `Sears Melvin Memorials — Deposit + permit fee — ${productDescription}`;
   const invoiceFooter = isFullInvoice
     ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
-    : "Thank you for choosing Sears Melvin Memorials. This invoice is for a 50% deposit. The remaining balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
+    : "Thank you for choosing Sears Melvin Memorials. This invoice covers a 50% deposit on the memorial plus the cemetery permit fee in full. The remaining 50% memorial balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
 
   // Create invoice FIRST as a draft, then attach line items explicitly
   const invoice = await stripePost("/invoices", {
@@ -1342,7 +1441,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
   const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
   const basePrice = await stripePost("/prices", {
     product: memorialProduct.id,
-    unit_amount: String(Math.round(basePricePence * multiplier)),
+    unit_amount: String(Math.round(basePricePence * memorialMultiplier)),
     currency: "gbp",
   });
   await stripePost("/invoiceitems", {
@@ -1352,19 +1451,19 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
     description: productDescription + " (inc. installation)" + label,
   });
 
-  // Create permit fee line item (if applicable)
+  // Create permit fee line item — always 100% of the fee, even on a deposit invoice.
   if (permitFeePence > 0) {
     const permitProduct = await findOrCreateStripeProduct("Cemetery Permit Fee", "permit");
     const permitPrice = await stripePost("/prices", {
       product: permitProduct.id,
-      unit_amount: String(Math.round(permitFeePence * multiplier)),
+      unit_amount: String(Math.round(permitFeePence * permitMultiplier)),
       currency: "gbp",
     });
     await stripePost("/invoiceitems", {
       customer: customerId,
       invoice: invoice.id,
       price: permitPrice.id,
-      description: "Cemetery Permit Fee" + label,
+      description: "Cemetery Permit Fee (paid in full)",
     });
   }
 
@@ -1375,7 +1474,7 @@ async function createStripeDepositInvoice(stripeKey, { name, email, phone, produ
       const addonProduct = await findOrCreateStripeProduct(addon.name || "Add-on", "addon");
       const addonPrice = await stripePost("/prices", {
         product: addonProduct.id,
-        unit_amount: String(Math.round(addonPence * multiplier)),
+        unit_amount: String(Math.round(addonPence * memorialMultiplier)),
         currency: "gbp",
       });
       await stripePost("/invoiceitems", {

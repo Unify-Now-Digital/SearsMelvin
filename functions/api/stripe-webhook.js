@@ -47,7 +47,15 @@ async function verifyStripeSignature(rawBody, sigHeader, secret) {
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return computedSig === givenSig;
+  return timingSafeEqual(computedSig, givenSig);
+}
+
+// Constant-time string compare — protects HMAC verification from timing attacks.
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 // ── Main handler ────────────────────────────────────────────────────────────────
@@ -125,6 +133,40 @@ async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
   }
 }
 
+// Read invoice_type from the underlying Stripe Invoice (metadata is set when the
+// invoice is created in submit.js). Returns "full" or "deposit" — defaults to
+// "deposit" when the PI isn't tied to an invoice or the call fails.
+async function fetchInvoiceType(env, pi) {
+  if (!pi.invoice || !env.STRIPE_SECRET_KEY) return "deposit";
+  try {
+    const res = await fetch(`https://api.stripe.com/v1/invoices/${pi.invoice}`, {
+      headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+    });
+    if (!res.ok) return "deposit";
+    const inv = await res.json();
+    return inv.metadata?.invoice_type === "full" ? "full" : "deposit";
+  } catch (err) {
+    console.error("Failed to fetch Stripe invoice metadata:", err);
+    return "deposit";
+  }
+}
+
+// Stripe retries delivery aggressively, so dedupe by PaymentIntent id (stored
+// as `reference`) before inserting another payments row.
+async function paymentAlreadyRecorded(env, sbHeaders, piId) {
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/payments?reference=eq.${encodeURIComponent(piId)}&select=id&limit=1`,
+      { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 // ── Payment succeeded ───────────────────────────────────────────────────────────
 async function handlePaymentSucceeded(env, pi) {
   const { customer_name: name, customer_email: email, cemetery, product,
@@ -141,48 +183,58 @@ async function handlePaymentSucceeded(env, pi) {
       "Content-Type":  "application/json",
     };
 
+    const invoiceType = await fetchInvoiceType(env, pi);
+    const isFull = invoiceType === "full";
+    const orderStatus = isFull ? "completed" : "partial";
+    const orderStage = "deposit_paid"; // either payment level unblocks production
+    const paymentNote = isFull
+      ? (product ? `Full payment — ${product}` : "Full payment")
+      : (product ? `Deposit + permit — ${product}` : "Deposit + permit");
+    const alreadyRecorded = await paymentAlreadyRecorded(env, sbHeaders, pi.id);
+
     try {
       if (invoiceId) {
-        // Invoice was created at quote time — update it to "partial" (deposit paid,
-        // balance still outstanding) and record the payment against it.
+        // Invoice was created at quote time — update it to "partial"/"completed"
+        // and record the payment against it.
         const patchRes = await fetch(
           `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${invoiceId}&select=order_id`,
           {
             method:  "PATCH",
             headers: { ...sbHeaders, "Prefer": "return=representation" },
-            body: JSON.stringify({ status: "partial", payment_method: "Stripe" }),
+            body: JSON.stringify({ status: orderStatus, payment_method: "Stripe" }),
           },
         );
         if (!patchRes.ok) {
           console.error(`Supabase invoices PATCH error ${patchRes.status}: ${await patchRes.text()}`);
         } else {
-          // Also update orders.status to reflect deposit paid
           const invRows = await patchRes.json();
           const ordId = invRows[0]?.order_id;
           if (ordId) {
             await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${ordId}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
-              body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
+              body: JSON.stringify({ status: orderStatus, stage: orderStage }),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, ordId);
           }
         }
 
-        const payRes = await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
-          method:  "POST",
-          headers: { ...sbHeaders, "Prefer": "return=minimal" },
-          body: JSON.stringify({
-            invoice_id: invoiceId,
-            amount:     parseFloat(amountPaid),
-            date:       today,
-            method:     "card",
-            reference:  pi.id,
-            notes:      product ? `50% deposit — ${product}` : "50% deposit",
-          }),
-        });
-        if (!payRes.ok) {
-          console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+        if (!alreadyRecorded) {
+          const payRes = await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+            method:  "POST",
+            headers: { ...sbHeaders, "Prefer": "return=minimal" },
+            body: JSON.stringify({
+              invoice_id: invoiceId,
+              amount:     parseFloat(amountPaid),
+              date:       today,
+              method:     "card",
+              reference:  pi.id,
+              notes:      paymentNote,
+            }),
+          });
+          if (!payRes.ok) {
+            console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+          }
         }
       } else {
         // Fallback: no invoice_id in metadata (e.g. older PI) — look up order by
@@ -207,7 +259,7 @@ async function handlePaymentSucceeded(env, pi) {
             order_id:       orderId,
             customer_name:  name || email || "Unknown",
             amount:         parseFloat(amountPaid),
-            status:         "partial",
+            status:         orderStatus,
             issue_date:     today,
             due_date:       today,
             payment_method: "Stripe",
@@ -219,28 +271,30 @@ async function handlePaymentSucceeded(env, pi) {
           const invoices     = await invRes.json();
           const newInvoiceId = invoices[0]?.id || null;
 
-          const payRes = await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
-            method:  "POST",
-            headers: { ...sbHeaders, "Prefer": "return=minimal" },
-            body: JSON.stringify({
-              invoice_id: newInvoiceId,
-              amount:     parseFloat(amountPaid),
-              date:       today,
-              method:     "card",
-              reference:  pi.id,
-              notes:      product ? `50% deposit — ${product}` : "50% deposit",
-            }),
-          });
-          if (!payRes.ok) {
-            console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+          if (!alreadyRecorded) {
+            const payRes = await fetch(`${env.SUPABASE_URL}/rest/v1/payments`, {
+              method:  "POST",
+              headers: { ...sbHeaders, "Prefer": "return=minimal" },
+              body: JSON.stringify({
+                invoice_id: newInvoiceId,
+                amount:     parseFloat(amountPaid),
+                date:       today,
+                method:     "card",
+                reference:  pi.id,
+                notes:      paymentNote,
+              }),
+            });
+            if (!payRes.ok) {
+              console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+            }
           }
 
-          // Update orders.status to reflect deposit paid
+          // Update orders.status to reflect payment
           if (orderId) {
             await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
-              body: JSON.stringify({ status: "partial", stage: "deposit_paid" }),
+              body: JSON.stringify({ status: orderStatus, stage: orderStage }),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, orderId);
           }

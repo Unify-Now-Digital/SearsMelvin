@@ -1,6 +1,21 @@
 User-agent: *
 Allow: /
 
+# Admin surfaces — clean URL and .html variants
 Disallow: /admin
+Disallow: /admin.html
+Disallow: /admin-products
+Disallow: /admin-products.html
+
+# Partner portal (login-only)
+Disallow: /partner
+Disallow: /partner.html
+
+# Customer tracking pages need a token to be useful
+Disallow: /track
+Disallow: /track.html
+
+# API endpoints — never indexable
+Disallow: /api/
 
 Sitemap: https://searsmelvin.co.uk/sitemap.xml

@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -251,8 +273,12 @@
                 <input type="tel" id="reqPhone">
             </div>
             <div class="login-field">
-                <label>Password *</label>
-                <input type="password" id="reqPassword" required autocomplete="new-password">
+                <label>Password * <span style="color:var(--color-text-muted);font-weight:normal;font-size:0.78rem;">(at least 6 characters)</span></label>
+                <input type="password" id="reqPassword" required autocomplete="new-password" minlength="6">
+            </div>
+            <div class="login-field">
+                <label>Confirm Password *</label>
+                <input type="password" id="reqPasswordConfirm" required autocomplete="new-password" minlength="6">
             </div>
             <div class="login-field">
                 <label>Message (optional)</label>
@@ -550,6 +576,20 @@
         var successEl = document.getElementById('reqSuccess');
         errEl.style.display = 'none';
         successEl.style.display = 'none';
+
+        var pw = document.getElementById('reqPassword').value;
+        var pwConfirm = document.getElementById('reqPasswordConfirm').value;
+        if (pw.length < 6) {
+            errEl.textContent = 'Password must be at least 6 characters.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (pw !== pwConfirm) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl.style.display = 'block';
+            return;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
@@ -563,7 +603,7 @@
                     company: document.getElementById('reqCompany').value.trim(),
                     email: document.getElementById('reqEmail').value.trim(),
                     phone: document.getElementById('reqPhone').value.trim(),
-                    password: document.getElementById('reqPassword').value,
+                    password: pw,
                     message: document.getElementById('reqMessage').value.trim(),
                 })
             });
@@ -945,6 +985,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {

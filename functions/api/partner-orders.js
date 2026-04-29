@@ -252,7 +252,7 @@ async function getPartnerFromToken(env, token) {
   if (sessRows.length === 0) return null;
 
   const partRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessRows[0].partner_id}&active=eq.true&select=id,email,name,company&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessRows[0].partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
     { headers },
   );
   if (!partRes.ok) return null;

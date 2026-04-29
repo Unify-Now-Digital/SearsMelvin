@@ -8,3 +8,6 @@
 
 # OS
 .DS_Store
+
+# Repo snapshots / release archives — never commit
+*.zip

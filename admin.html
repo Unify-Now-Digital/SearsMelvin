@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -759,8 +781,9 @@
 
     var ordersById = {};       // cached last-fetched orders by id
     var openOrderIds = new Set(); // ids the user has expanded; preserved across reloads
+    var orderPage = { offset: 0, limit: 100, hasMore: false, all: [] };
 
-    async function loadAdminOrders() {
+    async function loadAdminOrders(append) {
         try {
             populatePartnerFilter();
             var search = document.getElementById('orderSearchInput') ? document.getElementById('orderSearchInput').value.trim() : '';
@@ -768,7 +791,8 @@
             var partnerId = partnerSel ? partnerSel.value : '';
             var dateFrom = document.getElementById('orderDateFrom').value;
             var dateTo = document.getElementById('orderDateTo').value;
-            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search };
+            if (!append) orderPage = { offset: 0, limit: 100, hasMore: false, all: [] };
+            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search, offset: orderPage.offset, limit: orderPage.limit };
             if (partnerId) body.partnerId = parseInt(partnerId, 10);
             if (dateFrom) body.dateFrom = dateFrom;
             if (dateTo) body.dateTo = dateTo + 'T23:59:59';
@@ -779,10 +803,33 @@
             });
             var data = await res.json();
             if (!data.ok) return;
-            renderAdminOrders(data.orders);
+            orderPage.hasMore = !!data.hasMore;
+            orderPage.all = append ? orderPage.all.concat(data.orders) : data.orders;
+            orderPage.offset = orderPage.all.length;
+            renderAdminOrders(orderPage.all);
+            renderOrderPagination();
         } catch (err) {
             document.getElementById('orderList').innerHTML = '<div class="empty-state">Failed to load orders.</div>';
         }
+    }
+
+    function renderOrderPagination() {
+        var container = document.getElementById('orderList');
+        if (!container) return;
+        var existing = document.getElementById('orderLoadMore');
+        if (existing) existing.remove();
+        if (!orderPage.hasMore) return;
+        var btn = document.createElement('button');
+        btn.id = 'orderLoadMore';
+        btn.className = 'btn';
+        btn.style.cssText = 'display:block;margin:1rem auto;padding:0.6rem 1.5rem;background:var(--color-warm);border:1px solid var(--color-border);border-radius:6px;cursor:pointer;font-family:var(--font-body);font-size:0.85rem;';
+        btn.textContent = 'Load 100 more';
+        btn.onclick = function() {
+            btn.disabled = true;
+            btn.textContent = 'Loading…';
+            loadAdminOrders(true);
+        };
+        container.appendChild(btn);
     }
 
     function populatePartnerFilter() {
@@ -887,8 +934,9 @@
         var custEmail = p.email ? '<p><a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></p>' : '';
         var locBlock = o.location ? '<p style="color:var(--color-text-muted);font-size:0.78rem;margin-top:0.4rem;">' + esc(o.location) + '</p>' : '';
         var custTypeChip = p.is_customer ? '<span style="background:var(--color-success);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Customer</span>' : '<span style="background:var(--color-text-muted);color:white;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Lead</span>';
+        var fullName = [p.first_name, p.last_name].filter(Boolean).join(' ') || '\u2014';
         var custBlock = '<div class="info-block"><h4>Customer</h4>'
-            + '<p style="font-weight:600;">' + esc(p.name || '\u2014') + custTypeChip + '</p>'
+            + '<p style="font-weight:600;">' + esc(fullName) + custTypeChip + '</p>'
             + custEmail + custPhone + locBlock
             + '</div>';
 
@@ -921,8 +969,14 @@
         var permitRow = (o.permit_fee && parseFloat(o.permit_fee) > 0) ? '<div class="row"><span>Permit fee</span><span>' + formatPrice(o.permit_fee) + '</span></div>' : '';
         var paid = o.status === 'partial' || o.status === 'completed';
         var fullyPaid = o.status === 'completed';
-        var depositRow = (paid && o.value) ? '<div class="row"><span>50% deposit</span><span>' + formatPrice(parseFloat(o.value) * 0.5) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
-        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(parseFloat(o.value) * 0.5 + parseFloat(o.permit_fee || 0)) + '</span></div>' : '';
+        var memorialValue = parseFloat(o.value) || 0;
+        var permitFee = parseFloat(o.permit_fee) || 0;
+        // Deposit = 50% of memorial value + 100% of permit fee.
+        // Balance owed at completion = remaining 50% of memorial value (permit is paid in full upfront).
+        var depositAmount = (memorialValue * 0.5) + permitFee;
+        var balanceAmount = memorialValue * 0.5;
+        var depositRow = (paid && o.value) ? '<div class="row"><span>Deposit + permit</span><span>' + formatPrice(depositAmount) + ' <span style="color:var(--color-success);font-size:0.7rem;">paid</span></span></div>' : '';
+        var balanceRow = (paid && !fullyPaid && o.value) ? '<div class="row"><span>Balance due</span><span>' + formatPrice(balanceAmount) + '</span></div>' : '';
         var paymentBlock = '<div class="info-block"><h4>Payment ' + (fullyPaid ? '<span style="color:var(--color-success);font-size:0.7rem;">paid in full</span>' : paid ? '<span style="color:var(--color-success);font-size:0.7rem;">deposit paid</span>' : '<span style="color:var(--color-text-muted);font-size:0.7rem;">unpaid</span>') + '</h4>'
             + '<div class="row"><span>Base</span><span>' + (o.value ? formatPrice(o.value) : '\u2014') + '</span></div>'
             + configLines
@@ -1254,6 +1308,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {

@@ -68,48 +68,35 @@ async function getPortal(env, portalToken) {
   if (customers.length === 0) return json({ ok: false, error: "Invalid or expired link. Please request a new one." }, 404);
 
   const customer = customers[0];
-  const custEmail = customer.email ? customer.email.toLowerCase() : null;
+  const personId = customer.id;
 
-  // Fetch quotes for this customer
-  const quotesRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/quotes?customer_id=eq.${customer.id}&select=id,quote_number,product_name,product_sku,material,color,location,inscription,value,permit_cost,total_value,status,sent_at,expires_at,notes,created_at&order=created_at.desc&limit=20`,
+  // Single source of truth: every quote and order lives in `orders` (distinguished
+  // by `order_type`). Fetch both with one round-trip and split client-side.
+  const ordersSelect = [
+    "id", "order_number", "order_type", "sku", "color", "value", "permit_fee",
+    "location", "stage", "status",
+    "inscription_text", "inscription_status",
+    "proof_url", "proof_uploaded_at", "proof_notes",
+    "estimated_completion", "installation_date",
+    "tracking_token", "edit_token", "product_config", "notes",
+    "created_at", "updated_at",
+    "people(first_name,last_name,email)",
+  ].join(",");
+  const ordersRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=${ordersSelect}&order=created_at.desc&limit=40`,
     { headers },
   );
-  let quotes = [];
-  if (quotesRes.ok) quotes = await quotesRes.json();
+  const allOrders = ordersRes.ok ? await ordersRes.json() : [];
+  const quoteRows = allOrders.filter(o => o.order_type === "quote");
+  const orderRows = allOrders.filter(o => o.order_type !== "quote");
 
-  // Fetch orders — keyed off the linked person.
-  let orders = [];
-  let personId = null;
-  if (custEmail) {
-    const personRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(custEmail)}&select=id&limit=1`,
-      { headers },
-    );
-    if (personRes.ok) {
-      const rows = await personRes.json();
-      if (rows.length > 0) personId = rows[0].id;
-    }
-  }
-  if (personId) {
-    const ordersRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id,order_number,sku,color,location,stage,status,inscription_text,inscription_status,proof_url,proof_uploaded_at,proof_notes,estimated_completion,installation_date,tracking_token,product_config,created_at,updated_at,people(first_name,last_name,email)&order=created_at.desc&limit=20`,
-      { headers },
-    );
-    if (ordersRes.ok) orders = await ordersRes.json();
-  }
+  // Enquiries history.
+  const enqRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/enquiries?person_id=eq.${personId}&select=id,channel,sub_type,message,appointment_at,appointment_kind,status,created_at&order=created_at.desc&limit=30`,
+    { headers },
+  );
+  const enquiries = enqRes.ok ? await enqRes.json() : [];
 
-  // Fetch enquiries by person_id so the portal shows the full inbound history.
-  let enquiries = [];
-  if (personId) {
-    const enqRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/enquiries?person_id=eq.${personId}&select=id,channel,sub_type,message,appointment_at,appointment_kind,status,created_at&order=created_at.desc&limit=30`,
-      { headers },
-    );
-    if (enqRes.ok) enquiries = await enqRes.json();
-  }
-
-  // Build customer-safe response
   return json({
     ok: true,
     portal: true,
@@ -117,51 +104,8 @@ async function getPortal(env, portalToken) {
       firstName: customer.first_name,
       lastName: customer.last_name,
     },
-    quotes: quotes.map(q => ({
-      id: q.id,
-      ref: "QT-" + String(q.quote_number).padStart(4, "0"),
-      product: q.product_name || q.product_sku || null,
-      material: q.material || null,
-      colour: q.color || null,
-      location: q.location || null,
-      inscription: q.inscription || null,
-      value: q.value ? Number(q.value) : null,
-      permitCost: q.permit_cost ? Number(q.permit_cost) : null,
-      total: q.total_value ? Number(q.total_value) : null,
-      status: q.status || "draft",
-      sentAt: q.sent_at,
-      expiresAt: q.expires_at,
-      notes: q.notes || null,
-      createdAt: q.created_at,
-    })),
-    orders: orders.map(o => {
-      const config = o.product_config ? safeParse(o.product_config) : null;
-      const personName = [o.people?.first_name, o.people?.last_name].filter(Boolean).join(" ") || null;
-      return {
-        id: o.id,
-        ref: "SM-" + String(o.order_number || "0000"),
-        customerName: personName,
-        product: o.sku || (config && config.name) || null,
-        colour: o.color || (config && config.colour) || null,
-        location: o.location || null,
-        stage: o.stage || "quote_received",
-        paymentStatus: o.status || "pending",
-        inscription: {
-          text: o.inscription_text || (config && config.inscription) || null,
-          status: o.inscription_status || "pending",
-        },
-        proof: o.proof_url ? {
-          url: o.proof_url,
-          uploadedAt: o.proof_uploaded_at,
-          notes: o.proof_notes || null,
-        } : null,
-        estimatedCompletion: o.estimated_completion || null,
-        installationDate: o.installation_date || null,
-        trackingToken: o.tracking_token || null,
-        createdAt: o.created_at,
-        updatedAt: o.updated_at || null,
-      };
-    }),
+    quotes: quoteRows.map(mapOrderRowToQuote),
+    orders: orderRows.map(mapOrderRowToOrder),
     enquiries: enquiries.map(e => ({
       id: e.id,
       channel: e.channel,
@@ -173,6 +117,59 @@ async function getPortal(env, portalToken) {
       createdAt: e.created_at,
     })),
   });
+}
+
+function mapOrderRowToQuote(o) {
+  const config = o.product_config ? safeParse(o.product_config) : null;
+  const value = o.value != null ? Number(o.value) : null;
+  const permit = o.permit_fee != null ? Number(o.permit_fee) : null;
+  const total = (value != null || permit != null) ? (value || 0) + (permit || 0) : null;
+  return {
+    id: o.id,
+    ref: "QT-" + String(o.order_number || "0000").padStart(4, "0"),
+    product: o.sku || (config && config.name) || null,
+    material: (config && config.material) || null,
+    colour: o.color || (config && config.colour) || null,
+    location: o.location || null,
+    inscription: o.inscription_text || (config && config.inscription) || null,
+    value,
+    permitCost: permit,
+    total,
+    status: o.status || "pending",
+    sentAt: o.created_at,
+    expiresAt: null,
+    notes: o.notes || null,
+    createdAt: o.created_at,
+  };
+}
+
+function mapOrderRowToOrder(o) {
+  const config = o.product_config ? safeParse(o.product_config) : null;
+  const personName = [o.people?.first_name, o.people?.last_name].filter(Boolean).join(" ") || null;
+  return {
+    id: o.id,
+    ref: "SM-" + String(o.order_number || "0000"),
+    customerName: personName,
+    product: o.sku || (config && config.name) || null,
+    colour: o.color || (config && config.colour) || null,
+    location: o.location || null,
+    stage: o.stage || "quote_received",
+    paymentStatus: o.status || "pending",
+    inscription: {
+      text: o.inscription_text || (config && config.inscription) || null,
+      status: o.inscription_status || "pending",
+    },
+    proof: o.proof_url ? {
+      url: o.proof_url,
+      uploadedAt: o.proof_uploaded_at,
+      notes: o.proof_notes || null,
+    } : null,
+    estimatedCompletion: o.estimated_completion || null,
+    installationDate: o.installation_date || null,
+    trackingToken: o.tracking_token || null,
+    createdAt: o.created_at,
+    updatedAt: o.updated_at || null,
+  };
 }
 
 // ==================== GET SINGLE ORDER (backward compat) ====================
@@ -235,17 +232,37 @@ async function getOrderStatus(env, token) {
 }
 
 // ==================== SEND PORTAL LINK ====================
+// Per-isolate cooldown for portal-link emails. Defends against scripted abuse
+// from a single edge — a determined attacker can still spread requests across
+// regions, so pair this with a Cloudflare zone-level rate-limit rule for full
+// coverage. Map<email, timestamp_ms>; entries older than 60s are ignored.
+const PORTAL_LINK_COOLDOWN_MS = 60_000;
+const portalLinkRecent = new Map();
+function _markPortalLinkSent(email) {
+  portalLinkRecent.set(email, Date.now());
+  // Sweep stale entries periodically so the map doesn't grow unbounded.
+  if (portalLinkRecent.size > 200) {
+    const cutoff = Date.now() - PORTAL_LINK_COOLDOWN_MS;
+    for (const [k, t] of portalLinkRecent) if (t < cutoff) portalLinkRecent.delete(k);
+  }
+}
+function _portalLinkOnCooldown(email) {
+  const last = portalLinkRecent.get(email);
+  return last != null && (Date.now() - last) < PORTAL_LINK_COOLDOWN_MS;
+}
+
 async function sendPortalLink(env, { email }) {
   const safeMsg = "If we have an account for that email, we've sent your portal link.";
   if (!email || !email.trim()) return json({ ok: true, message: safeMsg });
 
   const cleanEmail = email.trim().toLowerCase();
+  // Same response either way so scripted callers can't infer cooldown vs no-account.
+  if (_portalLinkOnCooldown(cleanEmail)) return json({ ok: true, message: safeMsg });
   const headers = sbHeaders(env);
 
-  // Look up the person record (case-insensitive). Single source of truth — leads
-  // and paying customers both live in `people`.
+  // Single lookup — `people.email` is stored lower-cased on insert/upsert.
   const custRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=ilike.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name,portal_token&limit=1`,
     { headers },
   );
   let customer = null;
@@ -253,35 +270,6 @@ async function sendPortalLink(env, { email }) {
     const rows = await custRes.json();
     if (rows.length > 0) customer = rows[0];
   }
-
-  // Also resolve the person id and any linked orders.
-  let hasOrders = false;
-  let customerName = "";
-  let personId = null;
-  const personRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(cleanEmail)}&select=id,first_name,last_name&limit=1`,
-    { headers },
-  );
-  if (personRes.ok) {
-    const personRows = await personRes.json();
-    if (personRows.length > 0) {
-      personId = personRows[0].id;
-      customerName = [personRows[0].first_name, personRows[0].last_name].filter(Boolean).join(" ") || "";
-      const ordersRes = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/orders?person_id=eq.${personId}&select=id&limit=1`,
-        { headers },
-      );
-      if (ordersRes.ok) {
-        const ordRows = await ordersRes.json();
-        if (ordRows.length > 0) hasOrders = true;
-      }
-    }
-  }
-
-  // No matching person — bail with the safe message regardless of whether
-  // hasOrders is true. Both lookups above hit `people` directly, so if the
-  // case-insensitive ilike found nothing, the case-sensitive eq also found
-  // nothing — there is no person record to attach a portal token to.
   if (!customer) return json({ ok: true, message: safeMsg });
 
   // Generate portal token if missing
@@ -301,8 +289,8 @@ async function sendPortalLink(env, { email }) {
     return json({ ok: false, error: "Email service is temporarily unavailable. Please contact us directly." }, 500);
   }
 
-  const firstName = customer.first_name || customerName.split(" ")[0] || "there";
-  const portalUrl = `https://searsmelvin.co.uk/track?portal=${customer.portal_token}`;
+  const firstName = customer.first_name || "there";
+  const portalUrl = `https://searsmelvin.co.uk/track.html?portal=${customer.portal_token}`;
 
   try {
     const emailRes = await fetch("https://api.resend.com/emails", {
@@ -335,10 +323,14 @@ async function sendPortalLink(env, { email }) {
     return json({ ok: false, error: "Failed to send email. Please try again or contact us directly." }, 500);
   }
 
+  _markPortalLinkSent(cleanEmail);
   return json({ ok: true, message: "We've sent your portal link to " + cleanEmail + ". Please check your inbox and spam folder." });
 }
 
 // ==================== UPDATE QUOTE ====================
+// Quotes live in `orders` (order_type='quote'). The frontend calls this with
+// `quoteId` = orders.id; we verify ownership by joining person_id back to the
+// portal's customer.
 async function updateQuote(env, { portal, quoteId, inscription, notes }) {
   if (!portal || !quoteId) return json({ ok: false, error: "Missing required fields" }, 400);
 
@@ -346,9 +338,8 @@ async function updateQuote(env, { portal, quoteId, inscription, notes }) {
   const customer = await getCustomerByPortal(env, portal);
   if (!customer) return json({ ok: false, error: "Invalid link" }, 403);
 
-  // Verify quote belongs to this customer
   const qRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/quotes?id=eq.${encodeURIComponent(quoteId)}&customer_id=eq.${customer.id}&select=id,status&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(quoteId)}&person_id=eq.${customer.id}&order_type=eq.quote&select=id,status&limit=1`,
     { headers },
   );
   if (!qRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -356,15 +347,15 @@ async function updateQuote(env, { portal, quoteId, inscription, notes }) {
   if (quotes.length === 0) return json({ ok: false, error: "Quote not found" }, 404);
 
   const quote = quotes[0];
-  if (quote.status === "converted" || quote.status === "expired") {
+  if (quote.status === "completed" || quote.status === "expired") {
     return json({ ok: false, error: "This quote can no longer be edited." }, 400);
   }
 
   const updates = { updated_at: new Date().toISOString() };
-  if (inscription !== undefined) updates.inscription = inscription.trim();
+  if (inscription !== undefined) updates.inscription_text = inscription.trim();
   if (notes !== undefined) updates.notes = notes.trim();
 
-  await fetch(`${env.SUPABASE_URL}/rest/v1/quotes?id=eq.${quoteId}`, {
+  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${quoteId}`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=minimal" },
     body: JSON.stringify(updates),
@@ -382,22 +373,23 @@ async function acceptQuote(env, { portal, quoteId }) {
   if (!customer) return json({ ok: false, error: "Invalid link" }, 403);
 
   const qRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/quotes?id=eq.${encodeURIComponent(quoteId)}&customer_id=eq.${customer.id}&select=id,status&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(quoteId)}&person_id=eq.${customer.id}&order_type=eq.quote&select=id,status&limit=1`,
     { headers },
   );
   if (!qRes.ok) return json({ ok: false, error: "Database error" }, 500);
   const quotes = await qRes.json();
   if (quotes.length === 0) return json({ ok: false, error: "Quote not found" }, 404);
 
-  if (quotes[0].status === "converted") return json({ ok: false, error: "This quote has already been accepted." }, 400);
+  if (quotes[0].status === "accepted" || quotes[0].status === "partial" || quotes[0].status === "completed") {
+    return json({ ok: false, error: "This quote has already been accepted." }, 400);
+  }
   if (quotes[0].status === "expired") return json({ ok: false, error: "This quote has expired. Please contact us for a new quote." }, 400);
 
-  await fetch(`${env.SUPABASE_URL}/rest/v1/quotes?id=eq.${quoteId}`, {
+  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${quoteId}`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=minimal" },
     body: JSON.stringify({
       status: "accepted",
-      accepted_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }),
   });

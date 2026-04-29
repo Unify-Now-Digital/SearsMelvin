@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -14,6 +36,23 @@
     <meta name="description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
     <!-- Supabase data loaded via REST API directly -->
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/memorial">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Memorial | Sears Melvin Memorials">
+    <meta property="og:description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <meta property="og:url" content="https://searsmelvin.co.uk/memorial">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Memorial | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
@@ -1091,6 +1130,18 @@
             document.body.insertBefore(banner, document.body.firstChild);
         }
 
+        // Escape user-controlled or admin-controlled strings before injecting into innerHTML.
+        // Even though product data is admin-supplied, an `&`, `<` or `"` in a product name
+        // breaks rendering — and a future CMS leak shouldn't be one missing escape away from XSS.
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ==================== LOAD PRODUCT FROM SUPABASE ====================
         async function loadProduct() {
             const params = new URLSearchParams(window.location.search);
@@ -1138,6 +1189,27 @@
 
                 // Populate page
                 document.title = product.name + ' | Sears Melvin Memorials';
+                // Sync social/share metadata with the loaded product so a shared
+                // link gets the right preview image and title.
+                (function syncSocialMeta() {
+                    const url = 'https://searsmelvin.co.uk/memorial.html?slug=' + encodeURIComponent(product.slug || '');
+                    const title = product.name + ' | Sears Melvin Memorials';
+                    const desc = (product.description || 'Hand-finished memorial with 30-year guarantee.').slice(0, 200);
+                    const img = product.image_url || 'https://searsmelvin.co.uk/sm-logo.svg';
+                    function setMeta(selector, attr, value) {
+                        const el = document.querySelector(selector);
+                        if (el) el.setAttribute(attr, value);
+                    }
+                    setMeta('link[rel="canonical"]', 'href', url);
+                    setMeta('meta[property="og:url"]', 'content', url);
+                    setMeta('meta[property="og:title"]', 'content', title);
+                    setMeta('meta[property="og:description"]', 'content', desc);
+                    setMeta('meta[property="og:image"]', 'content', img);
+                    setMeta('meta[name="twitter:title"]', 'content', title);
+                    setMeta('meta[name="twitter:description"]', 'content', desc);
+                    setMeta('meta[name="twitter:image"]', 'content', img);
+                    setMeta('meta[name="description"]', 'content', desc);
+                })();
                 var catName = product.product_categories?.name || 'Memorial';
                 var catSlug = product.product_categories?.slug || '';
                 document.getElementById('productCategory').textContent = catName;
@@ -1150,8 +1222,8 @@
                 var bc = document.getElementById('breadcrumb');
                 bc.innerHTML = '<a href="/">Home</a><span>/</span>'
                     + '<a href="/memorials">Memorials</a><span>/</span>'
-                    + (catSlug ? '<a href="/memorials?type=' + catSlug + '">' + catName + '</a><span>/</span>' : '')
-                    + '<span>' + product.name + '</span>';
+                    + (catSlug ? '<a href="/memorials?type=' + encodeURIComponent(catSlug) + '">' + esc(catName) + '</a><span>/</span>' : '')
+                    + '<span>' + esc(product.name) + '</span>';
 
                 // Populate gallery with product image
                 renderGallery(product);
@@ -1251,22 +1323,22 @@
                 html += '<div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">'
                     + '<input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="' + photoPrice + '">'
                     + '<div class="addon-header"><div>'
-                    + '<div class="addon-name">' + photoAddon.name + '</div>'
+                    + '<div class="addon-name">' + esc(photoAddon.name) + '</div>'
                     + '<div class="addon-price" id="photoPriceLabel">+£' + photoPrice + '</div>'
                     + '</div><span class="addon-check"></span></div>'
-                    + '<p class="addon-desc">' + photoAddon.description + '</p></div>';
+                    + '<p class="addon-desc">' + esc(photoAddon.description) + '</p></div>';
             }
             // Regular addons
             addons.forEach(function(a) {
                 if (a.slug === 'photo-plaque') return;
                 var price = parseFloat(a.price);
                 html += '<div class="addon-card" onclick="toggleAddon(this)">'
-                    + '<input type="checkbox" name="addon" value="' + a.slug + '" data-price="' + price + '">'
+                    + '<input type="checkbox" name="addon" value="' + esc(a.slug) + '" data-price="' + price + '">'
                     + '<div class="addon-header"><div>'
-                    + '<div class="addon-name">' + a.name + '</div>'
+                    + '<div class="addon-name">' + esc(a.name) + '</div>'
                     + '<div class="addon-price">+£' + price.toLocaleString() + '</div>'
                     + '</div><span class="addon-check"></span></div>'
-                    + '<p class="addon-desc">' + a.description + '</p></div>';
+                    + '<p class="addon-desc">' + esc(a.description) + '</p></div>';
             });
             // Extra lettering addon (always present, calculated)
             html += '<label class="addon-card" onclick="toggleAddon(this)">'
@@ -1284,7 +1356,7 @@
             if (!features || !features.length) { container.innerHTML = ''; return; }
             const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
             container.innerHTML = features.map(function(f) {
-                return '<div class="feature-item">' + checkSvg + f + '</div>';
+                return '<div class="feature-item">' + checkSvg + esc(f) + '</div>';
             }).join('');
         }
 
@@ -1317,15 +1389,20 @@
                 badge.style.display = '';
             }
 
-            // Thumbnails
+            // Thumbnails. Use a data-url attribute + delegated click handler instead of
+            // building inline onclick="..." with the URL — that pattern is fragile
+            // (special characters break out of the attribute) and harder to escape safely.
             if (images.length > 1) {
                 var thumbsHTML = '';
                 images.forEach(function(url, i) {
-                    thumbsHTML += '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '" onclick="switchGalleryImage(\'' + url.replace(/'/g, "\\'") + '\', this)">'
-                        + '<img src="' + url + '" alt="View ' + (i + 1) + '" style="width:100%;height:100%;object-fit:cover;">'
+                    thumbsHTML += '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '" data-url="' + esc(url) + '">'
+                        + '<img src="' + esc(url) + '" alt="View ' + (i + 1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
                         + '</div>';
                 });
                 thumbsContainer.innerHTML = thumbsHTML;
+                thumbsContainer.querySelectorAll('.gallery-thumb').forEach(function(t) {
+                    t.addEventListener('click', function() { switchGalleryImage(t.dataset.url, t); });
+                });
             }
         }
 
@@ -1726,7 +1803,9 @@
         let _stripePK = '';
         let _stripeInst = null;
         let _stripeElements = null;
-        let _quoteTotal = 0;
+        let _quoteTotal = 0;          // grand total — memorial value + permit fee
+        let _quoteMemorialTotal = 0;  // memorial value only (base + addons + lettering)
+        let _quotePermitFee = 0;      // cemetery permit fee, billed 100% on deposit
         let _quoteName  = '';
         let _quoteEmail = '';
         let _quoteCemetery = '';
@@ -1802,7 +1881,11 @@
             _isFullPayment = !!isFullPayment;
 
             const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
-            const balance = _quoteTotal - amount;
+            // Balance owed at completion = the remaining 50% of the memorial value.
+            // The permit fee is paid in full as part of the deposit, so it doesn't
+            // contribute to the balance. _quoteMemorialTotal is set on the prior
+            // step to (base + addons + lettering), excluding the permit.
+            const balance = isFullPayment ? 0 : Math.round((_quoteMemorialTotal || (_quoteTotal - (_quotePermitFee || 0))) * 0.5);
 
             // Update UI labels based on payment type
             var headerTitle = document.querySelector('#quotePayStep .quote-deposit-header h3');
@@ -1819,12 +1902,12 @@
                 if (payBtnLabel) payBtnLabel.textContent = 'Pay in full';
             } else {
                 if (headerTitle) headerTitle.textContent = 'Secure your order';
-                if (headerDesc) headerDesc.textContent = 'A 50% deposit confirms your order and reserves your slot';
+                if (headerDesc) headerDesc.textContent = 'Pay 50% of the memorial today plus the cemetery permit fee in full to secure your order';
                 document.getElementById('qDepositAmount').textContent = fmt(amount);
                 document.getElementById('qBalanceDue').textContent = fmt(balance);
                 document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
                 document.getElementById('qDepositTotal').textContent = fmt(amount);
-                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit';
+                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit + permit';
             }
 
             document.getElementById('quotePayStep').style.display = 'block';
@@ -1892,6 +1975,7 @@
                             message,
                             source_page: window.location.pathname + window.location.search,
                             location: cemetery || null,
+                            cemetery_id: _selectedCemeteryId || null,
                             payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
                                 name:        productData ? productData.name : 'Memorial',
@@ -1900,7 +1984,8 @@
                                 size:        document.getElementById('selectedSizeName').textContent,
                                 addons:      getSelectedAddons(),
                             addonLineItems: getAddonLineItems(),
-                                inscription: state.inscription ? state.inscription.substring(0, 120) : '',
+                                // The textarea limits to 400 chars; cap defensively at 1000 in case of paste oddities.
+                                inscription: state.inscription ? state.inscription.substring(0, 1000) : '',
                                 font:        state.font || '',
                                 letterColour: state.letterColour || '',
                                 infillType:  state.infillType || '',
@@ -1914,25 +1999,42 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        _quoteTotal = total;
+                        // Memorial value (base + addons + lettering) only — permit fee is
+                        // billed separately at 100% so it doesn't get split across deposit/balance.
+                        _quoteMemorialTotal = total;
+                        _quotePermitFee = parseFloat(_selectedCemeteryFee) || 0;
+                        _quoteTotal = _quoteMemorialTotal + _quotePermitFee;
                         var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
+                        // Deposit = 50% of the memorial value (base + addons + lettering)
+                        // PLUS 100% of the cemetery permit fee. Balance owed at completion
+                        // = remaining 50% of the memorial value. Stripe charges this same
+                        // split, so the modal display has to mirror it.
+                        const memorialValue = total;
+                        const permit = parseFloat(_selectedCemeteryFee) || 0;
+                        const grandTotal = memorialValue + permit;
                         if (pref === 'quote_only') {
                             document.getElementById('quoteSuccess').style.display = 'block';
                             document.getElementById('quoteSuccessMsg').innerHTML =
-                                "Your quote has been submitted. Check your email — we've sent your quote summary with deposit and full payment options." + editLink + trackLink;
+                                "Your quote has been submitted. Check your email — we'll be in touch within 24 hours with deposit and full payment options." + editLink + trackLink;
                         } else if (pref === 'pay_full') {
-                            await showPaymentStep(total, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
+                            await showPaymentStep(grandTotal, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
                         } else {
-                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
+                            const depositAmount = Math.round(memorialValue * 0.5) + permit;
+                            await showPaymentStep(depositAmount, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
                         }
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
-                } catch {
+                } catch (err) {
+                    console.error('Quote submission failed:', err);
                     btn.disabled = false;
                     btn.querySelector('span').textContent = 'Send Quote Request';
+                    var errEl = document.getElementById('quoteError');
+                    if (errEl && err && err.message) {
+                        errEl.textContent = err.message.length > 200 ? 'Sorry, something went wrong. Please try again or call us on +44 20 3835 2548.' : err.message;
+                    }
                     document.getElementById('quoteError').style.display = 'block';
                 }
             });
@@ -2016,11 +2118,12 @@
         let QUOTE_CEMETERIES = [];
         (async function loadQuoteCemeteries() {
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
                 const res = await fetch(url, { headers: SUPABASE_HEADERS });
                 if (!res.ok) throw new Error(res.status);
                 const rows = await res.json();
                 QUOTE_CEMETERIES = rows.map(r => ({
+                    id: r.id,
                     name: r.name,
                     area: r.area + ', ' + r.postcode,
                     type: r.kerb_allowed ? 'kerb' : 'lawn',
@@ -2065,22 +2168,35 @@
             if (!matches.length) {
                 suggestions.innerHTML = '<div class="cem-suggestion"><span class="cem-suggestion-name" style="color:var(--color-text-muted)">No results — type cemetery name in the notes below</span></div>';
             } else {
-                suggestions.innerHTML = matches.map(function(c) {
-                    return '<div class="cem-suggestion" onclick="selectQuoteCemetery(\'' + c.name.replace(/'/g, "\\'") + '\', \'' + c.area.replace(/'/g, "\\'") + '\', \'' + c.type + '\', ' + (c.fee || 0) + ')">'
+                suggestions.innerHTML = matches.map(function(c, i) {
+                    return '<div class="cem-suggestion" data-idx="' + i + '">'
                         + '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
-                        + '<span style="flex:1"><span class="cem-suggestion-name">' + c.name + '</span><br><span class="cem-suggestion-area">' + c.area + '</span></span>'
+                        + '<span style="flex:1"><span class="cem-suggestion-name">' + escFinder(c.name) + '</span><br><span class="cem-suggestion-area">' + escFinder(c.area) + '</span></span>'
                         + '<span class="cem-badge ' + c.type + '">' + (c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only') + '</span>'
                         + '</div>';
                 }).join('');
+                suggestions.querySelectorAll('.cem-suggestion[data-idx]').forEach(function(node) {
+                    node.addEventListener('click', function() {
+                        var c = matches[parseInt(node.dataset.idx, 10)];
+                        if (c) selectQuoteCemetery(c);
+                    });
+                });
             }
             suggestions.classList.add('active');
         }
 
-        function selectQuoteCemetery(name, area, type, fee) {
-            document.getElementById('qCemeteryInput').value = name + ', ' + area;
-            document.getElementById('qCemeteryName').value = name + ', ' + area;
+        // Selected cemetery FK — sent on submit so the enquiry/order can be joined
+        // back to public.cemeteries instead of fuzzy-matching by name.
+        let _selectedCemeteryId = null;
+        function escFinder(s) {
+            return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function selectQuoteCemetery(c) {
+            document.getElementById('qCemeteryInput').value = c.name + ', ' + c.area;
+            document.getElementById('qCemeteryName').value = c.name + ', ' + c.area;
             document.getElementById('qCemSuggestions').classList.remove('active');
-            _selectedCemeteryFee = fee || 0;
+            _selectedCemeteryId = c.id || null;
+            _selectedCemeteryFee = c.fee || 0;
             updatePermitFeeRow();
         }
 
@@ -2131,6 +2247,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
@@ -2208,10 +2331,11 @@ function declineCookies() {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
                         var imageHTML = product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }

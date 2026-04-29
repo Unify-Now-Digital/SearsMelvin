@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -14,6 +36,23 @@
     <meta name="description" content="Get in touch with Sears Melvin Memorials. Request a quote, book a consultation, or ask a question. We're here when you're ready.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/contact">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Contact Us | Sears Melvin Memorials">
+    <meta property="og:description" content="Get in touch with our team for a memorial enquiry, quote, or showroom appointment. Based in North London (NW11).">
+    <meta property="og:url" content="https://searsmelvin.co.uk/contact">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact Us | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Get in touch with our team for a memorial enquiry, quote, or showroom appointment. Based in North London (NW11).">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -570,6 +609,7 @@
                                 <p>Photos help us provide accurate quotes</p>
                             </div>
                             <div class="file-preview" id="filePreview"></div>
+                            <div id="uploadNotice" style="display:none;margin-top:0.5rem;padding:0.5rem 0.75rem;border-radius:6px;background:#FFF8E6;border:1px solid #F0D58A;color:#7A5A00;font-size:0.85rem;" role="status" aria-live="polite"></div>
                         </div>
 
                         <!-- Message -->
@@ -691,11 +731,12 @@
         let cemeteries = [];
         (async function loadCemeteries() {
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed&is_active=eq.true&order=display_order';
                 const res = await fetch(url, { headers: SB_HEADERS });
                 if (!res.ok) throw new Error(res.status);
                 const rows = await res.json();
                 cemeteries = rows.map(r => ({
+                    id: r.id,
                     name: r.name,
                     area: r.area + ', ' + r.postcode,
                     region: r.region,
@@ -750,8 +791,8 @@
             if (matches.length === 0) {
                 suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
             } else {
-                suggestions.innerHTML = matches.map(c => `
-                    <div class="cemetery-suggestion" onclick="selectCemetery('${c.name.replace(/'/g, "\\'")}', '${c.type}')">
+                suggestions.innerHTML = matches.map((c, i) => `
+                    <div class="cemetery-suggestion" data-idx="${i}" data-id="${c.id || ''}">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="cemetery-suggestion-text">
                             <span class="cemetery-suggestion-name">${c.name}</span>
@@ -760,12 +801,24 @@
                         <span class="cemetery-badge ${c.type}">${c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only'}</span>
                     </div>
                 `).join('');
+                // Delegated click — avoids quote-escaping the cemetery name in inline onclick.
+                suggestions.querySelectorAll('.cemetery-suggestion[data-idx]').forEach(node => {
+                    node.addEventListener('click', () => {
+                        const idx = parseInt(node.dataset.idx, 10);
+                        const c = matches[idx];
+                        if (c) selectCemetery(c);
+                    });
+                });
             }
             suggestions.classList.add('active');
         }
 
-        function selectCemetery(name, type) {
-            document.getElementById('cemetery').value = name;
+        // Selected cemetery id (FK to public.cemeteries) is preserved on the form
+        // so reports can join to the cemetery row instead of fuzzy-matching by name.
+        let selectedCemeteryId = null;
+        function selectCemetery(c) {
+            document.getElementById('cemetery').value = c.name;
+            selectedCemeteryId = c.id || null;
             document.getElementById('cemeterySuggestions').classList.remove('active');
         }
 
@@ -832,11 +885,14 @@
         function selectAppointment(el, date, time) {
             document.querySelectorAll('.appointment-slot').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
-            // The picker generates an ISO date with the local clock time appended.
-            // Build a single ISO timestamp combining the two for `appointment_at`.
+            // Send date + time as separate fields and let the server treat them as
+            // Europe/London local. Constructing an ISO timestamp on the client used
+            // to shift events by an hour during BST because new Date(...).toISOString()
+            // converts via the browser's local timezone.
             const day = date.split('T')[0];
             selectedAppointment = {
-                at: new Date(`${day}T${time}:00`).toISOString(),
+                date: day,
+                time: time,
                 kind: 'showroom',
             };
         }
@@ -863,15 +919,45 @@
             handleFileSelect(e.dataTransfer.files);
         });
 
+        function showUploadNotice(msg) {
+            const el = document.getElementById('uploadNotice');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+            if (msg) clearTimeout(showUploadNotice._t);
+            if (msg) showUploadNotice._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+
+        function escAttr(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
+        // Backend caps uploads at 10 MB. Pre-check on the client so users get an
+        // immediate, specific message instead of a generic "(failed)" status.
+        const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
         function handleFileSelect(files) {
-            Array.from(files).forEach(file => {
-                if (!file.type.startsWith('image/')) return;
-                if (uploadedPhotos.length >= 5) return;
-                const entry = { name: file.name, status: 'uploading', path: null };
+            const arr = Array.from(files);
+            const rejectedNonImage = arr.filter(f => !f.type.startsWith('image/')).length;
+            const images = arr.filter(f => f.type.startsWith('image/'));
+            const oversize = images.filter(f => f.size > MAX_PHOTO_BYTES);
+            const sized = images.filter(f => f.size <= MAX_PHOTO_BYTES);
+            const remaining = Math.max(0, 5 - uploadedPhotos.length);
+            const taken = sized.slice(0, remaining);
+            const rejectedOverLimit = sized.length - taken.length;
+
+            taken.forEach(file => {
+                const entry = { name: file.name, status: 'uploading', path: null, error: null };
                 uploadedPhotos.push(entry);
                 renderFilePreviews();
                 uploadPhoto(file, entry);
             });
+
+            const notes = [];
+            if (rejectedNonImage > 0) notes.push(`${rejectedNonImage} non-image file${rejectedNonImage > 1 ? 's' : ''} skipped`);
+            if (oversize.length > 0) notes.push(`${oversize.length} skipped (over 10 MB)`);
+            if (rejectedOverLimit > 0) notes.push(`${rejectedOverLimit} skipped (max 5 photos)`);
+            showUploadNotice(notes.join(' · '));
         }
 
         async function uploadPhoto(file, entry) {
@@ -879,13 +965,15 @@
                 const fd = new FormData();
                 fd.append('file', file, file.name);
                 const res = await fetch('/api/upload-photo', { method: 'POST', body: fd });
-                const result = await res.json();
-                if (!result.ok) throw new Error(result.error || 'Upload failed');
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok || !result.ok) throw new Error(result.error || `Upload failed (${res.status})`);
                 entry.status = 'done';
                 entry.path = result.path;
             } catch (err) {
                 entry.status = 'error';
+                entry.error = err.message || 'Upload failed';
                 console.error('Photo upload failed:', err);
+                showUploadNotice(`${entry.name}: ${entry.error}`);
             }
             renderFilePreviews();
         }
@@ -897,9 +985,10 @@
                 const statusBadge = entry.status === 'uploading' ? ' (uploading…)'
                                   : entry.status === 'error'     ? ' (failed)'
                                   : '';
+                const errAttr = entry.error ? ` title="${escAttr(entry.error)}"` : '';
                 return `
-                <div class="file-preview-item">
-                    <span>${label}${statusBadge}</span>
+                <div class="file-preview-item"${errAttr}>
+                    <span>${escAttr(label)}${statusBadge}</span>
                     <button type="button" onclick="removeFile(${i})">
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -907,9 +996,20 @@
             }).join('');
         }
 
-        function removeFile(index) {
+        async function removeFile(index) {
+            const entry = uploadedPhotos[index];
+            if (!entry) return;
+            // Remove locally first so the UI reflects the click instantly.
             uploadedPhotos.splice(index, 1);
             renderFilePreviews();
+            // Free the storage object — fire-and-forget; the bucket would otherwise orphan it.
+            if (entry.status === 'done' && entry.path) {
+                try {
+                    await fetch('/api/upload-photo?path=' + encodeURIComponent(entry.path), { method: 'DELETE' });
+                } catch (err) {
+                    console.error('Photo delete failed:', err);
+                }
+            }
         }
 
         // Form submission
@@ -927,18 +1027,64 @@
             const existingError = document.getElementById('formSubmitError');
             if (existingError) existingError.style.display = 'none';
 
-            const firstName   = document.getElementById('firstName').value.trim();
-            const lastName    = document.getElementById('lastName').value.trim();
-            const email       = document.getElementById('email').value.trim();
-            const phone       = document.getElementById('phone').value.trim();
-            const message     = document.getElementById('message').value.trim();
-            const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
-            const cemetery    = document.getElementById('cemetery').value.trim();
-            const contactPref = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
+            const firstName    = document.getElementById('firstName').value.trim();
+            const lastName     = document.getElementById('lastName').value.trim();
+            const email        = document.getElementById('email').value.trim();
+            const phone        = document.getElementById('phone').value.trim();
+            const message      = document.getElementById('message').value.trim();
+            const enquiryType  = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
+            const cemetery     = document.getElementById('cemetery').value.trim();
+            const graveNumber  = document.getElementById('graveNumber').value.trim();
+            const contactPref  = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
 
-            // Wait for any in-flight photo uploads to complete (max 30s safety bound).
-            for (let i = 0; i < 30 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
+            // Inline validation guards. Surfacing in formSubmitError keeps everything in one place.
+            function showInlineError(msg) {
+                let errEl = document.getElementById('formSubmitError');
+                if (!errEl) {
+                    errEl = document.createElement('p');
+                    errEl.id = 'formSubmitError';
+                    errEl.style.cssText = 'color:#b44; margin-top:0.75rem; font-size:0.9rem;';
+                    submitBtn.insertAdjacentElement('afterend', errEl);
+                }
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+            }
+            if (!enquiryType) {
+                showInlineError('Please choose an enquiry type at the top of the form.');
+                return;
+            }
+            if (contactPref === 'appointment' && !selectedAppointment) {
+                showInlineError('Please pick an appointment slot, or change "How would you like us to respond?" to email or phone.');
+                return;
+            }
+            if (enquiryType === 'renovation' && uploadedPhotos.filter(p => p.status === 'done').length === 0) {
+                showInlineError('Please upload at least one photo of the memorial so we can quote accurately, or pick a different enquiry type.');
+                return;
+            }
+
+            // Wait for any in-flight photo uploads to complete (max 60s safety bound).
+            for (let i = 0; i < 60 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
                 await new Promise(r => setTimeout(r, 1000));
+            }
+            const stillUploading = uploadedPhotos.some(p => p.status === 'uploading');
+            const failedUploads = uploadedPhotos.filter(p => p.status === 'error');
+            if (stillUploading || failedUploads.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+                let errEl = document.getElementById('formSubmitError');
+                if (!errEl) {
+                    errEl = document.createElement('p');
+                    errEl.id = 'formSubmitError';
+                    errEl.style.cssText = 'color:#b44; margin-top:0.75rem; font-size:0.9rem;';
+                    submitBtn.insertAdjacentElement('afterend', errEl);
+                }
+                errEl.textContent = stillUploading
+                    ? 'Some photos are still uploading. Please wait a moment and try again, or remove them.'
+                    : 'Some photos failed to upload. Please remove them and try again.';
+                errEl.style.display = 'block';
+                return;
             }
             const photoPaths = uploadedPhotos.filter(p => p.status === 'done' && p.path).map(p => p.path);
 
@@ -952,11 +1098,21 @@
                         email,
                         phone,
                         message,
+                        // Send both `sub_type` (newer / DB column) and `enquiry_type`
+                        // (legacy / what the business email + ClickUp template read).
+                        // submit.js falls back between them; keeping both means neither
+                        // path goes "Not specified" in the team's inbox.
                         sub_type: enquiryType || null,
+                        enquiry_type: enquiryType || null,
+                        grave_number: graveNumber || null,
                         source_page: window.location.pathname,
                         contact_pref: contactPref || null,
                         location: cemetery || null,
-                        appointment_at: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.at : null,
+                        cemetery_id: selectedCemeteryId || null,
+                        // Send date+time separately so the server can treat them as
+                        // Europe/London local without browser-timezone conversion.
+                        appointment_date: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.date : null,
+                        appointment_time: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.time : null,
                         appointment_kind: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.kind : null,
                         photo_urls: photoPaths.length > 0 ? photoPaths : null
                     })
@@ -1023,6 +1179,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
@@ -1100,10 +1263,11 @@ function declineCookies() {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
                         var imageHTML = product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }
