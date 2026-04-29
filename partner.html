@@ -273,8 +273,12 @@
                 <input type="tel" id="reqPhone">
             </div>
             <div class="login-field">
-                <label>Password *</label>
-                <input type="password" id="reqPassword" required autocomplete="new-password">
+                <label>Password * <span style="color:var(--color-text-muted);font-weight:normal;font-size:0.78rem;">(at least 6 characters)</span></label>
+                <input type="password" id="reqPassword" required autocomplete="new-password" minlength="6">
+            </div>
+            <div class="login-field">
+                <label>Confirm Password *</label>
+                <input type="password" id="reqPasswordConfirm" required autocomplete="new-password" minlength="6">
             </div>
             <div class="login-field">
                 <label>Message (optional)</label>
@@ -572,6 +576,20 @@
         var successEl = document.getElementById('reqSuccess');
         errEl.style.display = 'none';
         successEl.style.display = 'none';
+
+        var pw = document.getElementById('reqPassword').value;
+        var pwConfirm = document.getElementById('reqPasswordConfirm').value;
+        if (pw.length < 6) {
+            errEl.textContent = 'Password must be at least 6 characters.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (pw !== pwConfirm) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl.style.display = 'block';
+            return;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
@@ -585,7 +603,7 @@
                     company: document.getElementById('reqCompany').value.trim(),
                     email: document.getElementById('reqEmail').value.trim(),
                     phone: document.getElementById('reqPhone').value.trim(),
-                    password: document.getElementById('reqPassword').value,
+                    password: pw,
                     message: document.getElementById('reqMessage').value.trim(),
                 })
             });

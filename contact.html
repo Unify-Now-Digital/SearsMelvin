@@ -731,11 +731,12 @@
         let cemeteries = [];
         (async function loadCemeteries() {
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed&is_active=eq.true&order=display_order';
                 const res = await fetch(url, { headers: SB_HEADERS });
                 if (!res.ok) throw new Error(res.status);
                 const rows = await res.json();
                 cemeteries = rows.map(r => ({
+                    id: r.id,
                     name: r.name,
                     area: r.area + ', ' + r.postcode,
                     region: r.region,
@@ -790,8 +791,8 @@
             if (matches.length === 0) {
                 suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
             } else {
-                suggestions.innerHTML = matches.map(c => `
-                    <div class="cemetery-suggestion" onclick="selectCemetery('${c.name.replace(/'/g, "\\'")}', '${c.type}')">
+                suggestions.innerHTML = matches.map((c, i) => `
+                    <div class="cemetery-suggestion" data-idx="${i}" data-id="${c.id || ''}">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="cemetery-suggestion-text">
                             <span class="cemetery-suggestion-name">${c.name}</span>
@@ -800,12 +801,24 @@
                         <span class="cemetery-badge ${c.type}">${c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only'}</span>
                     </div>
                 `).join('');
+                // Delegated click — avoids quote-escaping the cemetery name in inline onclick.
+                suggestions.querySelectorAll('.cemetery-suggestion[data-idx]').forEach(node => {
+                    node.addEventListener('click', () => {
+                        const idx = parseInt(node.dataset.idx, 10);
+                        const c = matches[idx];
+                        if (c) selectCemetery(c);
+                    });
+                });
             }
             suggestions.classList.add('active');
         }
 
-        function selectCemetery(name, type) {
-            document.getElementById('cemetery').value = name;
+        // Selected cemetery id (FK to public.cemeteries) is preserved on the form
+        // so reports can join to the cemetery row instead of fuzzy-matching by name.
+        let selectedCemeteryId = null;
+        function selectCemetery(c) {
+            document.getElementById('cemetery').value = c.name;
+            selectedCemeteryId = c.id || null;
             document.getElementById('cemeterySuggestions').classList.remove('active');
         }
 
@@ -872,11 +885,14 @@
         function selectAppointment(el, date, time) {
             document.querySelectorAll('.appointment-slot').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
-            // The picker generates an ISO date with the local clock time appended.
-            // Build a single ISO timestamp combining the two for `appointment_at`.
+            // Send date + time as separate fields and let the server treat them as
+            // Europe/London local. Constructing an ISO timestamp on the client used
+            // to shift events by an hour during BST because new Date(...).toISOString()
+            // converts via the browser's local timezone.
             const day = date.split('T')[0];
             selectedAppointment = {
-                at: new Date(`${day}T${time}:00`).toISOString(),
+                date: day,
+                time: time,
                 kind: 'showroom',
             };
         }
@@ -916,13 +932,19 @@
             return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
         }
 
+        // Backend caps uploads at 10 MB. Pre-check on the client so users get an
+        // immediate, specific message instead of a generic "(failed)" status.
+        const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
         function handleFileSelect(files) {
             const arr = Array.from(files);
             const rejectedNonImage = arr.filter(f => !f.type.startsWith('image/')).length;
-            const accepted = arr.filter(f => f.type.startsWith('image/'));
+            const images = arr.filter(f => f.type.startsWith('image/'));
+            const oversize = images.filter(f => f.size > MAX_PHOTO_BYTES);
+            const sized = images.filter(f => f.size <= MAX_PHOTO_BYTES);
             const remaining = Math.max(0, 5 - uploadedPhotos.length);
-            const taken = accepted.slice(0, remaining);
-            const rejectedOverLimit = accepted.length - taken.length;
+            const taken = sized.slice(0, remaining);
+            const rejectedOverLimit = sized.length - taken.length;
 
             taken.forEach(file => {
                 const entry = { name: file.name, status: 'uploading', path: null, error: null };
@@ -933,6 +955,7 @@
 
             const notes = [];
             if (rejectedNonImage > 0) notes.push(`${rejectedNonImage} non-image file${rejectedNonImage > 1 ? 's' : ''} skipped`);
+            if (oversize.length > 0) notes.push(`${oversize.length} skipped (over 10 MB)`);
             if (rejectedOverLimit > 0) notes.push(`${rejectedOverLimit} skipped (max 5 photos)`);
             showUploadNotice(notes.join(' · '));
         }
@@ -1004,14 +1027,42 @@
             const existingError = document.getElementById('formSubmitError');
             if (existingError) existingError.style.display = 'none';
 
-            const firstName   = document.getElementById('firstName').value.trim();
-            const lastName    = document.getElementById('lastName').value.trim();
-            const email       = document.getElementById('email').value.trim();
-            const phone       = document.getElementById('phone').value.trim();
-            const message     = document.getElementById('message').value.trim();
-            const enquiryType = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
-            const cemetery    = document.getElementById('cemetery').value.trim();
-            const contactPref = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
+            const firstName    = document.getElementById('firstName').value.trim();
+            const lastName     = document.getElementById('lastName').value.trim();
+            const email        = document.getElementById('email').value.trim();
+            const phone        = document.getElementById('phone').value.trim();
+            const message      = document.getElementById('message').value.trim();
+            const enquiryType  = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
+            const cemetery     = document.getElementById('cemetery').value.trim();
+            const graveNumber  = document.getElementById('graveNumber').value.trim();
+            const contactPref  = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
+
+            // Inline validation guards. Surfacing in formSubmitError keeps everything in one place.
+            function showInlineError(msg) {
+                let errEl = document.getElementById('formSubmitError');
+                if (!errEl) {
+                    errEl = document.createElement('p');
+                    errEl.id = 'formSubmitError';
+                    errEl.style.cssText = 'color:#b44; margin-top:0.75rem; font-size:0.9rem;';
+                    submitBtn.insertAdjacentElement('afterend', errEl);
+                }
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+            }
+            if (!enquiryType) {
+                showInlineError('Please choose an enquiry type at the top of the form.');
+                return;
+            }
+            if (contactPref === 'appointment' && !selectedAppointment) {
+                showInlineError('Please pick an appointment slot, or change "How would you like us to respond?" to email or phone.');
+                return;
+            }
+            if (enquiryType === 'renovation' && uploadedPhotos.filter(p => p.status === 'done').length === 0) {
+                showInlineError('Please upload at least one photo of the memorial so we can quote accurately, or pick a different enquiry type.');
+                return;
+            }
 
             // Wait for any in-flight photo uploads to complete (max 60s safety bound).
             for (let i = 0; i < 60 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
@@ -1047,11 +1098,21 @@
                         email,
                         phone,
                         message,
+                        // Send both `sub_type` (newer / DB column) and `enquiry_type`
+                        // (legacy / what the business email + ClickUp template read).
+                        // submit.js falls back between them; keeping both means neither
+                        // path goes "Not specified" in the team's inbox.
                         sub_type: enquiryType || null,
+                        enquiry_type: enquiryType || null,
+                        grave_number: graveNumber || null,
                         source_page: window.location.pathname,
                         contact_pref: contactPref || null,
                         location: cemetery || null,
-                        appointment_at: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.at : null,
+                        cemetery_id: selectedCemeteryId || null,
+                        // Send date+time separately so the server can treat them as
+                        // Europe/London local without browser-timezone conversion.
+                        appointment_date: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.date : null,
+                        appointment_time: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.time : null,
                         appointment_kind: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.kind : null,
                         photo_urls: photoPaths.length > 0 ? photoPaths : null
                     })

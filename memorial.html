@@ -1969,6 +1969,7 @@
                             message,
                             source_page: window.location.pathname + window.location.search,
                             location: cemetery || null,
+                            cemetery_id: _selectedCemeteryId || null,
                             payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
                                 name:        productData ? productData.name : 'Memorial',
@@ -1977,7 +1978,8 @@
                                 size:        document.getElementById('selectedSizeName').textContent,
                                 addons:      getSelectedAddons(),
                             addonLineItems: getAddonLineItems(),
-                                inscription: state.inscription ? state.inscription.substring(0, 120) : '',
+                                // The textarea limits to 400 chars; cap defensively at 1000 in case of paste oddities.
+                                inscription: state.inscription ? state.inscription.substring(0, 1000) : '',
                                 font:        state.font || '',
                                 letterColour: state.letterColour || '',
                                 infillType:  state.infillType || '',
@@ -1991,25 +1993,35 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        _quoteTotal = total;
+                        // Track grand total (incl. permit fee) so payment-step balance maths line up.
+                        _quoteTotal = total + (parseFloat(_selectedCemeteryFee) || 0);
                         var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
+                        // Deposit / full charge include permit fee — Stripe charges the
+                        // same calculation, so the modal display has to match or the
+                        // amount on Stripe surprises the customer.
+                        const grandTotal = total + (parseFloat(_selectedCemeteryFee) || 0);
                         if (pref === 'quote_only') {
                             document.getElementById('quoteSuccess').style.display = 'block';
                             document.getElementById('quoteSuccessMsg').innerHTML =
-                                "Your quote has been submitted. Check your email — we've sent your quote summary with deposit and full payment options." + editLink + trackLink;
+                                "Your quote has been submitted. Check your email — we'll be in touch within 24 hours with deposit and full payment options." + editLink + trackLink;
                         } else if (pref === 'pay_full') {
-                            await showPaymentStep(total, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
+                            await showPaymentStep(grandTotal, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
                         } else {
-                            await showPaymentStep(Math.round(total * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
+                            await showPaymentStep(Math.round(grandTotal * 0.5), name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
                         }
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
-                } catch {
+                } catch (err) {
+                    console.error('Quote submission failed:', err);
                     btn.disabled = false;
                     btn.querySelector('span').textContent = 'Send Quote Request';
+                    var errEl = document.getElementById('quoteError');
+                    if (errEl && err && err.message) {
+                        errEl.textContent = err.message.length > 200 ? 'Sorry, something went wrong. Please try again or call us on +44 20 3835 2548.' : err.message;
+                    }
                     document.getElementById('quoteError').style.display = 'block';
                 }
             });
@@ -2093,11 +2105,12 @@
         let QUOTE_CEMETERIES = [];
         (async function loadQuoteCemeteries() {
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
                 const res = await fetch(url, { headers: SUPABASE_HEADERS });
                 if (!res.ok) throw new Error(res.status);
                 const rows = await res.json();
                 QUOTE_CEMETERIES = rows.map(r => ({
+                    id: r.id,
                     name: r.name,
                     area: r.area + ', ' + r.postcode,
                     type: r.kerb_allowed ? 'kerb' : 'lawn',
@@ -2142,22 +2155,35 @@
             if (!matches.length) {
                 suggestions.innerHTML = '<div class="cem-suggestion"><span class="cem-suggestion-name" style="color:var(--color-text-muted)">No results — type cemetery name in the notes below</span></div>';
             } else {
-                suggestions.innerHTML = matches.map(function(c) {
-                    return '<div class="cem-suggestion" onclick="selectQuoteCemetery(\'' + c.name.replace(/'/g, "\\'") + '\', \'' + c.area.replace(/'/g, "\\'") + '\', \'' + c.type + '\', ' + (c.fee || 0) + ')">'
+                suggestions.innerHTML = matches.map(function(c, i) {
+                    return '<div class="cem-suggestion" data-idx="' + i + '">'
                         + '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
-                        + '<span style="flex:1"><span class="cem-suggestion-name">' + c.name + '</span><br><span class="cem-suggestion-area">' + c.area + '</span></span>'
+                        + '<span style="flex:1"><span class="cem-suggestion-name">' + escFinder(c.name) + '</span><br><span class="cem-suggestion-area">' + escFinder(c.area) + '</span></span>'
                         + '<span class="cem-badge ' + c.type + '">' + (c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only') + '</span>'
                         + '</div>';
                 }).join('');
+                suggestions.querySelectorAll('.cem-suggestion[data-idx]').forEach(function(node) {
+                    node.addEventListener('click', function() {
+                        var c = matches[parseInt(node.dataset.idx, 10)];
+                        if (c) selectQuoteCemetery(c);
+                    });
+                });
             }
             suggestions.classList.add('active');
         }
 
-        function selectQuoteCemetery(name, area, type, fee) {
-            document.getElementById('qCemeteryInput').value = name + ', ' + area;
-            document.getElementById('qCemeteryName').value = name + ', ' + area;
+        // Selected cemetery FK — sent on submit so the enquiry/order can be joined
+        // back to public.cemeteries instead of fuzzy-matching by name.
+        let _selectedCemeteryId = null;
+        function escFinder(s) {
+            return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function selectQuoteCemetery(c) {
+            document.getElementById('qCemeteryInput').value = c.name + ', ' + c.area;
+            document.getElementById('qCemeteryName').value = c.name + ', ' + c.area;
             document.getElementById('qCemSuggestions').classList.remove('active');
-            _selectedCemeteryFee = fee || 0;
+            _selectedCemeteryId = c.id || null;
+            _selectedCemeteryFee = c.fee || 0;
             updatePermitFeeRow();
         }
 

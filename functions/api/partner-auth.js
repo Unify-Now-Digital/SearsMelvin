@@ -174,6 +174,14 @@ async function handleRequest(env, { email, password, name, company, phone, messa
   if (!email || !password || !name) {
     return json({ ok: false, error: "Name, email, and password are required" }, 400);
   }
+  // The signup form marks company required; enforce here so a scripted POST
+  // can't slip an empty company through.
+  if (!company || !String(company).trim()) {
+    return json({ ok: false, error: "Company / business name is required" }, 400);
+  }
+  if (typeof password !== "string" || password.length < 6) {
+    return json({ ok: false, error: "Password must be at least 6 characters" }, 400);
+  }
 
   const headers = sbHeaders(env);
 

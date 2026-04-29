@@ -232,11 +232,32 @@ async function getOrderStatus(env, token) {
 }
 
 // ==================== SEND PORTAL LINK ====================
+// Per-isolate cooldown for portal-link emails. Defends against scripted abuse
+// from a single edge — a determined attacker can still spread requests across
+// regions, so pair this with a Cloudflare zone-level rate-limit rule for full
+// coverage. Map<email, timestamp_ms>; entries older than 60s are ignored.
+const PORTAL_LINK_COOLDOWN_MS = 60_000;
+const portalLinkRecent = new Map();
+function _markPortalLinkSent(email) {
+  portalLinkRecent.set(email, Date.now());
+  // Sweep stale entries periodically so the map doesn't grow unbounded.
+  if (portalLinkRecent.size > 200) {
+    const cutoff = Date.now() - PORTAL_LINK_COOLDOWN_MS;
+    for (const [k, t] of portalLinkRecent) if (t < cutoff) portalLinkRecent.delete(k);
+  }
+}
+function _portalLinkOnCooldown(email) {
+  const last = portalLinkRecent.get(email);
+  return last != null && (Date.now() - last) < PORTAL_LINK_COOLDOWN_MS;
+}
+
 async function sendPortalLink(env, { email }) {
   const safeMsg = "If we have an account for that email, we've sent your portal link.";
   if (!email || !email.trim()) return json({ ok: true, message: safeMsg });
 
   const cleanEmail = email.trim().toLowerCase();
+  // Same response either way so scripted callers can't infer cooldown vs no-account.
+  if (_portalLinkOnCooldown(cleanEmail)) return json({ ok: true, message: safeMsg });
   const headers = sbHeaders(env);
 
   // Single lookup — `people.email` is stored lower-cased on insert/upsert.
@@ -302,6 +323,7 @@ async function sendPortalLink(env, { email }) {
     return json({ ok: false, error: "Failed to send email. Please try again or contact us directly." }, 500);
   }
 
+  _markPortalLinkSent(cleanEmail);
   return json({ ok: true, message: "We've sent your portal link to " + cleanEmail + ". Please check your inbox and spam folder." });
 }
 
