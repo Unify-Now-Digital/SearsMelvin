@@ -9,7 +9,7 @@
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -79,6 +79,35 @@ export async function onRequestPost(context) {
   }
 
   return json({ ok: true, path });
+}
+
+// DELETE /api/upload-photo?path=<storage path>
+// Used by the contact form when a customer removes a preview before submitting.
+// Path must live under the customer's org prefix; we reject anything trying to
+// escape the bucket layout we wrote in onRequestPost.
+export async function onRequestDelete({ request, env }) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
+    return json({ ok: false, error: "Server configuration error" }, 500);
+  }
+  const url = new URL(request.url);
+  const path = url.searchParams.get("path") || "";
+  if (!path) return json({ ok: false, error: "Missing path" }, 400);
+  // Defence in depth: only allow paths under the configured org prefix and reject traversal.
+  if (path.includes("..") || !path.startsWith(`${env.SM_ORG_ID}/`)) {
+    return json({ ok: false, error: "Invalid path" }, 400);
+  }
+  const delRes = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURI(path)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+    },
+  );
+  if (!delRes.ok && delRes.status !== 404) {
+    console.error(`Storage delete failed ${delRes.status}: ${await delRes.text()}`);
+    return json({ ok: false, error: "Delete failed" }, 502);
+  }
+  return json({ ok: true });
 }
 
 function sanitiseFilename(name) {

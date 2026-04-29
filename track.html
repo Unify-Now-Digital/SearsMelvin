@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -572,6 +594,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {

@@ -364,7 +364,7 @@ async function getDashboard(env) {
 }
 
 // ==================== LIST ORDERS ====================
-async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) {
+async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo, offset, limit }) {
   const headers = sbHeaders(env);
   const select = [
     "id", "order_number", "person_id",
@@ -378,7 +378,9 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
     "partners(id,name,company,email)"
   ].join(",");
   const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${env.SM_ORG_ID}` : "";
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=200${orgFilter}`;
+  const pageSize = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 200);
+  const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=${pageSize}&offset=${pageOffset}${orgFilter}`;
 
   if (filter && filter !== "all") {
     url += `&stage=eq.${encodeURIComponent(filter)}`;
@@ -417,7 +419,10 @@ async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo }) 
     );
   }
 
-  return json({ ok: true, orders });
+  // hasMore is true if the page came back fully populated; the next call should
+  // bump `offset` by `limit`. Search is client-side, so we report on the raw page.
+  const hasMore = orders.length >= pageSize;
+  return json({ ok: true, orders, offset: pageOffset, limit: pageSize, hasMore });
 }
 
 function personFullName(p) {
@@ -426,12 +431,15 @@ function personFullName(p) {
 }
 
 // ==================== LIST ENQUIRIES ====================
-async function listEnquiries(env, { channel, status, limit }) {
+async function listEnquiries(env, { channel, status, limit, offset }) {
   const headers = sbHeaders(env);
+  const pageSize = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 200);
+  const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
   const params = new URLSearchParams({
     select: "*,people(id,first_name,last_name,email,phone,is_customer),orders(id,order_number,stage,value)",
     order: "created_at.desc",
-    limit: String(Math.min(parseInt(limit, 10) || 100, 200)),
+    limit: String(pageSize),
+    offset: String(pageOffset),
   });
   if (env.SM_ORG_ID) params.append("organization_id", `eq.${env.SM_ORG_ID}`);
   if (channel && channel !== "all") params.append("channel", `eq.${channel}`);
@@ -458,7 +466,8 @@ async function listEnquiries(env, { channel, status, limit }) {
       }
     }
   }
-  return json({ ok: true, enquiries });
+  const hasMore = enquiries.length >= pageSize;
+  return json({ ok: true, enquiries, offset: pageOffset, limit: pageSize, hasMore });
 }
 
 async function signPhotoPaths(env, paths) {

@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -14,6 +36,23 @@
     <meta name="description" content="Get in touch with Sears Melvin Memorials. Request a quote, book a consultation, or ask a question. We're here when you're ready.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/contact">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Contact Us | Sears Melvin Memorials">
+    <meta property="og:description" content="Get in touch with our team for a memorial enquiry, quote, or showroom appointment. Based in North London (NW11).">
+    <meta property="og:url" content="https://searsmelvin.co.uk/contact">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact Us | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Get in touch with our team for a memorial enquiry, quote, or showroom appointment. Based in North London (NW11).">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -570,6 +609,7 @@
                                 <p>Photos help us provide accurate quotes</p>
                             </div>
                             <div class="file-preview" id="filePreview"></div>
+                            <div id="uploadNotice" style="display:none;margin-top:0.5rem;padding:0.5rem 0.75rem;border-radius:6px;background:#FFF8E6;border:1px solid #F0D58A;color:#7A5A00;font-size:0.85rem;" role="status" aria-live="polite"></div>
                         </div>
 
                         <!-- Message -->
@@ -863,15 +903,38 @@
             handleFileSelect(e.dataTransfer.files);
         });
 
+        function showUploadNotice(msg) {
+            const el = document.getElementById('uploadNotice');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+            if (msg) clearTimeout(showUploadNotice._t);
+            if (msg) showUploadNotice._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+
+        function escAttr(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
         function handleFileSelect(files) {
-            Array.from(files).forEach(file => {
-                if (!file.type.startsWith('image/')) return;
-                if (uploadedPhotos.length >= 5) return;
-                const entry = { name: file.name, status: 'uploading', path: null };
+            const arr = Array.from(files);
+            const rejectedNonImage = arr.filter(f => !f.type.startsWith('image/')).length;
+            const accepted = arr.filter(f => f.type.startsWith('image/'));
+            const remaining = Math.max(0, 5 - uploadedPhotos.length);
+            const taken = accepted.slice(0, remaining);
+            const rejectedOverLimit = accepted.length - taken.length;
+
+            taken.forEach(file => {
+                const entry = { name: file.name, status: 'uploading', path: null, error: null };
                 uploadedPhotos.push(entry);
                 renderFilePreviews();
                 uploadPhoto(file, entry);
             });
+
+            const notes = [];
+            if (rejectedNonImage > 0) notes.push(`${rejectedNonImage} non-image file${rejectedNonImage > 1 ? 's' : ''} skipped`);
+            if (rejectedOverLimit > 0) notes.push(`${rejectedOverLimit} skipped (max 5 photos)`);
+            showUploadNotice(notes.join(' · '));
         }
 
         async function uploadPhoto(file, entry) {
@@ -879,13 +942,15 @@
                 const fd = new FormData();
                 fd.append('file', file, file.name);
                 const res = await fetch('/api/upload-photo', { method: 'POST', body: fd });
-                const result = await res.json();
-                if (!result.ok) throw new Error(result.error || 'Upload failed');
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok || !result.ok) throw new Error(result.error || `Upload failed (${res.status})`);
                 entry.status = 'done';
                 entry.path = result.path;
             } catch (err) {
                 entry.status = 'error';
+                entry.error = err.message || 'Upload failed';
                 console.error('Photo upload failed:', err);
+                showUploadNotice(`${entry.name}: ${entry.error}`);
             }
             renderFilePreviews();
         }
@@ -897,9 +962,10 @@
                 const statusBadge = entry.status === 'uploading' ? ' (uploading…)'
                                   : entry.status === 'error'     ? ' (failed)'
                                   : '';
+                const errAttr = entry.error ? ` title="${escAttr(entry.error)}"` : '';
                 return `
-                <div class="file-preview-item">
-                    <span>${label}${statusBadge}</span>
+                <div class="file-preview-item"${errAttr}>
+                    <span>${escAttr(label)}${statusBadge}</span>
                     <button type="button" onclick="removeFile(${i})">
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -907,9 +973,20 @@
             }).join('');
         }
 
-        function removeFile(index) {
+        async function removeFile(index) {
+            const entry = uploadedPhotos[index];
+            if (!entry) return;
+            // Remove locally first so the UI reflects the click instantly.
             uploadedPhotos.splice(index, 1);
             renderFilePreviews();
+            // Free the storage object — fire-and-forget; the bucket would otherwise orphan it.
+            if (entry.status === 'done' && entry.path) {
+                try {
+                    await fetch('/api/upload-photo?path=' + encodeURIComponent(entry.path), { method: 'DELETE' });
+                } catch (err) {
+                    console.error('Photo delete failed:', err);
+                }
+            }
         }
 
         // Form submission
@@ -936,9 +1013,27 @@
             const cemetery    = document.getElementById('cemetery').value.trim();
             const contactPref = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
 
-            // Wait for any in-flight photo uploads to complete (max 30s safety bound).
-            for (let i = 0; i < 30 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
+            // Wait for any in-flight photo uploads to complete (max 60s safety bound).
+            for (let i = 0; i < 60 && uploadedPhotos.some(p => p.status === 'uploading'); i++) {
                 await new Promise(r => setTimeout(r, 1000));
+            }
+            const stillUploading = uploadedPhotos.some(p => p.status === 'uploading');
+            const failedUploads = uploadedPhotos.filter(p => p.status === 'error');
+            if (stillUploading || failedUploads.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+                let errEl = document.getElementById('formSubmitError');
+                if (!errEl) {
+                    errEl = document.createElement('p');
+                    errEl.id = 'formSubmitError';
+                    errEl.style.cssText = 'color:#b44; margin-top:0.75rem; font-size:0.9rem;';
+                    submitBtn.insertAdjacentElement('afterend', errEl);
+                }
+                errEl.textContent = stillUploading
+                    ? 'Some photos are still uploading. Please wait a moment and try again, or remove them.'
+                    : 'Some photos failed to upload. Please remove them and try again.';
+                errEl.style.display = 'block';
+                return;
             }
             const photoPaths = uploadedPhotos.filter(p => p.status === 'done' && p.path).map(p => p.path);
 
@@ -1023,6 +1118,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
@@ -1100,10 +1202,11 @@ function declineCookies() {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
                         var imageHTML = product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }

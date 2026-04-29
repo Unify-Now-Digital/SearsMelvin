@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -14,6 +36,23 @@
     <meta name="description" content="Not sure which memorial is right? Our guided tool helps you find the perfect tribute based on your needs and preferences.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/finder">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Memorial Finder | Sears Melvin Memorials">
+    <meta property="og:description" content="Answer a few questions and we'll recommend the right memorial for your cemetery, style, and budget.">
+    <meta property="og:url" content="https://searsmelvin.co.uk/finder">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Memorial Finder | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Answer a few questions and we'll recommend the right memorial for your cemetery, style, and budget.">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -1059,101 +1098,113 @@
             
             summaryEl.innerHTML = summaryHTML;
 
-            // Recommendations based on selections
+            // Recommendations from real Supabase products, filtered to match cemetery + budget.
             const recsEl = document.getElementById('recommendations');
-            let recommendations = getRecommendations();
-            
-            let recsHTML = '';
-            recommendations.forEach((rec, i) => {
-                recsHTML += `
-                    <div class="recommendation-card ${i === 0 ? 'best-match' : ''}">
-                        ${i === 0 ? '<span class="best-match-badge">Best Match</span>' : ''}
-                        <div class="rec-image">
-                            ${rec.svg}
-                        </div>
-                        <div class="rec-content">
-                            <div class="rec-category">${rec.category}</div>
-                            <div class="rec-title">${rec.title}</div>
-                            <div class="rec-reason">${rec.reason}</div>
-                            <div class="rec-price"><span>From</span> ${rec.price}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            recsEl.innerHTML = recsHTML;
+            recsEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--color-text-muted);">Finding the best matches for you…</p>';
+            getRecommendations()
+                .then(renderRecs)
+                .catch((err) => {
+                    console.error('Finder load failed:', err);
+                    recsEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#b44;">We couldn\'t load recommendations. <a href="/memorials" style="color:var(--color-accent);">Browse the full range</a> instead.</p>';
+                });
         }
 
-        function getRecommendations() {
-            // Logic to return relevant products
-            const recs = [];
-            
-            if (selections.cemetery === 'cremation') {
-                recs.push({
-                    category: 'Cremation Memorial',
-                    title: 'Polished Desk Tablet',
-                    reason: 'Perfect size for cremation gardens. Simple, elegant, and within budget.',
-                    price: '£695',
-                    svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="130" width="120" height="20" fill="#9ab094"/><g transform="translate(60,75)"><path d="M-40 40 L-35 -15 L35 -15 L40 40 Z" fill="#1a1a1a"/><path d="M-35 -15 L-30 -30 L30 -30 L35 -15 Z" fill="#2a2a2a"/><rect x="-45" y="40" width="90" height="10" fill="#252525"/></g></svg>`
-                });
-                recs.push({
-                    category: 'Cremation Memorial',
-                    title: 'Slant Marker',
-                    reason: 'Angled design makes inscription easy to read. A popular choice.',
-                    price: '£850',
-                    svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="130" width="120" height="20" fill="#9ab094"/><g transform="translate(60,75)"><path d="M-40 45 L-35 -10 L35 -10 L40 45 Z" fill="#5a5a5a"/><path d="M-35 -10 L-32 -20 L32 -20 L35 -10 Z" fill="#6a6a6a"/><rect x="-45" y="45" width="90" height="8" fill="#4a4a4a"/></g></svg>`
-                });
-            } else if (selections.cemetery === 'kerb-allowed') {
-                recs.push({
-                    category: 'Kerb Set',
-                    title: 'Full Cover Kerb Set',
-                    reason: 'Maximises your plot with full surround. Premium finish throughout.',
-                    price: '£3,200',
-                    svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="120" width="120" height="30" fill="#9ab094"/><g transform="translate(60,80)"><rect x="-50" y="10" width="100" height="45" fill="#2a2a2a"/><rect x="-45" y="15" width="90" height="35" fill="#3a3a3a"/><path d="M-25 10 L-25 -25 Q-25 -40 -15 -48 Q0 -58 15 -48 Q25 -40 25 -25 L25 10 Z" fill="#1a1a1a"/></g></svg>`
-                });
-                recs.push({
-                    category: 'Kerb Set',
-                    title: 'Kerb Set with Vase',
-                    reason: 'Full kerb surround with matching granite. Beautiful and practical.',
-                    price: '£2,800',
-                    svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="120" width="120" height="30" fill="#9ab094"/><g transform="translate(60,80)"><rect x="-50" y="10" width="100" height="40" fill="#2a2a2a"/><path d="M-22 10 L-22 -22 Q-22 -35 -12 -42 Q0 -50 12 -42 Q22 -35 22 -22 L22 10 Z" fill="#1a1a1a"/><ellipse cx="35" cy="8" rx="8" ry="4" fill="#252525"/><path d="M30 8 L33 -8 L37 -8 L40 8" fill="#2a2a2a"/></g></svg>`
-                });
-            } else {
-                // Lawn or not sure - show headstones
-                if (selections.style === 'unique') {
-                    recs.push({
-                        category: 'Heart Memorial',
-                        title: 'Single Heart on Base',
-                        reason: 'A beautiful, distinctive shape that stands out with love.',
-                        price: '£1,650',
-                        svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="125" width="120" height="25" fill="#9ab094"/><g transform="translate(60,70)"><path d="M0 50 C-35 25 -50 -10 -30 -32 C-12 -52 0 -38 0 -22 C0 -38 12 -52 30 -32 C50 -10 35 25 0 50 Z" fill="#1a1a1a"/><rect x="-35" y="52" width="70" height="14" fill="#252525"/></g></svg>`
-                    });
-                    recs.push({
-                        category: 'Book Memorial',
-                        title: 'Open Book on Plinth',
-                        reason: 'Tell their story with this distinctive book design.',
-                        price: '£1,850',
-                        svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="125" width="120" height="25" fill="#9ab094"/><g transform="translate(60,72)"><rect x="-3" y="-30" width="6" height="50" fill="#252525"/><path d="M-3 -30 L-3 20 Q-25 23 -48 15 L-48 -35 Q-25 -40 -3 -30" fill="#1a1a1a"/><path d="M3 -30 L3 20 Q25 23 48 15 L48 -35 Q25 -40 3 -30" fill="#1a1a1a"/><rect x="-55" y="25" width="110" height="12" fill="#2a2a2a"/><rect x="-60" y="37" width="120" height="15" fill="#252525"/></g></svg>`
-                    });
-                } else {
-                    recs.push({
-                        category: 'Lawn Headstone',
-                        title: 'Classic Ogee Top',
-                        reason: 'Our most popular choice. Timeless design that suits any setting.',
-                        price: '£1,450',
-                        svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="125" width="120" height="25" fill="#9ab094"/><g transform="translate(60,70)"><path d="M-38 55 L-38 -25 Q-38 -48 -25 -58 Q0 -75 25 -58 Q38 -48 38 -25 L38 55 Z" fill="#1a1a1a"/><rect x="-44" y="55" width="88" height="12" fill="#252525"/></g></svg>`
-                    });
-                    recs.push({
-                        category: 'Lawn Headstone',
-                        title: 'Square Top Contemporary',
-                        reason: 'Clean, modern lines. Best value in our range.',
-                        price: '£1,400',
-                        svg: `<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="125" width="120" height="25" fill="#9ab094"/><g transform="translate(60,70)"><rect x="-32" y="-50" width="64" height="100" fill="#1a1a1a" rx="2"/><rect x="-38" y="50" width="76" height="10" fill="#252525"/></g></svg>`
-                    });
-                }
+        function escFinder(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function fmtFinderPrice(n) {
+            const v = parseFloat(n);
+            if (!isFinite(v) || v <= 0) return '—';
+            return '£' + v.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+        }
+        function renderRecs(recs) {
+            const recsEl = document.getElementById('recommendations');
+            if (!recs || recs.length === 0) {
+                recsEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--color-text-muted);">No exact matches — <a href="/memorials" style="color:var(--color-accent);">browse the full range</a> or <a href="/contact" style="color:var(--color-accent);">contact us</a> for advice.</p>';
+                return;
             }
-            
-            return recs;
+            recsEl.innerHTML = recs.map((p, i) => {
+                const cat = (p.product_categories && p.product_categories.name) || 'Memorial';
+                const img = p.image_url
+                    ? '<img src="' + escFinder(p.image_url) + '" alt="' + escFinder(p.name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
+                    : '<svg viewBox="0 0 120 150"><rect width="120" height="150" fill="#d4cfc6"/><rect x="0" y="125" width="120" height="25" fill="#9ab094"/><g transform="translate(60,70)"><rect x="-32" y="-50" width="64" height="100" fill="#1a1a1a" rx="2"/></g></svg>';
+                const reason = p._reason || (p.description ? p.description.slice(0, 120) : 'Hand-crafted in our North London workshop.');
+                return `
+                    <a href="/memorial.html?slug=${encodeURIComponent(p.slug)}" class="recommendation-card ${i === 0 ? 'best-match' : ''}" style="text-decoration:none;color:inherit;">
+                        ${i === 0 ? '<span class="best-match-badge">Best Match</span>' : ''}
+                        <div class="rec-image">${img}</div>
+                        <div class="rec-content">
+                            <div class="rec-category">${escFinder(cat)}</div>
+                            <div class="rec-title">${escFinder(p.name)}</div>
+                            <div class="rec-reason">${escFinder(reason)}</div>
+                            <div class="rec-price"><span>From</span> ${fmtFinderPrice(p.base_price)}</div>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        // Map cemetery selection → likely category slugs (matches the seed data in Supabase).
+        function categorySlugsForCemetery(cemetery) {
+            if (cemetery === 'cremation') return ['cremation-memorial', 'cremation', 'plaque'];
+            if (cemetery === 'kerb-allowed') return ['kerb-set', 'kerb', 'full-memorial'];
+            // 'lawn-only' or 'not-sure' — default to lawn headstones.
+            return ['lawn-headstone', 'lawn', 'headstone'];
+        }
+
+        // Budget slider value → numeric upper bound (kept loose so we can sort by closeness).
+        function budgetUpperBound(budget) {
+            const map = {
+                '0': 1000,   // Under £1,000
+                '1': 2000,   // £1,000 – £2,000
+                '2': 3000,   // £2,000 – £3,000
+                '3': 5000,   // £3,000 – £5,000
+                '4': 99999,  // £5,000+
+            };
+            return map[String(budget)] != null ? map[String(budget)] : 99999;
+        }
+
+        async function getRecommendations() {
+            const SB_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+            const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+            const headers = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+            // Pull the full active catalogue once — there aren't enough rows to justify server-side filtering.
+            const res = await fetch(SB_URL + '/rest/v1/products?is_active=eq.true&select=id,name,slug,description,base_price,image_url,is_featured,product_categories(name,slug)', { headers });
+            if (!res.ok) throw new Error('Supabase ' + res.status);
+            const all = await res.json();
+
+            const wantedCatSlugs = categorySlugsForCemetery(selections.cemetery);
+            const targetMax = budgetUpperBound(selections.budget);
+
+            // Filter by cemetery → category. If nothing matches (sparse data), fall back to all.
+            let pool = all.filter(p => {
+                const slug = p.product_categories && p.product_categories.slug;
+                return slug && wantedCatSlugs.some(w => slug.includes(w));
+            });
+            if (pool.length === 0) pool = all;
+
+            // Score: proximity to budget upper bound (lower = better), with a featured boost.
+            pool = pool.map(p => {
+                const price = parseFloat(p.base_price) || 0;
+                const overBudget = price > targetMax ? (price - targetMax) : 0;
+                const distance = Math.abs(targetMax - price);
+                const featuredBoost = p.is_featured ? -1500 : 0;
+                return { ...p, _score: overBudget * 5 + distance + featuredBoost };
+            });
+
+            pool.sort((a, b) => a._score - b._score);
+
+            // Annotate the top picks with a short, honest reason.
+            const cemeteryReason = {
+                'cremation': 'Suitable for cremation gardens — a compact, elegant tribute.',
+                'kerb-allowed': 'Full kerb surround for cemeteries that allow it.',
+                'lawn-only': 'Designed to fit lawn-only cemetery sections.',
+                'not-sure': 'A versatile choice that works in most cemeteries.',
+            }[selections.cemetery] || 'Hand-finished in our North London workshop.';
+            return pool.slice(0, 3).map((p, i) => ({ ...p, _reason: i === 0 ? cemeteryReason : (p.description || cemeteryReason) }));
         }
     </script>
 
@@ -1205,6 +1256,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
@@ -1284,10 +1342,11 @@ function declineCookies() {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
                         var imageHTML = product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }

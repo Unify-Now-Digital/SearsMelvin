@@ -223,6 +223,21 @@ async function handleEnquiry(env, data, submittedAt) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
+
+  // If the contact form picked a slot, create the calendar event too — otherwise
+  // the customer thinks they've booked but nothing reaches the calendar.
+  if (data.appointment_at) {
+    try {
+      await createCalendarEventFromIso(env, {
+        name, email, phone,
+        appointmentAtIso: data.appointment_at,
+        appointmentKind: data.appointment_kind || "consultation",
+        notes: message,
+      });
+    } catch (err) {
+      console.error("Contact-form calendar event creation failed:", err);
+    }
+  }
   try {
     const ghlExtraFields = [
       message      ? { key: "customer_message",  field_value: message } : null,
@@ -331,6 +346,30 @@ async function handleAppointment(env, data, submittedAt) {
   }
 
   return jsonResponse({ ok: true });
+}
+
+// Lightweight wrapper around createGoogleCalendarEvent for callers that already
+// have an ISO timestamp (e.g. the contact form's appointment picker, which sends
+// `appointment_at` rather than separate date/time fields).
+async function createCalendarEventFromIso(env, { name, email, phone, appointmentAtIso, appointmentKind, notes }) {
+  if (!appointmentAtIso) return null;
+  const d = new Date(appointmentAtIso);
+  if (isNaN(d.getTime())) return null;
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const min = String(d.getUTCMinutes()).padStart(2, "0");
+  const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+  const typeLabel = typeLabels[appointmentKind] || (appointmentKind || "Consultation");
+  return createGoogleCalendarEvent(env, {
+    name, email, phone,
+    appointment_type: appointmentKind || "consultation",
+    appointment_date: `${yyyy}-${mm}-${dd}`,
+    appointment_time: `${hh}:${min}`,
+    notes: notes || "",
+    typeLabel,
+  });
 }
 
 async function createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel }) {

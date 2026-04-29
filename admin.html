@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -759,8 +781,9 @@
 
     var ordersById = {};       // cached last-fetched orders by id
     var openOrderIds = new Set(); // ids the user has expanded; preserved across reloads
+    var orderPage = { offset: 0, limit: 100, hasMore: false, all: [] };
 
-    async function loadAdminOrders() {
+    async function loadAdminOrders(append) {
         try {
             populatePartnerFilter();
             var search = document.getElementById('orderSearchInput') ? document.getElementById('orderSearchInput').value.trim() : '';
@@ -768,7 +791,8 @@
             var partnerId = partnerSel ? partnerSel.value : '';
             var dateFrom = document.getElementById('orderDateFrom').value;
             var dateTo = document.getElementById('orderDateTo').value;
-            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search };
+            if (!append) orderPage = { offset: 0, limit: 100, hasMore: false, all: [] };
+            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search, offset: orderPage.offset, limit: orderPage.limit };
             if (partnerId) body.partnerId = parseInt(partnerId, 10);
             if (dateFrom) body.dateFrom = dateFrom;
             if (dateTo) body.dateTo = dateTo + 'T23:59:59';
@@ -779,10 +803,33 @@
             });
             var data = await res.json();
             if (!data.ok) return;
-            renderAdminOrders(data.orders);
+            orderPage.hasMore = !!data.hasMore;
+            orderPage.all = append ? orderPage.all.concat(data.orders) : data.orders;
+            orderPage.offset = orderPage.all.length;
+            renderAdminOrders(orderPage.all);
+            renderOrderPagination();
         } catch (err) {
             document.getElementById('orderList').innerHTML = '<div class="empty-state">Failed to load orders.</div>';
         }
+    }
+
+    function renderOrderPagination() {
+        var container = document.getElementById('orderList');
+        if (!container) return;
+        var existing = document.getElementById('orderLoadMore');
+        if (existing) existing.remove();
+        if (!orderPage.hasMore) return;
+        var btn = document.createElement('button');
+        btn.id = 'orderLoadMore';
+        btn.className = 'btn';
+        btn.style.cssText = 'display:block;margin:1rem auto;padding:0.6rem 1.5rem;background:var(--color-warm);border:1px solid var(--color-border);border-radius:6px;cursor:pointer;font-family:var(--font-body);font-size:0.85rem;';
+        btn.textContent = 'Load 100 more';
+        btn.onclick = function() {
+            btn.disabled = true;
+            btn.textContent = 'Loading…';
+            loadAdminOrders(true);
+        };
+        container.appendChild(btn);
     }
 
     function populatePartnerFilter() {
@@ -1257,6 +1304,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {

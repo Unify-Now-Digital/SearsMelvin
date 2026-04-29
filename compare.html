@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -14,6 +36,23 @@
     <meta name="description" content="Compare memorial options side by side. See features, pricing, and find the perfect tribute for your loved one.">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/compare">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Compare Memorials | Sears Melvin Memorials">
+    <meta property="og:description" content="Compare memorial options side by side — features, pricing, and what fits your cemetery.">
+    <meta property="og:url" content="https://searsmelvin.co.uk/compare">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Compare Memorials | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Compare memorial options side by side — features, pricing, and what fits your cemetery.">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -324,126 +363,21 @@
                 </a>
             </div>
 
-            <!-- Comparison Table -->
-            <div class="compare-table" id="compareTable" style="--compare-count: 3;">
-                <div class="compare-header">
-                    <div class="compare-header-cell"></div>
-                    <div class="compare-header-cell" id="col1">
-                        <button class="compare-remove" onclick="removeFromCompare(0)">
-                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                        <div class="compare-image">
-                            <svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="40" y="10" width="40" height="55" rx="8" ry="20" fill="#1a1a1a"/><rect x="35" y="65" width="50" height="12" fill="#2a2a2a"/></svg>
-                        </div>
-                        <h3 class="compare-name">Classic Ogee Top</h3>
-                        <span class="compare-type">Lawn Memorial</span>
-                    </div>
-                    <div class="compare-header-cell" id="col2">
-                        <button class="compare-remove" onclick="removeFromCompare(1)">
-                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                        <div class="compare-image">
-                            <svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="10" y="55" width="100" height="10" fill="#2a2a2a"/><rect x="10" y="65" width="100" height="30" fill="#3a3a3a"/><rect x="35" y="10" width="50" height="45" fill="#1a1a1a" rx="2"/></svg>
-                        </div>
-                        <h3 class="compare-name">Traditional Kerb Set</h3>
-                        <span class="compare-type">Kerb Memorial</span>
-                    </div>
-                    <div class="compare-header-cell add-column" id="addCol" onclick="window.location='/memorials'">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                        <span>Add another</span>
-                    </div>
-                </div>
-
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Price From</div>
-                    <div class="compare-cell"><span class="compare-price">£1,400</span></div>
-                    <div class="compare-cell"><span class="compare-price">£2,800</span></div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Cemetery Type</div>
-                    <div class="compare-cell">Lawn sections only</div>
-                    <div class="compare-cell">Kerb-set sections</div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Photo Plaque</div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Flower Vase</div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Cover Slab</div>
-                    <div class="compare-cell">
-                        <span class="check no"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
-                    </div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Chippings Area</div>
-                    <div class="compare-cell">
-                        <span class="check no"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
-                    </div>
-                    <div class="compare-cell">
-                        <span class="check yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    </div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Typical Timeline</div>
-                    <div class="compare-cell">10-14 weeks</div>
-                    <div class="compare-cell">12-18 weeks</div>
-                    <div class="compare-cell"></div>
-                </div>
-                <div class="compare-row">
-                    <div class="compare-cell compare-label">Best For</div>
-                    <div class="compare-cell"><span class="best-for">Budget-conscious</span></div>
-                    <div class="compare-cell"><span class="best-for">Complete tribute</span></div>
-                    <div class="compare-cell"></div>
-                </div>
-
-                <div class="compare-footer">
-                    <div class="compare-footer-cell"></div>
-                    <div class="compare-footer-cell">
-                        <a href="/memorial" class="btn">
-                            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            View Details
-                        </a>
-                    </div>
-                    <div class="compare-footer-cell">
-                        <a href="/memorial" class="btn">
-                            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            View Details
-                        </a>
-                    </div>
-                    <div class="compare-footer-cell"></div>
-                </div>
+            <!-- Loading state for the comparison fetch -->
+            <div id="compareLoading" style="display:none;text-align:center;padding:3rem 1rem;color:var(--color-text-muted);">
+                <p>Loading your selected memorials…</p>
             </div>
 
-            <!-- Recommendation -->
+            <!-- Comparison Table — populated dynamically from Supabase -->
+            <div class="compare-table" id="compareTable"></div>
+
+            <!-- Recommendation — short blurb tailored to the selection -->
             <div class="recommendation" id="recommendation" style="display: none;">
                 <h3>
                     <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     Our Recommendation
                 </h3>
-                <p>Based on your selections, the <strong>Traditional Kerb Set</strong> offers the most complete tribute with the cover slab and chippings area. If your cemetery permits kerb sets, this provides a beautifully enclosed space for flowers and mementos. However, if your cemetery only allows lawn memorials, the <strong>Classic Ogee Top</strong> is an elegant and cost-effective choice.</p>
+                <p id="recommendationText"></p>
             </div>
         </div>
     </section>
@@ -500,61 +434,184 @@
     </nav>
 
     <script>
-        // Check URL for compare items
+        // ==================== COMPARE — REAL PRODUCT DATA ====================
+        const COMPARE_SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const COMPARE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function escAttr(s) { return escHtml(s); }
+        function fmtPrice(n) {
+            const v = parseFloat(n);
+            if (!isFinite(v) || v <= 0) return '—';
+            return '£' + v.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+        }
+
+        // Persisted set of slugs to compare. URL ?items=a,b,c wins; otherwise localStorage.
         let compareItems = [];
+        let comparedProducts = [];
 
         function init() {
             const params = new URLSearchParams(window.location.search);
             const ids = params.get('items');
-            
             if (ids) {
-                compareItems = ids.split(',');
-                loadCompareItems();
+                compareItems = ids.split(',').map(s => s.trim()).filter(Boolean);
             } else {
-                // Check localStorage
-                const stored = localStorage.getItem('smm_compare');
-                if (stored) {
-                    try {
-                        compareItems = JSON.parse(stored);
-                    } catch (e) {
-                        compareItems = [];
-                        localStorage.removeItem('smm_compare');
-                    }
-                    if (compareItems.length > 0) {
-                        loadCompareItems();
-                    }
+                try {
+                    const stored = localStorage.getItem('smm_compare');
+                    if (stored) compareItems = JSON.parse(stored) || [];
+                } catch (_e) {
+                    compareItems = [];
+                    localStorage.removeItem('smm_compare');
                 }
             }
-
-            updateUI();
+            // Clamp to 3 (the layout assumes a fixed grid of three columns).
+            compareItems = compareItems.slice(0, 3);
+            persist();
+            render();
         }
 
-        function loadCompareItems() {
-            // In a real implementation, this would fetch data for each item
-            // For now, show the demo comparison table
-            if (compareItems.length > 0) {
-                document.getElementById('compareTable').classList.add('active');
-                document.getElementById('emptyState').style.display = 'none';
-                document.getElementById('recommendation').style.display = 'block';
+        function persist() {
+            localStorage.setItem('smm_compare', JSON.stringify(compareItems));
+        }
+
+        async function fetchProducts(slugs) {
+            if (!slugs.length) return [];
+            // PostgREST `in.(...)` filter; slugs are simple, but encode anyway.
+            const list = slugs.map(s => '"' + s.replace(/"/g, '') + '"').join(',');
+            const url = COMPARE_SUPABASE_URL + '/rest/v1/products?slug=in.(' + encodeURIComponent(list)
+                + ')&is_active=eq.true&select=id,name,slug,description,base_price,image_url,inscription_chars_included,included_features,product_categories(name,slug)';
+            try {
+                const res = await fetch(url, {
+                    headers: { 'apikey': COMPARE_SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + COMPARE_SUPABASE_ANON_KEY }
+                });
+                if (!res.ok) throw new Error('Supabase ' + res.status);
+                const rows = await res.json();
+                // Preserve the user's chosen order.
+                const bySlug = new Map(rows.map(p => [p.slug, p]));
+                return slugs.map(s => bySlug.get(s)).filter(Boolean);
+            } catch (err) {
+                console.error('Compare fetch failed:', err);
+                return [];
             }
         }
 
-        function updateUI() {
-            const hasItems = compareItems.length > 0 || document.getElementById('compareTable').classList.contains('active');
-            document.getElementById('emptyState').style.display = hasItems ? 'none' : 'block';
+        async function render() {
+            const empty = document.getElementById('emptyState');
+            const loading = document.getElementById('compareLoading');
+            const table = document.getElementById('compareTable');
+            const recommendation = document.getElementById('recommendation');
+
+            if (compareItems.length === 0) {
+                empty.style.display = 'block';
+                loading.style.display = 'none';
+                table.classList.remove('active');
+                table.innerHTML = '';
+                recommendation.style.display = 'none';
+                return;
+            }
+
+            empty.style.display = 'none';
+            loading.style.display = 'block';
+            table.classList.remove('active');
+
+            comparedProducts = await fetchProducts(compareItems);
+            loading.style.display = 'none';
+
+            if (comparedProducts.length === 0) {
+                table.classList.remove('active');
+                table.innerHTML = '<p style="text-align:center;color:#b44;padding:2rem;">We couldn\'t load those memorials. They may have been retired — please <a href="/memorials" style="color:var(--color-accent);">browse the current range</a>.</p>';
+                recommendation.style.display = 'none';
+                return;
+            }
+
+            const cols = comparedProducts.length;
+            // Three header cells max, last column reserved for "Add another" if room remains.
+            const showAddCol = cols < 3;
+            const totalCols = showAddCol ? cols + 1 : cols;
+            table.style.setProperty('--compare-count', String(totalCols));
+            table.classList.add('active');
+
+            // --- Header row ---
+            let html = '<div class="compare-header">';
+            html += '<div class="compare-header-cell"></div>';
+            comparedProducts.forEach((p, i) => {
+                const cat = p.product_categories?.name || 'Memorial';
+                const img = p.image_url
+                    ? '<img src="' + escAttr(p.image_url) + '" alt="' + escAttr(p.name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">'
+                    : '<svg viewBox="0 0 120 100"><rect width="120" height="100" fill="#e8e4dd"/><rect x="40" y="10" width="40" height="55" rx="8" fill="#1a1a1a"/></svg>';
+                html += '<div class="compare-header-cell">'
+                    + '<button class="compare-remove" aria-label="Remove ' + escAttr(p.name) + '" onclick="removeFromCompare(' + i + ')">'
+                    + '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+                    + '<div class="compare-image">' + img + '</div>'
+                    + '<h3 class="compare-name">' + escHtml(p.name) + '</h3>'
+                    + '<span class="compare-type">' + escHtml(cat) + '</span>'
+                    + '</div>';
+            });
+            if (showAddCol) {
+                html += '<div class="compare-header-cell add-column" onclick="window.location=\'/memorials\'">'
+                    + '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'
+                    + '<span>Add another</span></div>';
+            }
+            html += '</div>';
+
+            // --- Rows: Price / Category / Inscription / Features summary / Description ---
+            const rows = [
+                { label: 'Price From', cells: comparedProducts.map(p => '<span class="compare-price">' + fmtPrice(p.base_price) + '</span>') },
+                { label: 'Cemetery Type', cells: comparedProducts.map(p => escHtml(p.product_categories?.name || '—')) },
+                { label: 'Inscription (included)', cells: comparedProducts.map(p => p.inscription_chars_included ? escHtml(String(p.inscription_chars_included)) + ' characters' : '—') },
+                { label: 'Included Features', cells: comparedProducts.map(p => {
+                    const feats = Array.isArray(p.included_features) && p.included_features.length
+                        ? p.included_features.map(f => '<li>' + escHtml(String(f)) + '</li>').join('')
+                        : '<li style="color:var(--color-text-muted);">—</li>';
+                    return '<ul style="text-align:left;margin:0;padding-left:1rem;font-size:0.85rem;">' + feats + '</ul>';
+                }) },
+                { label: 'Description', cells: comparedProducts.map(p => '<span style="font-size:0.85rem;color:var(--color-text-muted);">' + escHtml(p.description || '—') + '</span>') },
+            ];
+            for (const row of rows) {
+                html += '<div class="compare-row">';
+                html += '<div class="compare-cell compare-label">' + escHtml(row.label) + '</div>';
+                row.cells.forEach(c => { html += '<div class="compare-cell">' + c + '</div>'; });
+                if (showAddCol) html += '<div class="compare-cell"></div>';
+                html += '</div>';
+            }
+
+            // --- Footer with View Details CTAs ---
+            html += '<div class="compare-footer"><div class="compare-footer-cell"></div>';
+            comparedProducts.forEach(p => {
+                html += '<div class="compare-footer-cell">'
+                    + '<a href="/memorial.html?slug=' + encodeURIComponent(p.slug) + '" class="btn">'
+                    + '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+                    + 'View Details</a></div>';
+            });
+            if (showAddCol) html += '<div class="compare-footer-cell"></div>';
+            html += '</div>';
+
+            table.innerHTML = html;
+
+            // Plain recommendation: cheapest is "best value", most expensive is "premium".
+            const sorted = [...comparedProducts].sort((a, b) => (parseFloat(a.base_price) || 0) - (parseFloat(b.base_price) || 0));
+            const cheapest = sorted[0];
+            const dearest = sorted[sorted.length - 1];
+            const recEl = document.getElementById('recommendationText');
+            if (comparedProducts.length === 1) {
+                recEl.innerHTML = 'Add another memorial to see them side by side.';
+            } else if (cheapest === dearest) {
+                recEl.innerHTML = 'These memorials are similarly priced — the right choice often comes down to style and cemetery rules. <a href="/contact" style="color:var(--color-accent);">Talk to us</a> if you need help deciding.';
+            } else {
+                recEl.innerHTML = 'For best value, <strong>' + escHtml(cheapest.name) + '</strong> starts at ' + fmtPrice(cheapest.base_price) + '. For the most complete tribute, <strong>' + escHtml(dearest.name) + '</strong> is our premium option at ' + fmtPrice(dearest.base_price) + '.';
+            }
+            recommendation.style.display = 'block';
         }
 
         function removeFromCompare(index) {
             compareItems.splice(index, 1);
-            localStorage.setItem('smm_compare', JSON.stringify(compareItems));
-            
-            if (compareItems.length === 0) {
-                document.getElementById('compareTable').classList.remove('active');
-                document.getElementById('emptyState').style.display = 'block';
-                document.getElementById('recommendation').style.display = 'none';
-            }
+            persist();
+            render();
         }
-
 
         function toggleMobileMenu() {
             var nav = document.getElementById('mobileNav');
@@ -593,6 +650,13 @@
 })();
 function pushConsent(granted) {
     window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
@@ -672,10 +736,11 @@ function declineCookies() {
                     html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
                         var imageHTML = product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + product.name + '">'
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + product.slug + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + product.name + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }
