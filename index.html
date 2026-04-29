@@ -167,7 +167,7 @@
         .btn-accent:hover { background-color: var(--color-stone); }
 
         .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
-        .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 4px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.15); position: relative; background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 4px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.15); position: relative; background: white; }
         .hero-image svg, .hero-image img { width: 100%; height: 100%; object-fit: contain; }
         .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
         .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: rgba(255,255,255,0.9); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
@@ -193,7 +193,7 @@
         .categories-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
         .category-card { border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; }
         .category-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
-        .category-image { aspect-ratio: 1/1; overflow: hidden; background: linear-gradient(145deg, #e8e4dd, #d4cfc6); }
+        .category-image { aspect-ratio: 1/1; overflow: hidden; background: white; }
         .category-image svg, .category-image img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s ease; }
         .category-card:hover .category-image svg, .category-card:hover .category-image img { transform: scale(1.05); }
         .category-info { padding: 1.5rem; }
@@ -204,7 +204,7 @@
         /* About Section */
         .about { padding: 6rem 2rem; background: linear-gradient(180deg, var(--color-warm) 0%, var(--color-cream) 100%); }
         .about-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; }
-        .about-image { aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); background: linear-gradient(145deg, #d4cfc6, #e0dcd4); }
+        .about-image { aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); background: white; }
         .about-image svg, .about-image img { width: 100%; height: 100%; object-fit: contain; }
         .about-content h2 { margin-bottom: 1.5rem; }
         .about-text { font-size: 1.1rem; line-height: 1.9; margin-bottom: 1.5rem; }
@@ -253,29 +253,6 @@
         .timeline-detail ul { list-style: none; }
         .timeline-detail li { color: rgba(255,255,255,0.7); padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
         .timeline-detail li::before { content: '✓'; position: absolute; left: 0; color: var(--color-accent-light); }
-
-        /* Before/After Renovation */
-        .renovation { padding: 6rem 2rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); }
-        .renovation-container { max-width: 1200px; margin: 0 auto; }
-        .renovation-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: center; }
-        .before-after { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); aspect-ratio: 4/3; }
-        .before-after-images { position: relative; width: 100%; height: 100%; }
-        .ba-image { position: absolute; inset: 0; background-size: cover; background-position: center; overflow: hidden; }
-        .ba-image svg, .ba-image img { width: 100%; height: 100%; object-fit: contain; }
-        .ba-image.before { background: linear-gradient(145deg, #8a8a8a, #6a6a6a); clip-path: inset(0 50% 0 0); transition: clip-path 0.1s ease-out; }
-        .ba-image.after { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); }
-        .ba-slider { position: absolute; top: 0; bottom: 0; width: 4px; background: white; left: 50%; transform: translateX(-50%); cursor: ew-resize; z-index: 10; }
-        .ba-slider::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; background: white; border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        .ba-slider::after { content: '⟷'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; color: var(--color-stone); }
-        .ba-label { position: absolute; bottom: 1rem; padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.7); color: white; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 3px; }
-        .ba-label.before { left: 1rem; }
-        .ba-label.after { right: 1rem; }
-        .renovation-content h2 { margin-bottom: 1rem; }
-        .renovation-content > p { margin-bottom: 1.5rem; font-size: 1.05rem; }
-        .renovation-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
-        .renovation-stat { text-align: center; padding: 1.5rem; background: white; border-radius: 6px; }
-        .renovation-stat .number { font-family: var(--font-display); font-size: 2.5rem; color: var(--color-accent); }
-        .renovation-stat .label { font-size: 0.85rem; color: var(--color-text-muted); }
 
         /* Testimonials Section */
         .testimonials { padding: 6rem 2rem; background: white; }
@@ -421,7 +398,6 @@
             .about-image { max-width: 400px; margin: 0 auto; }
             .timeline { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
             .timeline::before { display: none; }
-            .renovation-grid { grid-template-columns: 1fr; }
             .care-guide-container { flex-direction: column; text-align: center; }
             .grief-cards { grid-template-columns: 1fr; }
         }
@@ -433,7 +409,6 @@
             .values-grid { grid-template-columns: 1fr; }
             .timeline { grid-template-columns: 1fr; }
             .timeline-detail-content { grid-template-columns: 1fr; }
-            .renovation-stats { grid-template-columns: 1fr; }
             .testimonials-grid { grid-template-columns: 1fr; }
             .faq-tabs { gap: 0.3rem; }
             .footer-container { flex-direction: column; text-align: center; }
@@ -774,36 +749,6 @@
                     <div class="value-item"><h4>Connected</h4><p>Real-time updates on your order.</p></div>
                     <div class="value-item"><h4>Craftsmen</h4><p>Traditional skills. Premium materials.</p></div>
                     <div class="value-item"><h4>Caring</h4><p>Empathy first. We're here for you.</p></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Before/After Renovation -->
-    <section class="renovation reveal">
-        <div class="renovation-container">
-            <div class="renovation-grid">
-                <div class="before-after" id="beforeAfter">
-                    <div class="before-after-images">
-                        <div class="ba-image after" id="baAfterImage">
-                        </div>
-                        <div class="ba-image before" id="baBeforeImage">
-                        </div>
-                    </div>
-                    <div class="ba-slider" id="baSlider"></div>
-                    <span class="ba-label before">Before</span>
-                    <span class="ba-label after">After</span>
-                </div>
-                <div class="renovation-content">
-                    <p class="section-label">Restoration Services</p>
-                    <h2>Bring memorials back to life</h2>
-                    <p>Over time, even the finest memorials can show their age. Weathering, moss, faded lettering—we can restore them all. Our renovation service brings dignity back to memorials that have suffered years of exposure.</p>
-                    <p>From simple cleaning to complete re-gilding and structural repairs, we treat every memorial with the respect it deserves.</p>
-                    <div class="renovation-stats">
-                        <div class="renovation-stat"><span class="number">500+</span><span class="label">Memorials restored</span></div>
-                        <div class="renovation-stat"><span class="number">98%</span><span class="label">Customer satisfaction</span></div>
-                    </div>
-                    <a href="/contact" class="btn btn-primary" style="margin-top: 2rem;">Enquire About Restoration</a>
                 </div>
             </div>
         </div>
@@ -1327,29 +1272,6 @@
             document.getElementById('endDate').textContent = months[minDate.getMonth()] + ' - ' + months[maxDate.getMonth()] + ' ' + maxDate.getFullYear();
         }
 
-        // ==================== BEFORE/AFTER SLIDER ====================
-        function initBeforeAfter() {
-            const container = document.getElementById('beforeAfter');
-            const slider = document.getElementById('baSlider');
-            const beforeImg = container.querySelector('.ba-image.before');
-            let isDragging = false;
-
-            function updateSlider(x) {
-                const rect = container.getBoundingClientRect();
-                let pos = ((x - rect.left) / rect.width) * 100;
-                pos = Math.max(5, Math.min(95, pos));
-                slider.style.left = pos + '%';
-                beforeImg.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
-            }
-
-            container.addEventListener('mousedown', (e) => { isDragging = true; updateSlider(e.clientX); });
-            document.addEventListener('mouseup', () => isDragging = false);
-            document.addEventListener('mousemove', (e) => { if (isDragging) updateSlider(e.clientX); });
-            container.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches[0]) updateSlider(e.touches[0].clientX); }, { passive: true });
-            document.addEventListener('touchend', () => isDragging = false);
-            document.addEventListener('touchmove', (e) => { if (isDragging && e.touches[0]) { e.preventDefault(); updateSlider(e.touches[0].clientX); } }, { passive: false });
-        }
-
         // ==================== FAQ ====================
         function toggleFaq(el) {
             const item = el.parentElement;
@@ -1502,24 +1424,6 @@
                     }
                 }
 
-                // Populate before/after with renovation-style images
-                var afterEl = document.getElementById('baAfterImage');
-                var beforeEl = document.getElementById('baBeforeImage');
-                if (afterEl) {
-                    var afterProduct = products.find(function(p) { return p.image_url && p.product_categories && p.product_categories.slug === 'lawn-headstone'; })
-                        || products.find(function(p) { return p.image_url; });
-                    if (afterProduct && afterProduct.image_url) {
-                        afterEl.innerHTML = '<img src="' + afterProduct.image_url + '" alt="After renovation" loading="lazy">';
-                    }
-                }
-                if (beforeEl) {
-                    var beforeProduct = products.filter(function(p) { return p.image_url; })[2]
-                        || products.find(function(p) { return p.image_url; });
-                    if (beforeProduct && beforeProduct.image_url) {
-                        beforeEl.innerHTML = '<img src="' + beforeProduct.image_url + '" alt="Before renovation" loading="lazy" style="filter:saturate(0.4) brightness(0.8);">';
-                    }
-                }
-
                 // Re-trigger scroll animations for dynamically added content
                 initScrollAnimations();
             } catch (err) {
@@ -1531,7 +1435,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             initScrollAnimations();
             calculateTimeline();
-            initBeforeAfter();
             loadHomepagePhotos();
             // Set min date for appointment to tomorrow
             const tomorrow = new Date();
