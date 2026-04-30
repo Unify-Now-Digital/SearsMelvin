@@ -544,7 +544,16 @@
             quotes.forEach(function(q) {
                 var statusClass = q.status === 'partial' || q.status === 'completed' ? 'partial' : 'pending';
                 var statusLabel = q.status === 'partial' ? 'Deposit Paid' : q.status === 'completed' ? 'Completed' : 'Pending';
-                html += '<div class="quote-mini-card" onclick="window.location.href=\'/memorial?slug=' + encodeURIComponent(q.config && q.config.slug ? q.config.slug : '') + '\'">'
+                // Only link to /memorial when we have a slug — older quote rows
+                // didn't persist product.slug into product_config and would
+                // redirect to a slug-less /memorial which renders "Product
+                // not found". Without a slug, leave the card as a static
+                // summary.
+                var slug = q.config && q.config.slug ? q.config.slug : '';
+                var clickAttr = slug
+                    ? ' onclick="window.location.href=\'/memorial?slug=' + encodeURIComponent(slug) + '\'" style="cursor:pointer;"'
+                    : '';
+                html += '<div class="quote-mini-card"' + clickAttr + '>'
                     + '<div class="quote-mini-info">'
                     + '<h4>' + esc(q.product || 'Memorial') + (q.colour ? ' · ' + esc(q.colour) : '') + '</h4>'
                     + '<p>' + formatDate(q.created_at) + ' · <span class="quote-status ' + statusClass + '">' + statusLabel + '</span></p>'

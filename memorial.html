@@ -1947,6 +1947,7 @@
                             cemetery_id: _selectedCemeteryId || null,
                             product: {
                                 name:        productData ? productData.name : 'Memorial',
+                                slug:        productData ? productData.slug : null,
                                 type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
                                 colour:      colour,
                                 size:        document.getElementById('selectedSizeName').textContent,
