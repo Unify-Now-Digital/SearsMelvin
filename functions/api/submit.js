@@ -1341,6 +1341,10 @@ async function createOrderForQuote(env, { personId, customerName, product, locat
     body: JSON.stringify({
       organization_id: env.SM_ORG_ID,
       person_id: personId,
+      // orders.customer_name is NOT NULL; mirror onto person_name for the
+      // admin views that read either column.
+      customer_name: customerName || "Website lead",
+      person_name: customerName || null,
       order_type: "quote",
       sku: product?.name || null,
       color: product?.colour || null,
@@ -1359,11 +1363,16 @@ async function createOrderForQuote(env, { personId, customerName, product, locat
   let invoiceId = null;
   if (product?.price) {
     const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
+    // invoices.invoice_number is NOT NULL UNIQUE. The admin app uses
+    // sequential INV-NNNNNN numbers; pick a clearly-distinct prefix for
+    // website-generated draft invoices so the two namespaces don't collide.
+    const invoiceNumber = `INV-WEB-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`;
     const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
       method: "POST", headers: { ...headers, "Prefer": "return=representation" },
       body: JSON.stringify({
         organization_id: env.SM_ORG_ID,
         order_id: orderId,
+        invoice_number: invoiceNumber,
         customer_name: customerName,
         amount: fullAmount,
         status: "pending",
