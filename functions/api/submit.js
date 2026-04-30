@@ -127,7 +127,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("Failed to send quote customer email:", err);
   }
 
-  // 4. ClickUp
+  // 5. ClickUp
   try {
     await createClickUpTask(env.CLICKUP_API_KEY, {
       name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
@@ -138,7 +138,7 @@ async function handleQuoteRequest(env, data, submittedAt) {
     console.error("Failed to create ClickUp quote task:", err);
   }
 
-  // 5. GHL
+  // 6. GHL
   try {
     const ghlExtraFields = [
       message              ? { key: "customer_message",   field_value: message } : null,
