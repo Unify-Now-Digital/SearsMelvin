@@ -220,13 +220,22 @@ async function handleEnquiry(env, data, submittedAt) {
 
   const enquiryTypeLabel = formatEnquiryTypeLabel(enquiry_type);
 
+  // Sign photo paths once so the business email can render thumbnails. The
+  // bucket is private so direct paths can't be linked. 1-year TTL means the
+  // team can re-open old emails without the links going dead.
+  let photoSignedUrls = [];
+  if (Array.isArray(photo_urls) && photo_urls.length > 0) {
+    try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
+    catch (err) { console.error("Failed to sign enquiry photo URLs:", err); }
+  }
+
   // 2. Business notification email (non-fatal — record is already saved).
   try {
     await sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: BUSINESS_EMAIL,
       subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
-      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
+      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, submittedAt }),
     });
   } catch (err) {
     console.error("Failed to send business notification email:", err);
@@ -1073,7 +1082,31 @@ function enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref
   return rows.join("");
 }
 
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }) {
+// Renders a 2-column thumbnail grid of clickable photo previews for the
+// business email. Uses signed URLs (1-year TTL) so the team can open the
+// full-size image straight from their inbox.
+function enquiryPhotoGallery(signedUrls) {
+  if (!Array.isArray(signedUrls) || signedUrls.length === 0) return "";
+  const cells = signedUrls.map(url => `
+    <td width="50%" valign="top" style="padding:6px;">
+      <a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;">
+        <img src="${esc(url)}" alt="Enquiry photo" width="260" style="display:block;width:100%;max-width:260px;height:auto;border:1px solid #E0DCD5;border-radius:6px;" />
+      </a>
+    </td>`);
+  // Pair cells into rows of 2
+  let rows = "";
+  for (let i = 0; i < cells.length; i += 2) {
+    rows += `<tr>${cells[i] || ""}${cells[i + 1] || `<td width="50%">&nbsp;</td>`}</tr>`;
+  }
+  return `
+      <tr><td style="padding:4px 22px 0;">
+        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 8px 6px;font-family:Arial,sans-serif;">Photos attached</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
+        <p style="font-size:11px;color:#999999;margin:6px 6px 0;font-family:Arial,sans-serif;">Click any photo to open the full-size image. Links expire in 12 months.</p>
+      </td></tr>`;
+}
+
+function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls, submittedAt }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -1103,12 +1136,14 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
           ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
         </table>
       </td></tr>
-      <tr><td style="padding:12px 28px 28px;">
+      <tr><td style="padding:12px 28px ${photo_signed_urls && photo_signed_urls.length ? '4px' : '28px'};">
         <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Message</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
         </table>
       </td></tr>
+      ${enquiryPhotoGallery(photo_signed_urls)}
+      <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
         <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
       </td></tr>
@@ -1232,6 +1267,39 @@ function splitName(full) {
 function formatEnquiryTypeLabel(slug) {
   if (!slug) return "General";
   return String(slug).replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Storage bucket where the contact form's renovation photos live. Kept in
+// sync with /api/upload-photo's BUCKET constant.
+const ENQUIRY_PHOTO_BUCKET = "enquiry-photos";
+// Sign for 1 year so the team can re-open old enquiry emails without the
+// thumbnail links breaking. If the team needs longer-lived access, regenerate
+// from the admin viewer (which signs on demand).
+const ENQUIRY_PHOTO_SIGN_TTL_S = 60 * 60 * 24 * 365;
+
+// Resolve raw storage paths to fully qualified signed URLs the email client
+// can render. Uses the batch-sign endpoint to keep this to a single round-trip
+// regardless of how many photos were uploaded.
+async function signEnquiryPhotoUrls(env, paths) {
+  if (!Array.isArray(paths) || paths.length === 0) return [];
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return [];
+  const headers = supabaseHeaders(env);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/sign/${ENQUIRY_PHOTO_BUCKET}`,
+    {
+      method: "POST",
+      headers: { apikey: headers.apikey, Authorization: headers.Authorization, "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: ENQUIRY_PHOTO_SIGN_TTL_S, paths }),
+    },
+  );
+  if (!res.ok) {
+    console.error(`Storage batch-sign error ${res.status}: ${await res.text()}`);
+    return [];
+  }
+  const rows = await res.json();
+  return (Array.isArray(rows) ? rows : [])
+    .filter(r => r && r.signedURL && !r.error)
+    .map(r => `${env.SUPABASE_URL}/storage/v1${r.signedURL}`);
 }
 
 // Best-effort: resolve a free-text cemetery name to a row in `public.cemeteries`.
