@@ -46,20 +46,31 @@ export async function onRequestPost(context) {
   });
   // Accept the new `channel` envelope or the legacy `type` field.
   const channel = data.channel || data.type;
-  if (channel === "quote") return handleQuoteRequest(env, data, submittedAt);
-  if (channel === "appointment" || channel === "call") return handleAppointment(env, data, submittedAt);
-  return handleEnquiry(env, data, submittedAt);
+  if (channel === "quote") return handleQuoteRequest(context, data, submittedAt);
+  if (channel === "appointment" || channel === "call") return handleAppointment(context, data, submittedAt);
+  return handleEnquiry(context, data, submittedAt);
 }
 
-async function handleQuoteRequest(env, data, submittedAt) {
+// Background-side-effect helper. Runs `task` and swallows errors so an outer
+// Promise.allSettled never blows up; returns a plain promise so callers can
+// hand it to ctx.waitUntil. Preserves error logging.
+function bg(label, task) {
+  return Promise.resolve().then(task).catch(err => {
+    console.error(`[bg ${label}]`, err);
+  });
+}
+
+async function handleQuoteRequest(ctx, data, submittedAt) {
+  const env = ctx.env;
   const { name, email, phone, cemetery, message, product = {}, location } = data;
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
   const cemeteryOrLocation = cemetery || location || null;
 
-  // 1. Supabase first — single source of truth. Customer should only see
-  // "submitted" if their record actually saved. The customer email needs
-  // editToken, and the response needs invoiceId.
+  // 1. Supabase save — must complete before responding so the customer only
+  // sees "submitted" when the record actually persisted. Everything else
+  // (Stripe invoices, emails, ClickUp, GHL) runs in the background via
+  // ctx.waitUntil so the response returns in ~500ms instead of 5–10s.
   let invoiceId = null;
   let editToken = null;
   try {
@@ -79,96 +90,81 @@ async function handleQuoteRequest(env, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
   }
 
-  // 2. Stripe invoices — always create both (deposit + full) so the customer
-  // email can present all payment options. They are no obligation; the
-  // customer pays only if/when they're ready.
+  // 2. Background side-effects.
+  ctx.waitUntil(quoteSideEffects({
+    env, name, email, phone, message, product, submittedAt,
+    cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+  }));
+
+  return jsonResponse({ ok: true, invoiceId, editToken });
+}
+
+// Runs after the response has been returned. Stripe invoice creation is the
+// slowest step (multiple Stripe round-trips per invoice); the deposit and full
+// invoices are created in parallel because they're independent.
+async function quoteSideEffects({
+  env, name, email, phone, message, product, submittedAt,
+  cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+}) {
+  // Stripe deposit + full in parallel.
   let stripeDepositUrl = null;
   let stripeFullUrl = null;
   if (env.STRIPE_SECRET_KEY) {
-    try {
-      stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location: cemeteryOrLocation,
-        isFullInvoice: false,
-      });
-    } catch (err) {
-      console.error("Stripe deposit invoice creation failed:", err);
-    }
-    try {
-      stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location: cemeteryOrLocation,
-        isFullInvoice: true,
-      });
-    } catch (err) {
-      console.error("Stripe full invoice creation failed:", err);
-    }
+    const [depositRes, fullRes] = await Promise.allSettled([
+      createStripeDepositInvoice(env.STRIPE_SECRET_KEY, { name, email, phone, product, location: cemeteryOrLocation, isFullInvoice: false }),
+      createStripeDepositInvoice(env.STRIPE_SECRET_KEY, { name, email, phone, product, location: cemeteryOrLocation, isFullInvoice: true }),
+    ]);
+    if (depositRes.status === "fulfilled") stripeDepositUrl = depositRes.value;
+    else console.error("Stripe deposit invoice creation failed:", depositRes.reason);
+    if (fullRes.status === "fulfilled") stripeFullUrl = fullRes.value;
+    else console.error("Stripe full invoice creation failed:", fullRes.reason);
   }
 
-  // 3. Business notification email (non-fatal — record is already saved)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
+  // Now fire emails (need the Stripe URLs) + ClickUp + GHL in parallel.
+  await Promise.allSettled([
+    bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
       html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote business email:", err);
-  }
-
-  // 4. Customer confirmation email (non-fatal)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
+    })),
+    bg("quote customer email", () => sendEmail(env.RESEND_API_KEY, {
+      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to:      email,
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html: quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }),
-    });
-  } catch (err) {
-    console.error("Failed to send quote customer email:", err);
-  }
-
-  // 5. ClickUp
-  try {
-    await createClickUpTask(env.CLICKUP_API_KEY, {
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }),
+    })),
+    bg("quote clickup task", () => createClickUpTask(env.CLICKUP_API_KEY, {
       name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
       description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
       listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp quote task:", err);
-  }
-
-  // 6. GHL
-  try {
-    const ghlExtraFields = [
-      message              ? { key: "customer_message",   field_value: message } : null,
-      cemetery || location ? { key: "cemetery_location",  field_value: cemetery || location } : null,
-      product.type         ? { key: "memorial_type",      field_value: product.type } : null,
-      product.font         ? { key: "font_style",         field_value: product.font } : null,
-      product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
-      product.inscription  ? { key: "inscription_text",   field_value: product.inscription } : null,
-      product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
-      product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
-      product.image        ? { key: "product_image_url",  field_value: product.image } : null,
-    ].filter(Boolean);
-    const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
-    try {
-      await createGHLOpportunity(env, {
-        contactId,
-        name: `${product.name || "Memorial"} — ${name}`,
-        monetaryValue: parseFloat(product.price) || 0,
-      });
-    } catch (err) {
-      console.error("GHL opportunity create failed:", err);
-    }
-  } catch (err) {
-    console.error("GHL contact create failed:", err);
-  }
-
-  return jsonResponse({ ok: true, invoiceId, stripeDepositUrl, stripeFullUrl, editToken });
+    })),
+    bg("ghl quote contact+opportunity", async () => {
+      const ghlExtraFields = [
+        message              ? { key: "customer_message",   field_value: message } : null,
+        cemetery || location ? { key: "cemetery_location",  field_value: cemetery || location } : null,
+        product.type         ? { key: "memorial_type",      field_value: product.type } : null,
+        product.font         ? { key: "font_style",         field_value: product.font } : null,
+        product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
+        product.inscription  ? { key: "inscription_text",   field_value: product.inscription } : null,
+        product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
+        product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
+        product.image        ? { key: "product_image_url",  field_value: product.image } : null,
+      ].filter(Boolean);
+      const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
+      if (contactId) {
+        await createGHLOpportunity(env, {
+          contactId,
+          name: `${product.name || "Memorial"} — ${name}`,
+          monetaryValue: parseFloat(product.price) || 0,
+        });
+      }
+    }),
+  ]);
 }
 
-async function handleEnquiry(env, data, submittedAt) {
+async function handleEnquiry(ctx, data, submittedAt) {
+  const env = ctx.env;
   const { name, email, phone, message, location } = data;
   // Accept either `enquiry_type` (legacy / shortlist) or `sub_type` (contact form
   // post-refactor) — the frontend wasn't always consistent and the business
@@ -218,122 +214,118 @@ async function handleEnquiry(env, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
 
+  // 2. Background side-effects (emails, ClickUp, calendar, GHL) run after
+  // the response is returned via ctx.waitUntil — keeps the customer-facing
+  // latency to ~500ms instead of 3s.
   const enquiryTypeLabel = formatEnquiryTypeLabel(enquiry_type);
+  ctx.waitUntil(enquirySideEffects({
+    env, name, email, phone, message, location,
+    enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls,
+    submittedAt, appointment_date: data.appointment_date || null,
+    appointment_time: data.appointment_time || null,
+    appointment_at_iso: data.appointment_at || null,
+    appointment_kind: data.appointment_kind || null,
+  }));
 
-  // Sign photo paths once so the business email can render thumbnails. The
-  // bucket is private so direct paths can't be linked. 1-year TTL means the
-  // team can re-open old emails without the links going dead.
-  let photoSignedUrls = [];
-  if (Array.isArray(photo_urls) && photo_urls.length > 0) {
-    try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
-    catch (err) { console.error("Failed to sign enquiry photo URLs:", err); }
-  }
-
-  // 2. Business notification email (non-fatal — record is already saved).
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: BUSINESS_EMAIL,
-      subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
-      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, submittedAt }),
-    });
-  } catch (err) {
-    console.error("Failed to send business notification email:", err);
-  }
-
-  // 3. Customer confirmation email — copy of their submission + receipt note.
-  try {
-    const customerSubjectExtra = grave_number
-      ? ` — Grave ${grave_number}`
-      : (location ? ` — ${location}` : "");
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
-      subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
-      html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
-    });
-  } catch (err) {
-    console.error("Failed to send customer confirmation email:", err);
-  }
-
-  // 4. ClickUp task (non-fatal).
-  try {
-    const clickupLines = [
-      "=== WEBSITE ENQUIRY ===",
-      "",
-      "CUSTOMER",
-      `• Name: ${name}`,
-      `• Email: ${email}`,
-      `• Phone: ${phone || "Not provided"}`,
-      `• Enquiry type: ${enquiryTypeLabel}`,
-      grave_number ? `• Grave: ${grave_number}` : null,
-      location ? `• Cemetery: ${location}` : null,
-      "",
-      "MESSAGE",
-      message,
-      "",
-      "---",
-      `Submitted: ${submittedAt}`,
-    ].filter(l => l !== null);
-    await createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
-      description: clickupLines.join("\n"),
-      listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp task:", err);
-  }
-
-  // If the contact form picked a slot, create the calendar event too — otherwise
-  // the customer thinks they've booked but nothing reaches the calendar. Date+
-  // time pair is preferred (timezone-safe); ISO is a legacy fallback.
-  const apptDate = data.appointment_date || null;
-  const apptTime = data.appointment_time || null;
-  if (apptDate && apptTime) {
-    try {
-      const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
-      const kind = data.appointment_kind || "showroom";
-      await createGoogleCalendarEvent(env, {
-        name, email, phone,
-        appointment_type: kind,
-        appointment_date: apptDate,
-        appointment_time: apptTime,
-        notes: message,
-        typeLabel: typeLabels[kind] || kind,
-      });
-    } catch (err) {
-      console.error("Contact-form calendar event creation failed:", err);
-    }
-  } else if (data.appointment_at) {
-    try {
-      await createCalendarEventFromIso(env, {
-        name, email, phone,
-        appointmentAtIso: data.appointment_at,
-        appointmentKind: data.appointment_kind || "consultation",
-        notes: message,
-      });
-    } catch (err) {
-      console.error("Contact-form calendar event creation failed:", err);
-    }
-  }
-  try {
-    const ghlExtraFields = [
-      message      ? { key: "customer_message",  field_value: message } : null,
-      enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-      location     ? { key: "cemetery_location", field_value: location } : null,
-    ].filter(Boolean);
-    await createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
-  } catch (err) {
-    console.error("GHL contact create failed:", err);
-  }
   return jsonResponse({ ok: true });
+}
+
+// Runs after the response has been returned. Emails + ClickUp + calendar +
+// GHL are all independent so they fire in parallel; photo signing is a
+// prerequisite for the business email so it's chained inside that branch.
+async function enquirySideEffects({
+  env, name, email, phone, message, location,
+  enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls,
+  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind,
+}) {
+  await Promise.allSettled([
+    bg("enquiry business email", async () => {
+      let photoSignedUrls = [];
+      if (Array.isArray(photo_urls) && photo_urls.length > 0) {
+        try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
+        catch (err) { console.error("Failed to sign enquiry photo URLs:", err); }
+      }
+      await sendEmail(env.RESEND_API_KEY, {
+        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+        to: BUSINESS_EMAIL,
+        subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
+        html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, submittedAt }),
+      });
+    }),
+    bg("enquiry customer email", () => {
+      const customerSubjectExtra = grave_number
+        ? ` — Grave ${grave_number}`
+        : (location ? ` — ${location}` : "");
+      return sendEmail(env.RESEND_API_KEY, {
+        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+        to: email,
+        subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
+        html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
+      });
+    }),
+    bg("enquiry clickup task", () => {
+      const clickupLines = [
+        "=== WEBSITE ENQUIRY ===",
+        "",
+        "CUSTOMER",
+        `• Name: ${name}`,
+        `• Email: ${email}`,
+        `• Phone: ${phone || "Not provided"}`,
+        `• Enquiry type: ${enquiryTypeLabel}`,
+        grave_number ? `• Grave: ${grave_number}` : null,
+        location ? `• Cemetery: ${location}` : null,
+        "",
+        "MESSAGE",
+        message,
+        "",
+        "---",
+        `Submitted: ${submittedAt}`,
+      ].filter(l => l !== null);
+      return createClickUpTask(env.CLICKUP_API_KEY, {
+        name: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
+        description: clickupLines.join("\n"),
+        listId: CLICKUP_LIST_ID,
+      });
+    }),
+    // Calendar event if the contact form picked a slot.
+    appointment_date && appointment_time
+      ? bg("contact-form calendar event", () => {
+          const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+          const kind = appointment_kind || "showroom";
+          return createGoogleCalendarEvent(env, {
+            name, email, phone,
+            appointment_type: kind,
+            appointment_date,
+            appointment_time,
+            notes: message,
+            typeLabel: typeLabels[kind] || kind,
+          });
+        })
+      : (appointment_at_iso
+          ? bg("contact-form calendar event (ISO)", () => createCalendarEventFromIso(env, {
+              name, email, phone,
+              appointmentAtIso: appointment_at_iso,
+              appointmentKind: appointment_kind || "consultation",
+              notes: message,
+            }))
+          : null),
+    bg("ghl enquiry contact", () => {
+      const ghlExtraFields = [
+        message      ? { key: "customer_message",  field_value: message } : null,
+        enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
+        location     ? { key: "cemetery_location", field_value: location } : null,
+      ].filter(Boolean);
+      return createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
+    }),
+  ].filter(Boolean));
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // APPOINTMENT BOOKING
 // ═══════════════════════════════════════════════════════════════════
 
-async function handleAppointment(env, data, submittedAt) {
+async function handleAppointment(ctx, data, submittedAt) {
+  const env = ctx.env;
   const { name, email, phone, appointment_type, appointment_date, appointment_time, notes } = data;
   if (!appointment_date || !appointment_time)
     return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
@@ -345,7 +337,7 @@ async function handleAppointment(env, data, submittedAt) {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  // 1. Supabase first — single source of truth.
+  // 1. Supabase save — must complete before responding.
   const apptChannel = appointment_type === "phone" ? "call" : "appointment";
   const appointmentAtIso = appointment_date && appointment_time
     ? new Date(`${appointment_date}T${appointment_time}:00`).toISOString()
@@ -365,7 +357,23 @@ async function handleAppointment(env, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
   }
 
-  // 2. Google Calendar event (non-fatal)
+  // 2. Background side-effects.
+  ctx.waitUntil(appointmentSideEffects({
+    env, name, email, phone, notes, submittedAt,
+    appointment_type, appointment_date, appointment_time,
+    typeLabel, dateFormatted, firstName,
+  }));
+
+  return jsonResponse({ ok: true });
+}
+
+// Calendar event blocks emails because the business email links to it; the
+// email + ClickUp + GHL then fire in parallel once the calendar resolves.
+async function appointmentSideEffects({
+  env, name, email, phone, notes, submittedAt,
+  appointment_type, appointment_date, appointment_time,
+  typeLabel, dateFormatted, firstName,
+}) {
   let calendarLink = null;
   try {
     calendarLink = await createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel });
@@ -373,55 +381,34 @@ async function handleAppointment(env, data, submittedAt) {
     console.error("Google Calendar event creation failed:", err);
   }
 
-  // 3. Business notification email (non-fatal)
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
+  await Promise.allSettled([
+    bg("appointment business email", () => sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: BUSINESS_EMAIL,
       subject: `New Appointment Request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${name}`,
       html: appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }),
-    });
-  } catch (err) {
-    console.error("Failed to send appointment business email:", err);
-  }
-
-  // 4. Customer confirmation email
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
+    })),
+    bg("appointment customer email", () => sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: email,
       subject: `Appointment request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${BUSINESS_NAME}`,
       html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
-    });
-  } catch (err) {
-    console.error("Failed to send appointment customer email:", err);
-  }
-
-  // 5. ClickUp task
-  try {
-    await createClickUpTask(env.CLICKUP_API_KEY, {
+    })),
+    bg("appointment clickup task", () => createClickUpTask(env.CLICKUP_API_KEY, {
       name: `Appointment — ${typeLabel} — ${name}`,
       description: `=== APPOINTMENT REQUEST ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n\nAPPOINTMENT\n• Type: ${typeLabel}\n• Date: ${dateFormatted}\n• Time: ${appointment_time}\n• Notes: ${notes || "None"}\n\n---\nSubmitted: ${submittedAt}`,
       listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp appointment task:", err);
-  }
-
-  // 6. GHL
-  try {
-    const ghlExtraFields = [
-      appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
-      appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
-      appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
-      notes            ? { key: "appointment_notes", field_value: notes } : null,
-    ].filter(Boolean);
-    await createGHLContact(env, { name, email, phone, type: "appointment", extraFields: ghlExtraFields });
-  } catch (err) {
-    console.error("GHL contact create failed:", err);
-  }
-
-  return jsonResponse({ ok: true });
+    })),
+    bg("ghl appointment contact", () => {
+      const ghlExtraFields = [
+        appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
+        appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
+        appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
+        notes            ? { key: "appointment_notes", field_value: notes } : null,
+      ].filter(Boolean);
+      return createGHLContact(env, { name, email, phone, type: "appointment", extraFields: ghlExtraFields });
+    }),
+  ]);
 }
 
 // Lightweight wrapper around createGoogleCalendarEvent for callers that already
@@ -1461,12 +1448,21 @@ async function createOrderForQuote(env, { personId, customerName, product, locat
 // `people` row (deduped by email) and an `enquiries` row. For `channel='quote'`
 // also creates the order + invoice and links the enquiry to it via order_id.
 async function createEnquiry(env, payload) {
-  const person = await upsertPerson(env, {
-    name: payload.name,
-    email: payload.email,
-    phone: payload.phone,
-  });
+  // Person upsert and cemetery lookup are independent; run in parallel to
+  // shave ~150–400ms off the critical path. Cemetery lookup is best-effort
+  // (free-text submissions still save with cemetery_id=null).
+  const cemeteryNeeded = !payload.cemetery_id && payload.location;
+  const [person, lookedUpCemeteryId] = await Promise.all([
+    upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone }),
+    cemeteryNeeded
+      ? lookupCemeteryIdByName(env, payload.location).catch(err => {
+          console.error("Cemetery name lookup failed (non-fatal):", err);
+          return null;
+        })
+      : Promise.resolve(null),
+  ]);
   if (!person) throw new Error("Person upsert returned no id");
+  const resolvedCemeteryId = payload.cemetery_id ?? lookedUpCemeteryId ?? null;
 
   let orderId = null, editToken = null, invoiceId = null;
   if (payload.channel === "quote") {
@@ -1477,19 +1473,6 @@ async function createEnquiry(env, payload) {
       location: payload.location,
       message: payload.message,
     }));
-  }
-
-  // If the front-end didn't pass a cemetery_id (customer typed the name but
-  // didn't pick from the autocomplete dropdown), try to resolve it server-side
-  // so reports can join on the FK. Free-text-only submissions still save with
-  // cemetery_id=null and surface in the admin "unmatched cemetery" view.
-  let resolvedCemeteryId = payload.cemetery_id ?? null;
-  if (!resolvedCemeteryId && payload.location) {
-    try {
-      resolvedCemeteryId = await lookupCemeteryIdByName(env, payload.location);
-    } catch (err) {
-      console.error("Cemetery name lookup failed (non-fatal):", err);
-    }
   }
 
   const headers = supabaseHeaders(env);
