@@ -361,23 +361,29 @@
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
 
         /* Recent Installations Marquee */
-        .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; }
+        .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; position: relative; }
         .installations .section-header { padding: 0 2rem; }
-        .installations-marquee { position: relative; width: 100%; overflow: hidden; mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); }
-        .installations-track { display: flex; gap: 1.5rem; width: max-content; animation: marqueeScroll 50s linear infinite; }
-        .installations-marquee:hover .installations-track { animation-play-state: paused; }
-        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .installations-viewport { position: relative; max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
+        .installations-marquee { position: relative; width: 100%; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%); }
+        .installations-marquee.dragging { cursor: grabbing; }
+        .installations-marquee:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; border-radius: 4px; }
+        .installations-track { display: flex; gap: 1.5rem; width: max-content; will-change: transform; }
         .install-card { flex: 0 0 320px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; }
         .install-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.1); }
         .install-image { aspect-ratio: 4/3; background: linear-gradient(180deg, #e8e4dd 0%, #d4cfc6 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .install-image img { width: 100%; height: 100%; object-fit: cover; }
-        .install-illustration { width: 100%; height: 100%; display: block; }
+        .install-image img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         .install-image .placeholder-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(0,0,0,0.55); color: white; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 20px; z-index: 1; }
         .install-info { padding: 1.1rem 1.25rem 1.25rem; }
         .install-customer { font-family: var(--font-display); font-size: 1.15rem; color: var(--color-stone); margin-bottom: 0.25rem; }
         .install-cemetery { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-accent); }
         .install-cemetery svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; flex-shrink: 0; }
-        @media (prefers-reduced-motion: reduce) { .installations-track { animation: none; } }
+        .install-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.92); border: 1px solid var(--color-border); font-family: var(--font-display); font-size: 1.6rem; line-height: 1; color: var(--color-stone); cursor: pointer; z-index: 3; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.08); transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; padding: 0; }
+        .install-nav:hover { background: white; transform: translateY(-50%) scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .install-nav:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+        .install-nav.prev { left: 0.5rem; }
+        .install-nav.next { right: 0.5rem; }
+        @media (max-width: 640px) { .install-nav { display: none; } }
+        @media (prefers-reduced-motion: reduce) { .install-card { transition: none; } }
 
         /* Scroll to Top */
         .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
@@ -727,382 +733,20 @@
         </div>
     </section>
 
-    <!-- About -->
-    <section class="about" id="about">
-        <div class="about-container">
-            <div class="about-image reveal-left" id="aboutImage">
-            </div>
-            <div class="about-content reveal-right">
-                <p class="section-label">Our Story</p>
-                <h2>A fresh approach to an age-old craft</h2>
-                <p class="about-text">
-                    Sears Melvin Memorials was founded with a simple belief: families 
-                    deserve better. Better communication, better technology, better care.
-                </p>
-                <p class="about-text">
-                    We're a young, ambitious team challenging the way things have always 
-                    been done. We use modern tools to keep you informed at every stage—from 
-                    your first enquiry to the moment your memorial is installed.
-                </p>
-                <div class="values-grid">
-                    <div class="value-item"><h4>Transparent</h4><p>Clear pricing. Honest timelines.</p></div>
-                    <div class="value-item"><h4>Connected</h4><p>Real-time updates on your order.</p></div>
-                    <div class="value-item"><h4>Craftsmen</h4><p>Traditional skills. Premium materials.</p></div>
-                    <div class="value-item"><h4>Caring</h4><p>Empathy first. We're here for you.</p></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Recent Installations -->
     <section class="installations reveal" id="installations">
         <div class="section-header">
             <p class="section-label">Recent Work</p>
             <h2>Memorials we've installed</h2>
-            <p>A glimpse of recent installations across North London cemeteries. Replace placeholders with real photos as installations are completed.</p>
+            <p>A glimpse of recent installations across North London cemeteries. Drag, swipe, or use the arrows to browse.</p>
         </div>
-        <div class="installations-marquee" aria-label="Recent memorial installations">
-            <div class="installations-track" id="installationsTrack">
-                <!-- Placeholder cards (duplicated for seamless loop) -->
-                <!-- Set 1 -->
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Atkinson Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>New Southgate Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">Mr & Mrs Patel</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Hendon Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The O'Brien Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>East Finchley Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Williams Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Edmonton Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Cohen Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Bushey Jewish Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Murphy Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>St Pancras & Islington Cemetery</p>
-                    </div>
-                </article>
-                <!-- Set 2 (duplicate for seamless loop) -->
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Atkinson Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>New Southgate Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">Mr & Mrs Patel</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Hendon Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The O'Brien Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>East Finchley Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Williams Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Edmonton Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Cohen Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Bushey Jewish Cemetery</p>
-                    </div>
-                </article>
-                <article class="install-card" aria-hidden="true">
-                    <div class="install-image">
-                        <span class="placeholder-tag">Placeholder</span>
-                        <svg class="install-illustration" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="ig-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6df"/><stop offset="1" stop-color="#cfc9c0"/></linearGradient>
-                                <linearGradient id="ig-stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d5852"/><stop offset="1" stop-color="#3a3733"/></linearGradient>
-                                <linearGradient id="ig-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e9264"/><stop offset="1" stop-color="#566c44"/></linearGradient>
-                            </defs>
-                            <rect width="400" height="300" fill="url(#ig-sky)"/>
-                            <ellipse cx="200" cy="248" rx="120" ry="10" fill="rgba(0,0,0,0.18)"/>
-                            <path d="M140 232 V120 a60 60 0 0 1 120 0 V232 Z" fill="url(#ig-stone)"/>
-                            <path d="M140 120 a60 60 0 0 1 120 0 L256 124 a56 56 0 0 0 -112 0 Z" fill="rgba(255,255,255,0.06)"/>
-                            <rect x="160" y="138" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.55)"/>
-                            <rect x="172" y="156" width="56" height="2" rx="1" fill="rgba(255,255,255,0.38)"/>
-                            <rect x="166" y="172" width="68" height="2" rx="1" fill="rgba(255,255,255,0.34)"/>
-                            <rect x="178" y="188" width="44" height="2" rx="1" fill="rgba(255,255,255,0.32)"/>
-                            <rect x="170" y="204" width="60" height="2" rx="1" fill="rgba(255,255,255,0.26)"/>
-                            <rect x="120" y="232" width="160" height="14" fill="#2c2a27"/>
-                            <path d="M0 246 Q100 236 200 246 T400 246 V300 H0 Z" fill="url(#ig-grass)"/>
-                            <path d="M28 246 l3 -10 l3 10 z M68 248 l3 -8 l3 8 z M104 247 l3 -9 l3 9 z M186 247 l3 -10 l3 10 z M226 248 l3 -9 l3 9 z M308 246 l3 -11 l3 11 z M348 248 l3 -8 l3 8 z M384 247 l3 -10 l3 10 z" fill="#6a7e54"/>
-                        </svg>
-                    </div>
-                    <div class="install-info">
-                        <p class="install-customer">The Murphy Family</p>
-                        <p class="install-cemetery"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>St Pancras & Islington Cemetery</p>
-                    </div>
-                </article>
+        <div class="installations-viewport">
+            <button type="button" class="install-nav prev" id="installPrev" aria-label="Previous installations">&lsaquo;</button>
+            <div class="installations-marquee" id="installationsMarquee" tabindex="0"
+                 aria-label="Recent memorial installations" aria-roledescription="carousel">
+                <div class="installations-track" id="installationsTrack"></div>
             </div>
+            <button type="button" class="install-nav next" id="installNext" aria-label="Next installations">&rsaquo;</button>
         </div>
     </section>
 
@@ -1156,6 +800,33 @@
                         <span class="testimonial-name">Angela K.</span>
                         <span class="testimonial-location">Enfield</span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section class="about" id="about">
+        <div class="about-container">
+            <div class="about-image reveal-left" id="aboutImage">
+            </div>
+            <div class="about-content reveal-right">
+                <p class="section-label">Our Story</p>
+                <h2>A fresh approach to an age-old craft</h2>
+                <p class="about-text">
+                    Sears Melvin Memorials was founded with a simple belief: families
+                    deserve better. Better communication, better technology, better care.
+                </p>
+                <p class="about-text">
+                    We're a young, ambitious team challenging the way things have always
+                    been done. We use modern tools to keep you informed at every stage—from
+                    your first enquiry to the moment your memorial is installed.
+                </p>
+                <div class="values-grid">
+                    <div class="value-item"><h4>Transparent</h4><p>Clear pricing. Honest timelines.</p></div>
+                    <div class="value-item"><h4>Connected</h4><p>Real-time updates on your order.</p></div>
+                    <div class="value-item"><h4>Craftsmen</h4><p>Traditional skills. Premium materials.</p></div>
+                    <div class="value-item"><h4>Caring</h4><p>Empathy first. We're here for you.</p></div>
                 </div>
             </div>
         </div>
@@ -1647,11 +1318,132 @@
             }
         }
 
+        // ==================== RECENT INSTALLATIONS ====================
+        const INSTALLATIONS = [
+            { image: 'lawn-headstone.jpg',                 customer: 'The Atkinson Family', cemetery: 'New Southgate Cemetery' },
+            { image: 'kerb-set-with-vase.png',             customer: 'Mr & Mrs Patel',      cemetery: 'Hendon Cemetery' },
+            { image: 'peon-top-classic.png',               customer: "The O'Brien Family",  cemetery: 'East Finchley Cemetery' },
+            { image: 'wave-memorial-with-doves.png',       customer: 'The Williams Family', cemetery: 'Edmonton Cemetery' },
+            { image: 'square-top-contemporary.png',        customer: 'The Cohen Family',    cemetery: 'Bushey Jewish Cemetery' },
+            { image: 'single-heart-on-base.png',           customer: 'The Murphy Family',   cemetery: 'St Pancras & Islington Cemetery' },
+            { image: 'kerb-set.jpg',                       customer: 'The Reynolds Family', cemetery: 'Highgate Cemetery' },
+            { image: 'open-book-on-plinth.png',            customer: 'The Sullivan Family', cemetery: 'Lambeth Cemetery' },
+            { image: 'polished-desk-tablet.png',           customer: 'The Begum Family',    cemetery: 'Enfield Crematorium' },
+            { image: 'sandstone-churchyard-memorial.png',  customer: 'The Watson Family',   cemetery: "St Mary's Churchyard, East Barnet" },
+            { image: 'tapered-churchyard-memorial.png',    customer: 'The Hill Family',     cemetery: 'All Saints Churchyard, Edmonton' }
+        ];
+
+        function initInstallations() {
+            const track = document.getElementById('installationsTrack');
+            const marquee = document.getElementById('installationsMarquee');
+            const prevBtn = document.getElementById('installPrev');
+            const nextBtn = document.getElementById('installNext');
+            if (!track || !marquee) return;
+
+            const SUPA_PUB = 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/';
+            const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+            const pin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+            const card = ({ image, customer, cemetery }) =>
+                '<article class="install-card" aria-roledescription="slide">'
+                +   '<div class="install-image">'
+                +     '<span class="placeholder-tag">Placeholder</span>'
+                +     '<img src="' + SUPA_PUB + encodeURIComponent(image) + '" alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
+                +   '</div>'
+                +   '<div class="install-info">'
+                +     '<p class="install-customer">' + esc(customer) + '</p>'
+                +     '<p class="install-cemetery">' + pin + esc(cemetery) + '</p>'
+                +   '</div>'
+                + '</article>';
+
+            const html = INSTALLATIONS.map(card).join('');
+            track.innerHTML = html + html;
+
+            const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let offset = 0, singleWidth = 0, last = performance.now();
+            let onscreen = true, dragging = false, idleResumeAt = 0;
+
+            const measure = () => { singleWidth = track.scrollWidth / 2; };
+            measure();
+            window.addEventListener('resize', measure);
+            // Re-measure once images load (their intrinsic size may shift layout)
+            track.querySelectorAll('img').forEach(img => img.addEventListener('load', measure, { once: true }));
+
+            new IntersectionObserver(entries => { onscreen = entries[0].isIntersecting; }, { threshold: 0.05 }).observe(marquee);
+            document.addEventListener('visibilitychange', () => { last = performance.now(); });
+
+            const wrap = () => {
+                if (!singleWidth) return;
+                if (offset >= singleWidth) offset -= singleWidth;
+                if (offset < 0) offset += singleWidth;
+            };
+
+            function tick(now) {
+                const dt = Math.min(64, now - last); last = now;
+                const idle = now > idleResumeAt;
+                if (!reduceMotion && !dragging && idle && onscreen && !document.hidden) {
+                    offset += (30 * dt) / 1000;
+                }
+                wrap();
+                track.style.transform = 'translate3d(' + (-offset) + 'px,0,0)';
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+
+            // Drag with pointer events
+            let startX = 0, startOffset = 0, moved = 0, activePointer = null;
+            track.addEventListener('pointerdown', e => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                dragging = true; moved = 0; startX = e.clientX; startOffset = offset; activePointer = e.pointerId;
+                marquee.classList.add('dragging');
+                try { track.setPointerCapture(e.pointerId); } catch (_) {}
+            });
+            track.addEventListener('pointermove', e => {
+                if (!dragging || e.pointerId !== activePointer) return;
+                const dx = e.clientX - startX;
+                moved = Math.max(moved, Math.abs(dx));
+                offset = startOffset - dx;
+            });
+            const endDrag = e => {
+                if (!dragging || e.pointerId !== activePointer) return;
+                dragging = false; activePointer = null;
+                marquee.classList.remove('dragging');
+                idleResumeAt = performance.now() + 2500;
+                try { track.releasePointerCapture(e.pointerId); } catch (_) {}
+            };
+            track.addEventListener('pointerup', endDrag);
+            track.addEventListener('pointercancel', endDrag);
+            // Suppress click-through after a real drag
+            track.addEventListener('click', e => { if (moved > 5) { e.preventDefault(); e.stopPropagation(); } }, true);
+            // Stop browser image-drag fully
+            track.addEventListener('dragstart', e => e.preventDefault());
+
+            // Smooth nudge for buttons + arrow keys
+            function nudge(dir) {
+                const first = track.firstElementChild;
+                const cardW = first ? first.getBoundingClientRect().width + 24 : 320;
+                const start = offset, target = offset + dir * cardW, t0 = performance.now(), dur = 350;
+                idleResumeAt = performance.now() + 2500;
+                (function step(now) {
+                    const k = Math.min(1, (now - t0) / dur);
+                    const eased = 1 - Math.pow(1 - k, 3);
+                    offset = start + (target - start) * eased;
+                    if (k < 1) requestAnimationFrame(step);
+                })(t0);
+            }
+            if (prevBtn) prevBtn.addEventListener('click', () => nudge(-1));
+            if (nextBtn) nextBtn.addEventListener('click', () => nudge(1));
+            marquee.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft')  { nudge(-1); e.preventDefault(); }
+                if (e.key === 'ArrowRight') { nudge( 1); e.preventDefault(); }
+            });
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             initScrollAnimations();
             calculateTimeline();
             loadHomepagePhotos();
+            initInstallations();
             // Set min date for appointment to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
