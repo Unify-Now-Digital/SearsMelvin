@@ -1000,29 +1000,12 @@
                         <label>Plot number &amp; any other details</label>
                         <textarea id="qMessage" placeholder="Grave section/plot number, or any questions…"></textarea>
                     </div>
-                    <div class="quote-form-group">
-                        <label>How would you like to proceed?</label>
-                        <div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin-top:0.3rem;">
-                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:8px; cursor:pointer; background:rgba(139,115,85,0.04); transition:border-color 0.2s;">
-                                <input type="radio" name="paymentPref" value="quote_only" checked>
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Submit quote</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">We'll email you deposit and full payment invoice options</span></span>
-                            </label>
-                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
-                                <input type="radio" name="paymentPref" value="deposit">
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay 50% deposit now</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Secure your order today, pay balance on completion</span></span>
-                            </label>
-                            <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.75rem; border:1.5px solid var(--color-border); border-radius:8px; cursor:pointer; transition:border-color 0.2s;">
-                                <input type="radio" name="paymentPref" value="pay_full">
-                                <span style="font-size:0.83rem; line-height:1.4;"><strong style="color:var(--color-stone);">Pay in full now</strong><br><span style="color:var(--color-text-muted); font-size:0.78rem;">Complete your payment today — no further balance due</span></span>
-                            </label>
-                        </div>
-                    </div>
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on +44 20 3835 2548.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
-                    <p class="quote-form-note">No payment is taken until you're ready to proceed. We'll never share your details. <a href="/privacy">Privacy Policy</a></p>
+                    <p class="quote-form-note">We'll email you all payment options — deposit, full payment, or pay later. Production and installation timelines begin from the date the deposit is received. <a href="/privacy">Privacy Policy</a></p>
                 </form>
                 <div class="quote-success" id="quoteSuccess">
                     <div class="quote-success-icon">
@@ -1777,20 +1760,6 @@
             document.getElementById('quoteError').style.display   = 'none';
             document.getElementById('quoteOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
-
-            // Payment preference listeners - update button text and border styles
-            document.querySelectorAll('input[name="paymentPref"]').forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    const label = document.getElementById('quoteSubmitLabel');
-                    var labels = { quote_only: 'Submit Quote', deposit: 'Continue to Deposit', pay_full: 'Continue to Payment' };
-                    if (label) label.textContent = labels[this.value] || 'Send Quote Request';
-                    document.querySelectorAll('input[name="paymentPref"]').forEach(function(r) {
-                        const lbl = r.closest('label');
-                        if (lbl) lbl.style.borderColor = r.checked ? 'var(--color-accent)' : 'var(--color-border)';
-                        if (lbl) lbl.style.background = r.checked ? 'rgba(139,115,85,0.04)' : 'transparent';
-                    });
-                });
-            });
         }
 
         function closeQuoteModal() {
@@ -1976,7 +1945,6 @@
                             source_page: window.location.pathname + window.location.search,
                             location: cemetery || null,
                             cemetery_id: _selectedCemeteryId || null,
-                            payment_preference: (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'deposit',
                             product: {
                                 name:        productData ? productData.name : 'Memorial',
                                 type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
@@ -1999,31 +1967,11 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        // Memorial value (base + addons + lettering) only — permit fee is
-                        // billed separately at 100% so it doesn't get split across deposit/balance.
-                        _quoteMemorialTotal = total;
-                        _quotePermitFee = parseFloat(_selectedCemeteryFee) || 0;
-                        _quoteTotal = _quoteMemorialTotal + _quotePermitFee;
                         var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
-                        var pref = (document.querySelector('input[name="paymentPref"]:checked') || {}).value || 'quote_only';
-                        // Deposit = 50% of the memorial value (base + addons + lettering)
-                        // PLUS 100% of the cemetery permit fee. Balance owed at completion
-                        // = remaining 50% of the memorial value. Stripe charges this same
-                        // split, so the modal display has to mirror it.
-                        const memorialValue = total;
-                        const permit = parseFloat(_selectedCemeteryFee) || 0;
-                        const grandTotal = memorialValue + permit;
-                        if (pref === 'quote_only') {
-                            document.getElementById('quoteSuccess').style.display = 'block';
-                            document.getElementById('quoteSuccessMsg').innerHTML =
-                                "Your quote has been submitted. Check your email — we'll be in touch within 24 hours with deposit and full payment options." + editLink + trackLink;
-                        } else if (pref === 'pay_full') {
-                            await showPaymentStep(grandTotal, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, true);
-                        } else {
-                            const depositAmount = Math.round(memorialValue * 0.5) + permit;
-                            await showPaymentStep(depositAmount, name, email, cemetery, productData ? productData.name : 'Memorial', result.invoiceId, false);
-                        }
+                        document.getElementById('quoteSuccess').style.display = 'block';
+                        document.getElementById('quoteSuccessMsg').innerHTML =
+                            "Your quote has been submitted. Check your email — we've included options to pay a 50% deposit, pay in full, or simply wait for our team to be in touch within 24 hours. Production and installation timelines begin from the date the deposit is received." + editLink + trackLink;
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }

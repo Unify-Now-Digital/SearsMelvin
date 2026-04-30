@@ -52,38 +52,14 @@ export async function onRequestPost(context) {
 }
 
 async function handleQuoteRequest(env, data, submittedAt) {
-  const { name, email, phone, cemetery, message, product = {}, location, payment_preference } = data;
+  const { name, email, phone, cemetery, message, product = {}, location } = data;
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
   const cemeteryOrLocation = cemetery || location || null;
 
-  // 0. Stripe Invoices — only create them if the customer indicated they want
-  // to pay now (deposit or pay_full). 'quote_only' is the default selection on
-  // the quote modal, so without this gate every quote request would create two
-  // unrelated Stripe invoices that the customer never asked for.
-  let stripeDepositUrl = null;
-  let stripeFullUrl = null;
-  const wantsInvoices = payment_preference === "deposit" || payment_preference === "pay_full";
-  if (env.STRIPE_SECRET_KEY && wantsInvoices) {
-    try {
-      stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location: cemeteryOrLocation,
-        isFullInvoice: false,
-      });
-    } catch (err) {
-      console.error("Stripe deposit invoice creation failed:", err);
-    }
-    try {
-      stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
-        name, email, phone, product, location: cemeteryOrLocation,
-        isFullInvoice: true,
-      });
-    } catch (err) {
-      console.error("Stripe full invoice creation failed:", err);
-    }
-  }
-
-  // 1. Supabase first — the customer email needs editToken, and the response needs invoiceId.
+  // 1. Supabase first — single source of truth. Customer should only see
+  // "submitted" if their record actually saved. The customer email needs
+  // editToken, and the response needs invoiceId.
   let invoiceId = null;
   let editToken = null;
   try {
@@ -103,7 +79,31 @@ async function handleQuoteRequest(env, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
   }
 
-  // 2. Business notification email (critical)
+  // 2. Stripe invoices — always create both (deposit + full) so the customer
+  // email can present all payment options. They are no obligation; the
+  // customer pays only if/when they're ready.
+  let stripeDepositUrl = null;
+  let stripeFullUrl = null;
+  if (env.STRIPE_SECRET_KEY) {
+    try {
+      stripeDepositUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location: cemeteryOrLocation,
+        isFullInvoice: false,
+      });
+    } catch (err) {
+      console.error("Stripe deposit invoice creation failed:", err);
+    }
+    try {
+      stripeFullUrl = await createStripeDepositInvoice(env.STRIPE_SECRET_KEY, {
+        name, email, phone, product, location: cemeteryOrLocation,
+        isFullInvoice: true,
+      });
+    } catch (err) {
+      console.error("Stripe full invoice creation failed:", err);
+    }
+  }
+
+  // 3. Business notification email (non-fatal — record is already saved)
   try {
     await sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
@@ -113,10 +113,9 @@ async function handleQuoteRequest(env, data, submittedAt) {
     });
   } catch (err) {
     console.error("Failed to send quote business email:", err);
-    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
   }
 
-  // 3. Customer confirmation email (non-critical)
+  // 4. Customer confirmation email (non-fatal)
   try {
     await sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
@@ -144,7 +143,6 @@ async function handleQuoteRequest(env, data, submittedAt) {
     const ghlExtraFields = [
       message              ? { key: "customer_message",   field_value: message } : null,
       cemetery || location ? { key: "cemetery_location",  field_value: cemetery || location } : null,
-      payment_preference   ? { key: "payment_preference", field_value: payment_preference } : null,
       product.type         ? { key: "memorial_type",      field_value: product.type } : null,
       product.font         ? { key: "font_style",         field_value: product.font } : null,
       product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
@@ -177,57 +175,17 @@ async function handleEnquiry(env, data, submittedAt) {
   // notification email used to silently say "Not specified" for half of them.
   const enquiry_type = data.enquiry_type || data.sub_type || null;
   const grave_number = data.grave_number ? String(data.grave_number).trim() : null;
+  const contact_pref = data.contact_pref || null;
+  const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
   if (!message) return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: BUSINESS_EMAIL,
-      subject: `New Enquiry — ${name}`,
-      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, submittedAt }),
-    });
-  } catch (err) {
-    console.error("Failed to send business notification email:", err);
-    return jsonResponse({ ok: false, error: "Failed to send notification email" }, 500);
-  }
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
-      subject: `We've received your enquiry — ${BUSINESS_NAME}`,
-      html: enquiryCustomerEmail({ name }),
-    });
-  } catch (err) {
-    console.error("Failed to send customer confirmation email:", err);
-  }
-  try {
-    const clickupLines = [
-      "=== WEBSITE ENQUIRY ===",
-      "",
-      "CUSTOMER",
-      `• Name: ${name}`,
-      `• Email: ${email}`,
-      `• Phone: ${phone || "Not provided"}`,
-      `• Enquiry type: ${enquiry_type || "Not specified"}`,
-      grave_number ? `• Grave: ${grave_number}` : null,
-      location ? `• Cemetery: ${location}` : null,
-      "",
-      "MESSAGE",
-      message,
-      "",
-      "---",
-      `Submitted: ${submittedAt}`,
-    ].filter(l => l !== null);
-    await createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `New Enquiry — ${name}`,
-      description: clickupLines.join("\n"),
-      listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp task:", err);
-  }
+
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
   const isShortlist = enquiry_type === "shortlist-enquiry";
   const channel = isShortlist ? "shortlist" : "contact";
+
+  // 1. Supabase first — save record before sending any emails. If the save
+  // fails the customer should see an error (and not get a confirmation email
+  // for a record that doesn't exist).
   try {
     // Merge any structured details payload with our own grave_number so reports
     // can query it cleanly. For shortlist channels keep the items list shape.
@@ -243,7 +201,7 @@ async function handleEnquiry(env, data, submittedAt) {
       sub_type: enquiry_type || null,
       source_page: data.source_page || null,
       message,
-      contact_pref: data.contact_pref || null,
+      contact_pref,
       location,
       cemetery_id: data.cemetery_id || null,
       // Prefer the date+time pair; fall back to ISO for legacy callers. The
@@ -252,12 +210,69 @@ async function handleEnquiry(env, data, submittedAt) {
         ? new Date(`${data.appointment_date}T${data.appointment_time}:00Z`).toISOString()
         : (data.appointment_at || null),
       appointment_kind: data.appointment_kind || null,
-      photo_urls: Array.isArray(data.photo_urls) ? data.photo_urls : null,
+      photo_urls,
       details: mergedDetails,
     });
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
+  }
+
+  const enquiryTypeLabel = formatEnquiryTypeLabel(enquiry_type);
+
+  // 2. Business notification email (non-fatal — record is already saved).
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: BUSINESS_EMAIL,
+      subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
+      html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
+    });
+  } catch (err) {
+    console.error("Failed to send business notification email:", err);
+  }
+
+  // 3. Customer confirmation email — copy of their submission + receipt note.
+  try {
+    const customerSubjectExtra = grave_number
+      ? ` — Grave ${grave_number}`
+      : (location ? ` — ${location}` : "");
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
+      html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
+    });
+  } catch (err) {
+    console.error("Failed to send customer confirmation email:", err);
+  }
+
+  // 4. ClickUp task (non-fatal).
+  try {
+    const clickupLines = [
+      "=== WEBSITE ENQUIRY ===",
+      "",
+      "CUSTOMER",
+      `• Name: ${name}`,
+      `• Email: ${email}`,
+      `• Phone: ${phone || "Not provided"}`,
+      `• Enquiry type: ${enquiryTypeLabel}`,
+      grave_number ? `• Grave: ${grave_number}` : null,
+      location ? `• Cemetery: ${location}` : null,
+      "",
+      "MESSAGE",
+      message,
+      "",
+      "---",
+      `Submitted: ${submittedAt}`,
+    ].filter(l => l !== null);
+    await createClickUpTask(env.CLICKUP_API_KEY, {
+      name: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
+      description: clickupLines.join("\n"),
+      listId: CLICKUP_LIST_ID,
+    });
+  } catch (err) {
+    console.error("Failed to create ClickUp task:", err);
   }
 
   // If the contact form picked a slot, create the calendar event too — otherwise
@@ -321,53 +336,8 @@ async function handleAppointment(env, data, submittedAt) {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  // 1. Google Calendar event
-  let calendarLink = null;
-  try {
-    calendarLink = await createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel });
-  } catch (err) {
-    console.error("Google Calendar event creation failed:", err);
-  }
-
-  // 2. Business notification email
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: BUSINESS_EMAIL,
-      subject: `New Appointment Request — ${typeLabel} — ${name}`,
-      html: appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }),
-    });
-  } catch (err) {
-    console.error("Failed to send appointment business email:", err);
-    return jsonResponse({ ok: false, error: "Failed to send notification" }, 500);
-  }
-
-  // 3. Customer confirmation email
-  try {
-    await sendEmail(env.RESEND_API_KEY, {
-      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to: email,
-      subject: `Appointment request received — ${BUSINESS_NAME}`,
-      html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
-    });
-  } catch (err) {
-    console.error("Failed to send appointment customer email:", err);
-  }
-
-  // 4. ClickUp task
-  try {
-    await createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `Appointment — ${typeLabel} — ${name}`,
-      description: `=== APPOINTMENT REQUEST ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n\nAPPOINTMENT\n• Type: ${typeLabel}\n• Date: ${dateFormatted}\n• Time: ${appointment_time}\n• Notes: ${notes || "None"}\n\n---\nSubmitted: ${submittedAt}`,
-      listId: CLICKUP_LIST_ID,
-    });
-  } catch (err) {
-    console.error("Failed to create ClickUp appointment task:", err);
-  }
-
-  // 5. Supabase — phone consults route to channel='call', everything else to 'appointment'.
+  // 1. Supabase first — single source of truth.
   const apptChannel = appointment_type === "phone" ? "call" : "appointment";
-  // Combine date+time into an ISO timestamp (Europe/London local clock).
   const appointmentAtIso = appointment_date && appointment_time
     ? new Date(`${appointment_date}T${appointment_time}:00`).toISOString()
     : (data.appointment_at || null);
@@ -384,6 +354,49 @@ async function handleAppointment(env, data, submittedAt) {
   } catch (err) {
     console.error("Supabase appointment insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
+  }
+
+  // 2. Google Calendar event (non-fatal)
+  let calendarLink = null;
+  try {
+    calendarLink = await createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel });
+  } catch (err) {
+    console.error("Google Calendar event creation failed:", err);
+  }
+
+  // 3. Business notification email (non-fatal)
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: BUSINESS_EMAIL,
+      subject: `New Appointment Request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${name}`,
+      html: appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }),
+    });
+  } catch (err) {
+    console.error("Failed to send appointment business email:", err);
+  }
+
+  // 4. Customer confirmation email
+  try {
+    await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      subject: `Appointment request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${BUSINESS_NAME}`,
+      html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
+    });
+  } catch (err) {
+    console.error("Failed to send appointment customer email:", err);
+  }
+
+  // 5. ClickUp task
+  try {
+    await createClickUpTask(env.CLICKUP_API_KEY, {
+      name: `Appointment — ${typeLabel} — ${name}`,
+      description: `=== APPOINTMENT REQUEST ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n\nAPPOINTMENT\n• Type: ${typeLabel}\n• Date: ${dateFormatted}\n• Time: ${appointment_time}\n• Notes: ${notes || "None"}\n\n---\nSubmitted: ${submittedAt}`,
+      listId: CLICKUP_LIST_ID,
+    });
+  } catch (err) {
+    console.error("Failed to create ClickUp appointment task:", err);
   }
 
   // 6. GHL
@@ -946,13 +959,20 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
           </td>
         </tr>
 
-        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment CTA buttons -->
+        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment options header -->
         <tr>
-          <td style="padding:0 28px 16px;">
+          <td style="padding:0 28px 12px;">
+            <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">Ready to proceed?</p>
+            <p style="font-family:Arial,sans-serif;font-size:13px;color:#555555;margin:0;line-height:1.6;">Choose any of the options below — there's no obligation, and you can also wait for our team to call you.</p>
+          </td>
+        </tr>
+        <!-- Payment CTA buttons -->
+        <tr>
+          <td style="padding:0 28px 12px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               ${stripeDepositUrl ? `<tr>
                 <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;">
-                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay Deposit + Permit Fee &rarr;</a>
+                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay 50% Deposit + Permit Fee &rarr;</a>
                 </td>
               </tr>
               <tr><td style="height:10px;"></td></tr>` : ""}
@@ -960,22 +980,23 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
                 <td align="center" style="background-color:#2C2C2C;border-radius:8px;padding:0;">
                   <a href="${stripeFullUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay in Full &rarr;</a>
                 </td>
-              </tr>` : ""}
+              </tr>
+              <tr><td style="height:10px;"></td></tr>` : ""}
               <tr>
-                <td style="padding:10px 0 0;text-align:center;">
-                  <span style="font-family:Arial,sans-serif;color:#888888;font-size:12px;">No obligation — pay only when you're ready to proceed.</span>
+                <td align="center" style="background-color:#ffffff;border:1.5px solid #E0DCD5;border-radius:8px;padding:0;">
+                  <span style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#2C2C2C;text-align:center;">Or simply reply — we'll be in touch within 24 hours</span>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-        <!-- Outstanding balance note -->
+        <!-- Deposit timeline note -->
         <tr>
           <td style="padding:0 28px 16px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF8F5;border-radius:6px;border-left:3px solid #8B7355;">
               <tr>
                 <td style="padding:12px 14px;font-family:Arial,sans-serif;font-size:13px;color:#555555;line-height:1.6;">
-                  <strong style="color:#2C2C2C;">Please note:</strong> Outstanding balance may be required if modifications are made to the memorial after deposit. Your installation timeline begins once payment is confirmed — we'll be in touch to discuss dates and next steps.
+                  <strong style="color:#2C2C2C;">Please note:</strong> Production and installation timelines begin from the date the deposit is received. Outstanding balance may be required if modifications are made to the memorial after the deposit is paid.
                 </td>
               </tr>
             </table>
@@ -1028,7 +1049,31 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
 </html>`;
 }
 
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, submittedAt }) {
+// Render the submission detail rows shared by the business + customer emails.
+// Keeping the markup in a helper means both inboxes get the same field list,
+// so the customer copy is genuinely a record of what they sent.
+function enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls }) {
+  const contactPrefLabels = { email: "Email", phone: "Phone call", appointment: "Appointment" };
+  const rows = [];
+  if (enquiry_type) {
+    rows.push(`<tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Enquiry type</td><td style="padding:5px 0;color:#1A1A1A;">${esc(formatEnquiryTypeLabel(enquiry_type))}</td></tr>`);
+  }
+  if (location) {
+    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>`);
+  }
+  if (grave_number) {
+    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Grave</td><td style="padding:5px 0;color:#1A1A1A;">${esc(grave_number)}</td></tr>`);
+  }
+  if (contact_pref) {
+    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Preferred reply</td><td style="padding:5px 0;color:#1A1A1A;">${esc(contactPrefLabels[contact_pref] || contact_pref)}</td></tr>`);
+  }
+  if (Array.isArray(photo_urls) && photo_urls.length > 0) {
+    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Photos attached</td><td style="padding:5px 0;color:#1A1A1A;">${photo_urls.length} file${photo_urls.length === 1 ? "" : "s"}</td></tr>`);
+  }
+  return rows.join("");
+}
+
+function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -1039,11 +1084,11 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
       <tr><td style="background-color:#2C2C2C;padding:18px 28px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
-          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">New Enquiry</span></td>
+          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">${esc(formatEnquiryTypeLabel(enquiry_type))}</span></td>
         </tr></table>
       </td></tr>
       <tr><td style="padding:26px 28px 4px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">New Website Enquiry</h2>
+        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">${esc(formatEnquiryTypeLabel(enquiry_type))} enquiry</h2>
         <p style="color:#AAAAAA;font-size:12px;margin:0;font-family:Arial,sans-serif;">Received ${esc(submittedAt)}</p>
       </td></tr>
       <tr><td style="padding:16px 28px 0;">
@@ -1052,11 +1097,10 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
       <tr><td style="padding:16px 28px 0;">
         <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 12px 0;font-family:Arial,sans-serif;">Customer</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
-          <tr><td width="120" style="padding:5px 0;color:#999999;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
+          <tr><td width="130" style="padding:5px 0;color:#999999;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
           <tr><td style="padding:5px 0;color:#999999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
           <tr><td style="padding:5px 0;color:#999999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
-          ${enquiry_type ? `<tr><td style="padding:5px 0;color:#999999;">Enquiry type</td><td style="padding:5px 0;color:#1A1A1A;">${esc(enquiry_type.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()))}</td></tr>` : ""}
-          ${grave_number ? `<tr><td style="padding:5px 0;color:#999999;">Grave</td><td style="padding:5px 0;color:#1A1A1A;">${esc(grave_number)}</td></tr>` : ""}
+          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
         </table>
       </td></tr>
       <tr><td style="padding:12px 28px 28px;">
@@ -1074,8 +1118,11 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
 </body></html>`;
 }
 
-function enquiryCustomerEmail({ name }) {
-  const firstName = name.split(" ")[0];
+// Customer copy = receipt notice + verbatim copy of what they submitted, so
+// they can see exactly what reached us. Subject line carries the enquiry type
+// and an extra detail (grave / cemetery) so it stands out in their inbox.
+function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }) {
+  const firstName = (name || "").split(" ")[0];
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -1084,12 +1131,34 @@ function enquiryCustomerEmail({ name }) {
   <tr><td align="center">
     <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#ffffff;border-radius:10px;overflow:hidden;">
       <tr><td style="background-color:#2C2C2C;padding:20px 28px;">
-        <span style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></span>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
+          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">Submission Received</span></td>
+        </tr></table>
       </td></tr>
-      <tr><td style="padding:30px 28px 24px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
-        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 16px 0;font-family:Arial,sans-serif;">We've received your enquiry and one of our team will be in contact within 24 hours.</p>
-        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,sans-serif;">If you have any urgent questions in the meantime, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
+      <tr><td style="padding:30px 28px 6px;">
+        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">Thank you, ${esc(firstName)}.</h2>
+        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within 24 hours.</p>
+        <p style="color:#888888;font-size:13px;line-height:1.6;margin:0 0 18px 0;font-family:Arial,sans-serif;">A copy of your enquiry is below for your records.</p>
+      </td></tr>
+      <tr><td style="padding:0 28px 8px;">
+        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your details</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
+          <tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
+          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Email</td><td style="padding:5px 0;color:#1A1A1A;">${esc(email)}</td></tr>
+          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
+          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
+          ${submittedAt ? `<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Submitted</td><td style="padding:5px 0;color:#1A1A1A;">${esc(submittedAt)}</td></tr>` : ""}
+        </table>
+      </td></tr>
+      <tr><td style="padding:14px 28px 8px;">
+        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your message</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:18px 28px 24px;">
+        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 6px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
         <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
       </td></tr>
       <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
@@ -1155,6 +1224,38 @@ function splitName(full) {
     first_name: parts[0] || null,
     last_name: parts.length > 1 ? parts.slice(1).join(" ") : "-",
   };
+}
+
+// Pretty-print enquiry type slugs ("new-memorial" → "New Memorial").
+// Used in subject lines and email bodies so renovation submissions don't all
+// read as "New Memorial" (the first option in the picker).
+function formatEnquiryTypeLabel(slug) {
+  if (!slug) return "General";
+  return String(slug).replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Best-effort: resolve a free-text cemetery name to a row in `public.cemeteries`.
+// Falls back to null so reports can flag unmatched submissions for follow-up.
+async function lookupCemeteryIdByName(env, location) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return null;
+  if (!location || typeof location !== "string") return null;
+  const trimmed = location.trim();
+  if (trimmed.length < 3) return null;
+  const headers = supabaseHeaders(env);
+  // Postgres `ilike` with the full string first (exact-ish match), then loosen.
+  const tries = [
+    `name=ilike.${encodeURIComponent(trimmed)}`,
+    `name=ilike.${encodeURIComponent(trimmed + "%")}`,
+    `name=ilike.${encodeURIComponent("%" + trimmed + "%")}`,
+  ];
+  for (const filter of tries) {
+    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&select=id&limit=1`;
+    const res = await fetch(url, { headers: { apikey: headers.apikey, Authorization: headers.Authorization } });
+    if (!res.ok) continue;
+    const rows = await res.json();
+    if (rows?.[0]?.id) return rows[0].id;
+  }
+  return null;
 }
 
 // Upsert a retail contact into `people`, deduped by email. Never sets
@@ -1279,6 +1380,19 @@ async function createEnquiry(env, payload) {
     }));
   }
 
+  // If the front-end didn't pass a cemetery_id (customer typed the name but
+  // didn't pick from the autocomplete dropdown), try to resolve it server-side
+  // so reports can join on the FK. Free-text-only submissions still save with
+  // cemetery_id=null and surface in the admin "unmatched cemetery" view.
+  let resolvedCemeteryId = payload.cemetery_id ?? null;
+  if (!resolvedCemeteryId && payload.location) {
+    try {
+      resolvedCemeteryId = await lookupCemeteryIdByName(env, payload.location);
+    } catch (err) {
+      console.error("Cemetery name lookup failed (non-fatal):", err);
+    }
+  }
+
   const headers = supabaseHeaders(env);
   const enqBody = {
     organization_id: env.SM_ORG_ID,
@@ -1289,7 +1403,7 @@ async function createEnquiry(env, payload) {
     message: payload.message ?? null,
     contact_pref: payload.contact_pref ?? null,
     location: payload.location ?? null,
-    cemetery_id: payload.cemetery_id ?? null,
+    cemetery_id: resolvedCemeteryId,
     appointment_at: payload.appointment_at ?? null,
     appointment_kind: payload.appointment_kind ?? null,
     photo_urls: Array.isArray(payload.photo_urls) && payload.photo_urls.length > 0 ? payload.photo_urls : null,
