@@ -1261,6 +1261,12 @@ async function lookupCemeteryIdByName(env, location) {
 // Upsert a retail contact into `people`, deduped by email. Never sets
 // is_customer — that flag means "has paid at least once" and is owned
 // exclusively by the Stripe webhook (handlePaymentSucceeded).
+//
+// Lookup is email-only (not scoped to organization_id). The `people` table
+// has a global UNIQUE index on email, so a contact registered under any
+// tenant must be reused — otherwise the INSERT below would 23505 and abort
+// the entire submission. The enquiry row itself carries SM_ORG_ID, so
+// multi-tenant reporting is unaffected by sharing the people record.
 export async function upsertPerson(env, { name, email, phone }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return null;
   if (!email) return null;
@@ -1269,7 +1275,7 @@ export async function upsertPerson(env, { name, email, phone }) {
   const { first_name, last_name } = splitName(name);
 
   const existingRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&organization_id=eq.${env.SM_ORG_ID}&select=id,is_customer`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer&limit=1`,
     { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
   );
   if (!existingRes.ok) throw new Error(`Supabase people lookup error ${existingRes.status}: ${await existingRes.text()}`);
@@ -1301,7 +1307,23 @@ export async function upsertPerson(env, { name, email, phone }) {
       phone: phone || null,
     }),
   });
-  if (!insertRes.ok) throw new Error(`Supabase people insert error ${insertRes.status}: ${await insertRes.text()}`);
+  // Race-condition fallback: a concurrent submission for the same email
+  // could win the INSERT. If we hit a duplicate-key error, re-run the
+  // lookup and use the row that's now there.
+  if (!insertRes.ok) {
+    const errBody = await insertRes.text();
+    if (insertRes.status === 409 || /duplicate key|23505/i.test(errBody)) {
+      const refetch = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer&limit=1`,
+        { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+      );
+      if (refetch.ok) {
+        const row = (await refetch.json())[0];
+        if (row?.id) return { id: row.id, is_customer: !!row.is_customer };
+      }
+    }
+    throw new Error(`Supabase people insert error ${insertRes.status}: ${errBody}`);
+  }
   const inserted = (await insertRes.json())[0] || null;
   return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
 }
