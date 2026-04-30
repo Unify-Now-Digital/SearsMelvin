@@ -144,7 +144,7 @@
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .showroom-banner ~ .trust-bar { margin-top: 96px; }
-        .trust-bar + .hero { padding-top: 4rem; }
+        .trust-bar + .hero { padding-top: 2.5rem; }
         #navbar { top: 36px; }
 
         /* Hero */
@@ -167,7 +167,7 @@
         .btn-accent:hover { background-color: var(--color-stone); }
 
         .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
-        .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 4px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.15); position: relative; background: white; }
+        .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px rgba(60,50,40,0.12); position: relative; background: linear-gradient(145deg, #efeae2 0%, #d8d2c8 100%); }
         .hero-image svg, .hero-image img { width: 100%; height: 100%; object-fit: contain; }
         .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
         .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: rgba(255,255,255,0.9); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
@@ -176,11 +176,12 @@
         .floating-badge small { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
 
         /* Trust Bar */
-        .trust-bar { background-color: var(--color-cream); padding: 1.25rem 2rem; margin-top: 60px; border-bottom: 1px solid var(--color-border); }
-        .trust-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
-        .trust-item { display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: var(--color-stone); }
-        .trust-item svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; flex-shrink: 0; }
-        .trust-item span { font-size: 0.875rem; letter-spacing: 0.01em; }
+        .trust-bar { background-color: var(--color-cream); padding: 0.9rem 2rem; margin-top: 60px; border-top: 1px solid var(--color-border); }
+        .trust-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .trust-item { display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--color-stone); position: relative; padding: 0.15rem 0; }
+        .trust-item + .trust-item::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 1px; background: var(--color-border); }
+        .trust-item svg { width: 20px; height: 20px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; flex-shrink: 0; }
+        .trust-item span { font-size: 0.85rem; letter-spacing: 0.01em; }
 
         /* Section Styles */
         .section-label { font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 1rem; }
