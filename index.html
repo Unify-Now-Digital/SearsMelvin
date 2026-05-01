@@ -168,7 +168,8 @@
 
         .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
         .hero-image { width: 100%; aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px rgba(60,50,40,0.12); position: relative; background: linear-gradient(145deg, #efeae2 0%, #d8d2c8 100%); }
-        .hero-image svg, .hero-image img { width: 100%; height: 100%; object-fit: contain; }
+        .hero-image svg { width: 100%; height: 100%; object-fit: contain; }
+        .hero-image img { width: 100%; height: 100%; object-fit: cover; }
         .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
         .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: rgba(255,255,255,0.9); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
         .floating-badge { position: absolute; bottom: -30px; right: -30px; width: 140px; height: 140px; background-color: var(--color-accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; animation: float 4s ease-in-out infinite; z-index: 3; }
@@ -589,7 +590,8 @@
             </div>
             <div class="hero-visual">
                 <div class="hero-image" id="heroImage">
-                    <span class="hero-image-label">Bespoke Granite Memorial</span>
+                    <img src="/images/installed/gioiosa-family-kerb-set.webp" alt="Recently installed kerb-set memorial for the Gioiosa family" loading="eager" fetchpriority="high" width="1086" height="1448">
+                    <span class="hero-image-label">Recent Installation — The Gioiosa Family</span>
                 </div>
                 <div class="floating-badge">
                     <small>From</small>
@@ -1284,22 +1286,8 @@
                     grid.innerHTML = html;
                 }
 
-                // Populate hero image with The Westminster kerb set
-                var heroEl = document.getElementById('heroImage');
-                if (heroEl) {
-                    var featured = products.find(function(p) { return p.slug === 'the-whitby' && p.image_url; })
-                        || products.find(function(p) { return p.is_featured && p.image_url; })
-                        || products.find(function(p) { return p.image_url; });
-                    if (featured && featured.image_url) {
-                        var img = document.createElement('img');
-                        img.src = featured.image_url;
-                        img.alt = featured.name || 'Bespoke Memorial';
-                        img.loading = 'eager';
-                        heroEl.insertBefore(img, heroEl.firstChild);
-                        var label = heroEl.querySelector('.hero-image-label');
-                        if (label && featured.name) label.textContent = featured.name;
-                    }
-                }
+                // Hero image is a hard-coded recent installation (Gioiosa family kerb set);
+                // see the <img> in the hero markup. No dynamic override.
 
                 // Populate about image with a different product photo
                 var aboutEl = document.getElementById('aboutImage');
@@ -1320,7 +1308,12 @@
         }
 
         // ==================== RECENT INSTALLATIONS ====================
+        // `real: true` entries are actual installation photos served from the
+        // site itself; everything else is a stock product render flagged as a
+        // placeholder until we get on-site photography for that family.
         const INSTALLATIONS = [
+            { image: '/images/installed/gioiosa-family-kerb-set.webp', customer: 'The Gioiosa Family', cemetery: 'Recent installation', real: true },
+            { image: '/images/installed/smith-family-memorial.webp',   customer: 'The Smith Family',   cemetery: 'Recent installation', real: true },
             { image: 'lawn-headstone.jpg',                 customer: 'The Atkinson Family', cemetery: 'New Southgate Cemetery' },
             { image: 'kerb-set-with-vase.png',             customer: 'Mr & Mrs Patel',      cemetery: 'Hendon Cemetery' },
             { image: 'peon-top-classic.png',               customer: "The O'Brien Family",  cemetery: 'East Finchley Cemetery' },
@@ -1344,11 +1337,12 @@
             const SUPA_PUB = 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/';
             const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
             const pin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-            const card = ({ image, customer, cemetery }) =>
+            const resolveSrc = image => image.startsWith('/') ? image : (SUPA_PUB + encodeURIComponent(image));
+            const card = ({ image, customer, cemetery, real }) =>
                 '<article class="install-card" aria-roledescription="slide">'
                 +   '<div class="install-image">'
-                +     '<span class="placeholder-tag">Placeholder</span>'
-                +     '<img src="' + SUPA_PUB + encodeURIComponent(image) + '" alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
+                +     (real ? '' : '<span class="placeholder-tag">Placeholder</span>')
+                +     '<img src="' + resolveSrc(image) + '" alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
                 +   '</div>'
                 +   '<div class="install-info">'
                 +     '<p class="install-customer">' + esc(customer) + '</p>'
