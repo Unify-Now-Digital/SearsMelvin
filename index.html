@@ -124,12 +124,6 @@
         .mobile-menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
         .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-        /* Showroom Banner */
-        .showroom-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 101; background: var(--color-stone); color: white; font-size: 0.85rem; text-align: center; padding: 0.6rem 1rem; }
-        .showroom-banner-inner { display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
-        .showroom-banner-inner svg { flex-shrink: 0; }
-        .showroom-banner-link { color: var(--color-accent-light); font-weight: 600; margin-left: 0.5rem; transition: color 0.2s; }
-        .showroom-banner-link:hover { color: white; }
         /* Mobile Bottom Navigation */
         .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
@@ -143,9 +137,7 @@
         .mobile-nav-item.primary.active span { color: var(--color-accent); }
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
-        .showroom-banner ~ .trust-bar { margin-top: 96px; }
         .trust-bar + .hero { padding-top: 2.5rem; }
-        #navbar { top: 36px; }
 
         /* Hero */
         .hero { min-height: 100vh; display: flex; align-items: center; padding: 7rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
@@ -360,8 +352,6 @@
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
         .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
-        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
-
         /* Recent Installations Marquee */
         .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; position: relative; }
         .installations .section-header { padding: 0 2rem; }
@@ -374,7 +364,6 @@
         .install-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.1); }
         .install-image { aspect-ratio: 4/3; background: linear-gradient(180deg, #e8e4dd 0%, #d4cfc6 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .install-image img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        .install-image .placeholder-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(0,0,0,0.55); color: white; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 20px; z-index: 1; }
         .install-info { padding: 1.1rem 1.25rem 1.25rem; }
         .install-customer { font-family: var(--font-display); font-size: 1.15rem; color: var(--color-stone); margin-bottom: 0.25rem; }
         .install-cemetery { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-accent); }
@@ -544,18 +533,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Top Banner -->
-    <div class="showroom-banner">
-        <div class="showroom-banner-inner">
-            <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
-            <span class="banner-divider">|</span>
-            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                020 3835 2548
-            </a>
         </div>
     </div>
 
@@ -1308,13 +1285,13 @@
         }
 
         // ==================== RECENT INSTALLATIONS ====================
-        // `real: true` entries are actual installation photos served from the
-        // site itself; everything else is a stock product render flagged as a
-        // placeholder until we get on-site photography for that family.
+        // Local-path entries (starting with `/`) are real on-site installation
+        // photos; everything else is a stock product render served from the
+        // public Supabase product-images bucket.
         const INSTALLATIONS = [
-            { image: '/images/installed/gioiosa-family-kerb-set.webp',     customer: 'The Gioiosa Family',         cemetery: 'Recent installation', real: true },
-            { image: '/images/installed/smith-family-memorial.webp',       customer: 'The Smith Family',           cemetery: 'Recent installation', real: true },
-            { image: '/images/installed/dawkins-cook-family-memorial.webp', customer: 'The Dawkins & Cook Family', cemetery: 'Recent installation', real: true },
+            { image: '/images/installed/gioiosa-family-kerb-set.webp',      customer: 'The Gioiosa Family',         cemetery: 'Recent installation' },
+            { image: '/images/installed/smith-family-memorial.webp',        customer: 'The Smith Family',           cemetery: 'Recent installation' },
+            { image: '/images/installed/dawkins-cook-family-memorial.webp', customer: 'The Dawkins & Cook Family',  cemetery: 'Recent installation' },
             { image: 'lawn-headstone.jpg',                 customer: 'The Abood Family',           cemetery: 'New Southgate Cemetery' },
             { image: 'kerb-set-with-vase.png',             customer: 'The McKay Family',           cemetery: 'Hendon Cemetery' },
             { image: 'peon-top-classic.png',               customer: 'The Rivera Cordoba Family',  cemetery: 'East Finchley Cemetery' },
@@ -1324,7 +1301,6 @@
             { image: 'kerb-set.jpg',                       customer: 'The Clarke Family',          cemetery: 'Highgate Cemetery' },
             { image: 'open-book-on-plinth.png',            customer: 'The Carter Family',          cemetery: 'Lambeth Cemetery' },
             { image: 'polished-desk-tablet.png',           customer: 'The Rider Family',           cemetery: 'Enfield Crematorium' },
-            { image: 'sandstone-churchyard-memorial.png',  customer: 'The Thomas Family',          cemetery: "St Mary's Churchyard, East Barnet" },
             { image: 'tapered-churchyard-memorial.png',    customer: 'The Adamson Family',         cemetery: 'All Saints Churchyard, Edmonton' }
         ];
 
@@ -1339,10 +1315,9 @@
             const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
             const pin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
             const resolveSrc = image => image.startsWith('/') ? image : (SUPA_PUB + encodeURIComponent(image));
-            const card = ({ image, customer, cemetery, real }) =>
+            const card = ({ image, customer, cemetery }) =>
                 '<article class="install-card" aria-roledescription="slide">'
                 +   '<div class="install-image">'
-                +     (real ? '' : '<span class="placeholder-tag">Placeholder</span>')
                 +     '<img src="' + resolveSrc(image) + '" alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
                 +   '</div>'
                 +   '<div class="install-info">'
