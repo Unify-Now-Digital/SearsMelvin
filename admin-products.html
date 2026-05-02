@@ -213,7 +213,6 @@
         .product-image svg { width: 100%; height: 100%; }
         .product-image img { width: 100%; height: 100%; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
-        .product-badge.premium { background: var(--color-stone); }
         .product-badge.new { background: var(--color-success); }
         .product-info { padding: 1.25rem; }
         .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.3rem; display: block; }
@@ -874,7 +873,6 @@
                 let badge = '';
                 if (product.is_active === false) badge = '<span class="product-badge admin-hidden-badge">Hidden</span>';
                 else if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
-                else if (price >= 3000) badge = '<span class="product-badge premium">Premium</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
                 const colourDots = state.colours.map(c =>
                     '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
