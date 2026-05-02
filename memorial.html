@@ -1389,9 +1389,6 @@
             if (product.is_featured) {
                 badge.textContent = 'Popular Choice';
                 badge.style.display = '';
-            } else if (parseFloat(product.base_price) >= 3000) {
-                badge.textContent = 'Premium';
-                badge.style.display = '';
             }
 
             // Thumbnails. Use a data-url attribute + delegated click handler instead of
