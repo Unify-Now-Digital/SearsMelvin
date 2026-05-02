@@ -416,7 +416,7 @@
     <!-- Admin banner -->
     <div style="background:#2C2C2C;color:#fff;padding:0.6rem 1.25rem;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;font-size:0.85rem;position:sticky;top:0;z-index:1000;flex-wrap:wrap;gap:0.5rem;">
         <span><strong style="background:#c0392b;padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>All products view &mdash; includes hidden &amp; inactive items</span>
-        <a href="/admin.html" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to Admin Dashboard</a>
+        <a href="/admin" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to Admin Dashboard</a>
     </div>
     <nav>
         <a href="/" class="logo">
@@ -468,7 +468,7 @@
 
     <header class="page-header">
         <div class="breadcrumb">
-            <a href="/admin.html">Admin</a><span>/</span><span>All Products</span>
+            <a href="/admin">Admin</a><span>/</span><span>All Products</span>
         </div>
         <h1 class="reveal">All Products</h1>
         <p class="reveal reveal-delay-1">Admin view of every product in the catalogue, including hidden and inactive items.</p>
@@ -568,12 +568,12 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="memorials.html" class="search-quick-link">Browse Memorials</a>
-                        <a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a>
-                        <a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a>
-                        <a href="faq.html" class="search-quick-link">FAQs</a>
-                        <a href="contact.html" class="search-quick-link">Get a Quote</a>
-                        <a href="permit-checker.html" class="search-quick-link">Permit Info</a>
+                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a>
+                        <a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a>
+                        <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
                 </div>
             </div>
@@ -729,7 +729,7 @@
         // ==================== ADMIN AUTH GATE ====================
         const ADMIN_TOKEN = localStorage.getItem('admin_token');
         if (!ADMIN_TOKEN) {
-            window.location.href = '/admin.html';
+            window.location.href = '/admin';
         }
 
         // ==================== SUPABASE CONFIG ====================
@@ -776,7 +776,7 @@
                 if (!productsRes || !productsRes.ok) {
                     if (productsRes && productsRes.error === 'Unauthorized') {
                         localStorage.removeItem('admin_token');
-                        window.location.href = '/admin.html';
+                        window.location.href = '/admin';
                         return;
                     }
                     throw new Error((productsRes && productsRes.error) || 'Failed to load products');
@@ -1364,13 +1364,13 @@ function declineCookies() {
         // ==================== SITE SEARCH ==
 
         const searchFaqData = [
-            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
-            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "faq.html#permits" },
-            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "faq.html#pricing" },
-            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "faq.html#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "contact.html" },
-            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "memorials.html" },
-            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "care-guide.html" },
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
 
         let searchTimeout;
@@ -1391,7 +1391,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="memorials.html" class="search-quick-link">Browse Memorials</a><a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a><a href="faq.html" class="search-quick-link">FAQs</a><a href="contact.html" class="search-quick-link">Get a Quote</a><a href="permit-checker.html" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1429,7 +1429,7 @@ function declineCookies() {
                         var imageHTML = product.image_url
                             ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="/memorial?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }
@@ -1450,7 +1450,7 @@ function declineCookies() {
             }
 
             if (!html) {
-                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="memorials.html" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
             }
 
             resultsContainer.innerHTML = html;
