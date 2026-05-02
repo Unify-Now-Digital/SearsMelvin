@@ -84,6 +84,7 @@
             --color-cream: #FAF8F5;
             --color-warm: #E8E4DD;
             --color-accent: #8B7355;
+            --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
             --color-text-muted: #595959;
@@ -116,12 +117,12 @@
         .logo-icon { width: 28px; height: 36px; }
         .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
         .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
-        .nav-links a:hover, .nav-links a.active { color: var(--color-accent); }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
         .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
-        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent); font-weight: 500; }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
         .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
         .mobile-menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
@@ -132,20 +133,20 @@
         .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
-        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent); }
+        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
         .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .mobile-nav-item span { font-size: 0.65rem; letter-spacing: 0.02em; text-transform: uppercase; }
         .mobile-nav-item.primary { color: white; }
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
-        .mobile-nav-item.primary.active span { color: var(--color-accent); }
+        .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         /* Breadcrumb */
         .breadcrumb-bar { padding: 5.5rem 2rem 1rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
         .breadcrumb { display: flex; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text-muted); max-width: 1400px; margin: 0 auto; }
-        .breadcrumb a { color: var(--color-accent); transition: color 0.2s; }
+        .breadcrumb a { color: var(--color-accent-dark); transition: color 0.2s; }
         .breadcrumb a:hover { color: var(--color-stone); }
 
         /* Product Layout */
@@ -172,7 +173,7 @@
 
         /* Product Info */
         .product-info { padding-top: 0.5rem; }
-        .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
+        .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.5rem; }
         .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
         
 
@@ -262,7 +263,7 @@
         .addon-card input { display: none; }
         .addon-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem; }
         .addon-name { font-weight: 600; color: var(--color-stone); font-size: 0.95rem; }
-        .addon-price { color: var(--color-accent); font-weight: 600; }
+        .addon-price { color: var(--color-accent-dark); font-weight: 600; }
         .addon-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
         .addon-check { width: 22px; height: 22px; border: 2px solid var(--color-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; margin-left: 0.5rem; }
         .addon-card.selected .addon-check { background: var(--color-accent); border-color: var(--color-accent); }
@@ -356,7 +357,7 @@
         .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
         .quote-modal-close svg { width: 22px; height: 22px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .quote-config-summary { margin: 1.25rem 1.75rem; padding: 1rem 1.125rem; background: var(--color-cream); border-radius: 8px; border: 1px solid var(--color-border); font-size: 0.85rem; }
-        .quote-config-summary h3 { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); font-weight: 700; margin-bottom: 0.6rem; }
+        .quote-config-summary h3 { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); font-weight: 700; margin-bottom: 0.6rem; }
         .quote-config-row { display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--color-text-muted); }
         .quote-config-row span:last-child { color: var(--color-stone); font-weight: 500; }
         .quote-config-total { display: flex; justify-content: space-between; padding: 0.5rem 0 0; margin-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 0.85rem; }
@@ -378,12 +379,12 @@
         .cem-suggestion-area { font-size: 0.75rem; color: var(--color-text-muted); }
         .cem-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 3px; background: var(--color-warm); color: var(--color-text-muted); }
         #qCemeteryMap { height: 200px; border-radius: 6px; margin-top: 0.5rem; display: none; }
-        .quote-required { color: var(--color-accent); }
+        .quote-required { color: var(--color-accent-dark); }
         .quote-submit-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.25rem; }
         .quote-submit-btn:hover { background: var(--color-stone-light); }
         .quote-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .quote-form-note { margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
-        .quote-form-note a { color: var(--color-accent); }
+        .quote-form-note a { color: var(--color-accent-dark); }
         .quote-success { display: none; text-align: center; padding: 2.5rem 2rem; }
         .quote-success-icon { width: 56px; height: 56px; background: var(--color-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
         .quote-success-icon svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
@@ -429,7 +430,7 @@
         .save-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); z-index: 200; background: var(--color-stone); color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; pointer-events: none; max-width: 420px; width: max-content; }
         .save-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
         .save-toast svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 2; flex-shrink: 0; }
-        .save-toast a { color: var(--color-accent); font-weight: 500; text-decoration: underline; white-space: nowrap; }
+        .save-toast a { color: var(--color-accent-dark); font-weight: 500; text-decoration: underline; white-space: nowrap; }
         @media (max-width: 600px) { .save-toast { bottom: 140px; max-width: calc(100vw - 2rem); } }
 
         /* Footer */
@@ -480,7 +481,7 @@
         .search-result-content { flex: 1; min-width: 0; }
         .search-result-title { font-weight: 500; color: var(--color-stone); margin-bottom: 0.15rem; }
         .search-result-subtitle { font-size: 0.85rem; color: var(--color-text-muted); }
-        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent); white-space: nowrap; }
+        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent-dark); white-space: nowrap; }
 
         /* Quick Links */
         .search-quick-links { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
@@ -561,7 +562,7 @@
             <!-- Gallery with Product Image -->
             <div class="product-gallery animate-in">
                 <div class="gallery-main" id="galleryMain">
-                    <img id="galleryMainImg" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%204%205%22%2F%3E" alt="Memorial" width="800" height="1000" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:contain;">
+                    <img id="galleryMainImg" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%204%205%22%2F%3E" alt="Memorial" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:contain;">
                     <span class="gallery-badge" id="galleryBadge" style="display:none;"></span>
                 </div>
 
@@ -696,7 +697,7 @@
 
                     <!-- Photo size panel — sits BELOW the grid, never disrupts card positions -->
                     <div id="photoSubPanel" style="display:none; margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
-                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose photo plaque shape</p>
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color: var(--color-accent-dark); margin-bottom:1rem;">Choose photo plaque shape</p>
                         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem;">
                             <!-- Oval -->
                             <div class="photo-size-tile" id="psTileSmall" onclick="selectPhotoSize(this, 160, 'oval')" style="padding:0.75rem; border:1.5px solid var(--color-accent); border-radius:6px; cursor:pointer; background:rgba(139,115,85,0.05); text-align:center;">
@@ -791,7 +792,7 @@
 
                     <!-- Chippings colour sub-panel -->
                     <div id="chippingsColourPanel" style="margin-top:1rem; padding:1.25rem; background:white; border:1.5px solid var(--color-accent); border-radius:8px;">
-                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-accent); margin-bottom:1rem;">Choose chippings colour</p>
+                        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color: var(--color-accent-dark); margin-bottom:1rem;">Choose chippings colour</p>
                         <div style="display:flex; flex-wrap:wrap; gap:0.75rem;" id="chippingsColourGrid">
                             <label class="colour-option chippings-colour-tile" onclick="selectChippingsColour(this, 'white')" style="cursor:pointer;">
                                 <div class="colour-wrapper" style="border:2px solid var(--color-accent); border-radius:6px; padding:0.25rem;">
@@ -2025,8 +2026,8 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
-                        var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color:var(--color-accent);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
+                        var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
+                        var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
                             "Your quote has been submitted. Check your email — we've included options to pay a 50% deposit, pay in full, or simply wait for our team to be in touch within 24 hours. Production and installation timelines begin from the date the deposit is received." + editLink + trackLink;
@@ -2361,7 +2362,7 @@ function declineCookies() {
             }
 
             if (!html) {
-                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent-dark);">memorial collection</a>.</p></div>';
             }
 
             resultsContainer.innerHTML = html;
