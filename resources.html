@@ -121,11 +121,6 @@
         .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Showroom Banner */
-        .showroom-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 101; background: var(--color-stone); color: white; font-size: 0.85rem; text-align: center; padding: 0.6rem 1rem; }
-        .showroom-banner-inner { display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
-        .showroom-banner-inner svg { flex-shrink: 0; }
-        .showroom-banner-link { color: var(--color-accent-light); font-weight: 600; margin-left: 0.5rem; transition: color 0.2s; text-decoration: none; }
-        .showroom-banner-link:hover { color: white; }
         /* Mobile Bottom Navigation */
         .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
@@ -354,18 +349,6 @@
         <a href="/resources" class="active" onclick="toggleMobileMenu()">Support</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
-    <!-- Top Banner -->
-    <div class="showroom-banner">
-        <div class="showroom-banner-inner">
-            <span><strong>Showroom coming soon to North London</strong> — Visit us by appointment</span>
-            <span class="banner-divider">|</span>
-            <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                020 3835 2548
-            </a>
-        </div>
-    </div>
-
     <header class="page-header">
         <h1>Support & Resources</h1>
         <p>Losing someone you love is one of life's hardest experiences. You don't have to face it alone. Here are some resources that might help.</p>
