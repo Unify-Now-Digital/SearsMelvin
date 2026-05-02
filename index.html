@@ -603,7 +603,14 @@
             </div>
             <div class="hero-visual">
                 <div class="hero-image" id="heroImage">
-                    <img src="/images/installed/gioiosa-family-kerb-set.webp" alt="Recently installed kerb-set memorial for the Gioiosa family" loading="eager" fetchpriority="high" width="1086" height="1448">
+                    <img src="/images/installed/gioiosa-family-kerb-set.webp"
+                         alt="Recently installed kerb-set memorial for the Gioiosa family"
+                         loading="eager" fetchpriority="high"
+                         width="1086" height="1448"
+                         srcset="/images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+                                 /images/installed/gioiosa-family-kerb-set-900w.webp 900w,
+                                 /images/installed/gioiosa-family-kerb-set.webp 1086w"
+                         sizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 1086px">
                     <span class="hero-image-label">Recent Installation — The Gioiosa Family</span>
                 </div>
                 <div class="floating-badge">
@@ -1502,8 +1509,8 @@ function declineCookies() {
 }
 
         // ==================== SITE SEARCH ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        // SUPABASE_URL and SUPABASE_ANON_KEY are declared earlier in the
+        // shared Supabase fetch helper above.
 
         const searchFaqData = [
             { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
