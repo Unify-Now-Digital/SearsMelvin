@@ -74,6 +74,20 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
 .search-modal { z-index: 2147483601 !important; }
 .search-close-btn { padding: 0.75rem !important; }
 
+/* Guaranteed visual safety net for mobile bottom nav vs chat bubble.
+   Even if the JS observer can't reposition the widget (Shadow DOM, inline
+   styles, etc.), the nav grid is shifted left so its rightmost item is
+   clear of a ~64px chat bubble pinned to the bottom-right corner. */
+@media (max-width: 768px) {
+    .mobile-bottom-nav-inner {
+        margin-right: 70px !important;
+        margin-left: auto !important;
+    }
+    .mobile-bottom-bar {
+        padding-right: 80px !important;
+    }
+}
+
 /* Cross-page favourites count badge (header) */
 .shortlist-nav-btn-global {
     display: none;

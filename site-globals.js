@@ -50,6 +50,29 @@
             deeper[j].style.setProperty('bottom', bottom + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');
         }
+        // Heuristic fallback: any small fixed element pinned to the bottom-right
+        // corner is almost certainly the chat bubble (regardless of class/tag).
+        var direct = document.body ? document.body.children : [];
+        for (var k = 0; k < direct.length; k++) {
+            var node = direct[k];
+            if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'LINK') continue;
+            var cs;
+            try { cs = getComputedStyle(node); } catch (_e) { continue; }
+            if (cs.position !== 'fixed') continue;
+            var b = parseInt(cs.bottom, 10);
+            var r = parseInt(cs.right, 10);
+            if (isNaN(b) || isNaN(r)) continue;
+            if (b > 80 || r > 80) continue;
+            var w = node.offsetWidth || 0;
+            var h = node.offsetHeight || 0;
+            if (w === 0 || h === 0) continue;
+            if (w > 140 || h > 140) continue;
+            // Don't touch our own injected favourites badge or known nav elements
+            if (node.id === 'shortlistNavBtn') continue;
+            if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent'))) continue;
+            node.style.setProperty('bottom', bottom + 'px', 'important');
+            node.style.setProperty('right', '24px', 'important');
+        }
     }
 
     function watchChatWidget() {
@@ -57,8 +80,15 @@
         var observer = new MutationObserver(function () {
             applyWidgetPosition();
         });
-        observer.observe(document.body, { childList: true, subtree: true });
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         window.addEventListener('resize', applyWidgetPosition);
+        // Reapply periodically for the first 10s — GHL widget often sets inline
+        // styles after our observer runs, so re-pin to win the last-write race.
+        var ticks = 0;
+        var poll = setInterval(function () {
+            applyWidgetPosition();
+            if (++ticks >= 20) clearInterval(poll);
+        }, 500);
     }
 
     function readShortlist() {
