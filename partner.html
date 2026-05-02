@@ -65,6 +65,7 @@
             --color-cream: #FAF8F5;
             --color-warm: #E8E4DD;
             --color-accent: #8B7355;
+            --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
             --color-text-muted: #595959;
@@ -106,7 +107,7 @@
         .login-logo { margin-bottom: 1.5rem; }
         .login-logo svg { width: 40px; height: 52px; fill: var(--color-accent); }
         .login-home-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--color-text-muted); text-decoration: none; }
-        .login-home-link:hover { color: var(--color-accent); }
+        .login-home-link:hover { color: var(--color-accent-dark); }
 
         /* Login/Request tabs */
         .login-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
@@ -257,7 +258,7 @@
             </div>
             <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
             <p class="login-error" id="loginError"></p>
-            <p style="margin-top:1rem;"><a href="#" onclick="showForgotForm(event)" style="color:var(--color-accent);font-size:0.85rem;">Forgot your password?</a></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showForgotForm(event)" style="color: var(--color-accent-dark);font-size:0.85rem;">Forgot your password?</a></p>
         </form>
 
         <!-- Forgot Password form -->
@@ -270,7 +271,7 @@
             <button type="submit" class="login-btn" id="forgotBtn">Send Reset Link</button>
             <p class="login-error" id="forgotError"></p>
             <p class="login-success" id="forgotSuccess"></p>
-            <p style="margin-top:1rem;"><a href="#" onclick="showLoginTab('signin');event.preventDefault();" style="color:var(--color-accent);font-size:0.85rem;">Back to Sign In</a></p>
+            <p style="margin-top:1rem;"><a href="#" onclick="showLoginTab('signin');event.preventDefault();" style="color: var(--color-accent-dark);font-size:0.85rem;">Back to Sign In</a></p>
         </form>
 
         <!-- Reset Password form (shown when arriving with ?reset=token) -->
@@ -847,7 +848,7 @@
 
         if (order.notes) {
             html += '<div style="background:var(--color-cream);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">'
-                + '<strong style="font-size:0.75rem;text-transform:uppercase;color:var(--color-accent);">Notes</strong>'
+                + '<strong style="font-size:0.75rem;text-transform:uppercase;color: var(--color-accent-dark);">Notes</strong>'
                 + '<p style="margin-top:0.25rem;font-size:0.9rem;color:var(--color-text);">' + esc(order.notes) + '</p></div>';
         }
 

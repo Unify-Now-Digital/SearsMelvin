@@ -82,6 +82,7 @@
             --color-cream: #FAF8F5;
             --color-warm: #E8E4DD;
             --color-accent: #8B7355;
+            --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
             --color-text-muted: #595959;
@@ -109,12 +110,12 @@
         .logo-icon { width: 28px; height: 36px; }
         .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
         .nav-links a { font-size: 0.875rem; color: var(--color-text); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.3s; }
-        .nav-links a:hover, .nav-links a.active { color: var(--color-accent); }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
         .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
-        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent); font-weight: 500; }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
         .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
         .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
         .mobile-menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
@@ -125,13 +126,13 @@
         .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 500px; margin: 0 auto; }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
-        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent); }
+        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
         .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .mobile-nav-item span { font-size: 0.65rem; letter-spacing: 0.02em; text-transform: uppercase; }
         .mobile-nav-item.primary { color: white; }
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
-        .mobile-nav-item.primary.active span { color: var(--color-accent); }
+        .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
@@ -168,7 +169,7 @@
         .org-icon svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
         .org-header h3 { font-size: 1.15rem; }
         .org-card > p { font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem; }
-        .org-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-accent); font-size: 0.9rem; font-weight: 500; }
+        .org-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-accent-dark); font-size: 0.9rem; font-weight: 500; }
         .org-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
         .org-link:hover { text-decoration: underline; }
         .org-phone { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.9rem; color: var(--color-stone); font-weight: 500; }
@@ -192,7 +193,7 @@
         .download-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
 
         .checklist-group { margin-bottom: 2rem; }
-        .checklist-group h4 { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
+        .checklist-group h4 { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
         .checklist-items { list-style: none; }
         .checklist-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); }
         .checklist-item:last-child { border-bottom: none; }
@@ -213,7 +214,7 @@
         .reading-content { padding: 1.5rem; }
         .reading-content h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
         .reading-content p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
-        .reading-link { color: var(--color-accent); font-size: 0.85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.35rem; }
+        .reading-link { color: var(--color-accent-dark); font-size: 0.85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.35rem; }
         .reading-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
 
         /* CTA */
@@ -282,7 +283,7 @@
         .search-result-content { flex: 1; min-width: 0; }
         .search-result-title { font-weight: 500; color: var(--color-stone); margin-bottom: 0.15rem; }
         .search-result-subtitle { font-size: 0.85rem; color: var(--color-text-muted); }
-        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent); white-space: nowrap; }
+        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent-dark); white-space: nowrap; }
 
         /* Quick Links */
         .search-quick-links { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
@@ -866,7 +867,7 @@ function declineCookies() {
             }
 
             if (!html) {
-                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent-dark);">memorial collection</a>.</p></div>';
             }
 
             resultsContainer.innerHTML = html;
