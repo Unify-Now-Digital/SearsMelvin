@@ -1,0 +1,42 @@
+/* LeadConnector chat widget positioning overrides
+   Keeps the chat bubble clear of mobile bottom nav, cookie consent banner,
+   and per-page bottom bars. */
+
+iframe[src*="leadconnectorhq"],
+iframe[src*="msgsndr"],
+#chat-widget-button,
+[class*="LeadConnector"][class*="chat"] {
+    bottom: 24px !important;
+    right: 24px !important;
+}
+
+@media (max-width: 768px) {
+    iframe[src*="leadconnectorhq"],
+    iframe[src*="msgsndr"],
+    #chat-widget-button,
+    [class*="LeadConnector"][class*="chat"] {
+        bottom: 86px !important;
+    }
+}
+
+body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
+body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
+body:has(#cookieConsent[style*="display: block"]) #chat-widget-button {
+    bottom: 110px !important;
+}
+
+@media (max-width: 768px) {
+    body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
+    body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
+    body:has(#cookieConsent[style*="display: block"]) #chat-widget-button {
+        bottom: 170px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.has-mobile-bottom-bar iframe[src*="leadconnectorhq"],
+    body.has-mobile-bottom-bar iframe[src*="msgsndr"],
+    body.has-mobile-bottom-bar #chat-widget-button {
+        bottom: 146px !important;
+    }
+}
