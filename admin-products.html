@@ -64,7 +64,7 @@
             --color-accent: #8B7355;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
-            --color-text-muted: #666666;
+            --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
             --color-error: #b44;
@@ -384,7 +384,7 @@
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-modal .search-input::placeholder { color: #767676; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -462,7 +462,7 @@
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li>
-                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
@@ -472,7 +472,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span id="shortlistNavCount">0</span>
         </button>
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
     </nav>
@@ -590,7 +590,7 @@
             <div class="search-input-wrapper">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button class="search-close-btn" onclick="closeSearch()">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
                     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -615,7 +615,7 @@
         <div class="wizard-modal">
             <div class="wizard-header">
                 <h2>Find Your Perfect Memorial</h2>
-                <button class="wizard-close" onclick="closeWizard()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                <button class="wizard-close" onclick="closeWizard()" aria-label="Close wizard"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
             <div class="wizard-progress">
                 <div class="wizard-step-dot active" data-step="1"></div>
@@ -717,7 +717,7 @@
     <div class="shortlist-panel" id="shortlistPanel">
         <div class="shortlist-header">
             <h3>My Shortlist <span id="shortlistCount">0</span></h3>
-            <button class="shortlist-close" onclick="closeShortlist()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            <button class="shortlist-close" onclick="closeShortlist()" aria-label="Close shortlist"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         <div class="shortlist-content" id="shortlistContent">
             <div class="shortlist-empty">
@@ -897,7 +897,7 @@
                 ).join('');
                 const adminClass = product.is_active === false ? ' admin-hidden' : '';
 
-                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -1048,7 +1048,7 @@
                 state.shortlist.forEach(item => {
                     var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
                     var link = item.slug ? '/memorial?slug=' + item.slug : '#';
-                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class=\"shortlist-item-remove\" aria-label=\"Remove from shortlist\" onclick=\"removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
@@ -1356,7 +1356,7 @@
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>

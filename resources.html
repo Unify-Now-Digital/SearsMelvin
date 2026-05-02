@@ -84,7 +84,7 @@
             --color-accent: #8B7355;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
-            --color-text-muted: #666666;
+            --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
             --font-display: 'Cormorant Garamond', Georgia, serif;
@@ -269,7 +269,7 @@
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-modal .search-input::placeholder { color: #767676; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -338,13 +338,13 @@
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources" class="active">Support</a></li>
             <li>
-                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
             <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </nav>
     <div class="mobile-nav" id="mobileNav">
         <a href="/" onclick="toggleMobileMenu()">Home</a>
@@ -371,6 +371,7 @@
         <p>Losing someone you love is one of life's hardest experiences. You don't have to face it alone. Here are some resources that might help.</p>
     </header>
 
+    <main>
     <section class="resources-section">
         <div class="resources-container">
             <!-- Intro Message -->
@@ -389,7 +390,7 @@
             <div class="search-input-wrapper">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button class="search-close-btn" onclick="closeSearch()">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
                     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -657,6 +658,8 @@
         </div>
     </section>
 
+    </main>
+
     <footer>
         <div class="footer-container">
             <div>
@@ -754,7 +757,7 @@
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>

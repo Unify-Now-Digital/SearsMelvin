@@ -84,7 +84,7 @@
             --color-accent: #8B7355;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
-            --color-text-muted: #666666;
+            --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
             --font-display: 'Cormorant Garamond', Georgia, serif;
@@ -240,7 +240,7 @@
         .values-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem; }
         .value-item { padding: 1.25rem; background: white; border-radius: 6px; transition: transform 0.3s, box-shadow 0.3s; }
         .value-item:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        .value-item h4 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.25rem; }
+        .value-item h3 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.25rem; }
         .value-item p { font-size: 0.9rem; }
 
         /* Process Section - Interactive Timeline */
@@ -306,7 +306,7 @@
         .faq-item { background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .faq-question { padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
         .faq-question:hover { background: rgba(139,115,85,0.05); }
-        .faq-question h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-stone); margin: 0; }
+        .faq-question h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-stone); margin: 0; }
         .faq-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--color-warm); display: flex; align-items: center; justify-content: center; transition: transform 0.3s, background 0.3s; flex-shrink: 0; margin-left: 1rem; }
         .faq-icon svg { width: 12px; height: 12px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
         .faq-item.open .faq-icon { transform: rotate(180deg); background: var(--color-accent); }
@@ -381,10 +381,10 @@
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; display: inline-block; min-height: 44px; padding: 0.6rem 0; line-height: 1.2; }
         .footer-contact a:hover { color: white; }
-        .footer-links { display: flex; gap: 2rem; list-style: none; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links { display: flex; gap: 1rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.5rem; }
         .footer-links a:hover { color: white; }
         .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
         /* Recent Installations Marquee */
@@ -467,7 +467,7 @@
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-modal .search-input::placeholder { color: #767676; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -523,13 +523,13 @@
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li>
-                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
             <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
     </nav>
@@ -551,7 +551,7 @@
             <div class="search-input-wrapper">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button class="search-close-btn" onclick="closeSearch()">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
                     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -581,6 +581,7 @@
         </div>
     </div>
 
+    <main>
     <!-- Hero -->
     <section class="hero">
         <div class="hero-content">
@@ -838,10 +839,10 @@
                     your first enquiry to the moment your memorial is installed.
                 </p>
                 <div class="values-grid">
-                    <div class="value-item"><h4>Transparent</h4><p>Clear pricing. Honest timelines.</p></div>
-                    <div class="value-item"><h4>Connected</h4><p>Real-time updates on your order.</p></div>
-                    <div class="value-item"><h4>Craftsmen</h4><p>Traditional skills. Premium materials.</p></div>
-                    <div class="value-item"><h4>Caring</h4><p>Empathy first. We're here for you.</p></div>
+                    <div class="value-item"><h3>Transparent</h3><p>Clear pricing. Honest timelines.</p></div>
+                    <div class="value-item"><h3>Connected</h3><p>Real-time updates on your order.</p></div>
+                    <div class="value-item"><h3>Craftsmen</h3><p>Traditional skills. Premium materials.</p></div>
+                    <div class="value-item"><h3>Caring</h3><p>Empathy first. We're here for you.</p></div>
                 </div>
             </div>
         </div>
@@ -864,42 +865,42 @@
             <div class="faq-list" id="faqList">
                 <div class="faq-item" data-category="ordering">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>How long does the whole process take?</h4>
+                        <h3>How long does the whole process take?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">From placing your order to installation, typically 12-18 weeks. The main variable is permit approval time, which varies by cemetery. We'll give you a realistic timeline specific to your cemetery when you enquire.</div></div>
                 </div>
                 <div class="faq-item" data-category="ordering">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>What deposit do you require?</h4>
+                        <h3>What deposit do you require?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">We ask for a 50% deposit plus the permit fee to get started. The remaining balance is due once your memorial is complete and ready for installation. We accept bank transfer, card payments, and can arrange payment plans if needed.</div></div>
                 </div>
                 <div class="faq-item" data-category="permits">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>Do I need a permit for a memorial?</h4>
+                        <h3>Do I need a permit for a memorial?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">Yes, all cemeteries require a permit before any memorial can be installed. Don't worry—we handle the entire application process for you. The permit fee (usually £300-£500 depending on the cemetery) is separate from the memorial price and we'll confirm the exact amount in your quote.</div></div>
                 </div>
                 <div class="faq-item" data-category="permits">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>What if my cemetery has specific rules?</h4>
+                        <h3>What if my cemetery has specific rules?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">Every cemetery has different regulations about memorial sizes, styles, and materials. We maintain a database of requirements for hundreds of cemeteries and will advise you on what's permitted before you commit.</div></div>
                 </div>
                 <div class="faq-item" data-category="installation">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>Can I be present at the installation?</h4>
+                        <h3>Can I be present at the installation?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">Absolutely. Many families choose to be present when the memorial is installed. Just let us know and we'll arrange a time that works for you. If you can't attend, we'll send you photos of the completed installation.</div></div>
                 </div>
                 <div class="faq-item" data-category="aftercare">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <h4>How do I care for a granite memorial?</h4>
+                        <h3>How do I care for a granite memorial?</h3>
                         <span class="faq-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
                     <div class="faq-answer"><div class="faq-answer-inner">Granite is very low maintenance. We recommend cleaning with plain water and a soft cloth once or twice a year. Avoid harsh chemicals or pressure washers. We provide a full aftercare guide with every memorial.</div></div>
@@ -1041,6 +1042,8 @@
             <p class="gentle-message">Take your time. We're here when you're ready.</p>
         </div>
     </section>
+
+    </main>
 
     <footer>
         <div class="footer-container">
@@ -1463,7 +1466,7 @@
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>
