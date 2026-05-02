@@ -1,0 +1,29 @@
+# Cloudflare Pages cache headers
+# Filenames in /images/installed/ and root SVG assets are content-specific
+# (no hashing) but rarely change — long cache + immutable is safe because
+# new assets get new filenames.
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/sm-logo.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+# Crawler-facing files: revalidate hourly
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+# HTML: short browser cache, longer SWR so edge can serve stale while
+# revalidating in the background. Ensures content updates propagate
+# within ~5 minutes while keeping repeat-visit latency near-zero.
+/*.html
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
+
+/
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
