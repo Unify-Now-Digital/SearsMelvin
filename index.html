@@ -413,7 +413,7 @@
         @media (prefers-reduced-motion: reduce) { .install-card { transition: none; } }
 
         /* Scroll to Top */
-        .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .scroll-top { position: fixed; bottom: 2rem; left: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
         .scroll-top:hover { background: var(--color-accent); transform: translateY(-3px); }
         .scroll-top svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
@@ -504,6 +504,7 @@
         @keyframes searchSpin { to { transform: rotate(360deg); } }
 
     </style>
+    <link rel="stylesheet" href="/chat-widget.css">
 </head>
 <body class="page-transition">
     <!-- Google Tag Manager (noscript) -->
@@ -1617,5 +1618,7 @@ function declineCookies() {
         });
 
     </script>
+
+    <script src="https://beta.leadconnectorhq.com/loader.js" data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69f5bdefa4b26c5126799210"></script>
 </body>
 </html>
