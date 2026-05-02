@@ -762,11 +762,13 @@
         const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
         // Transform Supabase Storage object URL → image render URL (Pro plan feature).
+        // resize=contain is required — without it, Supabase keeps the source
+        // height and only changes the width, producing a distorted canvas.
         // Falls back to original via onerror if not available.
         function supabaseImgUrl(url, width) {
             if (!url || !url.includes('/storage/v1/object/public/')) return url || '';
             return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
-                + '?width=' + width + '&format=webp&quality=80';
+                + '?width=' + width + '&resize=contain&format=webp&quality=80';
         }
 
         async function supabaseFetch(table, params) {
