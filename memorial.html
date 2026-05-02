@@ -23,13 +23,33 @@
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-KRDX4BQ5');</script>
-    <!-- End Google Tag Manager -->
+    <!-- Google Tag Manager + LeadConnector — deferred until first interaction or 3s idle -->
+    <script>
+      (function(){
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var loaded = false;
+        function load(){
+          if (loaded) return; loaded = true;
+          var f = document.getElementsByTagName('script')[0];
+          var gtm = document.createElement('script');
+          gtm.async = true;
+          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+          f.parentNode.insertBefore(gtm, f);
+          var lc = document.createElement('script');
+          lc.src = 'https://beta.leadconnectorhq.com/loader.js';
+          lc.setAttribute('data-resources-url', 'https://beta.leadconnectorhq.com/chat-widget/loader.js');
+          lc.setAttribute('data-widget-id', '69f5bdefa4b26c5126799210');
+          document.body.appendChild(lc);
+        }
+        var evts = ['scroll','pointerdown','keydown','touchstart'];
+        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
+        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
+        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
+        else setTimeout(load, 3000);
+      })();
+    </script>
+    <!-- End Google Tag Manager + LeadConnector -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial | Sears Melvin Memorials</title>
@@ -53,6 +73,8 @@
     <meta name="twitter:description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
@@ -64,7 +86,7 @@
             --color-accent: #8B7355;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
-            --color-text-muted: #666666;
+            --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
             --font-display: 'Cormorant Garamond', Georgia, serif;
@@ -225,7 +247,7 @@
             border-color: var(--color-accent); 
             box-shadow: 0 0 0 4px rgba(139, 115, 85, 0.1);
         }
-        .inscription-input::placeholder { color: #bbb; font-style: italic; }
+        .inscription-input::placeholder { color: #767676; font-style: italic; }
         
         .inscription-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
         .char-counter { font-size: 0.8rem; color: var(--color-text-muted); }
@@ -445,7 +467,7 @@
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-modal .search-input::placeholder { color: #767676; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -480,6 +502,19 @@
         .search-spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: searchSpin 0.8s linear infinite; margin: 0 auto; }
         @keyframes searchSpin { to { transform: rotate(360deg); } }
 
+    
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -501,13 +536,13 @@
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li>
-                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
             <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </nav>
     <div class="mobile-nav" id="mobileNav">
         <a href="/" onclick="toggleMobileMenu()">Home</a>
@@ -537,12 +572,13 @@
         </div>
     </div>
 
+    <main>
     <section class="product-detail">
         <div class="product-container">
             <!-- Gallery with Product Image -->
             <div class="product-gallery animate-in">
                 <div class="gallery-main" id="galleryMain">
-                    <img id="galleryMainImg" src="" alt="Memorial" style="width:100%;height:100%;object-fit:contain;display:none;">
+                    <img id="galleryMainImg" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%204%205%22%2F%3E" alt="Memorial" width="800" height="1000" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:contain;">
                     <span class="gallery-badge" id="galleryBadge" style="display:none;"></span>
                 </div>
 
@@ -559,7 +595,7 @@
             <div class="search-input-wrapper">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button class="search-close-btn" onclick="closeSearch()">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
                     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -567,12 +603,12 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="memorials.html" class="search-quick-link">Browse Memorials</a>
-                        <a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a>
-                        <a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a>
-                        <a href="faq.html" class="search-quick-link">FAQs</a>
-                        <a href="contact.html" class="search-quick-link">Get a Quote</a>
-                        <a href="permit-checker.html" class="search-quick-link">Permit Info</a>
+                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a>
+                        <a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a>
+                        <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
                 </div>
             </div>
@@ -847,7 +883,7 @@
 
                 <!-- Features -->
                 <div class="features-section">
-                    <h4 class="features-title">What's Included</h4>
+                    <h2 class="features-title">What's Included</h2>
                     <div class="features-grid" id="featuresGrid">
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
                     </div>
@@ -917,6 +953,8 @@
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span id="saveToastMsg">Saved to your shortlist. <a href="/memorials">View shortlist</a></span>
     </div>
+
+    </main>
 
     <footer>
         <div class="footer-container">
@@ -1109,7 +1147,7 @@
                 '<span><strong style="background:' + (isHidden ? '#c0392b' : '#4A7C59') + ';padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>'
                 + (isHidden ? 'Previewing a HIDDEN product (is_active = false)' : 'Previewing as admin')
                 + '</span>'
-                + '<a href="/admin-products.html" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to All Products</a>';
+                + '<a href="/admin-products" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to All Products</a>';
             document.body.insertBefore(banner, document.body.firstChild);
         }
 
@@ -1360,7 +1398,6 @@
             if (images.length > 0) {
                 mainImg.src = images[0];
                 mainImg.alt = product.name;
-                mainImg.style.display = 'block';
             }
 
             // Badge
@@ -1780,19 +1817,53 @@
         let _quoteCemetery = '';
         let _quoteProduct = '';
 
+        let _googleMapsKey = '';
+        let _stripeJSPromise = null;
+
         async function loadConfig() {
             try {
                 const cfg = await fetch('/api/config').then(r => r.json());
                 _stripePK = cfg.stripePublishableKey || '';
-                if (cfg.googleMapsKey) initGoogleMaps(cfg.googleMapsKey);
+                _googleMapsKey = cfg.googleMapsKey || '';
+                armMapsLazyLoad();
             } catch (e) { console.warn('Config load failed', e); }
         }
 
+        function armMapsLazyLoad() {
+            if (!_googleMapsKey) return;
+            const input = document.getElementById('qCemeteryInput');
+            if (!input) return;
+            const trigger = () => {
+                input.removeEventListener('focus', trigger);
+                input.removeEventListener('pointerdown', trigger);
+                initGoogleMaps(_googleMapsKey);
+            };
+            input.addEventListener('focus', trigger, { once: true });
+            input.addEventListener('pointerdown', trigger, { once: true });
+        }
+
+        let _mapsInjected = false;
         function initGoogleMaps(key) {
+            if (_mapsInjected) return;
+            _mapsInjected = true;
             const s = document.createElement('script');
             s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
             s.async = true;
             document.head.appendChild(s);
+        }
+
+        function loadStripeJS() {
+            if (window.Stripe) return Promise.resolve(window.Stripe);
+            if (_stripeJSPromise) return _stripeJSPromise;
+            _stripeJSPromise = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://js.stripe.com/v3/';
+                s.async = true;
+                s.onload = () => resolve(window.Stripe);
+                s.onerror = () => { _stripeJSPromise = null; reject(new Error('Stripe.js failed to load')); };
+                document.head.appendChild(s);
+            });
+            return _stripeJSPromise;
         }
 
         window._onMapsReady = async function() {
@@ -1887,11 +1958,14 @@
             }
 
             try {
-                const piRes = await fetch('/api/stripe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount, name, email, cemetery, product, invoiceId }),
-                });
+                const [piRes] = await Promise.all([
+                    fetch('/api/stripe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount, name, email, cemetery, product, invoiceId }),
+                    }),
+                    loadStripeJS(),
+                ]);
                 const { clientSecret, error } = await piRes.json();
                 if (error || !clientSecret) throw new Error(error || 'No client secret');
 
@@ -2174,14 +2248,13 @@
             }
         });
     </script>
-    <script src="https://js.stripe.com/v3/"></script>
 <!-- Cookie Consent Banner -->
 <div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>
@@ -2219,13 +2292,13 @@ function declineCookies() {
         // ==================== SITE SEARCH ==
 
         const searchFaqData = [
-            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
-            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "faq.html#permits" },
-            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "faq.html#pricing" },
-            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "faq.html#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "contact.html" },
-            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "memorials.html" },
-            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "care-guide.html" },
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
 
         let searchTimeout;
@@ -2246,7 +2319,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="memorials.html" class="search-quick-link">Browse Memorials</a><a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a><a href="faq.html" class="search-quick-link">FAQs</a><a href="contact.html" class="search-quick-link">Get a Quote</a><a href="permit-checker.html" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -2284,7 +2357,7 @@ function declineCookies() {
                         var imageHTML = product.image_url
                             ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="/memorial?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }
@@ -2305,7 +2378,7 @@ function declineCookies() {
             }
 
             if (!html) {
-                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="memorials.html" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
             }
 
             resultsContainer.innerHTML = html;
@@ -2322,7 +2395,5 @@ function declineCookies() {
         });
 
     </script>
-
-    <script src="https://beta.leadconnectorhq.com/loader.js" data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69f5bdefa4b26c5126799210"></script>
 </body>
 </html>

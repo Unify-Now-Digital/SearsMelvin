@@ -23,18 +23,35 @@
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-KRDX4BQ5');</script>
-    <!-- End Google Tag Manager -->
+    <!-- Google Tag Manager + LeadConnector — deferred until first interaction or 3s idle -->
+    <script>
+      (function(){
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var loaded = false;
+        function load(){
+          if (loaded) return; loaded = true;
+          var f = document.getElementsByTagName('script')[0];
+          var gtm = document.createElement('script');
+          gtm.async = true;
+          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+          f.parentNode.insertBefore(gtm, f);
+        }
+        var evts = ['scroll','pointerdown','keydown','touchstart'];
+        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
+        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
+        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
+        else setTimeout(load, 3000);
+      })();
+    </script>
+    <!-- End Google Tag Manager + LeadConnector -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Products (Admin) | Sears Melvin Memorials</title>
     <meta name="description" content="Admin view of all products in the catalogue, including hidden items.">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <!-- Supabase data loaded via REST API directly -->
@@ -47,7 +64,7 @@
             --color-accent: #8B7355;
             --color-accent-light: #A69070;
             --color-text: #1A1A1A;
-            --color-text-muted: #666666;
+            --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
             --color-error: #b44;
@@ -367,7 +384,7 @@
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #bbb; }
+        .search-modal .search-input::placeholder { color: #767676; }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -406,6 +423,19 @@
         .product-card.admin-hidden { opacity: 0.55; outline: 2px dashed #c0392b; outline-offset: -2px; }
         .product-card.admin-hidden:hover { opacity: 0.85; }
         .product-badge.admin-hidden-badge { background: #c0392b !important; color: #fff !important; }
+    
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -416,7 +446,7 @@
     <!-- Admin banner -->
     <div style="background:#2C2C2C;color:#fff;padding:0.6rem 1.25rem;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;font-size:0.85rem;position:sticky;top:0;z-index:1000;flex-wrap:wrap;gap:0.5rem;">
         <span><strong style="background:#c0392b;padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>All products view &mdash; includes hidden &amp; inactive items</span>
-        <a href="/admin.html" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to Admin Dashboard</a>
+        <a href="/admin" style="color:#fff;text-decoration:underline;font-size:0.8rem;">&larr; Back to Admin Dashboard</a>
     </div>
     <nav>
         <a href="/" class="logo">
@@ -432,7 +462,7 @@
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li>
-                <button class="nav-search-btn" onclick="openSearch()" title="Search">
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
@@ -442,7 +472,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span id="shortlistNavCount">0</span>
         </button>
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
     </nav>
@@ -468,7 +498,7 @@
 
     <header class="page-header">
         <div class="breadcrumb">
-            <a href="/admin.html">Admin</a><span>/</span><span>All Products</span>
+            <a href="/admin">Admin</a><span>/</span><span>All Products</span>
         </div>
         <h1 class="reveal">All Products</h1>
         <p class="reveal reveal-delay-1">Admin view of every product in the catalogue, including hidden and inactive items.</p>
@@ -560,7 +590,7 @@
             <div class="search-input-wrapper">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button class="search-close-btn" onclick="closeSearch()">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
                     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -568,12 +598,12 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="memorials.html" class="search-quick-link">Browse Memorials</a>
-                        <a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a>
-                        <a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a>
-                        <a href="faq.html" class="search-quick-link">FAQs</a>
-                        <a href="contact.html" class="search-quick-link">Get a Quote</a>
-                        <a href="permit-checker.html" class="search-quick-link">Permit Info</a>
+                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a>
+                        <a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a>
+                        <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
                 </div>
             </div>
@@ -585,7 +615,7 @@
         <div class="wizard-modal">
             <div class="wizard-header">
                 <h2>Find Your Perfect Memorial</h2>
-                <button class="wizard-close" onclick="closeWizard()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                <button class="wizard-close" onclick="closeWizard()" aria-label="Close wizard"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
             <div class="wizard-progress">
                 <div class="wizard-step-dot active" data-step="1"></div>
@@ -687,7 +717,7 @@
     <div class="shortlist-panel" id="shortlistPanel">
         <div class="shortlist-header">
             <h3>My Shortlist <span id="shortlistCount">0</span></h3>
-            <button class="shortlist-close" onclick="closeShortlist()"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            <button class="shortlist-close" onclick="closeShortlist()" aria-label="Close shortlist"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         <div class="shortlist-content" id="shortlistContent">
             <div class="shortlist-empty">
@@ -729,7 +759,7 @@
         // ==================== ADMIN AUTH GATE ====================
         const ADMIN_TOKEN = localStorage.getItem('admin_token');
         if (!ADMIN_TOKEN) {
-            window.location.href = '/admin.html';
+            window.location.href = '/admin';
         }
 
         // ==================== SUPABASE CONFIG ====================
@@ -776,7 +806,7 @@
                 if (!productsRes || !productsRes.ok) {
                     if (productsRes && productsRes.error === 'Unauthorized') {
                         localStorage.removeItem('admin_token');
-                        window.location.href = '/admin.html';
+                        window.location.href = '/admin';
                         return;
                     }
                     throw new Error((productsRes && productsRes.error) || 'Failed to load products');
@@ -867,7 +897,7 @@
                 ).join('');
                 const adminClass = product.is_active === false ? ' admin-hidden' : '';
 
-                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorial?slug=' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -1018,7 +1048,7 @@
                 state.shortlist.forEach(item => {
                     var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
                     var link = item.slug ? '/memorial?slug=' + item.slug : '#';
-                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class="shortlist-item-remove" onclick="removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class=\"shortlist-item-remove\" aria-label=\"Remove from shortlist\" onclick=\"removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
@@ -1326,7 +1356,7 @@
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
             <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#aaa;border:1px solid #444;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>
@@ -1364,13 +1394,13 @@ function declineCookies() {
         // ==================== SITE SEARCH ==
 
         const searchFaqData = [
-            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "faq.html#timing" },
-            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "faq.html#permits" },
-            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "faq.html#pricing" },
-            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "faq.html#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "contact.html" },
-            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "memorials.html" },
-            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "care-guide.html" },
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
 
         let searchTimeout;
@@ -1391,7 +1421,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="memorials.html" class="search-quick-link">Browse Memorials</a><a href="memorials.html?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="memorials.html?type=kerb" class="search-quick-link">Kerb Sets</a><a href="faq.html" class="search-quick-link">FAQs</a><a href="contact.html" class="search-quick-link">Get a Quote</a><a href="permit-checker.html" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1429,7 +1459,7 @@ function declineCookies() {
                         var imageHTML = product.image_url
                             ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="memorial.html?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="/memorial?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }
@@ -1450,7 +1480,7 @@ function declineCookies() {
             }
 
             if (!html) {
-                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="memorials.html" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent);">memorial collection</a>.</p></div>';
             }
 
             resultsContainer.innerHTML = html;
