@@ -50,6 +50,8 @@
     <title>All Products (Admin) | Sears Melvin Memorials</title>
     <meta name="description" content="Admin view of all products in the catalogue, including hidden items.">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <!-- Supabase data loaded via REST API directly -->
@@ -421,6 +423,19 @@
         .product-card.admin-hidden { opacity: 0.55; outline: 2px dashed #c0392b; outline-offset: -2px; }
         .product-card.admin-hidden:hover { opacity: 0.85; }
         .product-badge.admin-hidden-badge { background: #c0392b !important; color: #fff !important; }
+    
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
     </style>
 </head>
 <body>

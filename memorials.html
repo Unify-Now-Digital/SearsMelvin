@@ -54,6 +54,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial Range | Sears Melvin Memorials</title>
     <meta name="description" content="Browse our collection of beautifully crafted memorials. Lawn headstones, kerb sets, cremation memorials, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
@@ -438,6 +440,19 @@
         .search-spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: searchSpin 0.8s linear infinite; margin: 0 auto; }
         @keyframes searchSpin { to { transform: rotate(360deg); } }
 
+    
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -866,7 +881,8 @@
                 const categoryName = product.product_categories?.name || 'Memorial';
                 const price = parseFloat(product.base_price);
                 const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
-                const productImage = product.image_url ? '<img src="' + product.image_url + '" alt="' + product.name + '" loading="lazy">' : '';
+                const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+                const productImage = product.image_url ? '<img src="' + product.image_url + '" alt="' + product.name + '" decoding="async"' + imgPriority + '>' : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (price >= 3000) badge = '<span class="product-badge premium">Premium</span>';
