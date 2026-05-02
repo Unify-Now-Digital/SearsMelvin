@@ -1,11 +1,20 @@
 /* LeadConnector chat widget positioning overrides
    Keeps the chat bubble clear of mobile bottom nav, cookie consent banner,
-   and per-page bottom bars. */
+   and per-page bottom bars. Selectors are intentionally broad because the
+   GHL beta widget renders varying wrappers (custom element, iframe, div).
+   site-globals.js applies a JS-side fallback for any element it misses. */
 
 iframe[src*="leadconnectorhq"],
 iframe[src*="msgsndr"],
+iframe[title*="hat"],
 #chat-widget-button,
-[class*="LeadConnector"][class*="chat"] {
+lc-chat-widget,
+[id^="lc_"],
+[id^="LC_"],
+[class^="lc-"],
+[class^="LC-"],
+[class*="LeadConnector"][class*="hat"],
+[data-widget-id="69f5bdefa4b26c5126799210"] {
     bottom: 24px !important;
     right: 24px !important;
 }
@@ -13,30 +22,84 @@ iframe[src*="msgsndr"],
 @media (max-width: 768px) {
     iframe[src*="leadconnectorhq"],
     iframe[src*="msgsndr"],
+    iframe[title*="hat"],
     #chat-widget-button,
-    [class*="LeadConnector"][class*="chat"] {
-        bottom: 86px !important;
+    lc-chat-widget,
+    [id^="lc_"],
+    [id^="LC_"],
+    [class^="lc-"],
+    [class^="LC-"],
+    [class*="LeadConnector"][class*="hat"],
+    [data-widget-id="69f5bdefa4b26c5126799210"] {
+        bottom: 100px !important;
     }
 }
 
+/* When the cookie consent banner is showing, lift higher so it stays usable */
 body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
 body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-body:has(#cookieConsent[style*="display: block"]) #chat-widget-button {
-    bottom: 110px !important;
+body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
+body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
+body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
+body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
+    bottom: 120px !important;
 }
 
 @media (max-width: 768px) {
     body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
     body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-    body:has(#cookieConsent[style*="display: block"]) #chat-widget-button {
-        bottom: 170px !important;
+    body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
+    body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
+    body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
+    body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
+        bottom: 190px !important;
     }
 }
 
+/* memorial.html has an extra bottom bar on mobile */
 @media (max-width: 768px) {
     body.has-mobile-bottom-bar iframe[src*="leadconnectorhq"],
     body.has-mobile-bottom-bar iframe[src*="msgsndr"],
-    body.has-mobile-bottom-bar #chat-widget-button {
-        bottom: 146px !important;
+    body.has-mobile-bottom-bar iframe[title*="hat"],
+    body.has-mobile-bottom-bar #chat-widget-button,
+    body.has-mobile-bottom-bar lc-chat-widget,
+    body.has-mobile-bottom-bar [data-widget-id="69f5bdefa4b26c5126799210"] {
+        bottom: 160px !important;
     }
+}
+
+/* Lift the site-wide search modal above the chat widget so its close X
+   is never intercepted by the GHL iframe stacking layer. */
+.search-overlay { z-index: 2147483600 !important; }
+.search-modal { z-index: 2147483601 !important; }
+.search-close-btn { padding: 0.75rem !important; }
+
+/* Cross-page favourites count badge (header) */
+.shortlist-nav-btn-global {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 1.5px solid var(--color-accent);
+    border-radius: 20px;
+    padding: 0.4rem 0.85rem 0.4rem 0.65rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: all 0.3s;
+    margin-left: 0.5rem;
+}
+.shortlist-nav-btn-global:hover {
+    background: var(--color-accent);
+    color: white;
+}
+.shortlist-nav-btn-global:hover svg {
+    fill: white;
+    stroke: white;
+}
+.shortlist-nav-btn-global.has-items {
+    display: inline-flex;
 }
