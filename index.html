@@ -70,27 +70,35 @@
     <!-- End Google Tag Manager + LeadConnector -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sears Melvin Memorials | Modern Memorial Masonry | North London</title>
-    <meta name="description" content="Sears Melvin Memorials - A modern approach to memorial masonry. Bespoke headstones, kerb memorials, and renovations across North London and beyond.">
+    <title>Memorial Masons London | Headstones &amp; Gravestones — Sears Melvin</title>
+    <meta name="description" content="London memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, full installation across London. Free quote.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://searsmelvin.co.uk/">
     <meta name="theme-color" content="#2C2C2C">
     <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Preload LCP hero image so the fetch starts before the parser hits the <img> tag -->
+    <link rel="preload" as="image"
+          href="/images/installed/gioiosa-family-kerb-set-900w.webp"
+          imagesrcset="/images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+                       /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
+          imagesizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 900px"
+          fetchpriority="high">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
-    <meta property="og:title" content="Sears Melvin Memorials | Modern Memorial Masonry | North London">
-    <meta property="og:description" content="Bespoke headstones, kerb memorials, and renovations across North London and beyond. 30-year guarantee, hand-finished in our NW11 workshop.">
+    <meta property="og:title" content="Memorial Masons London | Headstones &amp; Gravestones — Sears Melvin">
+    <meta property="og:description" content="London memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, full installation across London.">
     <meta property="og:url" content="https://searsmelvin.co.uk/">
     <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Sears Melvin Memorials | Modern Memorial Masonry | North London">
-    <meta name="twitter:description" content="Bespoke headstones, kerb memorials, and renovations across North London and beyond. 30-year guarantee, hand-finished in our NW11 workshop.">
+    <meta name="twitter:title" content="Memorial Masons London | Headstones &amp; Gravestones — Sears Melvin">
+    <meta name="twitter:description" content="London memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, full installation across London.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
     <style>
@@ -525,6 +533,38 @@
 
     </style>
     <link rel="stylesheet" href="/chat-widget.css">
+
+    <!-- Structured data: Business -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Stonemason",
+      "@id": "https://searsmelvin.co.uk/#business",
+      "name": "Sears Melvin Memorials",
+      "alternateName": "Sears Melvin",
+      "description": "London memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and full installation across London.",
+      "image": "https://searsmelvin.co.uk/sm-logo.svg",
+      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "url": "https://searsmelvin.co.uk",
+      "telephone": "+442038352548",
+      "email": "info@searsmelvin.co.uk",
+      "priceRange": "££",
+      "areaServed": [
+        {"@type": "City", "name": "London"},
+        {"@type": "AdministrativeArea", "name": "Barnet"},
+        {"@type": "AdministrativeArea", "name": "Camden"},
+        {"@type": "AdministrativeArea", "name": "Brent"},
+        {"@type": "AdministrativeArea", "name": "Haringey"},
+        {"@type": "AdministrativeArea", "name": "Enfield"}
+      ],
+      "openingHoursSpecification": [{
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "17:00"
+      }]
+    }
+    </script>
 </head>
 <body class="page-transition">
     <!-- Google Tag Manager (noscript) -->
@@ -1055,6 +1095,22 @@
                     <p>We'll confirm your appointment within 24 hours. You'll receive a calendar invite once confirmed.</p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Areas We Serve -->
+    <section class="areas-served reveal" style="padding:5rem 2rem;background:var(--color-cream);">
+        <div style="max-width:900px;margin:0 auto;text-align:center;">
+            <h2 style="font-family:var(--font-display);font-size:clamp(1.75rem,4vw,2.25rem);font-weight:400;color:var(--color-stone);margin-bottom:0.75rem;">Areas We Serve in London</h2>
+            <p style="color:var(--color-text-muted);font-size:1.05rem;max-width:640px;margin:0 auto 2.5rem;">Memorial masons working across London. Find your borough below for cemetery-specific information and permit timelines.</p>
+            <ul class="areas-list" style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;text-align:left;">
+                <li><a href="/areas/barnet" style="display:block;padding:1.25rem 1.5rem;background:white;border:1px solid var(--color-border);border-radius:4px;color:var(--color-stone);text-decoration:none;transition:all 0.2s;"><strong style="font-family:var(--font-display);font-size:1.2rem;display:block;">Barnet</strong><span style="font-size:0.875rem;color:var(--color-text-muted);">North London</span></a></li>
+                <li><a href="/areas/camden" style="display:block;padding:1.25rem 1.5rem;background:white;border:1px solid var(--color-border);border-radius:4px;color:var(--color-stone);text-decoration:none;transition:all 0.2s;"><strong style="font-family:var(--font-display);font-size:1.2rem;display:block;">Camden</strong><span style="font-size:0.875rem;color:var(--color-text-muted);">Highgate, Hampstead &amp; Camden</span></a></li>
+                <li><a href="/areas/brent" style="display:block;padding:1.25rem 1.5rem;background:white;border:1px solid var(--color-border);border-radius:4px;color:var(--color-stone);text-decoration:none;transition:all 0.2s;"><strong style="font-family:var(--font-display);font-size:1.2rem;display:block;">Brent</strong><span style="font-size:0.875rem;color:var(--color-text-muted);">North-West London</span></a></li>
+                <li><a href="/areas/haringey" style="display:block;padding:1.25rem 1.5rem;background:white;border:1px solid var(--color-border);border-radius:4px;color:var(--color-stone);text-decoration:none;transition:all 0.2s;"><strong style="font-family:var(--font-display);font-size:1.2rem;display:block;">Haringey</strong><span style="font-size:0.875rem;color:var(--color-text-muted);">Tottenham, Wood Green &amp; Hornsey</span></a></li>
+                <li><a href="/areas/enfield" style="display:block;padding:1.25rem 1.5rem;background:white;border:1px solid var(--color-border);border-radius:4px;color:var(--color-stone);text-decoration:none;transition:all 0.2s;"><strong style="font-family:var(--font-display);font-size:1.2rem;display:block;">Enfield</strong><span style="font-size:0.875rem;color:var(--color-text-muted);">North London</span></a></li>
+            </ul>
+            <p style="margin-top:2rem;font-size:0.95rem;color:var(--color-text-muted);">Don't see your borough? <a href="/contact" style="color:var(--color-accent-dark);">Get in touch</a> — we work with families across London.</p>
         </div>
     </section>
 
@@ -1639,6 +1695,5 @@ function declineCookies() {
     </script>
 
     <script src="/site-globals.js" defer></script>
-    <script src="https://beta.leadconnectorhq.com/loader.js" data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69f5bdefa4b26c5126799210"></script>
 </body>
 </html>
