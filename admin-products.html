@@ -137,9 +137,6 @@
         .breadcrumb a { color: var(--color-accent-dark); }
         .page-header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
         .page-header p { font-size: 1.1rem; max-width: 600px; margin: 0 auto 1.5rem; }
-        .wizard-trigger { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; background: white; border: 2px solid var(--color-accent); color: var(--color-accent-dark); border-radius: 30px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s; }
-        .wizard-trigger:hover { background: var(--color-accent); color: white; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(139,115,85,0.3); }
-        .wizard-trigger svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
         .floating-actions { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
         .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
         .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
@@ -229,46 +226,6 @@
         .no-results h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .no-results p { margin-bottom: 1.5rem; }
         .no-results button { padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-body); }
-        .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(4px); }
-        .wizard-overlay.active { display: flex; }
-        .wizard-modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; animation: scaleIn 0.3s ease; }
-        .wizard-header { padding: 1.5rem 2rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
-        .wizard-header h2 { font-size: 1.5rem; }
-        .wizard-close { background: none; border: none; cursor: pointer; padding: 0.5rem; }
-        .wizard-close svg { width: 24px; height: 24px; stroke: var(--color-text-muted); }
-        .wizard-progress { display: flex; padding: 1rem 2rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
-        .wizard-step-dot { flex: 1; height: 4px; background: var(--color-border); border-radius: 2px; transition: background 0.3s; }
-        .wizard-step-dot.active { background: var(--color-accent); }
-        .wizard-step-dot.complete { background: var(--color-success); }
-        .wizard-content { padding: 2rem; min-height: 350px; }
-        .wizard-step { display: none; animation: fadeIn 0.3s ease; }
-        .wizard-step.active { display: block; }
-        .wizard-step h3 { font-size: 1.3rem; margin-bottom: 0.5rem; text-align: center; }
-        .wizard-step > p { text-align: center; color: var(--color-text-muted); margin-bottom: 2rem; }
-        .wizard-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        .wizard-option { padding: 1.25rem; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
-        .wizard-option:hover { border-color: var(--color-accent); background: rgba(139,115,85,0.05); }
-        .wizard-option.selected { border-color: var(--color-accent); background: rgba(139,115,85,0.1); }
-        .wizard-option svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.75rem; }
-        .wizard-option h4 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.25rem; }
-        .wizard-option p { font-size: 0.8rem; color: var(--color-text-muted); }
-        .wizard-footer { padding: 1rem 2rem; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; }
-        .wizard-btn { padding: 0.75rem 1.5rem; border-radius: 4px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
-        .wizard-btn-back { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); }
-        .wizard-btn-back:hover { border-color: var(--color-stone); color: var(--color-stone); }
-        .wizard-btn-next { background: var(--color-accent); border: none; color: white; }
-        .wizard-btn-next:hover { background: var(--color-stone); }
-        .wizard-btn-next:disabled { background: var(--color-border); cursor: not-allowed; }
-        .wizard-results { text-align: left; }
-        .wizard-results h3 { text-align: center; margin-bottom: 1.5rem; }
-        .wizard-result-card { display: flex; gap: 1.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 1rem; transition: all 0.2s; }
-        .wizard-result-card:hover { border-color: var(--color-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .wizard-result-image { width: 120px; height: 100px; background: var(--color-warm); border-radius: 4px; flex-shrink: 0; }
-        .wizard-result-image svg, .wizard-result-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
-        .wizard-result-info h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
-        .wizard-result-info p { font-size: 0.85rem; margin-bottom: 0.5rem; }
-        .wizard-result-match { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-success); font-weight: 600; }
-        .wizard-result-match svg { width: 14px; height: 14px; stroke: currentColor; }
         .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px rgba(0,0,0,0.15); transition: right 0.4s ease; display: flex; flex-direction: column; }
         .shortlist-panel.active { right: 0; }
         .shortlist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
@@ -360,10 +317,8 @@
         @media (max-width: 600px) {
             .products-grid { grid-template-columns: 1fr; }
             .footer-container { flex-direction: column; text-align: center; }
-            .wizard-options { grid-template-columns: 1fr; }
             .colour-swatches { grid-template-columns: repeat(2, 1fr); }
             .page-header h1 { font-size: 1.8rem; }
-            .wizard-modal { max-height: 85vh; }
         }
 
         /* Search Button in Nav */
@@ -549,7 +504,7 @@
                     <div class="no-results" id="noResults" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
                         <h3>No memorials found</h3>
-                        <p>Try adjusting your filters or use our wizard to find the right memorial.</p>
+                        <p>Try adjusting your filters to find the right memorial.</p>
                         <button onclick="clearAllFilters()">Clear All Filters</button>
                     </div>
                 </div>
@@ -595,108 +550,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Wizard Modal -->
-    <div class="wizard-overlay" id="wizardOverlay" onclick="if(event.target===this)closeWizard()">
-        <div class="wizard-modal">
-            <div class="wizard-header">
-                <h2>Find Your Perfect Memorial</h2>
-                <button class="wizard-close" onclick="closeWizard()" aria-label="Close wizard"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-            </div>
-            <div class="wizard-progress">
-                <div class="wizard-step-dot active" data-step="1"></div>
-                <div class="wizard-step-dot" data-step="2"></div>
-                <div class="wizard-step-dot" data-step="3"></div>
-                <div class="wizard-step-dot" data-step="4"></div>
-            </div>
-            <div class="wizard-content">
-                <div class="wizard-step active" data-step="1">
-                    <h3>What type of cemetery is it?</h3>
-                    <p>This helps us show memorials that are permitted at your cemetery.</p>
-                    <div class="wizard-options">
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'lawn')">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M12 3v8"/></svg>
-                            <h4>Lawn Cemetery</h4>
-                            <p>Headstones only, no kerbs</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'kerb')">
-                            <svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="13" rx="1"/><rect x="7" y="3" width="10" height="8" rx="1"/></svg>
-                            <h4>Kerb Permitted</h4>
-                            <p>Full surrounds allowed</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'cremation')">
-                            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="8" ry="3"/><path d="M4 18V8c0-2.5 3.5-5 8-5s8 2.5 8 5v10"/></svg>
-                            <h4>Cremation Garden</h4>
-                            <p>Memorial tablets & plaques</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'cemetery', 'unsure')">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            <h4>I'm Not Sure</h4>
-                            <p>We'll help you find out</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="wizard-step" data-step="2">
-                    <h3>What's your budget range?</h3>
-                    <p>All our prices include installation and a 30-year guarantee.</p>
-                    <div class="wizard-options">
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'under-1500')">
-                            <h4>Under £1,500</h4>
-                            <p>Simple, elegant memorials</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '1500-2500')">
-                            <h4>£1,500 - £2,500</h4>
-                            <p>Most popular range</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', '2500-4000')">
-                            <h4>£2,500 - £4,000</h4>
-                            <p>Premium options</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'budget', 'flexible')">
-                            <h4>Budget Flexible</h4>
-                            <p>Show me everything</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="wizard-step" data-step="3">
-                    <h3>What style appeals to you?</h3>
-                    <p>Choose the look that feels right.</p>
-                    <div class="wizard-options">
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'traditional')">
-                            <svg viewBox="0 0 24 24"><path d="M12 2L8 6v14a2 2 0 002 2h4a2 2 0 002-2V6l-4-4z"/></svg>
-                            <h4>Traditional</h4>
-                            <p>Classic, timeless designs</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'modern')">
-                            <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/></svg>
-                            <h4>Modern</h4>
-                            <p>Clean, contemporary lines</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'unique')">
-                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                            <h4>Unique Shape</h4>
-                            <p>Hearts, books, angels</p>
-                        </div>
-                        <div class="wizard-option" onclick="selectWizardOption(this, 'style', 'any')">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                            <h4>Open to Ideas</h4>
-                            <p>Surprise me</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="wizard-step" data-step="4">
-                    <div class="wizard-results" id="wizardResults">
-                        <h3>We recommend these memorials for you</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="wizard-footer">
-                <button class="wizard-btn wizard-btn-back" onclick="prevWizardStep()" id="wizardBack" style="visibility:hidden;">Back</button>
-                <button class="wizard-btn wizard-btn-next" onclick="nextWizardStep()" id="wizardNext" disabled>Next</button>
-            </div>
-        </div>
-    </div>
-
 
     <!-- Shortlist Panel -->
     <div class="shortlist-overlay" id="shortlistOverlay" onclick="closeShortlist()"></div>
@@ -765,7 +618,6 @@
         const state = {
             filters: { type: [], colour: [], price: [] },
             shortlist: [],
-            wizard: { cemetery: null, budget: null, style: null, step: 1 },
             productsData: [],
             categories: [],
             colours: []
@@ -1148,55 +1000,6 @@
                 });
                 updateShortlistUI();
             }
-        }
-
-        // ==================== WIZARD ====================
-        function openWizard() {
-            document.getElementById('wizardOverlay').classList.add('active');
-            state.wizard = { cemetery: null, budget: null, style: null, step: 1 };
-            updateWizardUI();
-        }
-        function closeWizard() { document.getElementById('wizardOverlay').classList.remove('active'); }
-
-        function selectWizardOption(option, field, value) {
-            option.parentElement.querySelectorAll('.wizard-option').forEach(o => o.classList.remove('selected'));
-            option.classList.add('selected');
-            state.wizard[field] = value;
-            document.getElementById('wizardNext').disabled = false;
-        }
-
-        function nextWizardStep() { if (state.wizard.step < 4) { state.wizard.step++; updateWizardUI(); } }
-        function prevWizardStep() { if (state.wizard.step > 1) { state.wizard.step--; updateWizardUI(); } }
-
-        function updateWizardUI() {
-            const step = state.wizard.step;
-            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
-            document.querySelector('.wizard-step[data-step="' + step + '"]').classList.add('active');
-            document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
-                dot.classList.remove('active', 'complete');
-                if (i + 1 === step) dot.classList.add('active');
-                else if (i + 1 < step) dot.classList.add('complete');
-            });
-            document.getElementById('wizardBack').style.visibility = step > 1 ? 'visible' : 'hidden';
-            document.getElementById('wizardNext').textContent = step === 3 ? 'Show Results' : step === 4 ? 'Browse All' : 'Next';
-            const wizardFields = ['cemetery', 'budget', 'style'];
-            document.getElementById('wizardNext').disabled = step < 4 && !state.wizard[wizardFields[step-1]];
-            if (step === 4) {
-                generateWizardResults();
-                document.getElementById('wizardNext').onclick = () => { closeWizard(); clearAllFilters(); };
-            }
-        }
-
-        function generateWizardResults() {
-            const results = document.getElementById('wizardResults');
-            let recommended = products.filter(p => !p.classList.contains('hidden')).slice(0, 3);
-            if (recommended.length === 0) recommended = products.slice(0, 3);
-            let html = '<h3>We recommend these memorials for you</h3>';
-            recommended.forEach(p => {
-                var wImg = p.dataset.image ? '<img src="' + p.dataset.image + '" alt="' + p.dataset.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
-                html += '<a href="/memorial?slug=' + (p.dataset.slug || p.dataset.name.toLowerCase().replace(/\s+/g, '-')) + '" class="wizard-result-card"><div class="wizard-result-image">' + wImg + '</div><div class="wizard-result-info"><h4>' + p.dataset.name + '</h4><p>' + p.querySelector('.product-price').innerHTML + '</p><span class="wizard-result-match"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Great match</span></div></a>';
-            });
-            results.innerHTML = html;
         }
 
         // ==================== MOBILE ====================
