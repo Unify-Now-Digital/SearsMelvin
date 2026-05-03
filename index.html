@@ -80,6 +80,13 @@
     <link rel="canonical" href="https://searsmelvin.co.uk/">
     <meta name="theme-color" content="#2C2C2C">
     <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Preload LCP hero image so the fetch starts before the parser hits the <img> tag -->
+    <link rel="preload" as="image"
+          href="/images/installed/gioiosa-family-kerb-set-900w.webp"
+          imagesrcset="/images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+                       /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
+          imagesizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 900px"
+          fetchpriority="high">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
