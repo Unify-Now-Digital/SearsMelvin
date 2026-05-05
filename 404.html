@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Page Not Found — Sears Melvin Memorials</title>
+    <meta name="description" content="The page you were looking for could not be found. Return to the Sears Melvin home page or get in touch — we're here to help.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-stone: #2C2C2C;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #FAF8F5;
+            --color-warm: #E8E4DD;
+            --color-accent: #8B7355;
+            --color-accent-dark: #6B5840;
+            --color-text: #1A1A1A;
+            --color-text-muted: #595959;
+            --color-border: #E0DCD5;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .skip-link {
+            position: absolute; left: -9999px; top: 0;
+            background: var(--color-stone); color: var(--color-cream);
+            padding: 0.75rem 1rem; z-index: 9999;
+        }
+        .skip-link:focus { left: 1rem; top: 1rem; }
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--color-stone);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+        }
+        .panel {
+            max-width: 640px;
+            text-align: center;
+        }
+        .eyebrow {
+            font-size: 0.875rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--color-accent-dark);
+            margin-bottom: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .eyebrow::before, .eyebrow::after {
+            content: '';
+            width: 32px;
+            height: 1px;
+            background-color: var(--color-accent);
+        }
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 300;
+            font-size: clamp(3rem, 8vw, 5rem);
+            color: var(--color-stone);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        h1 em { font-style: italic; color: var(--color-accent-dark); }
+        p.lead {
+            font-size: 1.125rem;
+            color: var(--color-text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 3px;
+        }
+        .btn-primary { background-color: var(--color-stone); color: var(--color-cream); }
+        .btn-primary:hover { background-color: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .btn-secondary { background-color: transparent; color: var(--color-stone); border: 1px solid var(--color-stone); }
+        .btn-secondary:hover { background-color: var(--color-stone); color: var(--color-cream); }
+        .quick-links {
+            border-top: 1px solid var(--color-border);
+            padding-top: 2rem;
+        }
+        .quick-links h2 {
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            font-weight: 500;
+            margin-bottom: 1.25rem;
+        }
+        .quick-links ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem 1.5rem;
+        }
+        .quick-links a {
+            color: var(--color-text);
+            text-decoration: none;
+            font-size: 0.95rem;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .quick-links a:hover { color: var(--color-accent-dark); border-bottom-color: var(--color-accent); }
+        footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; animation: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header>
+        <a class="logo" href="/">
+            <img src="/sm-logo.svg" alt="" class="logo-icon" width="28" height="36">
+            Sears <span>Melvin</span>
+        </a>
+    </header>
+    <main id="main">
+        <div class="panel">
+            <div class="eyebrow">Error 404</div>
+            <h1>Page <em>not found</em></h1>
+            <p class="lead">The page you were looking for has moved or never existed. We're sorry for the detour. The links below should help you find what you need.</p>
+            <div class="actions">
+                <a class="btn btn-primary" href="/">Return home</a>
+                <a class="btn btn-secondary" href="/contact">Contact us</a>
+            </div>
+            <nav class="quick-links" aria-label="Quick links">
+                <h2>Or jump to</h2>
+                <ul>
+                    <li><a href="/memorials">Memorials</a></li>
+                    <li><a href="/quote">Free quote</a></li>
+                    <li><a href="/care-guide">Care guide</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/permit-checker">Permit checker</a></li>
+                    <li><a href="/resources">Resources</a></li>
+                </ul>
+            </nav>
+        </div>
+    </main>
+    <footer>
+        <p>Sears Melvin Memorials &middot; +44 20 3835 2548 &middot; info@searsmelvin.co.uk</p>
+    </footer>
+</body>
+</html>

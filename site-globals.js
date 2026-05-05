@@ -131,10 +131,83 @@
         else btn.classList.remove('has-items');
     }
 
+    // Companies Act 2006 s.1202 disclosure — must appear on the website.
+    // Injecting site-wide so every page footer carries the registered details
+    // without per-file edits. Update VAT number here once registered.
+    function ensureFooterDisclosures() {
+        var footer = document.querySelector('footer');
+        if (!footer) return;
+
+        // 1) Add Terms + Privacy to the footer link list, if not already there.
+        var linkList = footer.querySelector('.footer-links');
+        if (linkList && !linkList.querySelector('a[href="/terms"]')) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.href = '/terms';
+            a.textContent = 'Terms';
+            li.appendChild(a);
+            linkList.appendChild(li);
+        }
+        if (linkList && !linkList.querySelector('a[href="/privacy"]')) {
+            var liP = document.createElement('li');
+            var aP = document.createElement('a');
+            aP.href = '/privacy';
+            aP.textContent = 'Privacy';
+            liP.appendChild(aP);
+            linkList.appendChild(liP);
+        }
+
+        // 2) Add the legal disclosure block, if not already present.
+        if (footer.querySelector('.footer-legal')) return;
+        var copy = footer.querySelector('.footer-copy');
+        var disclosure = document.createElement('p');
+        disclosure.className = 'footer-legal';
+        disclosure.style.cssText = 'font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);';
+        disclosure.innerHTML =
+            'Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. ' +
+            'Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. ' +
+            'Trading as Sears Melvin Memorials.';
+        if (copy && copy.parentNode) {
+            copy.parentNode.insertBefore(disclosure, copy.nextSibling);
+        } else {
+            var container = footer.querySelector('.footer-container') || footer;
+            container.appendChild(disclosure);
+        }
+    }
+
+    function ensureSkipLink() {
+        if (document.querySelector('a.sm-skip-link')) return;
+        var main = document.querySelector('main');
+        if (!main) return;
+        if (!main.id) main.id = 'main';
+
+        var style = document.getElementById('sm-skip-link-style');
+        if (!style) {
+            style = document.createElement('style');
+            style.id = 'sm-skip-link-style';
+            // Visually hidden until focused — uses absolute positioning so it
+            // doesn't reflow page layout. WCAG 2.4.1 Bypass Blocks.
+            style.textContent =
+                '.sm-skip-link{position:absolute;left:-9999px;top:0;background:#2C2C2C;color:#FAF8F5;' +
+                'padding:.75rem 1rem;font-family:inherit;font-size:.875rem;letter-spacing:.05em;' +
+                'text-transform:uppercase;text-decoration:none;border-radius:0 0 3px 0;z-index:10000;}' +
+                '.sm-skip-link:focus{left:0;top:0;outline:2px solid #8B7355;outline-offset:2px;}';
+            document.head.appendChild(style);
+        }
+
+        var link = document.createElement('a');
+        link.className = 'sm-skip-link';
+        link.href = '#' + main.id;
+        link.textContent = 'Skip to content';
+        document.body.insertBefore(link, document.body.firstChild);
+    }
+
     function init() {
         watchChatWidget();
         ensureShortlistBadge();
         updateShortlistBadge();
+        ensureSkipLink();
+        ensureFooterDisclosures();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });

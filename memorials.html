@@ -724,6 +724,7 @@
 
                 renderFilters();
                 renderProducts();
+                injectItemListJsonLd(productsData);
                 applyUrlFilters();
                 loadShortlistFromStorage();
             } catch (error) {
@@ -807,6 +808,32 @@
             noResults.insertAdjacentHTML('beforebegin', productsHTML);
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
             document.getElementById('resultsCount').textContent = products.length;
+        }
+
+        // ==================== STRUCTURED DATA ====================
+        function injectItemListJsonLd(productsData) {
+            if (!Array.isArray(productsData) || productsData.length === 0) return;
+            var items = productsData.slice(0, 30).map(function (p, idx) {
+                return {
+                    '@type': 'ListItem',
+                    position: idx + 1,
+                    url: 'https://searsmelvin.co.uk/memorial.html?slug=' + encodeURIComponent(p.slug || ''),
+                    name: p.name
+                };
+            });
+            var ld = {
+                '@context': 'https://schema.org',
+                '@type': 'ItemList',
+                name: 'Memorial designs by Sears Melvin',
+                itemListElement: items
+            };
+            var existing = document.getElementById('itemListJsonLd');
+            if (existing) existing.remove();
+            var script = document.createElement('script');
+            script.type = 'application/ld+json';
+            script.id = 'itemListJsonLd';
+            script.textContent = JSON.stringify(ld);
+            document.head.appendChild(script);
         }
 
         // ==================== SCROLL ANIMATIONS ====================
@@ -1169,8 +1196,12 @@
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
                 <li><a href="/partner">Partner Portal</a></li>
+                <li><a href="/terms">Terms</a></li>
+                <li><a href="/privacy">Privacy</a></li>
             </ul>
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);"><span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;">Accredited</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">NAMM</strong> Member</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">RQMF</strong> Registered</span></div>
+            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
         </div>
     </footer>
 
