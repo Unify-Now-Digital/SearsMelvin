@@ -199,18 +199,6 @@
         .form-header h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .form-header p { font-size: 0.95rem; }
 
-        /* Enquiry Type Selector */
-        .enquiry-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.875rem; margin-bottom: 2rem; }
-        .enquiry-type { padding: 1.25rem 1rem; border: 2px solid var(--color-border); border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.25s; }
-        .enquiry-type:hover { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.03); transform: translateY(-2px); }
-        .enquiry-type.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.06); box-shadow: 0 0 0 1px var(--color-accent); }
-        .enquiry-type input { display: none; }
-        .enquiry-type-icon { width: 48px; height: 48px; margin: 0 auto 0.75rem; background: var(--color-warm); border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.25s; }
-        .enquiry-type.selected .enquiry-type-icon { background: var(--color-accent); }
-        .enquiry-type-icon svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; transition: stroke 0.25s; }
-        .enquiry-type.selected .enquiry-type-icon svg { stroke: white; }
-        .enquiry-type-label { font-weight: 600; font-size: 0.95rem; color: var(--color-stone); }
-        .enquiry-type-desc { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem; }
 
         /* Form Fields — always visible; enquiry type adds context but doesn't gate the form */
         .form-fields { display: block; }
@@ -266,26 +254,6 @@
         .file-preview-item button { background: none; border: none; cursor: pointer; padding: 0; }
         .file-preview-item button svg { width: 16px; height: 16px; stroke: var(--color-text-muted); }
 
-        /* Preferred Contact Method */
-        .contact-preference { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .contact-pref-option { flex: 1; min-width: 120px; padding: 0.875rem; border: 2px solid var(--color-border); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.3s; }
-        .contact-pref-option:hover { border-color: var(--color-stone); }
-        .contact-pref-option.selected { border-color: var(--color-accent); background: rgba(139, 115, 85, 0.08); }
-        .contact-pref-option input { display: none; }
-        .contact-pref-option svg { width: 24px; height: 24px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 0.35rem; }
-        .contact-pref-option span { display: block; font-size: 0.85rem; font-weight: 500; }
-
-        /* Appointment Picker */
-        .appointment-picker { margin-top: 1rem; padding: 1.25rem; background: var(--color-warm); border-radius: 8px; display: none; }
-        .appointment-picker.active { display: block; animation: fadeInUp 0.3s ease; }
-        .appointment-picker h4 { font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
-        .appointment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
-        .appointment-slot { padding: 0.75rem 0.5rem; border: 1px solid var(--color-border); border-radius: 4px; background: white; cursor: pointer; text-align: center; font-size: 0.8rem; transition: all 0.2s; }
-        .appointment-slot:hover { border-color: var(--color-accent); }
-        .appointment-slot.selected { border-color: var(--color-accent); background: var(--color-accent); color: white; }
-        .appointment-slot .date { font-weight: 600; }
-        .appointment-slot .time { color: var(--color-text-muted); }
-        .appointment-slot.selected .time { color: rgba(255,255,255,0.8); }
 
         /* Submit Button */
         .form-submit {
@@ -326,9 +294,7 @@
             .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
             .logo span { display: none; }
             .mobile-menu-btn { display: flex; }
-            .enquiry-type-grid { grid-template-columns: repeat(2, 1fr); }
             .form-row { grid-template-columns: 1fr; }
-            .appointment-grid { grid-template-columns: repeat(2, 1fr); }
             .contact-methods { flex-direction: column; }
             .contact-method { min-width: 0; }
             .contact-form-wrapper { padding: 1.5rem; }
@@ -551,35 +517,6 @@
                         </div>
                     </div>
 
-    <!-- Search Overlay -->
-    <div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
-
-    <!-- Search Modal -->
-    <div class="search-modal" id="searchModal">
-        <div class="search-modal-inner">
-            <div class="search-input-wrapper">
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
-                <button type="button" class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
-                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-            <div class="search-results" id="searchResults">
-                <div class="search-section" id="quickLinksSection">
-                    <div class="search-section-title">Quick Links</div>
-                    <div class="search-quick-links">
-                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
-                        <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
-                        <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
-                        <a href="/faq" class="search-quick-link">FAQs</a>
-                        <a href="/contact" class="search-quick-link">Get a Quote</a>
-                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
                     <!-- Opening Hours — client to confirm actual hours -->
                     <div class="contact-method">
                         <div class="contact-method-icon">
@@ -614,39 +551,15 @@
                     </div>
 
                     <!-- Enquiry Type Selection -->
-                    <div class="enquiry-type-grid">
-                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'new-memorial')">
-                            <input type="radio" name="enquiry_type" value="new-memorial">
-                            <div class="enquiry-type-icon">
-                                <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18"/><path d="M12 6V3"/></svg>
-                            </div>
-                            <div class="enquiry-type-label">New Memorial</div>
-                            <div class="enquiry-type-desc">Headstone or kerb set</div>
-                        </label>
-                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'renovation')">
-                            <input type="radio" name="enquiry_type" value="renovation">
-                            <div class="enquiry-type-icon">
-                                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                            </div>
-                            <div class="enquiry-type-label">Renovation</div>
-                            <div class="enquiry-type-desc">Clean, repair, restore</div>
-                        </label>
-                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'additional')">
-                            <input type="radio" name="enquiry_type" value="additional">
-                            <div class="enquiry-type-icon">
-                                <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                            </div>
-                            <div class="enquiry-type-label">Additional Work</div>
-                            <div class="enquiry-type-desc">Inscription, letters</div>
-                        </label>
-                        <label class="enquiry-type" onclick="selectEnquiryType(this, 'question')">
-                            <input type="radio" name="enquiry_type" value="question">
-                            <div class="enquiry-type-icon">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            </div>
-                            <div class="enquiry-type-label">Question</div>
-                            <div class="enquiry-type-desc">General enquiry</div>
-                        </label>
+                    <div class="form-group">
+                        <label for="enquiryType">Enquiry Type <span class="required">*</span></label>
+                        <select id="enquiryType" name="enquiry_type" class="form-select" required onchange="selectEnquiryType(this.value)">
+                            <option value="" disabled selected>Choose an enquiry type…</option>
+                            <option value="new-memorial">New Memorial — Headstone or kerb set</option>
+                            <option value="renovation">Renovation — Clean, repair, restore</option>
+                            <option value="additional">Additional Work — Inscription, letters</option>
+                            <option value="question">Question — General enquiry</option>
+                        </select>
                     </div>
 
                     <!-- Form Fields (Progressive Disclosure) -->
@@ -708,34 +621,6 @@
                             <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
                         </div>
 
-                        <!-- Preferred Contact Method -->
-                        <div class="form-group">
-                            <label>How would you like us to respond?</label>
-                            <div class="contact-preference">
-                                <label class="contact-pref-option selected" onclick="selectContactPref(this, 'email')">
-                                    <input type="radio" name="contact_pref" value="email" checked>
-                                    <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                    <span>Email</span>
-                                </label>
-                                <label class="contact-pref-option" onclick="selectContactPref(this, 'phone')">
-                                    <input type="radio" name="contact_pref" value="phone">
-                                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                    <span>Phone</span>
-                                </label>
-                                <label class="contact-pref-option" onclick="selectContactPref(this, 'appointment')">
-                                    <input type="radio" name="contact_pref" value="appointment">
-                                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    <span>Book Visit</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Appointment Picker (shown when "Book Visit" selected) -->
-                        <div class="appointment-picker" id="appointmentPicker">
-                            <h4>Choose a time that suits you</h4>
-                            <div class="appointment-grid" id="appointmentGrid"></div>
-                        </div>
-
                         <button type="submit" class="form-submit">
                             <span>Send Message</span>
                             <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -759,6 +644,35 @@
             </div>
         </div>
     </section>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-modal-inner">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
+                <button type="button" class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-section" id="quickLinksSection">
+                    <div class="search-section-title">Quick Links</div>
+                    <div class="search-quick-links">
+                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
+                        <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
+                        <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     </main>
 
@@ -844,21 +758,18 @@
         })();
 
         // Enquiry type selection
-        function selectEnquiryType(el, type) {
-            document.querySelectorAll('.enquiry-type').forEach(e => e.classList.remove('selected'));
-            el.classList.add('selected');
-
+        function selectEnquiryType(type) {
             // Show/hide context-specific fields based on type
             const cemeteryField = document.getElementById('cemeteryField');
             const graveField = document.getElementById('graveField');
             const photoField = document.getElementById('photoField');
-            
+
             const showCemetery = (type === 'new-memorial' || type === 'additional');
             cemeteryField.style.display = showCemetery ? 'block' : 'none';
             if (!showCemetery) document.getElementById('cemetery').value = '';
             graveField.style.display = showCemetery ? 'block' : 'none';
             photoField.style.display = (type === 'renovation') ? 'block' : 'none';
-            
+
             // Update message placeholder
             const placeholders = {
                 'new-memorial': 'Tell us about the memorial you\'re looking for - style, size, any specific requirements...',
@@ -866,7 +777,7 @@
                 'additional': 'What inscription or changes would you like to add?',
                 'question': 'What would you like to know?'
             };
-            document.getElementById('message').placeholder = placeholders[type];
+            document.getElementById('message').placeholder = placeholders[type] || '';
         }
 
         // Cemetery autocomplete
@@ -924,74 +835,6 @@
                 document.getElementById('cemeterySuggestions').classList.remove('active');
             }
         });
-
-        // Contact preference
-        function selectContactPref(el, pref) {
-            document.querySelectorAll('.contact-pref-option').forEach(e => e.classList.remove('selected'));
-            el.classList.add('selected');
-            
-            // Show appointment picker if "Book Visit" selected
-            const appointmentPicker = document.getElementById('appointmentPicker');
-            if (pref === 'appointment') {
-                appointmentPicker.classList.add('active');
-                generateAppointmentSlots();
-            } else {
-                appointmentPicker.classList.remove('active');
-            }
-        }
-
-        // Generate appointment slots
-        function generateAppointmentSlots() {
-            const grid = document.getElementById('appointmentGrid');
-            const slots = [];
-            const today = new Date();
-            
-            // Generate next 8 available slots (weekdays)
-            let current = new Date(today);
-            current.setDate(current.getDate() + 1); // Start from tomorrow
-            
-            while (slots.length < 8) {
-                const day = current.getDay();
-                if (day !== 0 && day !== 6) { // Skip weekends
-                    const times = ['10:00', '14:00'];
-                    times.forEach(time => {
-                        if (slots.length < 8) {
-                            slots.push({
-                                date: new Date(current),
-                                time: time
-                            });
-                        }
-                    });
-                }
-                current.setDate(current.getDate() + 1);
-            }
-            
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            grid.innerHTML = slots.map((slot, i) => `
-                <div class="appointment-slot" onclick="selectAppointment(this, '${slot.date.toISOString()}', '${slot.time}')">
-                    <div class="date">${days[slot.date.getDay()]} ${slot.date.getDate()} ${months[slot.date.getMonth()]}</div>
-                    <div class="time">${slot.time}</div>
-                </div>
-            `).join('');
-        }
-
-        let selectedAppointment = null;
-        function selectAppointment(el, date, time) {
-            document.querySelectorAll('.appointment-slot').forEach(s => s.classList.remove('selected'));
-            el.classList.add('selected');
-            // Send date + time as separate fields and let the server treat them as
-            // Europe/London local. Constructing an ISO timestamp on the client used
-            // to shift events by an hour during BST because new Date(...).toISOString()
-            // converts via the browser's local timezone.
-            const day = date.split('T')[0];
-            selectedAppointment = {
-                date: day,
-                time: time,
-                kind: 'showroom',
-            };
-        }
 
         // File upload — uploads each file to /api/upload-photo immediately and
         // stores the returned storage path. Submission sends `photo_urls`
@@ -1128,10 +971,9 @@
             const email        = document.getElementById('email').value.trim();
             const phone        = document.getElementById('phone').value.trim();
             const message      = document.getElementById('message').value.trim();
-            const enquiryType  = (document.querySelector('input[name="enquiry_type"]:checked') || {}).value || '';
+            const enquiryType  = document.getElementById('enquiryType').value;
             const cemetery     = document.getElementById('cemetery').value.trim();
             const graveNumber  = document.getElementById('graveNumber').value.trim();
-            const contactPref  = (document.querySelector('input[name="contact_pref"]:checked') || {}).value || '';
 
             // Inline validation guards. Surfacing in formSubmitError keeps everything in one place.
             function showInlineError(msg) {
@@ -1149,10 +991,6 @@
             }
             if (!enquiryType) {
                 showInlineError('Please choose an enquiry type at the top of the form.');
-                return;
-            }
-            if (contactPref === 'appointment' && !selectedAppointment) {
-                showInlineError('Please pick an appointment slot, or change "How would you like us to respond?" to email or phone.');
                 return;
             }
             if (enquiryType === 'renovation' && uploadedPhotos.filter(p => p.status === 'done').length === 0) {
@@ -1202,14 +1040,8 @@
                         enquiry_type: enquiryType || null,
                         grave_number: graveNumber || null,
                         source_page: window.location.pathname,
-                        contact_pref: contactPref || null,
                         location: cemetery || null,
                         cemetery_id: selectedCemeteryId || null,
-                        // Send date+time separately so the server can treat them as
-                        // Europe/London local without browser-timezone conversion.
-                        appointment_date: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.date : null,
-                        appointment_time: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.time : null,
-                        appointment_kind: contactPref === 'appointment' && selectedAppointment ? selectedAppointment.kind : null,
                         photo_urls: photoPaths.length > 0 ? photoPaths : null
                     })
                 });
