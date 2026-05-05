@@ -131,10 +131,38 @@
         else btn.classList.remove('has-items');
     }
 
+    function ensureSkipLink() {
+        if (document.querySelector('a.sm-skip-link')) return;
+        var main = document.querySelector('main');
+        if (!main) return;
+        if (!main.id) main.id = 'main';
+
+        var style = document.getElementById('sm-skip-link-style');
+        if (!style) {
+            style = document.createElement('style');
+            style.id = 'sm-skip-link-style';
+            // Visually hidden until focused — uses absolute positioning so it
+            // doesn't reflow page layout. WCAG 2.4.1 Bypass Blocks.
+            style.textContent =
+                '.sm-skip-link{position:absolute;left:-9999px;top:0;background:#2C2C2C;color:#FAF8F5;' +
+                'padding:.75rem 1rem;font-family:inherit;font-size:.875rem;letter-spacing:.05em;' +
+                'text-transform:uppercase;text-decoration:none;border-radius:0 0 3px 0;z-index:10000;}' +
+                '.sm-skip-link:focus{left:0;top:0;outline:2px solid #8B7355;outline-offset:2px;}';
+            document.head.appendChild(style);
+        }
+
+        var link = document.createElement('a');
+        link.className = 'sm-skip-link';
+        link.href = '#' + main.id;
+        link.textContent = 'Skip to content';
+        document.body.insertBefore(link, document.body.firstChild);
+    }
+
     function init() {
         watchChatWidget();
         ensureShortlistBadge();
         updateShortlistBadge();
+        ensureSkipLink();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });

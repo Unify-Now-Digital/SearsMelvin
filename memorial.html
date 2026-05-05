@@ -567,8 +567,8 @@
     }
     </script>
 
-    <!-- Structured data: Breadcrumbs -->
-    <script type="application/ld+json">
+    <!-- Structured data: Breadcrumbs (updated dynamically once product loads) -->
+    <script type="application/ld+json" id="breadcrumbJsonLd">
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -579,6 +579,9 @@
       ]
     }
     </script>
+
+    <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
+    <script type="application/ld+json" id="productJsonLd"></script>
 </head>
 <body class="has-mobile-bottom-bar">
     <!-- Google Tag Manager (noscript) -->
@@ -1281,6 +1284,56 @@
                     setMeta('meta[name="twitter:description"]', 'content', desc);
                     setMeta('meta[name="twitter:image"]', 'content', img);
                     setMeta('meta[name="description"]', 'content', desc);
+                })();
+
+                // Update Product + BreadcrumbList structured data with the
+                // loaded product so Google rich results show real price/image.
+                (function syncStructuredData() {
+                    var catName = product.product_categories?.name || 'Memorial';
+                    var catSlug = product.product_categories?.slug || '';
+                    var canonicalUrl = 'https://searsmelvin.co.uk/memorial.html?slug=' + encodeURIComponent(product.slug || '');
+                    var productImage = product.image_url || 'https://searsmelvin.co.uk/sm-logo.svg';
+
+                    var productLd = {
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: product.name,
+                        description: product.description || 'Hand-finished memorial with 30-year guarantee.',
+                        image: productImage,
+                        sku: product.slug || String(product.id || ''),
+                        category: catName,
+                        brand: { '@type': 'Brand', name: 'Sears Melvin Memorials' },
+                        offers: {
+                            '@type': 'Offer',
+                            url: canonicalUrl,
+                            priceCurrency: 'GBP',
+                            price: state.basePrice,
+                            availability: 'https://schema.org/InStock',
+                            priceValidUntil: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+                            seller: { '@type': 'Organization', name: 'Sears Melvin Memorials' }
+                        }
+                    };
+                    var prodScript = document.getElementById('productJsonLd');
+                    if (prodScript) prodScript.textContent = JSON.stringify(productLd);
+
+                    var crumbs = [
+                        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://searsmelvin.co.uk/' },
+                        { '@type': 'ListItem', position: 2, name: 'Memorials', item: 'https://searsmelvin.co.uk/memorials' }
+                    ];
+                    if (catSlug) {
+                        crumbs.push({ '@type': 'ListItem', position: 3, name: catName, item: 'https://searsmelvin.co.uk/memorials?type=' + encodeURIComponent(catSlug) });
+                        crumbs.push({ '@type': 'ListItem', position: 4, name: product.name, item: canonicalUrl });
+                    } else {
+                        crumbs.push({ '@type': 'ListItem', position: 3, name: product.name, item: canonicalUrl });
+                    }
+                    var crumbScript = document.getElementById('breadcrumbJsonLd');
+                    if (crumbScript) {
+                        crumbScript.textContent = JSON.stringify({
+                            '@context': 'https://schema.org',
+                            '@type': 'BreadcrumbList',
+                            itemListElement: crumbs
+                        });
+                    }
                 })();
                 var catName = product.product_categories?.name || 'Memorial';
                 var catSlug = product.product_categories?.slug || '';
