@@ -156,6 +156,8 @@
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta-soft { background-color: transparent; color: var(--color-stone) !important; padding: 0.75rem 1.5rem; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--color-stone); transition: background-color 0.2s, color 0.2s; }
+        .nav-cta-soft:hover { background-color: var(--color-stone); color: var(--color-cream) !important; }
         /* Page Header */
         .page-header { padding: 9rem 2rem 3rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
         .page-header h1 { font-size: 2.75rem; margin-bottom: 1rem; }
@@ -522,7 +524,7 @@
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
-            <li><a href="/contact" class="nav-cta">Contact</a></li>
+            <li><a href="/contact" class="nav-cta-soft">Contact</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </nav>
