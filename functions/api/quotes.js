@@ -162,6 +162,8 @@ async function updateQuote(env, data) {
     const customerName = [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ");
     const customerEmail = order.people?.email || "";
     const productName = (product && product.name) || order.sku || "Memorial";
+    const oldConfig = order.product_config ? safeParse(order.product_config) : {};
+    const productSlug = (product && product.slug) || oldConfig.slug || "";
     const changes = buildChangesSummary(order, product, message);
 
     // Notify the business
@@ -170,7 +172,7 @@ async function updateQuote(env, data) {
         from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
         to: "info@searsmelvin.co.uk",
         subject: `Quote updated by customer — ${customerName || customerEmail}`,
-        html: quoteUpdateBusinessEmail({ name: customerName, email: customerEmail, productName, changes }),
+        html: quoteUpdateBusinessEmail({ name: customerName, email: customerEmail, productName, productSlug, changes }),
       });
     } catch (err) {
       console.error("Quote update business email failed:", err);
@@ -183,7 +185,7 @@ async function updateQuote(env, data) {
           from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
           to: customerEmail,
           subject: "Your quote has been updated — Sears Melvin Memorials",
-          html: quoteUpdateCustomerEmail({ firstName: customerName.split(" ")[0] || "there", productName, changes }),
+          html: quoteUpdateCustomerEmail({ firstName: customerName.split(" ")[0] || "there", productName, productSlug, changes }),
         });
       } catch (err) {
         console.error("Quote update customer email failed:", err);
@@ -244,8 +246,9 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
   }
 }
 
-function quoteUpdateBusinessEmail({ name, email, productName, changes }) {
+function quoteUpdateBusinessEmail({ name, email, productName, productSlug, changes }) {
   const changeList = changes.map(c => `<li style="padding:3px 0;color:#1A1A1A;">${esc(c)}</li>`).join("");
+  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(productSlug)}` : "";
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
@@ -262,7 +265,7 @@ function quoteUpdateBusinessEmail({ name, email, productName, changes }) {
     <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:16px;">
       <tr><td style="color:#999;padding:5px 0;width:100px;">Customer</td><td style="color:#1A1A1A;font-weight:600;">${esc(name || "—")}</td></tr>
       <tr><td style="color:#999;padding:5px 0;">Email</td><td><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email || "—")}</a></td></tr>
-      <tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(productName)}</td></tr>
+      <tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(productName)}${productUrl ? ` &middot; <a href="${productUrl}" style="color:#8B7355;text-decoration:none;font-weight:600;">View product &rarr;</a>` : ""}</td></tr>
     </table>
     <div style="background:#F5F3F0;border-radius:8px;padding:16px 20px;">
       <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:8px;">Changes Made</div>
@@ -276,8 +279,9 @@ function quoteUpdateBusinessEmail({ name, email, productName, changes }) {
 </td></tr></table></body></html>`;
 }
 
-function quoteUpdateCustomerEmail({ firstName, productName, changes }) {
+function quoteUpdateCustomerEmail({ firstName, productName, productSlug, changes }) {
   const changeList = changes.map(c => `<li style="padding:3px 0;color:#1A1A1A;">${esc(c)}</li>`).join("");
+  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(productSlug)}` : "";
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
@@ -291,6 +295,7 @@ function quoteUpdateCustomerEmail({ firstName, productName, changes }) {
     <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 20px;">
       We've received your changes to your <strong style="color:#2C2C2C;">${esc(productName)}</strong> quote. Our team will review the updates and be in touch if anything needs adjusting.
     </p>
+    ${productUrl ? `<p style="margin:0 0 20px;"><a href="${productUrl}" style="color:#8B7355;font-size:14px;font-weight:600;text-decoration:none;">View this memorial on our website &rarr;</a></p>` : ""}
   </td></tr>
   <tr><td style="padding:0 28px 28px;">
     <div style="background:#F5F3F0;border-radius:8px;padding:16px 20px;">

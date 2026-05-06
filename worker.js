@@ -780,6 +780,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
   const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(product.slug)}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -808,6 +809,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
           <td style="padding:18px 20px;">
             <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px;">Memorial Configuration</p>
             <p style="font-family:Georgia,serif;font-size:20px;color:#2C2C2C;margin:0 0 14px;">${esc(product.name || "—")}</p>
+            ${productUrl ? `<p style="margin:0 0 14px;"><a href="${productUrl}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">View product on website &rarr;</a></p>` : ""}
 
             ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
               <tr><td align="center" style="background:#F5F3F0;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
@@ -910,6 +912,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) 
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
   const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(product.slug)}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -939,6 +942,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) 
           <td style="padding:16px 18px;">
             <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px;">Your Order Summary</p>
             <p style="font-family:Georgia,serif;font-size:18px;color:#2C2C2C;margin:0 0 14px;">${esc(product.name || "—")}</p>
+            ${productUrl ? `<p style="margin:0 0 14px;"><a href="${productUrl}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">View this memorial on our website &rarr;</a></p>` : ""}
 
             ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
               <tr><td align="center" style="background:#fff;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
