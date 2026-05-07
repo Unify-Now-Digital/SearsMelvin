@@ -841,7 +841,7 @@
                                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#999" stroke-width="1.5"><rect x="4" y="4" width="28" height="28" rx="2"/><path d="M4 22 Q10 18 18 20 Q26 22 32 19 L32 32 L4 32 Z" fill="#8B6914" opacity="0.4" stroke="none"/><circle cx="12" cy="14" r="1.5" fill="#4A7C59"/><circle cx="18" cy="12" r="2" fill="#4A7C59"/><circle cx="24" cy="14" r="1.5" fill="#4A7C59"/></svg>
                             </div>
                             <div style="font-size:0.8rem; font-weight:600; color:var(--color-stone);">Soil</div>
-                            <div style="font-size:0.72rem; color:var(--color-text-muted);">Included</div>
+                            <div style="font-size:0.72rem; color:var(--color-text-muted);">+£80</div>
                         </div>
                         <!-- Coverslab -->
                         <div class="infill-type-tile" onclick="selectInfillType(this, 'coverslab')" data-type="coverslab" style="padding:0.75rem; border:1.5px solid var(--color-border); border-radius:6px; cursor:pointer; text-align:center;">
@@ -1647,7 +1647,7 @@
         }
 
         // ==================== KERB INFILL TYPE ====================
-        var INFILL_PRICES = { none: 0, soil: 0, coverslab: 950, chippings: 250 };
+        var INFILL_PRICES = { none: 0, soil: 80, coverslab: 950, chippings: 250 };
 
         function selectInfillType(tile, typeName) {
             document.querySelectorAll('.infill-type-tile').forEach(function(t) {

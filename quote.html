@@ -832,7 +832,7 @@
                 html += '<div class="edit-field"><label>Kerb Infill Type</label>'
                     + '<select id="editInfillType" onchange="toggleEditChippingsColour()">'
                     + infillTypes.map(function(t) {
-                        return '<option value="' + t + '"' + (t === (product.infillType || 'chippings') ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + (t === 'coverslab' ? ' (+£950)' : t === 'chippings' ? ' (+£250)' : '') + '</option>';
+                        return '<option value="' + t + '"' + (t === (product.infillType || 'chippings') ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + (t === 'coverslab' ? ' (+£950)' : t === 'chippings' ? ' (+£250)' : t === 'soil' ? ' (+£80)' : '') + '</option>';
                     }).join('')
                     + '</select></div>';
 
