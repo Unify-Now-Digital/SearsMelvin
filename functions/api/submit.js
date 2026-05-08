@@ -3,7 +3,7 @@
  * Route: /api/submit (POST)
  */
 const CLICKUP_LIST_ID = "8ck2cf5-10552";
-const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
+const BUSINESS_EMAIL = "info@searmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
 
@@ -142,7 +142,6 @@ async function quoteSideEffects({
     bg("ghl quote contact+opportunity", async () => {
       const ghlExtraFields = [
         message              ? { key: "customer_message",   field_value: message } : null,
-        cemetery || location ? { key: "cemetery_location",  field_value: cemetery || location } : null,
         product.type         ? { key: "memorial_type",      field_value: product.type } : null,
         product.font         ? { key: "font_style",         field_value: product.font } : null,
         product.letterColour ? { key: "letter_colour",      field_value: product.letterColour } : null,
@@ -313,7 +312,6 @@ async function enquirySideEffects({
       const ghlExtraFields = [
         message      ? { key: "customer_message",  field_value: message } : null,
         enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-        location     ? { key: "cemetery_location", field_value: location } : null,
       ].filter(Boolean);
       return createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
     }),
