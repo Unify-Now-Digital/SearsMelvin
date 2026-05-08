@@ -402,7 +402,6 @@ async function handleQuoteRequest(env, data, submittedAt, corsHeaders) {
   try {
     const ghlExtraFields = [
       message              ? { key: "customer_message",   field_value: message } : null,
-      location             ? { key: "cemetery_location",  field_value: location } : null,
       payment_preference   ? { key: "payment_preference", field_value: payment_preference } : null,
       product.type         ? { key: "memorial_type",      field_value: product.type } : null,
       product.font         ? { key: "font_style",         field_value: product.font } : null,
@@ -546,7 +545,6 @@ async function handleEnquiry(env, data, submittedAt, corsHeaders) {
     const ghlExtraFields = [
       message      ? { key: "customer_message",  field_value: message } : null,
       enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-      location     ? { key: "cemetery_location", field_value: location } : null,
     ].filter(Boolean);
     await createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
   } catch (err) {
