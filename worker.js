@@ -20,7 +20,7 @@
  *   GHL_LOCATION_ID       → GoHighLevel → Settings → Business Profile
  */
 
-const CLICKUP_LIST_ID = "901207633256";
+const CLICKUP_LIST_ID = "8ck2cf5-10552";
 const BUSINESS_EMAIL  = "info@searsmelvin.co.uk";
 const FROM_EMAIL      = "info@searsmelvin.co.uk"; // Must be verified in Resend
 const BUSINESS_NAME   = "Sears Melvin Memorials";
