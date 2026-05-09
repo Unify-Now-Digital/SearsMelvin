@@ -175,6 +175,47 @@
         }
     }
 
+    // Compact the footer site-wide. Each page ships its own footer markup
+    // and CSS, so we centralise the spacing/structure tweaks here rather
+    // than touching 11 files.
+    function compactFooter() {
+        var footer = document.querySelector('footer');
+        if (footer) {
+            var contact = footer.querySelector('.footer-contact');
+            if (contact && !contact.getAttribute('data-sm-compact')) {
+                var brs = contact.querySelectorAll('br');
+                for (var b = 0; b < brs.length; b++) {
+                    var sep = document.createElement('span');
+                    sep.className = 'footer-contact-sep';
+                    sep.setAttribute('aria-hidden', 'true');
+                    sep.textContent = '·';
+                    brs[b].parentNode.replaceChild(sep, brs[b]);
+                }
+                contact.setAttribute('data-sm-compact', '1');
+            }
+        }
+
+        if (document.getElementById('sm-footer-compact-style')) return;
+        var style = document.createElement('style');
+        style.id = 'sm-footer-compact-style';
+        style.textContent = [
+            'footer{padding:1.5rem 2rem 1.25rem!important;}',
+            '.footer-container{align-items:center!important;gap:1rem 2rem!important;}',
+            '.footer-contact{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 0.55rem!important;line-height:1.5!important;margin-top:0.35rem!important;}',
+            '.footer-contact a{display:inline!important;min-height:0!important;padding:0!important;line-height:1.5!important;}',
+            '.footer-contact-sep{color:rgba(255,255,255,0.25)!important;}',
+            '.footer-links{gap:0.4rem 1rem!important;}',
+            '.footer-links a{min-height:32px!important;padding:0 0.25rem!important;}',
+            '.footer-copy{margin-top:0.75rem!important;padding-top:0.85rem!important;}',
+            '.footer-legal{margin-top:0.35rem!important;line-height:1.5!important;}',
+            '.footer-accreditations{margin-top:0.6rem!important;padding-top:0!important;border-top:0!important;gap:0.6rem!important;}',
+            '.footer-accreditations .accred-badge{padding:0.2rem 0.6rem!important;font-size:0.72rem!important;}',
+            '@media (max-width:768px){.footer-contact{justify-content:center!important;}}',
+            '@media (hover:none) and (pointer:coarse){.footer-contact a{display:inline-block!important;min-height:44px!important;padding:0.55rem 0!important;line-height:1.2!important;}}'
+        ].join('');
+        document.head.appendChild(style);
+    }
+
     function ensureSkipLink() {
         if (document.querySelector('a.sm-skip-link')) return;
         var main = document.querySelector('main');
@@ -208,6 +249,7 @@
         updateShortlistBadge();
         ensureSkipLink();
         ensureFooterDisclosures();
+        compactFooter();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });
