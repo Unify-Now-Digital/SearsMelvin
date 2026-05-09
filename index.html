@@ -403,17 +403,21 @@
         .contact-cta .gentle-message { margin-top: 2rem; font-size: 0.9rem; color: rgba(255,255,255,0.5); font-style: italic; }
 
         /* Footer */
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
-        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem; }
+        footer { padding: 1.75rem 2rem 1.25rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem 2rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; display: inline-block; min-height: 44px; padding: 0.6rem 0; line-height: 1.2; }
+        .footer-contact { font-size: 0.85rem; line-height: 1.5; margin-top: 0.4rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.6rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
-        .footer-links { display: flex; gap: 1rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.5rem; }
+        .footer-contact-sep { color: rgba(255,255,255,0.25); }
+        @media (hover: none) and (pointer: coarse) {
+            .footer-contact a { display: inline-block; min-height: 44px; padding: 0.6rem 0; line-height: 1.2; }
+        }
+        .footer-links { display: flex; gap: 0.5rem 1rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; display: inline-flex; align-items: center; min-height: 32px; padding: 0 0.25rem; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
         /* Recent Installations Marquee */
         .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; position: relative; }
         .installations .section-header { padding: 0 2rem; }
@@ -477,6 +481,7 @@
             .testimonials-grid { grid-template-columns: 1fr; }
             .faq-tabs { gap: 0.3rem; }
             .footer-container { flex-direction: column; text-align: center; }
+            .footer-contact { justify-content: center; }
             .footer-links { flex-wrap: wrap; justify-content: center; }
             body { padding-bottom: 70px; }
         }
@@ -1149,9 +1154,11 @@
             <div>
                 <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
                 <div class="footer-contact">
-                    <a href="tel:+442038352548">020 3835 2548</a><br>
-                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment
+                    <a href="tel:+442038352548">020 3835 2548</a>
+                    <span class="footer-contact-sep" aria-hidden="true">·</span>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span class="footer-contact-sep" aria-hidden="true">·</span>
+                    <span>North London — By appointment</span>
                 </div>
             </div>
             <ul class="footer-links">
@@ -1168,9 +1175,9 @@
                 <li><a href="/privacy">Privacy</a></li>
             </ul>
             <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            <p class="footer-legal" style="font-size:0.75rem;line-height:1.5;width:100%;text-align:center;margin-top:0.4rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
             <!-- Professional Memberships -->
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);"><span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;">Accredited</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">NAMM</strong> Member</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">RQMF</strong> Registered</span></div>
+            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;width:100%;margin-top:0.75rem;"><span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;">Accredited</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.25rem 0.65rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.72rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">NAMM</strong> Member</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.25rem 0.65rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.72rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">RQMF</strong> Registered</span></div>
         </div>
     </footer>
 
