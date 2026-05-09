@@ -25,7 +25,7 @@
         if (id.indexOf('lc_') === 0 || id.indexOf('lc-') === 0) return true;
         if (cls.indexOf('lc-') === 0 || cls.indexOf('lc_') === 0) return true;
         if (cls.indexOf('leadconnector') !== -1) return true;
-        if (el.getAttribute && el.getAttribute('data-widget-id') === '69f5bdefa4b26c5126799210') return true;
+        if (el.getAttribute && el.getAttribute('data-widget-id') === '69ff236b0d119858db377c07') return true;
         if (tag === 'iframe') {
             var src = (el.getAttribute('src') || '').toLowerCase();
             var title = (el.getAttribute('title') || '').toLowerCase();
@@ -45,7 +45,7 @@
                 el.style.setProperty('right', '24px', 'important');
             }
         }
-        var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69f5bdefa4b26c5126799210"]');
+        var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
         for (var j = 0; j < deeper.length; j++) {
             deeper[j].style.setProperty('bottom', bottom + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');
