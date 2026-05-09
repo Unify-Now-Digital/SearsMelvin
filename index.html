@@ -1544,17 +1544,45 @@
             });
         }
 
+        // ==================== HASH ANCHOR (post-load re-scroll) ====================
+        // The homepage has sections above the anchor targets whose contents are
+        // populated asynchronously (categoriesGrid via Supabase, the about
+        // image, lazy-loaded imagery). The browser's initial scroll to
+        // location.hash happens before those layout shifts, which leaves
+        // visitors landing in the wrong place. After the dynamic content
+        // settles, re-scroll to the requested anchor.
+        function scrollToInitialHash() {
+            const hash = location.hash;
+            if (!hash || hash.length < 2) return;
+            let target;
+            try { target = document.querySelector(hash); } catch (_) { return; }
+            if (!target) return;
+            target.scrollIntoView({ block: 'start' });
+        }
+
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             initScrollAnimations();
             calculateTimeline();
-            loadHomepagePhotos();
+            const photosPromise = loadHomepagePhotos();
             initInstallations();
             // Set min date for appointment to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const dateInput = document.getElementById('apptDate');
             if (dateInput) dateInput.min = tomorrow.toISOString().split('T')[0];
+
+            if (location.hash && location.hash.length > 1) {
+                // Re-scroll once the categories/about content is in the DOM…
+                Promise.resolve(photosPromise).catch(() => {}).then(() => {
+                    requestAnimationFrame(() => requestAnimationFrame(scrollToInitialHash));
+                });
+                // …and again once every image has finished loading, to absorb
+                // any remaining layout shift from late-decoding imagery.
+                window.addEventListener('load', () => {
+                    requestAnimationFrame(scrollToInitialHash);
+                }, { once: true });
+            }
         });
     </script>
 <!-- Cookie Consent Banner -->
