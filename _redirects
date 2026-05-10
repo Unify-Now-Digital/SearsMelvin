@@ -1,8 +1,12 @@
 # Clean product URLs: /memorials/<slug> serves memorial.html.
 #
-# Do NOT add a `/memorial -> /memorials` redirect here: Cloudflare Pages
-# canonicalises rewrite targets by stripping `.html` (so `/memorial.html`
-# resolves as `/memorial`), which would then match that rule and bounce
-# every product page back to the listing. memorial.html itself handles the
-# "no slug" case gracefully, so a bare `/memorial` visit is harmless.
-/memorials/:slug   /memorial.html   200
+# The destination MUST be the clean form `/memorial` (not `/memorial.html`).
+# Cloudflare Pages applies `.html` canonicalisation to rewrite targets — if
+# we point at `/memorial.html` the edge 308-redirects the browser to
+# `/memorial`, which strips the `:slug` and breaks the page. Using the
+# clean URL keeps the response a true rewrite (status 200, address bar
+# unchanged) so memorial.html can read the slug from the path.
+#
+# Do NOT add a `/memorial -> /memorials` redirect: memorial.html already
+# handles the "no slug" case gracefully by showing "Product not found".
+/memorials/:slug   /memorial   200
