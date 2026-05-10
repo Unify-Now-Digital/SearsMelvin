@@ -758,7 +758,7 @@ async function sendCustomerEmail(env, { orderId, kind }) {
     });
   }
 
-  const trackUrl = `https://searsmelvin.co.uk/track.html?token=${encodeURIComponent(trackingToken || "")}`;
+  const trackUrl = `https://searsmelvin.co.uk/track?token=${encodeURIComponent(trackingToken || "")}`;
   const greeting = customerName ? `Dear ${customerName},` : "Hello,";
 
   let subject, html;

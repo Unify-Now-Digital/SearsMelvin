@@ -1004,7 +1004,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
               <tr>
                 <td style="padding:14px 18px;font-family:Arial,sans-serif;">
                   <p style="font-size:13px;color:#555555;margin:0 0 8px;line-height:1.5;">Changed your mind about colour, size, or extras? You can update your quote at any time:</p>
-                  <a href="https://searsmelvin.co.uk/quote.html?token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
+                  <a href="https://searsmelvin.co.uk/quote?token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
                 </td>
               </tr>
             </table>
@@ -1015,7 +1015,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
         <tr>
           <td style="padding:0 28px 16px;">
             <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
-              ${email ? `<a href="https://searsmelvin.co.uk/quote.html?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account` : ""}
+              ${email ? `<a href="https://searsmelvin.co.uk/quote?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account` : ""}
             </p>
           </td>
         </tr>

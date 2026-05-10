@@ -290,7 +290,7 @@ async function sendPortalLink(env, { email }) {
   }
 
   const firstName = customer.first_name || "there";
-  const portalUrl = `https://searsmelvin.co.uk/track.html?portal=${customer.portal_token}`;
+  const portalUrl = `https://searsmelvin.co.uk/track?portal=${customer.portal_token}`;
 
   try {
     const emailRes = await fetch("https://api.resend.com/emails", {

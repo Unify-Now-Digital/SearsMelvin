@@ -36,14 +36,18 @@ function escXml(s) {
 }
 
 async function fetchProducts(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
+  // Most Pages Functions configure SUPABASE_SERVICE_KEY for server-side use;
+  // accept either that or SUPABASE_ANON_KEY (read-only) so we don't depend on
+  // a separate env var that's easy to forget when provisioning a new env.
+  const key = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
+  if (!env.SUPABASE_URL || !key) return [];
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/products?is_active=eq.true&select=slug,updated_at,created_at&order=display_order.asc`,
       {
         headers: {
-          apikey: env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+          apikey: key,
+          Authorization: `Bearer ${key}`,
         },
       },
     );
