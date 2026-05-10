@@ -174,6 +174,23 @@ async function handlePaymentSucceeded(env, pi) {
   const amountPaid = (pi.amount_received / 100).toFixed(2);
   const today      = new Date().toISOString().split("T")[0];
 
+  // Idempotency gate. Stripe retries webhook delivery on any non-2xx or
+  // timeout, so we may see the same payment_intent.succeeded multiple times.
+  // If we've already inserted a payments row for this PI, exit before doing
+  // anything else (otherwise we double-email customer + business). The
+  // payments-row check is the source of truth because every successful path
+  // writes one.
+  if (env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY) {
+    const sbHeadersForCheck = {
+      apikey:        env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    };
+    if (await paymentAlreadyRecorded(env, sbHeadersForCheck, pi.id)) {
+      console.log(`Webhook idempotent skip — PI ${pi.id} already recorded`);
+      return;
+    }
+  }
+
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     console.warn("Supabase not configured — skipping invoice/payment insert");
   } else {
