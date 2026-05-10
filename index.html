@@ -201,17 +201,19 @@
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
         .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
-        .trust-bar + .hero { padding-top: 2.5rem; }
+        .trust-bar + .hero, .site-trust-bar + .hero { padding-top: 1.5rem; }
 
         /* Hero */
-        .hero { min-height: 100vh; display: flex; align-items: center; padding: 6rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
-        .hero-content { max-width: 1400px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
-        .hero-text { animation: fadeInUp 1s ease forwards; padding-top: 1rem; }
-        .hero-tagline { font-size: 0.875rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+        .hero { min-height: 0; display: flex; align-items: center; padding: 2rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
+        .hero-content { max-width: 1400px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .hero-text { animation: fadeInUp 1s ease forwards; }
+        .hero-tagline { font-size: 0.875rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1rem; }
         .hero-tagline::before { content: ''; width: 40px; height: 1px; background-color: var(--color-accent); }
-        .hero h1 { margin-bottom: 1.5rem; }
+        .hero h1 { margin-bottom: 1.25rem; }
         .hero h1 em { font-style: italic; font-weight: 300; color: var(--color-accent-dark); }
-        .hero-description { font-size: 1.125rem; line-height: 1.8; margin-bottom: 2.5rem; max-width: 520px; }
+        .hero-lead { font-size: 1.2rem; line-height: 1.5; margin-bottom: 1rem; color: var(--color-accent-dark); max-width: 520px; }
+        .hero-lead em { font-style: italic; font-weight: 400; }
+        .hero-description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 2rem; max-width: 520px; }
         .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
         .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; font-family: var(--font-body); font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s ease; border-radius: 3px; }
         .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
@@ -472,19 +474,23 @@
             .logo span { display: none; }
             .mobile-menu-btn { display: flex; }
             .trust-bar { margin-top: 56px; }
-            .hero { min-height: 0; padding: 1rem 1.25rem 2.5rem; }
-            .trust-bar + .hero { padding-top: 1rem; }
-            .hero-content { gap: 1.25rem; }
-            .hero-text { order: 0; padding-top: 0; }
-            .hero-visual { order: 1; max-width: 320px; }
-            .hero h1 { font-size: 1.85rem; margin-bottom: 0.85rem; line-height: 1.15; }
-            .hero-tagline { font-size: 0.7rem; margin-bottom: 0.75rem; }
-            .hero-description { font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+            .hero { min-height: 0; padding: 0.75rem 1.25rem 2rem; }
+            .trust-bar + .hero, .site-trust-bar + .hero { padding-top: 0.75rem; }
+            .hero-content { gap: 1rem; grid-template-columns: 1fr; }
+            .hero-text { order: 0; padding-top: 0; text-align: center; }
+            .hero-visual { order: 1; max-width: 260px; margin: 0 auto; }
+            .hero-tagline { display: none; }
+            .hero h1 { font-size: 1.7rem; margin-bottom: 0.6rem; line-height: 1.15; }
+            .hero-lead { font-size: 1rem; line-height: 1.45; margin: 0 auto 1rem; max-width: 360px; color: var(--color-text); }
+            .hero-lead em { font-weight: 500; color: var(--color-stone); }
+            .hero-description { display: none; }
             .hero-image { aspect-ratio: 5/4; }
-            .floating-badge { width: 96px; height: 96px; bottom: -18px; right: -10px; }
-            .floating-badge span { font-size: 1.4rem; }
-            .floating-badge small { font-size: 0.55rem; }
-            .hero-buttons .btn { padding: 0.85rem 1.25rem; font-size: 0.8rem; }
+            .floating-badge { width: 84px; height: 84px; bottom: -14px; right: -8px; }
+            .floating-badge span { font-size: 1.25rem; }
+            .floating-badge small { font-size: 0.5rem; }
+            .hero-buttons { gap: 0.5rem; flex-wrap: nowrap; justify-content: center; }
+            .hero-buttons .btn { padding: 0.85rem 1rem; font-size: 0.78rem; flex: 1; justify-content: center; }
+            .hero-buttons .btn svg { width: 16px; height: 16px; }
             .trust-container { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
             .categories-grid { grid-template-columns: 1fr; }
             .values-grid { grid-template-columns: 1fr; }
@@ -707,8 +713,8 @@
             <div class="hero-text">
                 <p class="hero-tagline">Modern Memorial Masons</p>
                 <h1>Headstones, Gravestones &amp; Memorial Monuments</h1>
+                <p class="hero-lead"><em>Meaningful tributes for those who matter most.</em></p>
                 <p class="hero-description">
-                    <em>Meaningful tributes for those who matter most.</em>
                     We're a new kind of memorial company—built on traditional craftsmanship,
                     powered by modern thinking. Bespoke headstones, kerb-set monuments and
                     gravestone renovations, delivered with care and transparency.
