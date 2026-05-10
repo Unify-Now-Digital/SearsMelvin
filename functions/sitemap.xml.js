@@ -7,11 +7,11 @@
 
 const BASE = "https://searsmelvin.co.uk";
 
-// Static, hand-maintained set. Customer-facing only — never list /admin or /track.
+// Static, hand-maintained set. Customer-facing only — never list /admin,
+// /track, /partner, /quote (all noindex or login-gated).
 const STATIC_PAGES = [
   { path: "/",                priority: "1.0",  changefreq: "weekly"  },
   { path: "/memorials",       priority: "0.9",  changefreq: "weekly"  },
-  { path: "/quote",           priority: "0.8",  changefreq: "monthly" },
   { path: "/contact",         priority: "0.8",  changefreq: "monthly" },
   { path: "/care-guide",      priority: "0.6",  changefreq: "monthly" },
   { path: "/faq",             priority: "0.6",  changefreq: "monthly" },
