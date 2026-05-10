@@ -364,13 +364,31 @@
             .mobile-bottom-bar { display: flex; }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
-            body { padding-bottom: 110px; }
+            /* Body has to clear both the bottom-nav (~70px) and the floating bottom-bar above it (~50px + safe area) */
+            body { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
             .gallery-thumbs { gap: 0.5rem; }
             .gallery-thumb { width: 60px; height: 60px; }
             .product-info h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
             .product-category { font-size: 0.7rem; margin-bottom: 0.3rem; letter-spacing: 0.1em; }
             .product-description { font-size: 0.95rem; line-height: 1.65; margin-bottom: 1.25rem; padding-bottom: 1.25rem; }
             .option-group { margin-bottom: 1.25rem; }
+            /* Optional extras as a compact 4-up grid on mobile (Garden Kerb keeps its full-width override via inline style) */
+            .addons-grid { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+            .addon-card { padding: 0.55rem 0.4rem 0.65rem; text-align: center; position: relative; }
+            .addon-header { flex-direction: column; align-items: center; gap: 0.15rem; margin-bottom: 0; }
+            .addon-name { font-size: 0.78rem; line-height: 1.2; }
+            .addon-price { font-size: 0.72rem; }
+            .addon-desc { display: none; }
+            .addon-check { position: absolute; top: 0.3rem; right: 0.3rem; width: 16px; height: 16px; margin-left: 0; }
+            .addon-card.selected .addon-check::after { font-size: 10px; }
+            /* Restore the Garden Kerb card to a full-width, descriptive card */
+            #kerbAddonCard { padding: 1rem; text-align: left; }
+            #kerbAddonCard .addon-header { flex-direction: row; align-items: start; gap: 0.5rem; margin-bottom: 0.4rem; }
+            #kerbAddonCard .addon-name { font-size: 0.95rem; }
+            #kerbAddonCard .addon-price { font-size: 0.85rem; }
+            #kerbAddonCard .addon-desc { display: block; }
+            #kerbAddonCard .addon-check { position: static; width: 22px; height: 22px; margin-left: 0.5rem; }
+            #kerbAddonCard.selected .addon-check::after { font-size: 12px; }
             .footer-container { flex-direction: column; text-align: center; }
             .footer-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
         }
@@ -756,7 +774,7 @@
                 </div>
 
                 <!-- Visual Size Selector with Human Reference -->
-                <div class="option-group">
+                <div class="option-group" id="sizeOptionGroup">
                     <div class="option-header">
                         <span class="option-label">Memorial Size</span>
                         <span class="option-value" id="selectedSizeName">Loading...</span>
@@ -1003,7 +1021,7 @@
                 </div>
 
                 <!-- Features -->
-                <div class="features-section">
+                <div class="features-section" id="featuresSection">
                     <h2 class="features-title">What's Included</h2>
                     <div class="features-grid" id="featuresGrid">
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
@@ -1486,7 +1504,9 @@
 
         function renderSizes(sizes) {
             const container = document.getElementById('sizeOptions');
-            if (!sizes.length) { container.innerHTML = '<span>No sizes available</span>'; return; }
+            const group = document.getElementById('sizeOptionGroup');
+            if (!sizes.length) { if (group) group.style.display = 'none'; return; }
+            if (group) group.style.display = '';
             const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
             const heightMap = { 0: 75, 1: 88, 2: 100 };
             let html = '';
@@ -1554,7 +1574,12 @@
 
         function renderFeatures(features) {
             const container = document.getElementById('featuresGrid');
-            if (!features || !features.length) { container.innerHTML = ''; return; }
+            const section = document.getElementById('featuresSection');
+            if (!features || !features.length) {
+                if (section) section.style.display = 'none';
+                return;
+            }
+            if (section) section.style.display = '';
             const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
             container.innerHTML = features.map(function(f) {
                 return '<div class="feature-item">' + checkSvg + esc(f) + '</div>';
