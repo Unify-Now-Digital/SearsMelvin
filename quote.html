@@ -944,7 +944,7 @@
             // Link to product page
             if (product.slug || product.name) {
                 html += '<div style="text-align:center;margin-top:1rem;">'
-                    + '<a href="/memorial' + (product.slug ? '?slug=' + encodeURIComponent(product.slug) : '') + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View this memorial &rarr;</a>'
+                    + '<a href="' + (product.slug ? '/memorials/' + encodeURIComponent(product.slug) : '/memorials') + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View this memorial &rarr;</a>'
                     + '</div>';
             }
 
