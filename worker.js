@@ -778,7 +778,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
   const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
-  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(product.slug)}` : "";
+  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorials/${encodeURIComponent(product.slug)}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -910,7 +910,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, editToken, email }) 
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
   const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
-  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(product.slug)}` : "";
+  const productUrl = product.slug ? `https://searsmelvin.co.uk/memorials/${encodeURIComponent(product.slug)}` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
