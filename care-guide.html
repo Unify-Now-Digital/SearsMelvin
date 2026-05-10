@@ -454,6 +454,19 @@
                 transform: none !important;
             }
         }
+        /* Navbar accreditation chips */
+        .nav-accred { display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 1.25rem; font-size: 0.7rem; color: var(--color-text-muted); letter-spacing: 0.06em; text-transform: uppercase; flex-wrap: nowrap; }
+        .nav-accred-label { font-weight: 600; }
+        .nav-accred-chip { border: 1px solid var(--color-border); padding: 0.2rem 0.55rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--color-stone); background: white; white-space: nowrap; }
+        .nav-accred-chip strong { font-weight: 700; }
+        @media (max-width: 1024px) {
+            .nav-accred-label { display: none; }
+            .nav-accred { gap: 0.3rem; margin: 0 0.5rem 0 auto; }
+            .nav-accred-chip { font-size: 0.6rem; padding: 0.1rem 0.4rem; }
+        }
+        @media (max-width: 380px) {
+            .nav-accred { display: none; }
+        }
             /* Site-wide Trust Bar */
         .site-trust-bar { background: var(--color-cream); border-bottom: 1px solid var(--color-border); padding: 0.85rem 2rem 0.7rem; margin-top: 60px; }
         .site-trust-row { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
@@ -465,13 +478,12 @@
         .site-trust-chip { border: 1px solid var(--color-border); padding: 0.25rem 0.6rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--color-stone); background: white; }
         .site-trust-chip strong { font-weight: 700; color: var(--color-stone); }
         @media (max-width: 768px) {
-            .site-trust-bar { padding: 0.7rem 1rem 0.55rem; margin-top: 56px; }
-            .site-trust-row { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
-            .site-trust-item { font-size: 0.85rem; gap: 0.4rem; }
-            .site-trust-item svg { width: 18px; height: 18px; }
+            .site-trust-bar { padding: 0.45rem 0.75rem 0.4rem; margin-top: 56px; }
+            .site-trust-row { grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
+            .site-trust-item { font-size: 0.65rem; gap: 0.3rem; flex-direction: column; text-align: center; line-height: 1.15; font-weight: 500; padding: 0; }
+            .site-trust-item span { display: block; }
+            .site-trust-item svg { width: 16px; height: 16px; }
             .site-trust-item + .site-trust-item::before { display: none; }
-            .site-trust-accred { flex-wrap: wrap; gap: 0.4rem; font-size: 0.7rem; }
-            .site-trust-chip { font-size: 0.78rem; }
         }
 </style>
     <noscript>
@@ -595,6 +607,11 @@
             </svg>
             Sears Melvin <span>Memorials</span>
         </a>
+        <div class="nav-accred" aria-label="Accreditations">
+            <span class="nav-accred-label">Accredited</span>
+            <span class="nav-accred-chip"><strong>NAMM</strong> Member</span>
+            <span class="nav-accred-chip"><strong>RQMF</strong> Registered</span>
+        </div>
         <ul class="nav-links">
             <li>
                 <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
@@ -627,11 +644,6 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span>24hr Response</span>
             </div>
-        </div>
-        <div class="site-trust-accred">
-            <span class="site-trust-accred-label">Accredited</span>
-            <span class="site-trust-chip"><strong>NAMM</strong> Member</span>
-            <span class="site-trust-chip"><strong>RQMF</strong> Registered</span>
         </div>
     </section>
     <div class="mobile-nav" id="mobileNav">
