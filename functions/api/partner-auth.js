@@ -282,7 +282,7 @@ async function handleForgotPassword(env, { email }) {
   if (!env.RESEND_API_KEY) {
     console.error("RESEND_API_KEY not set — cannot send password reset email");
   } else {
-    const resetUrl = `https://searsmelvin.co.uk/partner.html?reset=${token}`;
+    const resetUrl = `https://searsmelvin.co.uk/partner?reset=${token}`;
     const firstName = (partner.name || "").split(" ")[0] || "there";
     try {
       const emailRes = await fetch("https://api.resend.com/emails", {
@@ -517,7 +517,7 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       <p style="margin:0;font-size:13px;color:#1A1A1A;line-height:1.6;">${esc(message)}</p>
     </div>` : ""}
     <p style="margin-top:16px;font-size:13px;color:#555;">
-      <a href="https://searsmelvin.co.uk/admin.html" style="color:#8B7355;font-weight:600;">Review in Admin Panel &rarr;</a>
+      <a href="https://searsmelvin.co.uk/admin" style="color:#8B7355;font-weight:600;">Review in Admin Panel &rarr;</a>
     </p>
   </td></tr>
   <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;">
@@ -558,7 +558,7 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       Thank you for requesting access to the Sears Melvin Partner Portal. Our team will review your application and get back to you shortly.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
-      Once approved, you'll be able to sign in at <a href="https://searsmelvin.co.uk/partner.html" style="color:#8B7355;font-weight:600;">searsmelvin.co.uk/partner.html</a> using the email and password you provided.
+      Once approved, you'll be able to sign in at <a href="https://searsmelvin.co.uk/partner" style="color:#8B7355;font-weight:600;">searsmelvin.co.uk/partner</a> using the email and password you provided.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:20px 0 0;">
       If you have any questions, please contact us at <a href="mailto:info@searsmelvin.co.uk" style="color:#8B7355;">info@searsmelvin.co.uk</a>.

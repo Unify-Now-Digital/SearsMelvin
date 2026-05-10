@@ -643,15 +643,17 @@
     }
     </script>
 
-    <!-- Structured data: Breadcrumbs (updated dynamically once product loads) -->
+    <!-- Structured data: Breadcrumbs (updated dynamically once product loads).
+         Initial state has only Home + Memorials so we don't advertise a
+         non-existent /memorial URL to crawlers; the third (product) crumb is
+         appended by syncStructuredData() once we know the slug + name. -->
     <script type="application/ld+json" id="breadcrumbJsonLd">
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       "itemListElement": [
         {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://searsmelvin.co.uk/"},
-        {"@type": "ListItem", "position": 2, "name": "Memorials", "item": "https://searsmelvin.co.uk/memorials"},
-        {"@type": "ListItem", "position": 3, "name": "Memorial", "item": "https://searsmelvin.co.uk/memorial"}
+        {"@type": "ListItem", "position": 2, "name": "Memorials", "item": "https://searsmelvin.co.uk/memorials"}
       ]
     }
     </script>
