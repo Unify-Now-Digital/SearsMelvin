@@ -3,7 +3,7 @@
  * Route: /api/submit (POST)
  */
 const CLICKUP_LIST_ID = "8ck2cf5-10552";
-const BUSINESS_EMAIL = "info@searmelvin.co.uk";
+const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
 
