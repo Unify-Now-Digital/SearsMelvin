@@ -1472,7 +1472,7 @@
                 // Populate about image with a different product photo
                 var aboutEl = document.getElementById('aboutImage');
                 if (aboutEl) {
-                    var aboutProduct = products.find(function(p) { return p.image_url && p.product_categories && p.product_categories.slug === 'kerb-set'; })
+                    var aboutProduct = products.find(function(p) { return p.image_url && p.product_categories && p.product_categories.slug === 'kerb-sets'; })
                         || products.filter(function(p) { return p.image_url; })[1]
                         || products.find(function(p) { return p.image_url; });
                     if (aboutProduct && aboutProduct.image_url) {
