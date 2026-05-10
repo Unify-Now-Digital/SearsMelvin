@@ -1,0 +1,5 @@
+# Clean product URLs: /memorials/<slug> serves memorial.html
+/memorials/:slug   /memorial.html   200
+
+# Bare /memorial -> listing
+/memorial          /memorials       301

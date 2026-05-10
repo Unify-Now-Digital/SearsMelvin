@@ -636,7 +636,7 @@ function declineCookies() {
                         var imageHTML = product.image_url
                             ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
-                        html += '<a href="/memorial?slug=' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                        html += '<a href="/memorials/' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });
                     html += '</div>';
                 }

@@ -84,7 +84,7 @@ export async function onRequestGet({ env }) {
 
   const productEntries = products.map((p) =>
     urlEntry({
-      loc: `${BASE}/memorial.html?slug=${encodeURIComponent(p.slug)}`,
+      loc: `${BASE}/memorials/${encodeURIComponent(p.slug)}`,
       lastmod: (p.updated_at || p.created_at || today).split("T")[0],
       priority: "0.7",
       changefreq: "monthly",

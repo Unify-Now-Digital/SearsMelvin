@@ -248,7 +248,7 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
 
 function quoteUpdateBusinessEmail({ name, email, productName, productSlug, changes }) {
   const changeList = changes.map(c => `<li style="padding:3px 0;color:#1A1A1A;">${esc(c)}</li>`).join("");
-  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(productSlug)}` : "";
+  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorials/${encodeURIComponent(productSlug)}` : "";
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
@@ -281,7 +281,7 @@ function quoteUpdateBusinessEmail({ name, email, productName, productSlug, chang
 
 function quoteUpdateCustomerEmail({ firstName, productName, productSlug, changes }) {
   const changeList = changes.map(c => `<li style="padding:3px 0;color:#1A1A1A;">${esc(c)}</li>`).join("");
-  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorial?slug=${encodeURIComponent(productSlug)}` : "";
+  const productUrl = productSlug ? `https://searsmelvin.co.uk/memorials/${encodeURIComponent(productSlug)}` : "";
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
