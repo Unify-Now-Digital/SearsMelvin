@@ -74,11 +74,10 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // 1. Supabase save — must complete before responding so the customer only
   // sees "submitted" when the record actually persisted. We persist the
   // person + order + enquiry rows synchronously (the order carries the
-  // edit_token the customer needs). The draft invoice, emails, ClickUp and
-  // GHL all run in the background via ctx.waitUntil so the response returns
-  // in a few hundred ms instead of 5–10s.
+  // edit_token the customer needs). The emails, ClickUp and GHL contact all
+  // run in the background via ctx.waitUntil so the response returns in a few
+  // hundred ms instead of 5–10s.
   let editToken = null;
-  let orderId = null;
   try {
     const sbResult = await createEnquiry(env, {
       channel: "quote",
@@ -90,7 +89,6 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
       product,
     });
     editToken = sbResult?.editToken || null;
-    orderId = sbResult?.orderId || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
@@ -99,7 +97,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // 2. Background side-effects.
   ctx.waitUntil(quoteSideEffects({
     env, name, email, phone, message, product, submittedAt,
-    cemeteryOrLocation, firstName, stoneHex, editToken, orderId, cemetery, location,
+    cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
   }));
 
   return jsonResponse({ ok: true, editToken });
@@ -109,18 +107,9 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 // emails, the ClickUp task and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, editToken, orderId, cemetery, location,
+  cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
 }) {
   await Promise.allSettled([
-    // Draft invoice — a pending admin artifact reconstructable from the order,
-    // so it's created here off the customer's critical path.
-    orderId && product.price
-      ? bg("quote draft invoice", () => createDraftInvoice(env, {
-          orderId,
-          customerName: name,
-          amount: (parseFloat(product.price) || 0) + (parseFloat(product.permit_fee) || 0),
-        }))
-      : null,
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
@@ -158,7 +147,7 @@ async function quoteSideEffects({
         });
       }
     }),
-  ].filter(Boolean));
+  ]);
 }
 
 async function handleEnquiry(ctx, data, submittedAt) {
@@ -1327,8 +1316,8 @@ export async function upsertPerson(env, { name, email, phone }) {
   return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
 }
 
-// Create the order + invoice rows for a product quote. Isolated so non-quote
-// channels never touch the orders table.
+// Create the order row for a product quote. Isolated so non-quote channels
+// never touch the orders table.
 async function createOrderForQuote(env, { personId, customerName, product, location, message }) {
   const headers = supabaseHeaders(env);
   const editToken = generateToken();
@@ -1359,43 +1348,9 @@ async function createOrderForQuote(env, { personId, customerName, product, locat
   return { orderId, editToken };
 }
 
-// Draft (pending) invoice for a website quote. Created off the request's
-// critical path — the customer's response only needs the order + edit token,
-// and the invoice is reconstructable from the order — so failures are logged
-// rather than surfaced.
-async function createDraftInvoice(env, { orderId, customerName, amount }) {
-  if (!orderId || !(amount > 0)) return null;
-  const headers = supabaseHeaders(env);
-  const today = new Date().toISOString().split("T")[0];
-  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-  // invoices.invoice_number is NOT NULL UNIQUE. The admin app uses sequential
-  // INV-NNNNNN numbers; pick a clearly-distinct prefix for website-generated
-  // draft invoices so the two namespaces don't collide.
-  const invoiceNumber = `INV-WEB-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`;
-  const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
-    method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-    body: JSON.stringify({
-      organization_id: env.SM_ORG_ID,
-      order_id: orderId,
-      invoice_number: invoiceNumber,
-      customer_name: customerName,
-      amount,
-      status: "pending",
-      issue_date: today,
-      due_date: dueDate,
-    }),
-  });
-  if (!invRes.ok) {
-    console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
-    return null;
-  }
-  return (await invRes.json())[0]?.id || null;
-}
-
 // Single source of truth for every inbound submission. Always creates a
 // `people` row (deduped by email) and an `enquiries` row. For `channel='quote'`
-// it also creates the order and links the enquiry to it via order_id; the
-// draft invoice is created separately, off the critical path, by the caller.
+// it also creates the order and links the enquiry to it via order_id.
 async function createEnquiry(env, payload) {
   // Person upsert and the best-effort cemetery lookup are independent, so kick
   // both off up front. The cemetery lookup (up to 3 sequential ilike queries)
@@ -1415,9 +1370,7 @@ async function createEnquiry(env, payload) {
   if (!person) throw new Error("Person upsert returned no id");
 
   // For quotes the order insert only needs person.id, so start it now and let
-  // it run concurrently with the cemetery lookup. The draft invoice is created
-  // off the critical path by the caller (handleQuoteRequest) since nothing in
-  // the response depends on it.
+  // it run concurrently with the cemetery lookup.
   const orderPromise = payload.channel === "quote"
     ? createOrderForQuote(env, {
         personId: person.id,
