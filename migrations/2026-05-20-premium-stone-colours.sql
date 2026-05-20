@@ -22,12 +22,13 @@ WHERE slug IN ('black-galaxy', 'rustenberg-grey');
 
 -- 3. Add two more standard colours: a deep solid Black and a mid Grey.
 --    Inserted at temporary high display_order values; step 4 sets the final order.
-INSERT INTO public.stone_colours (id, name, slug, hex_primary, hex_secondary, display_order, is_active, is_premium)
-SELECT gen_random_uuid(), 'Black', 'black', '#0d0d0d', '#1c1c1c', 101, true, false
+--    created_at is set explicitly so the insert doesn't depend on a column default.
+INSERT INTO public.stone_colours (id, name, slug, hex_primary, hex_secondary, display_order, is_active, is_premium, created_at)
+SELECT gen_random_uuid(), 'Black', 'black', '#0d0d0d', '#1c1c1c', 101, true, false, now()
 WHERE NOT EXISTS (SELECT 1 FROM public.stone_colours WHERE slug = 'black');
 
-INSERT INTO public.stone_colours (id, name, slug, hex_primary, hex_secondary, display_order, is_active, is_premium)
-SELECT gen_random_uuid(), 'Grey', 'grey', '#8a8a8a', '#9a9a9a', 102, true, false
+INSERT INTO public.stone_colours (id, name, slug, hex_primary, hex_secondary, display_order, is_active, is_premium, created_at)
+SELECT gen_random_uuid(), 'Grey', 'grey', '#8a8a8a', '#9a9a9a', 102, true, false, now()
 WHERE NOT EXISTS (SELECT 1 FROM public.stone_colours WHERE slug = 'grey');
 
 -- 4. Order standard colours first, premium after. Applied top-down so no two

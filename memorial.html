@@ -245,7 +245,11 @@
         }
         .colour-name { font-size: 0.7rem; color: var(--color-text-muted); max-width: 65px; line-height: 1.3; }
         .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
-        .colour-price { font-size: 0.65rem; font-weight: 600; color: var(--color-accent-dark); letter-spacing: 0.02em; }
+        .colour-group { flex-basis: 100%; }
+        .colour-group-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.85rem; }
+        .colour-group-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; border-radius: 99px; background: var(--color-accent); color: white; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; }
+        .colour-group-note { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--color-accent-dark); }
+        .colour-swatch-row { display: flex; flex-wrap: wrap; gap: 1rem; }
 
         /* Visual Size Selector */
         .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
@@ -1464,18 +1468,35 @@
             const container = document.getElementById('stoneColourOptions');
             if (!colours.length) { container.innerHTML = '<span>No colours available</span>'; return; }
             const surcharge = premiumColourSurcharge();
-            let html = '';
-            colours.forEach(function(c, i) {
+            // First colour overall is pre-selected (standard colours sort first).
+            const firstSlug = colours[0].slug;
+
+            function swatch(c) {
                 const highlight = c.hex_secondary || c.hex_primary;
                 const price = c.is_premium ? surcharge : 0;
-                html += '<label class="colour-option">'
-                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (i === 0 ? ' checked' : '') + ' onchange="updateColour(this)">'
+                return '<label class="colour-option">'
+                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
                     + '<div class="colour-wrapper">'
                     + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + c.hex_primary + ' 0%, ' + highlight + ' 50%, ' + c.hex_primary + ' 100%);"></span>'
                     + '<span class="colour-name">' + c.name + '</span>'
-                    + (price > 0 ? '<span class="colour-price">+£' + price + '</span>' : '')
                     + '</div></label>';
-            });
+            }
+            function row(list) { return '<div class="colour-swatch-row">' + list.map(swatch).join('') + '</div>'; }
+
+            const standard = colours.filter(function(c) { return !c.is_premium; });
+            const premium  = colours.filter(function(c) { return c.is_premium; });
+
+            let html;
+            if (premium.length && standard.length) {
+                html = '<div class="colour-group"><span class="colour-group-label">Standard</span>' + row(standard) + '</div>'
+                     + '<div class="colour-group"><span class="colour-group-label">'
+                     + '<span class="colour-group-tag">Premium</span>'
+                     + '<span class="colour-group-note">+£' + surcharge + '</span>'
+                     + '</span>' + row(premium) + '</div>';
+            } else {
+                // No premium colours yet (e.g. before the is_premium migration runs) — flat list.
+                html = colours.map(swatch).join('');
+            }
             container.innerHTML = html;
             // Apply first colour
             var first = container.querySelector('input[name="colour"]');
