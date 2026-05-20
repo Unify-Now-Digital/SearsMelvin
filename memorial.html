@@ -1204,7 +1204,7 @@
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
-                    <p class="quote-form-note">We'll email you all payment options — deposit, full payment, or pay later. Production and installation timelines begin from the date the deposit is received. <a href="/privacy">Privacy Policy</a></p>
+                    <p class="quote-form-note">We'll email you a copy of your quote and our team will be in touch within 24 hours. <a href="/privacy">Privacy Policy</a></p>
                 </form>
                 <div class="quote-success" id="quoteSuccess">
                     <div class="quote-success-icon">
@@ -1523,7 +1523,7 @@
         function renderSizes(sizes) {
             const container = document.getElementById('sizeOptions');
             const group = document.getElementById('sizeOptionGroup');
-            if (!sizes.length) { if (group) group.style.display = 'none'; return; }
+            if (!sizes.length) { if (group) group.style.display = 'none'; document.getElementById('selectedSizeName').textContent = ''; return; }
             if (group) group.style.display = '';
             const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
             const heightMap = { 0: 75, 1: 88, 2: 100 };
@@ -1962,7 +1962,7 @@
         function openQuoteModal() {
             document.getElementById('qsProduct').textContent = productData ? productData.name : 'Memorial';
             document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
-            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
+            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent || '—';
 
             // Font
             var fontRow = document.getElementById('qsFontRow');
@@ -2219,7 +2219,8 @@
                 const lastName  = document.getElementById('qLastName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
-                const cemetery  = document.getElementById('qCemeteryName').value.trim();
+                const cemetery  = document.getElementById('qCemeteryName').value.trim()
+                                  || document.getElementById('qCemeteryInput').value.trim();
                 const message   = document.getElementById('qMessage').value.trim();
 
                 const colour = document.getElementById('selectedColourName').textContent;
@@ -2244,7 +2245,7 @@
                                 slug:        productData ? productData.slug : null,
                                 type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
                                 colour:      colour,
-                                size:        document.getElementById('selectedSizeName').textContent,
+                                size:        (function() { var s = document.getElementById('selectedSizeName').textContent.trim(); return (!s || s === 'Loading...') ? '' : s; })(),
                                 addons:      getSelectedAddons(),
                             addonLineItems: getAddonLineItems(),
                                 // The textarea limits to 400 chars; cap defensively at 1000 in case of paste oddities.
@@ -2266,7 +2267,7 @@
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
-                            "Your quote has been submitted. Check your email — we've included options to pay a 50% deposit, pay in full, or simply wait for our team to be in touch within 24 hours. Production and installation timelines begin from the date the deposit is received." + editLink + trackLink;
+                            "Your quote has been submitted — we've sent a copy to your email. There's nothing more you need to do right now; our team will be in touch within 24 hours." + editLink + trackLink;
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
