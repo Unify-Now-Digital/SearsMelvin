@@ -72,11 +72,13 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   const cemeteryOrLocation = cemetery || location || null;
 
   // 1. Supabase save — must complete before responding so the customer only
-  // sees "submitted" when the record actually persisted. Everything else
-  // (Stripe invoices, emails, ClickUp, GHL) runs in the background via
-  // ctx.waitUntil so the response returns in ~500ms instead of 5–10s.
-  let invoiceId = null;
+  // sees "submitted" when the record actually persisted. We persist the
+  // person + order + enquiry rows synchronously (the order carries the
+  // edit_token the customer needs). The draft invoice, emails, ClickUp and
+  // GHL all run in the background via ctx.waitUntil so the response returns
+  // in a few hundred ms instead of 5–10s.
   let editToken = null;
+  let orderId = null;
   try {
     const sbResult = await createEnquiry(env, {
       channel: "quote",
@@ -87,8 +89,8 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
       cemetery_id: data.cemetery_id || null,
       product,
     });
-    invoiceId = sbResult?.invoiceId || null;
     editToken = sbResult?.editToken || null;
+    orderId = sbResult?.orderId || null;
   } catch (err) {
     console.error("Supabase insert failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
@@ -97,19 +99,28 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // 2. Background side-effects.
   ctx.waitUntil(quoteSideEffects({
     env, name, email, phone, message, product, submittedAt,
-    cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+    cemeteryOrLocation, firstName, stoneHex, editToken, orderId, cemetery, location,
   }));
 
-  return jsonResponse({ ok: true, invoiceId, editToken });
+  return jsonResponse({ ok: true, editToken });
 }
 
 // Runs after the response has been returned. Fires the customer + business
 // emails, the ClickUp task and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+  cemeteryOrLocation, firstName, stoneHex, editToken, orderId, cemetery, location,
 }) {
   await Promise.allSettled([
+    // Draft invoice — a pending admin artifact reconstructable from the order,
+    // so it's created here off the customer's critical path.
+    orderId && product.price
+      ? bg("quote draft invoice", () => createDraftInvoice(env, {
+          orderId,
+          customerName: name,
+          amount: (parseFloat(product.price) || 0) + (parseFloat(product.permit_fee) || 0),
+        }))
+      : null,
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
@@ -147,7 +158,7 @@ async function quoteSideEffects({
         });
       }
     }),
-  ]);
+  ].filter(Boolean));
 }
 
 async function handleEnquiry(ctx, data, submittedAt) {
@@ -1320,8 +1331,6 @@ export async function upsertPerson(env, { name, email, phone }) {
 // channels never touch the orders table.
 async function createOrderForQuote(env, { personId, customerName, product, location, message }) {
   const headers = supabaseHeaders(env);
-  const today = new Date().toISOString().split("T")[0];
-  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
   const editToken = generateToken();
 
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
@@ -1347,66 +1356,81 @@ async function createOrderForQuote(env, { personId, customerName, product, locat
   });
   if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
   const orderId = (await orderRes.json())[0]?.id || null;
+  return { orderId, editToken };
+}
 
-  let invoiceId = null;
-  if (product?.price) {
-    const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
-    // invoices.invoice_number is NOT NULL UNIQUE. The admin app uses
-    // sequential INV-NNNNNN numbers; pick a clearly-distinct prefix for
-    // website-generated draft invoices so the two namespaces don't collide.
-    const invoiceNumber = `INV-WEB-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`;
-    const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
-      method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({
-        organization_id: env.SM_ORG_ID,
-        order_id: orderId,
-        invoice_number: invoiceNumber,
-        customer_name: customerName,
-        amount: fullAmount,
-        status: "pending",
-        issue_date: today,
-        due_date: dueDate,
-      }),
-    });
-    if (!invRes.ok) {
-      console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
-    } else {
-      invoiceId = (await invRes.json())[0]?.id || null;
-    }
+// Draft (pending) invoice for a website quote. Created off the request's
+// critical path — the customer's response only needs the order + edit token,
+// and the invoice is reconstructable from the order — so failures are logged
+// rather than surfaced.
+async function createDraftInvoice(env, { orderId, customerName, amount }) {
+  if (!orderId || !(amount > 0)) return null;
+  const headers = supabaseHeaders(env);
+  const today = new Date().toISOString().split("T")[0];
+  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+  // invoices.invoice_number is NOT NULL UNIQUE. The admin app uses sequential
+  // INV-NNNNNN numbers; pick a clearly-distinct prefix for website-generated
+  // draft invoices so the two namespaces don't collide.
+  const invoiceNumber = `INV-WEB-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`;
+  const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
+    method: "POST", headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({
+      organization_id: env.SM_ORG_ID,
+      order_id: orderId,
+      invoice_number: invoiceNumber,
+      customer_name: customerName,
+      amount,
+      status: "pending",
+      issue_date: today,
+      due_date: dueDate,
+    }),
+  });
+  if (!invRes.ok) {
+    console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+    return null;
   }
-  return { orderId, editToken, invoiceId };
+  return (await invRes.json())[0]?.id || null;
 }
 
 // Single source of truth for every inbound submission. Always creates a
 // `people` row (deduped by email) and an `enquiries` row. For `channel='quote'`
-// also creates the order + invoice and links the enquiry to it via order_id.
+// it also creates the order and links the enquiry to it via order_id; the
+// draft invoice is created separately, off the critical path, by the caller.
 async function createEnquiry(env, payload) {
-  // Person upsert and cemetery lookup are independent; run in parallel to
-  // shave ~150–400ms off the critical path. Cemetery lookup is best-effort
-  // (free-text submissions still save with cemetery_id=null).
+  // Person upsert and the best-effort cemetery lookup are independent, so kick
+  // both off up front. The cemetery lookup (up to 3 sequential ilike queries)
+  // only feeds the enquiry row's cemetery_id, so we let it run concurrently
+  // with the person upsert AND the order insert below rather than serialising
+  // in front of them. Free-text submissions still save with cemetery_id=null.
   const cemeteryNeeded = !payload.cemetery_id && payload.location;
-  const [person, lookedUpCemeteryId] = await Promise.all([
-    upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone }),
-    cemeteryNeeded
-      ? lookupCemeteryIdByName(env, payload.location).catch(err => {
-          console.error("Cemetery name lookup failed (non-fatal):", err);
-          return null;
-        })
-      : Promise.resolve(null),
-  ]);
-  if (!person) throw new Error("Person upsert returned no id");
-  const resolvedCemeteryId = payload.cemetery_id ?? lookedUpCemeteryId ?? null;
+  const personPromise = upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone });
+  const cemeteryPromise = cemeteryNeeded
+    ? lookupCemeteryIdByName(env, payload.location).catch(err => {
+        console.error("Cemetery name lookup failed (non-fatal):", err);
+        return null;
+      })
+    : Promise.resolve(null);
 
-  let orderId = null, editToken = null, invoiceId = null;
-  if (payload.channel === "quote") {
-    ({ orderId, editToken, invoiceId } = await createOrderForQuote(env, {
-      personId: person.id,
-      customerName: payload.name,
-      product: payload.product,
-      location: payload.location,
-      message: payload.message,
-    }));
-  }
+  const person = await personPromise;
+  if (!person) throw new Error("Person upsert returned no id");
+
+  // For quotes the order insert only needs person.id, so start it now and let
+  // it run concurrently with the cemetery lookup. The draft invoice is created
+  // off the critical path by the caller (handleQuoteRequest) since nothing in
+  // the response depends on it.
+  const orderPromise = payload.channel === "quote"
+    ? createOrderForQuote(env, {
+        personId: person.id,
+        customerName: payload.name,
+        product: payload.product,
+        location: payload.location,
+        message: payload.message,
+      })
+    : Promise.resolve(null);
+
+  const [orderResult, lookedUpCemeteryId] = await Promise.all([orderPromise, cemeteryPromise]);
+  const { orderId = null, editToken = null } = orderResult || {};
+  const resolvedCemeteryId = payload.cemetery_id ?? lookedUpCemeteryId ?? null;
 
   const headers = supabaseHeaders(env);
   const enqBody = {
@@ -1437,7 +1461,6 @@ async function createEnquiry(env, payload) {
     enquiryId: enqRow?.id || null,
     orderId,
     editToken,
-    invoiceId,
   };
 }
 
