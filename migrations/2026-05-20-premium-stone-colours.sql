@@ -43,3 +43,31 @@ UPDATE public.stone_colours SET display_order = 4  WHERE slug = 'grey';
 UPDATE public.stone_colours SET display_order = 3  WHERE slug = 'rustenberg-grey';
 UPDATE public.stone_colours SET display_order = 2  WHERE slug = 'black';
 UPDATE public.stone_colours SET display_order = 1  WHERE slug = 'black-galaxy';
+
+-- ============================================================================
+-- Verification (does NOT run as part of the migration — copy/paste to check).
+--
+-- Safe dry run: applies the migration to real data, shows the result, then
+-- discards it. Run the block above between BEGIN and ROLLBACK, e.g.:
+--   BEGIN;
+--   <the statements above>
+--   SELECT display_order AS ord, name, slug, is_premium
+--   FROM public.stone_colours ORDER BY display_order;     -- expect 10 rows
+--   ROLLBACK;   -- change to COMMIT; to keep it
+--
+-- Post-run checks (after COMMIT):
+--   -- expect: 4 standard first, then 6 premium; total 10 / premium 6
+--   SELECT display_order AS ord, name, slug, is_premium
+--   FROM public.stone_colours ORDER BY display_order;
+--
+--   SELECT count(*) AS total,
+--          count(*) FILTER (WHERE is_premium)     AS premium,
+--          count(*) FILTER (WHERE NOT is_premium) AS standard
+--   FROM public.stone_colours;
+--
+--   -- both should return 0 rows (no duplicate orders / slugs)
+--   SELECT display_order, count(*) FROM public.stone_colours
+--     GROUP BY display_order HAVING count(*) > 1;
+--   SELECT slug, count(*) FROM public.stone_colours
+--     GROUP BY slug HAVING count(*) > 1;
+-- ============================================================================
