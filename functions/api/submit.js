@@ -9,11 +9,15 @@ const BUSINESS_NAME = "Sears Melvin Memorials";
 
 const STONE_COLOURS = {
   "Black Galaxy": "#1a1a1a",
-  "Rustenberg Grey": "#6b6b6b",
-  "Vizag Blue": "#2c3e50",
-  "Indian Aurora": "#8B5A2B",
-  "Emerald Pearl": "#2d4a3e",
-  "Ruby Red": "#722F37",
+  "Black": "#0d0d0d",
+  "Rustenberg Grey": "#5a5a5a",
+  "Grey": "#8a8a8a",
+  "Vizag Blue": "#1a2a3a",
+  "Indian Aurora": "#6B4423",
+  "Emerald Pearl": "#1d3a2e",
+  "Ruby Red": "#5a2028",
+  "Bahama Blue": "#2a4a5a",
+  "Tropical Green": "#2a4a3a",
 };
 
 const CORS = {
