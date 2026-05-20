@@ -245,6 +245,7 @@
         }
         .colour-name { font-size: 0.7rem; color: var(--color-text-muted); max-width: 65px; line-height: 1.3; }
         .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
+        .colour-price { font-size: 0.65rem; font-weight: 600; color: var(--color-accent-dark); letter-spacing: 0.02em; }
 
         /* Visual Size Selector */
         .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
@@ -473,23 +474,6 @@
         .pac-item { padding: 0.45rem 0.75rem; cursor: pointer; }
         .pac-item:hover { background: #f5f3f0; }
         .pac-item-query { font-size: 0.85rem; color: var(--color-stone); }
-
-        /* Payment step */
-        .quote-pay-step { padding: 0 1.75rem 1.5rem; }
-        .quote-deposit-header { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1.25rem; }
-        .quote-deposit-icon { width: 40px; height: 40px; background: var(--color-stone); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .quote-deposit-icon svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
-        .quote-deposit-header h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
-        .quote-deposit-header p { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); }
-        .quote-deposit-card { background: #f5f3f0; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem; }
-        .quote-deposit-row { display: flex; justify-content: space-between; font-size: 0.875rem; padding: 0.2rem 0; }
-        .quote-deposit-row span:first-child { color: var(--color-text-muted); }
-        .quote-deposit-total { border-top: 1px solid var(--color-border); margin-top: 0.4rem; padding-top: 0.5rem; font-weight: 600; color: var(--color-stone); }
-        #payment-element { margin-bottom: 1rem; }
-        .quote-pay-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; }
-        .quote-pay-btn:hover { background: var(--color-stone-light); }
-        .quote-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .quote-skip-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; background: none; border: none; width: 100%; font-family: var(--font-body); }
 
         /* Save Toast */
         .save-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); z-index: 200; background: var(--color-stone); color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; pointer-events: none; max-width: 420px; width: max-content; }
@@ -1060,6 +1044,10 @@
                         <span id="priceSizeLabel">Size upgrade</span>
                         <span id="priceSizeAmount">+£0</span>
                     </div>
+                    <div class="price-row" id="priceColourRow" style="display: none;">
+                        <span id="priceColourLabel">Premium colour</span>
+                        <span id="priceColourAmount">+£0</span>
+                    </div>
                     <div class="price-row" id="priceInscriptionRow" style="display: none;">
                         <span>Extra inscription (<span id="extraCharsCount">0</span> chars)</span>
                         <span id="priceInscription">+£0</span>
@@ -1204,7 +1192,7 @@
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         <span id="quoteSubmitLabel">Send Quote Request</span>
                     </button>
-                    <p class="quote-form-note">We'll email you all payment options — deposit, full payment, or pay later. Production and installation timelines begin from the date the deposit is received. <a href="/privacy">Privacy Policy</a></p>
+                    <p class="quote-form-note">We'll email you a copy of your quote and our team will be in touch within 24 hours. <a href="/privacy">Privacy Policy</a></p>
                 </form>
                 <div class="quote-success" id="quoteSuccess">
                     <div class="quote-success-icon">
@@ -1214,44 +1202,6 @@
                     <p id="quoteSuccessMsg">We've sent a confirmation to your email and will be in touch within 24 hours.</p>
                     <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
                 </div>
-            </div>
-
-            <!-- Step 2: Deposit payment -->
-            <div class="quote-pay-step" id="quotePayStep" style="display:none">
-                <div class="quote-deposit-header">
-                    <div class="quote-deposit-icon">
-                        <svg viewBox="0 0 24 24"><rect x="1" y="11" width="22" height="11" rx="2" ry="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    </div>
-                    <div>
-                        <h3>Secure your order</h3>
-                        <p>A 50% deposit confirms your order and reserves your slot</p>
-                    </div>
-                </div>
-                <div class="quote-deposit-card">
-                    <div class="quote-deposit-row">
-                        <span>50% deposit</span>
-                        <span id="qDepositAmount">—</span>
-                    </div>
-                    <div class="quote-deposit-row">
-                        <span>Balance due later</span>
-                        <span id="qBalanceDue">—</span>
-                    </div>
-                    <div class="quote-deposit-row quote-deposit-total">
-                        <span>Order total</span>
-                        <span id="qOrderTotal">—</span>
-                    </div>
-                    <div class="quote-deposit-row quote-deposit-total">
-                        <span>Total today</span>
-                        <span id="qDepositTotal">—</span>
-                    </div>
-                </div>
-                <div id="payment-element"></div>
-                <p class="quote-error" id="quotePayError" style="display:none"></p>
-                <button class="quote-pay-btn" id="quotePayBtn" type="button">
-                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="11" width="22" height="11" rx="2"/><path d="M1 16h22M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span>Pay deposit</span>
-                </button>
-                <button class="quote-skip-link" id="quoteSkipBtn" type="button">Skip for now — pay later by invoice</button>
             </div>
         </div>
     </div>
@@ -1291,6 +1241,7 @@
             font: 'traditional',
             inscription: '',
             colour: 'black',
+            colourPrice: 0,
             selectedSize: 'standard',
             infillType: 'chippings',
             infillColour: 'white',
@@ -1501,17 +1452,28 @@
             }
         }
 
+        // Premium colour surcharge depends on the product type.
+        function premiumColourSurcharge() {
+            var slug = productData && productData.product_categories ? productData.product_categories.slug : '';
+            if (slug === 'kerb-sets') return 350;
+            if (slug === 'cremation-memorials') return 90;
+            return 125;
+        }
+
         function renderStoneColours(colours) {
             const container = document.getElementById('stoneColourOptions');
             if (!colours.length) { container.innerHTML = '<span>No colours available</span>'; return; }
+            const surcharge = premiumColourSurcharge();
             let html = '';
             colours.forEach(function(c, i) {
                 const highlight = c.hex_secondary || c.hex_primary;
+                const price = c.is_premium ? surcharge : 0;
                 html += '<label class="colour-option">'
-                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '"' + (i === 0 ? ' checked' : '') + ' onchange="updateColour(this)">'
+                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (i === 0 ? ' checked' : '') + ' onchange="updateColour(this)">'
                     + '<div class="colour-wrapper">'
                     + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + c.hex_primary + ' 0%, ' + highlight + ' 50%, ' + c.hex_primary + ' 100%);"></span>'
                     + '<span class="colour-name">' + c.name + '</span>'
+                    + (price > 0 ? '<span class="colour-price">+£' + price + '</span>' : '')
                     + '</div></label>';
             });
             container.innerHTML = html;
@@ -1523,7 +1485,7 @@
         function renderSizes(sizes) {
             const container = document.getElementById('sizeOptions');
             const group = document.getElementById('sizeOptionGroup');
-            if (!sizes.length) { if (group) group.style.display = 'none'; return; }
+            if (!sizes.length) { if (group) group.style.display = 'none'; document.getElementById('selectedSizeName').textContent = ''; return; }
             if (group) group.style.display = '';
             const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
             const heightMap = { 0: 75, 1: 88, 2: 100 };
@@ -1656,7 +1618,17 @@
         function updateColour(input) {
             const name = input.dataset.name;
             state.colour = input.value;
+            state.colourPrice = parseInt(input.dataset.price) || 0;
             document.getElementById('selectedColourName').textContent = name;
+            const colourRow = document.getElementById('priceColourRow');
+            if (state.colourPrice > 0) {
+                colourRow.style.display = 'flex';
+                document.getElementById('priceColourLabel').textContent = `Premium colour (${name})`;
+                document.getElementById('priceColourAmount').textContent = `+£${state.colourPrice}`;
+            } else {
+                colourRow.style.display = 'none';
+            }
+            updateTotalPrice();
         }
 
         // ==================== LETTERING COLOUR ====================
@@ -1862,7 +1834,7 @@
 
         // ==================== TOTAL PRICE ====================
         function updateTotalPrice() {
-            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             const fmt   = `£${total.toLocaleString()}`;
             document.getElementById('priceTotal').textContent = fmt;
             document.getElementById('mobilePriceTotal').textContent = fmt;
@@ -1961,8 +1933,11 @@
         // ==================== QUOTE MODAL ====================
         function openQuoteModal() {
             document.getElementById('qsProduct').textContent = productData ? productData.name : 'Memorial';
-            document.getElementById('qsColour').textContent = document.getElementById('selectedColourName').textContent;
-            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent;
+            const colourName = document.getElementById('selectedColourName').textContent;
+            document.getElementById('qsColour').textContent = state.colourPrice > 0
+                ? `${colourName} (+£${state.colourPrice})`
+                : colourName;
+            document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent || '—';
 
             // Font
             var fontRow = document.getElementById('qsFontRow');
@@ -2004,7 +1979,7 @@
                      + '<span>+£' + item.price.toLocaleString() + '</span></div>';
             }).join('');
 
-            const total = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             // Reset permit fee for fresh modal open (user can select cemetery below)
             _selectedCemeteryFee = 0;
             var permitRow = document.getElementById('qsPermitFeeRow');
@@ -2025,25 +2000,12 @@
         }
 
         // ==================== INIT ====================
-        // ==================== CONFIG + STRIPE + MAPS ====================
-        let _stripePK = '';
-        let _stripeInst = null;
-        let _stripeElements = null;
-        let _quoteTotal = 0;          // grand total — memorial value + permit fee
-        let _quoteMemorialTotal = 0;  // memorial value only (base + addons + lettering)
-        let _quotePermitFee = 0;      // cemetery permit fee, billed 100% on deposit
-        let _quoteName  = '';
-        let _quoteEmail = '';
-        let _quoteCemetery = '';
-        let _quoteProduct = '';
-
+        // ==================== CONFIG + MAPS ====================
         let _googleMapsKey = '';
-        let _stripeJSPromise = null;
 
         async function loadConfig() {
             try {
                 const cfg = await fetch('/api/config').then(r => r.json());
-                _stripePK = cfg.stripePublishableKey || '';
                 _googleMapsKey = cfg.googleMapsKey || '';
                 armMapsLazyLoad();
             } catch (e) { console.warn('Config load failed', e); }
@@ -2070,20 +2032,6 @@
             s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
             s.async = true;
             document.head.appendChild(s);
-        }
-
-        function loadStripeJS() {
-            if (window.Stripe) return Promise.resolve(window.Stripe);
-            if (_stripeJSPromise) return _stripeJSPromise;
-            _stripeJSPromise = new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://js.stripe.com/v3/';
-                s.async = true;
-                s.onload = () => resolve(window.Stripe);
-                s.onerror = () => { _stripeJSPromise = null; reject(new Error('Stripe.js failed to load')); };
-                document.head.appendChild(s);
-            });
-            return _stripeJSPromise;
         }
 
         window._onMapsReady = async function() {
@@ -2131,74 +2079,6 @@
             }
         };
 
-        var _isFullPayment = false;
-
-        async function showPaymentStep(amount, name, email, cemetery, product, invoiceId, isFullPayment) {
-            _quoteName     = name;
-            _quoteEmail    = email;
-            _quoteCemetery = cemetery;
-            _quoteProduct  = product;
-            _isFullPayment = !!isFullPayment;
-
-            const fmt     = v => '£' + Math.round(v).toLocaleString('en-GB');
-            // Balance owed at completion = the remaining 50% of the memorial value.
-            // The permit fee is paid in full as part of the deposit, so it doesn't
-            // contribute to the balance. _quoteMemorialTotal is set on the prior
-            // step to (base + addons + lettering), excluding the permit.
-            const balance = isFullPayment ? 0 : Math.round((_quoteMemorialTotal || (_quoteTotal - (_quotePermitFee || 0))) * 0.5);
-
-            // Update UI labels based on payment type
-            var headerTitle = document.querySelector('#quotePayStep .quote-deposit-header h3');
-            var headerDesc = document.querySelector('#quotePayStep .quote-deposit-header p');
-            var payBtnLabel = document.querySelector('#quotePayBtn span');
-
-            if (isFullPayment) {
-                if (headerTitle) headerTitle.textContent = 'Complete your payment';
-                if (headerDesc) headerDesc.textContent = 'Pay the full amount today — no further balance due';
-                document.getElementById('qDepositAmount').textContent = fmt(amount);
-                document.getElementById('qBalanceDue').textContent = '£0';
-                document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
-                document.getElementById('qDepositTotal').textContent = fmt(amount);
-                if (payBtnLabel) payBtnLabel.textContent = 'Pay in full';
-            } else {
-                if (headerTitle) headerTitle.textContent = 'Secure your order';
-                if (headerDesc) headerDesc.textContent = 'Pay 50% of the memorial today plus the cemetery permit fee in full to secure your order';
-                document.getElementById('qDepositAmount').textContent = fmt(amount);
-                document.getElementById('qBalanceDue').textContent = fmt(balance);
-                document.getElementById('qOrderTotal').textContent = fmt(_quoteTotal);
-                document.getElementById('qDepositTotal').textContent = fmt(amount);
-                if (payBtnLabel) payBtnLabel.textContent = 'Pay deposit + permit';
-            }
-
-            document.getElementById('quotePayStep').style.display = 'block';
-
-            if (!_stripePK) {
-                document.getElementById('quoteSkipBtn').click();
-                return;
-            }
-
-            try {
-                const [piRes] = await Promise.all([
-                    fetch('/api/stripe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount, name, email, cemetery, product, invoiceId }),
-                    }),
-                    loadStripeJS(),
-                ]);
-                const { clientSecret, error } = await piRes.json();
-                if (error || !clientSecret) throw new Error(error || 'No client secret');
-
-                _stripeInst     = Stripe(_stripePK);
-                _stripeElements = _stripeInst.elements({ clientSecret, appearance: { theme: 'stripe' } });
-                const el = _stripeElements.create('payment');
-                el.mount('#payment-element');
-            } catch (e) {
-                console.warn('Stripe init failed', e);
-                document.getElementById('quoteSkipBtn').click();
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             await loadProduct();
             loadConfig();
@@ -2219,12 +2099,16 @@
                 const lastName  = document.getElementById('qLastName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
-                const cemetery  = document.getElementById('qCemeteryName').value.trim();
+                const cemetery  = document.getElementById('qCemeteryName').value.trim()
+                                  || document.getElementById('qCemeteryInput').value.trim();
                 const message   = document.getElementById('qMessage').value.trim();
 
                 const colour = document.getElementById('selectedColourName').textContent;
-                const total  = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+                const total  = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
                 const name   = (firstName + ' ' + lastName).trim();
+
+                const lineItems = getAddonLineItems();
+                if (state.colourPrice > 0) lineItems.push({ name: 'Premium colour — ' + colour, price: state.colourPrice });
 
                 try {
                     const res = await fetch('/api/submit', {
@@ -2244,9 +2128,9 @@
                                 slug:        productData ? productData.slug : null,
                                 type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
                                 colour:      colour,
-                                size:        document.getElementById('selectedSizeName').textContent,
+                                size:        (function() { var s = document.getElementById('selectedSizeName').textContent.trim(); return (!s || s === 'Loading...') ? '' : s; })(),
                                 addons:      getSelectedAddons(),
-                            addonLineItems: getAddonLineItems(),
+                            addonLineItems: lineItems,
                                 // The textarea limits to 400 chars; cap defensively at 1000 in case of paste oddities.
                                 inscription: state.inscription ? state.inscription.substring(0, 1000) : '',
                                 font:        state.font || '',
@@ -2266,7 +2150,7 @@
                         var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
-                            "Your quote has been submitted. Check your email — we've included options to pay a 50% deposit, pay in full, or simply wait for our team to be in touch within 24 hours. Production and installation timelines begin from the date the deposit is received." + editLink + trackLink;
+                            "Your quote has been submitted — we've sent a copy to your email. There's nothing more you need to do right now; our team will be in touch within 24 hours." + editLink + trackLink;
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
@@ -2281,45 +2165,7 @@
                     document.getElementById('quoteError').style.display = 'block';
                 }
             });
-
-            document.getElementById('quotePayBtn').addEventListener('click', async function() {
-                const btn = document.getElementById('quotePayBtn');
-                const errEl = document.getElementById('quotePayError');
-                errEl.style.display = 'none';
-                if (!_stripeElements) { showQuoteSuccess(false); return; }
-                btn.disabled = true;
-                btn.querySelector('span').textContent = 'Processing…';
-                const { error } = await _stripeInst.confirmPayment({
-                    elements: _stripeElements,
-                    confirmParams: { return_url: window.location.href },
-                    redirect: 'if_required',
-                });
-                if (error) {
-                    btn.disabled = false;
-                    btn.querySelector('span').textContent = _isFullPayment ? 'Pay in full' : 'Pay deposit';
-                    errEl.textContent = error.message;
-                    errEl.style.display = 'block';
-                } else {
-                    showQuoteSuccess(true, _isFullPayment);
-                }
-            });
-
-            document.getElementById('quoteSkipBtn').addEventListener('click', function() {
-                showQuoteSuccess(false);
-            });
         });
-
-        function showQuoteSuccess(paid, isFullPayment) {
-            document.getElementById('quotePayStep').style.display = 'none';
-            document.getElementById('quoteSuccess').style.display = 'block';
-            if (paid && isFullPayment) {
-                document.getElementById('quoteSuccessMsg').textContent = 'Your payment is confirmed. We\'ll be in touch within 24 hours to discuss your order.';
-            } else if (paid) {
-                document.getElementById('quoteSuccessMsg').textContent = 'Your deposit is confirmed. We\'ll be in touch within 24 hours to discuss your order.';
-            } else {
-                document.getElementById('quoteSuccessMsg').textContent = 'We\'ve sent a confirmation to your email and will be in touch within 24 hours.';
-            }
-        }
     </script>
 
     <!-- Mobile Bottom Navigation -->
@@ -2457,7 +2303,7 @@
                 if (noteEl) noteEl.style.display = '';
             }
             // Recalculate total with permit fee
-            var memorialTotal = state.basePrice + state.sizePrice + state.inscriptionPrice + state.addonsPrice;
+            var memorialTotal = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             var grandTotal = memorialTotal + _selectedCemeteryFee;
             if (totalEl) totalEl.textContent = '£' + grandTotal.toLocaleString();
         }

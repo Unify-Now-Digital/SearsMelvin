@@ -9,11 +9,15 @@ const BUSINESS_NAME = "Sears Melvin Memorials";
 
 const STONE_COLOURS = {
   "Black Galaxy": "#1a1a1a",
-  "Rustenberg Grey": "#6b6b6b",
-  "Vizag Blue": "#2c3e50",
-  "Indian Aurora": "#8B5A2B",
-  "Emerald Pearl": "#2d4a3e",
-  "Ruby Red": "#722F37",
+  "Black": "#0d0d0d",
+  "Rustenberg Grey": "#5a5a5a",
+  "Grey": "#8a8a8a",
+  "Vizag Blue": "#1a2a3a",
+  "Indian Aurora": "#6B4423",
+  "Emerald Pearl": "#1d3a2e",
+  "Ruby Red": "#5a2028",
+  "Bahama Blue": "#2a4a5a",
+  "Tropical Green": "#2a4a3a",
 };
 
 const CORS = {
@@ -99,40 +103,24 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   return jsonResponse({ ok: true, invoiceId, editToken });
 }
 
-// Runs after the response has been returned. Stripe invoice creation is the
-// slowest step (multiple Stripe round-trips per invoice); the deposit and full
-// invoices are created in parallel because they're independent.
+// Runs after the response has been returned. Fires the customer + business
+// emails, the ClickUp task and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
   cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
 }) {
-  // Stripe deposit + full in parallel.
-  let stripeDepositUrl = null;
-  let stripeFullUrl = null;
-  if (env.STRIPE_SECRET_KEY) {
-    const [depositRes, fullRes] = await Promise.allSettled([
-      createStripeDepositInvoice(env.STRIPE_SECRET_KEY, { name, email, phone, product, location: cemeteryOrLocation, isFullInvoice: false }),
-      createStripeDepositInvoice(env.STRIPE_SECRET_KEY, { name, email, phone, product, location: cemeteryOrLocation, isFullInvoice: true }),
-    ]);
-    if (depositRes.status === "fulfilled") stripeDepositUrl = depositRes.value;
-    else console.error("Stripe deposit invoice creation failed:", depositRes.reason);
-    if (fullRes.status === "fulfilled") stripeFullUrl = fullRes.value;
-    else console.error("Stripe full invoice creation failed:", fullRes.reason);
-  }
-
-  // Now fire emails (need the Stripe URLs) + ClickUp + GHL in parallel.
   await Promise.allSettled([
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
-      html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }),
+      html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt }),
     })),
     bg("quote customer email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      email,
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }),
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation, editToken, email }),
     })),
     bg("quote clickup task", () => createClickUpTask(env.CLICKUP_API_KEY, {
       name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
@@ -570,7 +558,7 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
 // EMAIL TEMPLATES
 // ═══════════════════════════════════════════════════════════════════
 
-function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt, stripeDepositUrl, stripeFullUrl }) {
+function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
     : Array.isArray(product.addons) && product.addons.length > 0
@@ -756,39 +744,13 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                 <td style="padding:5px 0;color:#999999;vertical-align:top;">Phone</td>
                 <td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td>
               </tr>
-              ${location ? `<tr>
+              <tr>
                 <td style="padding:5px 0;color:#999999;vertical-align:top;">Cemetery</td>
-                <td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td>
-              </tr>` : ""}
-            </table>
-          </td>
-        </tr>
-
-        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment CTA buttons -->
-        <tr>
-          <td style="padding:20px 28px 10px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              ${stripeDepositUrl ? `<tr>
-                <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;margin-bottom:8px;">
-                  <a href="${stripeDepositUrl}" style="display:block;padding:14px 20px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">50% Deposit Invoice &rarr;</a>
-                </td>
+                <td style="padding:5px 0;color:#1A1A1A;">${esc(location || "Not provided")}</td>
               </tr>
-              <tr><td style="height:8px;"></td></tr>` : ""}
-              ${stripeFullUrl ? `<tr>
-                <td align="center" style="background-color:#2C2C2C;border-radius:8px;padding:0;">
-                  <a href="${stripeFullUrl}" style="display:block;padding:14px 20px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Full Payment Invoice &rarr;</a>
-                </td>
-              </tr>` : ""}
             </table>
           </td>
         </tr>
-        <tr>
-          <td style="padding:0 28px 10px;">
-            <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;line-height:1.5;">
-              <em>Note: Outstanding balance may be required if modifications are made to the memorial after deposit.</em>
-            </p>
-          </td>
-        </tr>` : ""}
 
         ${message ? `<!-- Customer notes -->
         <tr>
@@ -817,7 +779,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, stripeFullUrl, editToken, email }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken, email }) {
   const totalPrice = parseFloat(product.price) || 0;
   const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -912,6 +874,10 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
                       <td style="color:#999999;padding:3px 0;vertical-align:top;">Lettering colour</td>
                       <td style="color:#2C2C2C;">${esc(product.letterColour.charAt(0).toUpperCase() + product.letterColour.slice(1))}</td>
                     </tr>` : ""}
+                    ${location ? `<tr>
+                      <td style="color:#999999;padding:3px 0;vertical-align:top;">Cemetery</td>
+                      <td style="color:#2C2C2C;">${esc(location)}</td>
+                    </tr>` : ""}
                   </table>
 
                   <!-- Price breakdown -->
@@ -953,49 +919,18 @@ function quoteCustomerEmail({ firstName, product, stoneHex, stripeDepositUrl, st
           </td>
         </tr>
 
-        ${stripeDepositUrl || stripeFullUrl ? `<!-- Payment options header -->
-        <tr>
-          <td style="padding:0 28px 12px;">
-            <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">Ready to proceed?</p>
-            <p style="font-family:Arial,sans-serif;font-size:13px;color:#555555;margin:0;line-height:1.6;">Choose any of the options below — there's no obligation, and you can also wait for our team to call you.</p>
-          </td>
-        </tr>
-        <!-- Payment CTA buttons -->
-        <tr>
-          <td style="padding:0 28px 12px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              ${stripeDepositUrl ? `<tr>
-                <td align="center" style="background-color:#8B7355;border-radius:8px;padding:0;">
-                  <a href="${stripeDepositUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay 50% Deposit + Permit Fee &rarr;</a>
-                </td>
-              </tr>
-              <tr><td style="height:10px;"></td></tr>` : ""}
-              ${stripeFullUrl ? `<tr>
-                <td align="center" style="background-color:#2C2C2C;border-radius:8px;padding:0;">
-                  <a href="${stripeFullUrl}" style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Pay in Full &rarr;</a>
-                </td>
-              </tr>
-              <tr><td style="height:10px;"></td></tr>` : ""}
-              <tr>
-                <td align="center" style="background-color:#ffffff;border:1.5px solid #E0DCD5;border-radius:8px;padding:0;">
-                  <span style="display:block;padding:16px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#2C2C2C;text-align:center;">Or simply reply — we'll be in touch within 24 hours</span>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <!-- Deposit timeline note -->
+        <!-- Reassurance -->
         <tr>
           <td style="padding:0 28px 16px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF8F5;border-radius:6px;border-left:3px solid #8B7355;">
               <tr>
                 <td style="padding:12px 14px;font-family:Arial,sans-serif;font-size:13px;color:#555555;line-height:1.6;">
-                  <strong style="color:#2C2C2C;">Please note:</strong> Production and installation timelines begin from the date the deposit is received. Outstanding balance may be required if modifications are made to the memorial after the deposit is paid.
+                  <strong style="color:#2C2C2C;">What happens next?</strong> There's nothing more you need to do right now — our team will be in touch within 24 hours to talk through your memorial. If you'd like to reach us sooner, just reply to this email or give us a call.
                 </td>
               </tr>
             </table>
           </td>
-        </tr>` : ""}
+        </tr>
 
         ${editToken ? `<!-- Edit quote link -->
         <tr>
@@ -1551,150 +1486,6 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
     }),
   });
   if (!res.ok) throw new Error(`GHL Opportunity error ${res.status}: ${await res.text()}`);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// STRIPE DEPOSIT INVOICE — creates a 50% deposit invoice (or full if invoice_only)
-// ═══════════════════════════════════════════════════════════════════
-async function createStripeDepositInvoice(stripeKey, { name, email, phone, product, location, isFullInvoice }) {
-  const stripePost = (path, params) => fetch(`https://api.stripe.com/v1${path}`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${stripeKey}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(params),
-  }).then(async r => {
-    const json = await r.json();
-    if (json.error) throw new Error(`Stripe ${path}: ${json.error.message}`);
-    return json;
-  });
-
-  const stripeGet = (path) => fetch(`https://api.stripe.com/v1${path}`, {
-    headers: { "Authorization": `Bearer ${stripeKey}` },
-  }).then(r => r.json());
-
-  // Find or create Stripe customer
-  const existingRes = await stripeGet(`/customers?email=${encodeURIComponent(email)}&limit=1`);
-  let customerId;
-  if (existingRes.data && existingRes.data.length > 0) {
-    customerId = existingRes.data[0].id;
-    await stripePost(`/customers/${customerId}`, { name: name || "", ...(phone ? { phone } : {}) });
-  } else {
-    const customer = await stripePost("/customers", {
-      email, name: name || "", ...(phone ? { phone } : {}),
-      ...(location ? { "metadata[cemetery]": location } : {}),
-    });
-    customerId = customer.id;
-  }
-
-  const totalPricePence = Math.round(parseFloat(product.price || 0) * 100);
-  const permitFeePence = Math.round(parseFloat(product.permit_fee || 0) * 100);
-  const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
-    ? product.addonLineItems : [];
-  const addonTotalPence = addonItems.reduce((sum, a) => sum + Math.round(parseFloat(a.price || 0) * 100), 0);
-  const basePricePence = Math.max(0, totalPricePence - addonTotalPence);
-  const productDescription = [product.name || "Memorial", product.colour ? `· ${product.colour}` : "", product.size ? `· ${product.size}` : ""].filter(Boolean).join(" ");
-
-  // Deposit structure:
-  //   • Memorial value (base + addons + lettering): charged 50% on deposit, 50% on completion.
-  //   • Cemetery permit fee: charged 100% on deposit (we have to pay it upfront to the cemetery).
-  // Full-payment invoice charges 100% of everything.
-  const memorialMultiplier = isFullInvoice ? 1 : 0.5;
-  const permitMultiplier = 1; // always full
-  const label = isFullInvoice ? "" : " — 50% deposit";
-
-  // Helper: find existing Stripe Product by metadata key, or create a new one
-  async function findOrCreateStripeProduct(itemName, itemType) {
-    const searchRes = await stripeGet(
-      `/products/search?query=metadata['sm_name']:'${encodeURIComponent(itemName)}' AND metadata['sm_type']:'${encodeURIComponent(itemType)}'&limit=1`
-    );
-    if (searchRes.data && searchRes.data.length > 0) return searchRes.data[0];
-    return stripePost("/products", {
-      name: itemName,
-      "metadata[sm_name]": itemName,
-      "metadata[sm_type]": itemType,
-      "metadata[source]": "searsmelvin",
-    });
-  }
-
-  const invoiceDescription = isFullInvoice
-    ? `Sears Melvin Memorials — ${productDescription}`
-    : `Sears Melvin Memorials — Deposit + permit fee — ${productDescription}`;
-  const invoiceFooter = isFullInvoice
-    ? "Thank you for choosing Sears Melvin Memorials. All prices include installation. Balance due within 30 days."
-    : "Thank you for choosing Sears Melvin Memorials. This invoice covers a 50% deposit on the memorial plus the cemetery permit fee in full. The remaining 50% memorial balance is due on completion. Your installation timeline begins once the deposit is confirmed.";
-
-  // Create invoice FIRST as a draft, then attach line items explicitly
-  const invoice = await stripePost("/invoices", {
-    customer: customerId, collection_method: "send_invoice", days_until_due: "30", auto_advance: "false",
-    description: invoiceDescription,
-    footer: invoiceFooter,
-    "metadata[customer_name]": name || "", "metadata[product]": product.name || "",
-    "metadata[cemetery]": location || "", "metadata[invoice_type]": isFullInvoice ? "full" : "deposit",
-  });
-
-  // Create Stripe Product + one-time Price for the base memorial
-  const memorialProduct = await findOrCreateStripeProduct(product.name || "Memorial", "memorial");
-  const basePrice = await stripePost("/prices", {
-    product: memorialProduct.id,
-    unit_amount: String(Math.round(basePricePence * memorialMultiplier)),
-    currency: "gbp",
-  });
-  await stripePost("/invoiceitems", {
-    customer: customerId,
-    invoice: invoice.id,
-    price: basePrice.id,
-    description: productDescription + " (inc. installation)" + label,
-  });
-
-  // Create permit fee line item — always 100% of the fee, even on a deposit invoice.
-  if (permitFeePence > 0) {
-    const permitProduct = await findOrCreateStripeProduct("Cemetery Permit Fee", "permit");
-    const permitPrice = await stripePost("/prices", {
-      product: permitProduct.id,
-      unit_amount: String(Math.round(permitFeePence * permitMultiplier)),
-      currency: "gbp",
-    });
-    await stripePost("/invoiceitems", {
-      customer: customerId,
-      invoice: invoice.id,
-      price: permitPrice.id,
-      description: "Cemetery Permit Fee (paid in full)",
-    });
-  }
-
-  // Create Stripe Products + Prices for each addon line item
-  for (const addon of addonItems) {
-    const addonPence = Math.round(parseFloat(addon.price || 0) * 100);
-    if (addonPence > 0) {
-      const addonProduct = await findOrCreateStripeProduct(addon.name || "Add-on", "addon");
-      const addonPrice = await stripePost("/prices", {
-        product: addonProduct.id,
-        unit_amount: String(Math.round(addonPence * memorialMultiplier)),
-        currency: "gbp",
-      });
-      await stripePost("/invoiceitems", {
-        customer: customerId,
-        invoice: invoice.id,
-        price: addonPrice.id,
-        description: (addon.name || "Add-on") + label,
-      });
-    }
-  }
-
-  // Fallback: add addon names as zero-value items if no priced line items
-  if (addonItems.length === 0 && Array.isArray(product.addons) && product.addons.length > 0) {
-    for (const addonName of product.addons) {
-      const addonProduct = await findOrCreateStripeProduct(addonName, "addon");
-      const zeroPrice = await stripePost("/prices", {
-        product: addonProduct.id,
-        unit_amount: "0",
-        currency: "gbp",
-      });
-      await stripePost("/invoiceitems", { customer: customerId, invoice: invoice.id, price: zeroPrice.id, description: addonName });
-    }
-  }
-
-  const finalised = await stripePost(`/invoices/${invoice.id}/finalize`, { auto_advance: "false" });
-  return finalised.hosted_invoice_url || null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
