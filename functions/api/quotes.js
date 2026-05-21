@@ -144,19 +144,6 @@ async function updateQuote(env, data) {
   );
   if (!patchRes.ok) return json({ ok: false, error: "Failed to update quote" }, 500);
 
-  // Sync invoice amount if product price changed
-  if (product && product.price) {
-    const newAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
-    await fetch(
-      `${env.SUPABASE_URL}/rest/v1/invoices?order_id=eq.${orderId}&status=eq.pending`,
-      {
-        method: "PATCH",
-        headers: { ...headers, "Prefer": "return=minimal" },
-        body: JSON.stringify({ amount: newAmount }),
-      },
-    );
-  }
-
   // Send notification emails about the update
   if (env.RESEND_API_KEY) {
     const customerName = [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ");

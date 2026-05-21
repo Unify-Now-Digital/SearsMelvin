@@ -71,26 +71,35 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
   const cemeteryOrLocation = cemetery || location || null;
 
-  // 1. Supabase save — must complete before responding so the customer only
-  // sees "submitted" when the record actually persisted. Everything else
-  // (Stripe invoices, emails, ClickUp, GHL) runs in the background via
-  // ctx.waitUntil so the response returns in ~500ms instead of 5–10s.
-  let invoiceId = null;
-  let editToken = null;
+  // 1. Persist the quote in a single atomic Supabase RPC — it upserts the
+  // person, creates the order (carrying this edit_token) and the enquiry in one
+  // transaction / one network round trip instead of ~4 sequential PostgREST
+  // calls. Must complete before responding so the customer only sees
+  // "submitted" once the quote actually persisted. The emails, ClickUp and GHL
+  // contact run in the background via ctx.waitUntil below.
+  const editToken = generateToken();
+  const { first_name, last_name } = splitName(name);
   try {
-    const sbResult = await createEnquiry(env, {
-      channel: "quote",
-      name, email, phone,
-      source_page: data.source_page || null,
-      message,
-      location: cemeteryOrLocation,
-      cemetery_id: data.cemetery_id || null,
-      product,
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_quote`, {
+      method: "POST",
+      headers: supabaseHeaders(env),
+      body: JSON.stringify({
+        payload: {
+          organization_id: env.SM_ORG_ID,
+          email, first_name, last_name, name,
+          phone: phone || null,
+          source_page: data.source_page || null,
+          message: message || null,
+          location: cemeteryOrLocation,
+          cemetery_id: data.cemetery_id || null,
+          edit_token: editToken,
+          product,
+        },
+      }),
     });
-    invoiceId = sbResult?.invoiceId || null;
-    editToken = sbResult?.editToken || null;
+    if (!res.ok) throw new Error(`create_quote RPC ${res.status}: ${await res.text()}`);
   } catch (err) {
-    console.error("Supabase insert failed:", err);
+    console.error("Supabase quote save failed:", err);
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
   }
 
@@ -100,7 +109,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
   }));
 
-  return jsonResponse({ ok: true, invoiceId, editToken });
+  return jsonResponse({ ok: true, editToken });
 }
 
 // Runs after the response has been returned. Fires the customer + business
@@ -1316,74 +1325,13 @@ export async function upsertPerson(env, { name, email, phone }) {
   return inserted ? { id: inserted.id, is_customer: !!inserted.is_customer } : null;
 }
 
-// Create the order + invoice rows for a product quote. Isolated so non-quote
-// channels never touch the orders table.
-async function createOrderForQuote(env, { personId, customerName, product, location, message }) {
-  const headers = supabaseHeaders(env);
-  const today = new Date().toISOString().split("T")[0];
-  const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-  const editToken = generateToken();
-
-  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders`, {
-    method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-    body: JSON.stringify({
-      organization_id: env.SM_ORG_ID,
-      person_id: personId,
-      // orders.customer_name is NOT NULL; mirror onto person_name for the
-      // admin views that read either column.
-      customer_name: customerName || "Website lead",
-      person_name: customerName || null,
-      order_type: "quote",
-      sku: product?.name || null,
-      color: product?.colour || null,
-      value: product?.price ? parseFloat(product.price) : null,
-      permit_fee: product?.permit_fee ? parseFloat(product.permit_fee) : null,
-      location: location || null,
-      edit_token: editToken,
-      ...(product ? { product_config: JSON.stringify(product) } : {}),
-      ...(message ? { notes: message } : {}),
-      ...(product?.inscription ? { inscription_text: product.inscription } : {}),
-    }),
-  });
-  if (!orderRes.ok) throw new Error(`Supabase orders error ${orderRes.status}: ${await orderRes.text()}`);
-  const orderId = (await orderRes.json())[0]?.id || null;
-
-  let invoiceId = null;
-  if (product?.price) {
-    const fullAmount = parseFloat(product.price) + parseFloat(product.permit_fee || 0);
-    // invoices.invoice_number is NOT NULL UNIQUE. The admin app uses
-    // sequential INV-NNNNNN numbers; pick a clearly-distinct prefix for
-    // website-generated draft invoices so the two namespaces don't collide.
-    const invoiceNumber = `INV-WEB-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`;
-    const invRes = await fetch(`${env.SUPABASE_URL}/rest/v1/invoices`, {
-      method: "POST", headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({
-        organization_id: env.SM_ORG_ID,
-        order_id: orderId,
-        invoice_number: invoiceNumber,
-        customer_name: customerName,
-        amount: fullAmount,
-        status: "pending",
-        issue_date: today,
-        due_date: dueDate,
-      }),
-    });
-    if (!invRes.ok) {
-      console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
-    } else {
-      invoiceId = (await invRes.json())[0]?.id || null;
-    }
-  }
-  return { orderId, editToken, invoiceId };
-}
-
-// Single source of truth for every inbound submission. Always creates a
-// `people` row (deduped by email) and an `enquiries` row. For `channel='quote'`
-// also creates the order + invoice and links the enquiry to it via order_id.
+// Persist a non-quote submission: always a `people` row (deduped by email) plus
+// an `enquiries` row. Quotes go through the atomic create_quote RPC instead
+// (see handleQuoteRequest); this path covers contact, appointment and shortlist.
 async function createEnquiry(env, payload) {
-  // Person upsert and cemetery lookup are independent; run in parallel to
-  // shave ~150–400ms off the critical path. Cemetery lookup is best-effort
-  // (free-text submissions still save with cemetery_id=null).
+  // Person upsert and the best-effort cemetery lookup are independent; run them
+  // concurrently. Cemetery lookup is best-effort (free-text submissions still
+  // save with cemetery_id=null).
   const cemeteryNeeded = !payload.cemetery_id && payload.location;
   const [person, lookedUpCemeteryId] = await Promise.all([
     upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone }),
@@ -1397,18 +1345,6 @@ async function createEnquiry(env, payload) {
   if (!person) throw new Error("Person upsert returned no id");
   const resolvedCemeteryId = payload.cemetery_id ?? lookedUpCemeteryId ?? null;
 
-  let orderId = null, editToken = null, invoiceId = null;
-  if (payload.channel === "quote") {
-    ({ orderId, editToken, invoiceId } = await createOrderForQuote(env, {
-      personId: person.id,
-      customerName: payload.name,
-      product: payload.product,
-      location: payload.location,
-      message: payload.message,
-    }));
-  }
-
-  const headers = supabaseHeaders(env);
   const enqBody = {
     organization_id: env.SM_ORG_ID,
     person_id: person.id,
@@ -1422,23 +1358,16 @@ async function createEnquiry(env, payload) {
     appointment_at: payload.appointment_at ?? null,
     appointment_kind: payload.appointment_kind ?? null,
     photo_urls: Array.isArray(payload.photo_urls) && payload.photo_urls.length > 0 ? payload.photo_urls : null,
-    details: payload.details ?? (payload.product || null),
-    order_id: orderId,
+    details: payload.details ?? null,
+    order_id: null,
   };
   const enqRes = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
-    headers: { ...headers, "Prefer": "return=representation" },
+    headers: supabaseHeaders(env),
     body: JSON.stringify(enqBody),
   });
   if (!enqRes.ok) throw new Error(`Supabase enquiries error ${enqRes.status}: ${await enqRes.text()}`);
-  const enqRow = (await enqRes.json())[0] || null;
-  return {
-    personId: person.id,
-    enquiryId: enqRow?.id || null,
-    orderId,
-    editToken,
-    invoiceId,
-  };
+  return { personId: person.id };
 }
 
 // ═══════════════════════════════════════════════════════════════════
