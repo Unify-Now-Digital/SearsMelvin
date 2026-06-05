@@ -1483,18 +1483,32 @@
             }
             function row(list) { return '<div class="colour-swatch-row">' + list.map(swatch).join('') + '</div>'; }
 
-            const standard = colours.filter(function(c) { return !c.is_premium; });
-            const premium  = colours.filter(function(c) { return c.is_premium; });
+            // Group by tier. Falls back to is_premium for rows from before the
+            // tier migration (no tier column → standard/premium only).
+            function tierOf(c) { return c.tier || (c.is_premium ? 'premium' : 'standard'); }
+            const standard     = colours.filter(function(c) { return tierOf(c) === 'standard'; });
+            const premium      = colours.filter(function(c) { return tierOf(c) === 'premium'; });
+            const naturalStone = colours.filter(function(c) { return tierOf(c) === 'natural-stone'; });
+
+            function plainGroup(label, list) {
+                return '<div class="colour-group"><span class="colour-group-label">' + label + '</span>' + row(list) + '</div>';
+            }
+            // Premium tiers share one surcharge; the tag carries the tier name.
+            function premiumGroup(tag, list) {
+                return '<div class="colour-group"><span class="colour-group-label">'
+                     + '<span class="colour-group-tag">' + tag + '</span>'
+                     + '<span class="colour-group-note">+£' + surcharge + '</span>'
+                     + '</span>' + row(list) + '</div>';
+            }
 
             let html;
-            if (premium.length && standard.length) {
-                html = '<div class="colour-group"><span class="colour-group-label">Standard</span>' + row(standard) + '</div>'
-                     + '<div class="colour-group"><span class="colour-group-label">'
-                     + '<span class="colour-group-tag">Premium</span>'
-                     + '<span class="colour-group-note">+£' + surcharge + '</span>'
-                     + '</span>' + row(premium) + '</div>';
+            if (standard.length && (premium.length || naturalStone.length)) {
+                html = '';
+                if (standard.length)     html += plainGroup('Standard', standard);
+                if (premium.length)      html += premiumGroup('Premium', premium);
+                if (naturalStone.length) html += premiumGroup('Premium Natural Stone', naturalStone);
             } else {
-                // No premium colours yet (e.g. before the is_premium migration runs) — flat list.
+                // No premium colours yet (e.g. before the migration runs) — flat list.
                 html = colours.map(swatch).join('');
             }
             container.innerHTML = html;
@@ -1507,7 +1521,10 @@
             const container = document.getElementById('sizeOptions');
             const group = document.getElementById('sizeOptionGroup');
             if (!sizes.length) { if (group) group.style.display = 'none'; document.getElementById('selectedSizeName').textContent = ''; return; }
-            if (group) group.style.display = '';
+            // Size picker hidden on the front end (per request). The radios are
+            // still rendered (hidden) so the default size stays selected and
+            // pricing/summary keep working — this is a front-end-only change.
+            if (group) group.style.display = 'none';
             const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
             const heightMap = { 0: 75, 1: 88, 2: 100 };
             let html = '';
