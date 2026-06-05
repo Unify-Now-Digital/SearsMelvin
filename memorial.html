@@ -1521,7 +1521,10 @@
             const container = document.getElementById('sizeOptions');
             const group = document.getElementById('sizeOptionGroup');
             if (!sizes.length) { if (group) group.style.display = 'none'; document.getElementById('selectedSizeName').textContent = ''; return; }
-            if (group) group.style.display = '';
+            // Size picker hidden on the front end (per request). The radios are
+            // still rendered (hidden) so the default size stays selected and
+            // pricing/summary keep working — this is a front-end-only change.
+            if (group) group.style.display = 'none';
             const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
             const heightMap = { 0: 75, 1: 88, 2: 100 };
             let html = '';
