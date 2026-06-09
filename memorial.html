@@ -2042,6 +2042,15 @@
             document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
 
             document.getElementById('quoteForm').reset();
+            // Re-enable the submit button on (re)open. A prior successful submit hides
+            // the form without resetting the button, so reopening the modal in the same
+            // session (no page reload) would otherwise leave it stuck disabled on "Sending…".
+            var _qSubmitBtn = document.getElementById('quoteSubmitBtn');
+            if (_qSubmitBtn) {
+                _qSubmitBtn.disabled = false;
+                var _qSubmitSpan = _qSubmitBtn.querySelector('span');
+                if (_qSubmitSpan) _qSubmitSpan.textContent = 'Send Quote Request';
+            }
             document.getElementById('quoteForm').style.display    = '';
             document.getElementById('quoteSuccess').style.display = 'none';
             document.getElementById('quoteError').style.display   = 'none';
