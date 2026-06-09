@@ -2098,7 +2098,10 @@
             try {
                 const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
                 const autocomplete = new PlaceAutocompleteElement({
-                    componentRestrictions: { country: 'gb' },
+                    // New PlaceAutocompleteElement uses `includedRegionCodes`, NOT the
+                    // legacy `componentRestrictions` — passing the latter throws an
+                    // InvalidValueError that surfaced in the browser console.
+                    includedRegionCodes: ['gb'],
                 });
                 autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.9rem;';
                 autocomplete.id = 'qCemeteryAuto';
