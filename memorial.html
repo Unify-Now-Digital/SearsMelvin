@@ -2157,8 +2157,20 @@
                 const lastName  = document.getElementById('qLastName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
-                const cemetery  = document.getElementById('qCemeteryName').value.trim()
-                                  || document.getElementById('qCemeteryInput').value.trim();
+                // Read the cemetery from whichever holder is populated. The field can be
+                // backed by three different widgets depending on load state, so every lookup
+                // is optional-chained — the old `qCemeteryInput` is destroyed once Google's
+                // PlaceAutocompleteElement mounts, and reading `.value` on that null element
+                // used to throw and silently abort the whole submit.
+                //   qCemeteryName  — set by the native Supabase suggestion dropdown
+                //   qCemeteryValue — hidden input set by the new PlaceAutocompleteElement
+                //   qCemeteryInput — plain text input before Google Maps replaces it
+                //   qCemeteryAuto  — the new element itself (best-effort current text)
+                const cemetery  = document.getElementById('qCemeteryName')?.value?.trim()
+                                  || document.getElementById('qCemeteryValue')?.value?.trim()
+                                  || document.getElementById('qCemeteryInput')?.value?.trim()
+                                  || document.getElementById('qCemeteryAuto')?.value?.trim()
+                                  || '';
                 const message   = document.getElementById('qMessage').value.trim();
 
                 const colour = document.getElementById('selectedColourName').textContent;
