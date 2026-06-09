@@ -21,9 +21,17 @@
 const BASE = "https://searsmelvin.co.uk";
 const FALLBACK_IMAGE = `${BASE}/sm-logo.svg`;
 
+// Asset requests (favicon.svg, robots.txt, *.map …) can be resolved by the
+// browser against /memorials/<slug>/ and land on this route. They're never
+// products, so skip the DB lookup rather than querying slug=eq.favicon.svg.
+function looksLikeAsset(slug) {
+  return /\.[a-z0-9]{2,5}$/i.test(slug);
+}
+
 async function fetchProduct(env, slug) {
   const key = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
   if (!env.SUPABASE_URL || !key) return null;
+  if (looksLikeAsset(slug)) return null;
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&select=*,product_categories(name,slug)&limit=1`,

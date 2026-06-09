@@ -73,7 +73,11 @@
     <title>Memorial | Sears Melvin Memorials</title>
     <meta name="description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
     <!-- Supabase data loaded via REST API directly -->
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <!-- Must be root-absolute. A relative `favicon.svg` resolves against the
+         page path, so on /memorials/<slug> the browser requests
+         /memorials/favicon.svg — which the Pages function treats as a product
+         slug and runs a pointless products?slug=eq.favicon.svg query. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
     <meta name="theme-color" content="#2C2C2C">
     <link rel="apple-touch-icon" href="/favicon.svg">
@@ -1285,6 +1289,13 @@
             const pathMatch = window.location.pathname.match(/^\/memorials\/([^\/?#]+)/);
             const slug = (pathMatch && pathMatch[1]) || params.get('slug');
             if (!slug) { document.getElementById('productName').textContent = 'Product not found'; return; }
+            // Asset paths (favicon.svg, robots.txt, sourcemaps…) can resolve under
+            // /memorials/ and reach here as a "slug". They're never products, so
+            // skip the lookup entirely rather than firing a doomed query.
+            if (/\.[a-z0-9]{2,5}$/i.test(slug)) {
+                document.getElementById('productName').textContent = 'Product not found';
+                return;
+            }
             // Upgrade legacy ?slug= URLs to clean path-style without a reload.
             if (params.get('slug') && !pathMatch) {
                 history.replaceState({}, '', '/memorials/' + encodeURIComponent(slug));
@@ -1309,10 +1320,15 @@
                     }
                 }
                 if (!product) {
-                    const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true' });
+                    const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true', limit: '1' });
                     product = products[0];
                 }
-                if (!product) { document.getElementById('productName').textContent = 'Product not found'; return; }
+                // Genuinely unknown slug (the fetch succeeded but returned no
+                // active product): send the visitor to the catalogue instead of
+                // leaving them on a dead "Product not found" shell. This only
+                // fires on a real empty result — a thrown/network error lands in
+                // the catch below and keeps the user on the page.
+                if (!product) { window.location.replace('/memorials'); return; }
 
                 productData = product;
                 state.basePrice = parseFloat(product.base_price);
@@ -1406,7 +1422,7 @@
                 var catSlug = product.product_categories?.slug || '';
                 document.getElementById('productCategory').textContent = catName;
                 document.getElementById('productName').textContent = product.name;
-                document.getElementById('productDescription').textContent = product.description + ' Price includes nationwide installation and our 30-year guarantee.';
+                document.getElementById('productDescription').textContent = ((product.description || '') + ' Price includes nationwide installation and our 30-year guarantee.').trim();
                 document.getElementById('priceBaseName').textContent = product.name;
                 document.getElementById('priceBase').textContent = '£' + state.basePrice.toLocaleString();
 
@@ -1529,7 +1545,8 @@
             const heightMap = { 0: 75, 1: 88, 2: 100 };
             let html = '';
             sizes.forEach(function(s, i) {
-                const price = parseFloat(s.price_adjustment);
+                const price = parseFloat(s.price_adjustment) || 0;
+                const dims  = s.dimensions || '';
                 const scale = scaleMap[i] || (1 + i * 0.15);
                 const h = heightMap[i] || (75 + i * 13);
                 const w = Math.round(h * 0.8);
@@ -1537,19 +1554,19 @@
                 const vh = Math.round(h * 1.1);
                 const priceLabel = price > 0 ? ' +£' + price.toLocaleString() : '';
                 html += '<label class="size-preview">'
-                    + '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + s.dimensions.replace(/"/g, '&quot;') + '" data-price="' + price + '" data-scale="' + scale + '"' + (s.is_default ? ' checked' : '') + ' onchange="updateSize(this)">'
+                    + '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + dims.replace(/"/g, '&quot;') + '" data-price="' + price + '" data-scale="' + scale + '"' + (s.is_default ? ' checked' : '') + ' onchange="updateSize(this)">'
                     + '<div class="size-memorial" style="height: ' + h + 'px;">'
                     + '<svg viewBox="0 0 ' + vw + ' ' + vh + '" width="' + w + '" height="' + h + '">'
                     + '<path d="M5 ' + (vh-8) + ' L5 ' + Math.round(vh*0.28) + ' Q5 ' + Math.round(vh*0.1) + ' ' + Math.round(vw*0.25) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw*0.5) + ' ' + Math.round(-vh*0.06) + ' ' + Math.round(vw*0.75) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw-5) + ' ' + Math.round(vh*0.1) + ' ' + (vw-5) + ' ' + Math.round(vh*0.28) + ' L' + (vw-5) + ' ' + (vh-8) + ' Z" fill="var(--stone-primary)"/>'
                     + '<rect x="2" y="' + (vh-8) + '" width="' + (vw-4) + '" height="' + Math.round(vh*0.07) + '" fill="var(--stone-secondary)"/>'
                     + '</svg></div>'
                     + '<div class="size-label"><strong>' + s.size_name + priceLabel + '</strong>'
-                    + '<span class="size-dimensions">' + s.dimensions + '</span></div></label>';
+                    + '<span class="size-dimensions">' + dims + '</span></div></label>';
             });
             container.innerHTML = html;
             // Set initial size label
             var defaultSize = sizes.find(function(s) { return s.is_default; }) || sizes[0];
-            document.getElementById('selectedSizeName').textContent = defaultSize.size_name + ' (' + defaultSize.dimensions + ')';
+            document.getElementById('selectedSizeName').textContent = defaultSize.size_name + (defaultSize.dimensions ? ' (' + defaultSize.dimensions + ')' : '');
         }
 
         function renderAddons(addons) {
