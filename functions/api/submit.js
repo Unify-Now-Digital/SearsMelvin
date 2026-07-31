@@ -2,10 +2,22 @@
  * Sears Melvin Memorials — Cloudflare Pages Function
  * Route: /api/submit (POST)
  */
-const CLICKUP_LIST_ID = "8ck2cf5-10552";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
+
+// GHL pipeline defaults. These were previously env-only, and because neither var
+// was ever set in Cloudflare `createGHLOpportunity` returned early on every
+// submission — no opportunity has been created since Sept 2025. Defaulting them
+// here means the funnel works out of the box; env still wins if it's set.
+const GHL_PIPELINE_ID_DEFAULT = "ty7z50OQyVGXMS1NARrK";              // SM Memorial Pipeline
+const GHL_PIPELINE_STAGE_ID_DEFAULT = "3c1dd6af-1ccd-4acd-bf0e-96a8cb478d08"; // New Lead
+
+// The Cemetery custom field already exists in the SM sub-account. Addressed by
+// id rather than key: GHL stores keys prefixed (`contact.cemetery`) and it's
+// unconfirmed whether it matches the bare keys the rest of this file sends, so
+// the id is the one form guaranteed to land.
+const GHL_CEMETERY_FIELD_ID_DEFAULT = "SNtzqw1uQAWjDnUPqwiK";
 
 const STONE_COLOURS = {
   "Black Galaxy": "#1a1a1a",
@@ -75,7 +87,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // person, creates the order (carrying this edit_token) and the enquiry in one
   // transaction / one network round trip instead of ~4 sequential PostgREST
   // calls. Must complete before responding so the customer only sees
-  // "submitted" once the quote actually persisted. The emails, ClickUp and GHL
+  // "submitted" once the quote actually persisted. The emails and the GHL
   // contact run in the background via ctx.waitUntil below.
   const editToken = generateToken();
   const { first_name, last_name } = splitName(name);
@@ -113,7 +125,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 }
 
 // Runs after the response has been returned. Fires the customer + business
-// emails, the ClickUp task and the GHL contact/opportunity in parallel.
+// emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
   cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
@@ -131,11 +143,6 @@ async function quoteSideEffects({
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
       html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation, editToken, email }),
     })),
-    bg("quote clickup task", () => createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `Quote Request — ${product.name || "Memorial"} — ${name}`,
-      description: buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }),
-      listId: CLICKUP_LIST_ID,
-    })),
     bg("ghl quote contact+opportunity", async () => {
       const ghlExtraFields = [
         message              ? { key: "customer_message",   field_value: message } : null,
@@ -147,7 +154,11 @@ async function quoteSideEffects({
         product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
         product.image        ? { key: "product_image_url",  field_value: product.image } : null,
       ].filter(Boolean);
-      const contactId = await createGHLContact(env, { name, email, phone, type: "quote", product, extraFields: ghlExtraFields });
+      const contactId = await createGHLContact(env, {
+        name, email, phone, type: "quote", product,
+        cemetery: cemeteryOrLocation,
+        extraFields: ghlExtraFields,
+      });
       if (contactId) {
         await createGHLOpportunity(env, {
           contactId,
@@ -210,7 +221,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
 
-  // 2. Background side-effects (emails, ClickUp, calendar, GHL) run after
+  // 2. Background side-effects (emails, calendar, GHL) run after
   // the response is returned via ctx.waitUntil — keeps the customer-facing
   // latency to ~500ms instead of 3s.
   const enquiryTypeLabel = formatEnquiryTypeLabel(enquiry_type);
@@ -226,9 +237,9 @@ async function handleEnquiry(ctx, data, submittedAt) {
   return jsonResponse({ ok: true });
 }
 
-// Runs after the response has been returned. Emails + ClickUp + calendar +
-// GHL are all independent so they fire in parallel; photo signing is a
-// prerequisite for the business email so it's chained inside that branch.
+// Runs after the response has been returned. Emails + calendar + GHL are all
+// independent so they fire in parallel; photo signing is a prerequisite for
+// the business email so it's chained inside that branch.
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls,
@@ -259,30 +270,6 @@ async function enquirySideEffects({
         html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
       });
     }),
-    bg("enquiry clickup task", () => {
-      const clickupLines = [
-        "=== WEBSITE ENQUIRY ===",
-        "",
-        "CUSTOMER",
-        `• Name: ${name}`,
-        `• Email: ${email}`,
-        `• Phone: ${phone || "Not provided"}`,
-        `• Enquiry type: ${enquiryTypeLabel}`,
-        grave_number ? `• Grave: ${grave_number}` : null,
-        location ? `• Cemetery: ${location}` : null,
-        "",
-        "MESSAGE",
-        message,
-        "",
-        "---",
-        `Submitted: ${submittedAt}`,
-      ].filter(l => l !== null);
-      return createClickUpTask(env.CLICKUP_API_KEY, {
-        name: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
-        description: clickupLines.join("\n"),
-        listId: CLICKUP_LIST_ID,
-      });
-    }),
     // Calendar event if the contact form picked a slot.
     appointment_date && appointment_time
       ? bg("contact-form calendar event", () => {
@@ -305,12 +292,23 @@ async function enquirySideEffects({
               notes: message,
             }))
           : null),
-    bg("ghl enquiry contact", () => {
+    bg("ghl enquiry contact+opportunity", async () => {
       const ghlExtraFields = [
         message      ? { key: "customer_message",  field_value: message } : null,
         enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
       ].filter(Boolean);
-      return createGHLContact(env, { name, email, phone, type: "enquiry", extraFields: ghlExtraFields });
+      const contactId = await createGHLContact(env, {
+        name, email, phone, type: "enquiry",
+        cemetery: location,
+        extraFields: ghlExtraFields,
+      });
+      if (contactId) {
+        await createGHLOpportunity(env, {
+          contactId,
+          name: `${enquiryTypeLabel} — ${name}`,
+          monetaryValue: 0,
+        });
+      }
     }),
   ].filter(Boolean));
 }
@@ -363,7 +361,7 @@ async function handleAppointment(ctx, data, submittedAt) {
 }
 
 // Calendar event blocks emails because the business email links to it; the
-// email + ClickUp + GHL then fire in parallel once the calendar resolves.
+// emails + GHL then fire in parallel once the calendar resolves.
 async function appointmentSideEffects({
   env, name, email, phone, notes, submittedAt,
   appointment_type, appointment_date, appointment_time,
@@ -389,19 +387,23 @@ async function appointmentSideEffects({
       subject: `Appointment request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${BUSINESS_NAME}`,
       html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
     })),
-    bg("appointment clickup task", () => createClickUpTask(env.CLICKUP_API_KEY, {
-      name: `Appointment — ${typeLabel} — ${name}`,
-      description: `=== APPOINTMENT REQUEST ===\n\nCUSTOMER\n• Name: ${name}\n• Email: ${email}\n• Phone: ${phone || "Not provided"}\n\nAPPOINTMENT\n• Type: ${typeLabel}\n• Date: ${dateFormatted}\n• Time: ${appointment_time}\n• Notes: ${notes || "None"}\n\n---\nSubmitted: ${submittedAt}`,
-      listId: CLICKUP_LIST_ID,
-    })),
-    bg("ghl appointment contact", () => {
+    bg("ghl appointment contact+opportunity", async () => {
       const ghlExtraFields = [
         appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
         appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
         appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
         notes            ? { key: "appointment_notes", field_value: notes } : null,
       ].filter(Boolean);
-      return createGHLContact(env, { name, email, phone, type: "appointment", extraFields: ghlExtraFields });
+      const contactId = await createGHLContact(env, {
+        name, email, phone, type: "appointment", extraFields: ghlExtraFields,
+      });
+      if (contactId) {
+        await createGHLOpportunity(env, {
+          contactId,
+          name: `${typeLabel} — ${name}`,
+          monetaryValue: 0,
+        });
+      }
     }),
   ]);
 }
@@ -1134,33 +1136,6 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
 </body></html>`;
 }
 
-// ─── ClickUp task description ────────────────────────────────────────────────
-function buildQuoteClickUpDescription({ name, email, phone, message, product, submittedAt }) {
-  const addons = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons.join(", ") : "None";
-  const lines = [
-    "=== QUOTE REQUEST ===", "",
-    "PRODUCT SELECTED",
-    `• Memorial: ${product.name || "—"}`,
-    `• Type: ${product.type || "—"}`,
-    `• Stone: ${product.colour || "—"}`,
-    `• Size: ${product.size || "—"}`,
-    product.font ? `• Font: ${product.font === 'script' ? 'Script' : 'Traditional'}` : "",
-    product.letterColour ? `• Lettering colour: ${product.letterColour}` : "",
-    `• Extras: ${addons}`,
-    product.inscription ? `• Inscription: "${product.inscription}"` : "",
-    `• Guide total: £${formatPrice(product.price)}`, "",
-    "CUSTOMER",
-    `• Name: ${name}`,
-    `• Email: ${email}`,
-    `• Phone: ${phone || "Not provided"}`, "",
-    message ? `CUSTOMER NOTES\n"${message}"` : "", "",
-    "---",
-    `Submitted: ${submittedAt}`,
-  ].filter(l => l !== undefined);
-  return lines.join("\n");
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
@@ -1373,17 +1348,21 @@ async function createEnquiry(env, payload) {
 // ═══════════════════════════════════════════════════════════════════
 // GOHIGHLEVEL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function createGHLContact(env, { name, email, phone, type, product, extraFields }) {
+async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type];
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
+  const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
   const customFields = [
     { key: "lead_type", field_value: type },
     product?.name ? { key: "memorial_product", field_value: product.name } : null,
     product?.colour ? { key: "stone_colour", field_value: product.colour } : null,
     product?.size ? { key: "memorial_size", field_value: product.size } : null,
     product?.price ? { key: "guide_price", field_value: `£${formatPrice(product.price)}` } : null,
+    // Addressed by id — this field exists in GHL and is the strongest qualifier
+    // on a memorial job, but nothing has ever written to it.
+    cemetery && cemeteryFieldId ? { id: cemeteryFieldId, field_value: String(cemetery).trim() } : null,
     ...(extraFields || []),
   ].filter(Boolean);
   const res = await fetch("https://services.leadconnectorhq.com/contacts/", {
@@ -1399,14 +1378,71 @@ async function createGHLContact(env, { name, email, phone, type, product, extraF
   return body.contact?.id || null;
 }
 
+/**
+ * Find this contact's existing open opportunity, if any.
+ * Returns { id, pipelineStageId } or null. Fails open (returns null) on any
+ * error: a duplicate opportunity is recoverable, a silently dropped lead is not.
+ */
+async function findOpenGHLOpportunity(env, contactId) {
+  const params = new URLSearchParams({
+    location_id: env.GHL_LOCATION_ID,
+    contact_id: contactId,
+    status: "open",
+    limit: "1",
+  });
+  try {
+    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/search?${params}`, {
+      headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28" },
+    });
+    if (!res.ok) return null;
+    const found = (await res.json())?.opportunities?.[0];
+    return found ? { id: found.id, pipelineStageId: found.pipelineStageId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upsert, not create. One contact submitting four quote configurations in a day
+ * (which happens — see Annette McDonald, 28–29 Jul 2026) must produce ONE
+ * opportunity, not four. On update the existing stage is preserved: a deal
+ * already moved to Quoted or Invoiced must not be dragged back by a new
+ * submission.
+ */
 async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
-  if (!env.GHL_API_KEY || !env.GHL_PIPELINE_ID || !env.GHL_PIPELINE_STAGE_ID || !contactId) return;
+  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
+  const pipelineId = env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT;
+  const defaultStageId = env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT;
+  const headers = {
+    "Authorization": `Bearer ${env.GHL_API_KEY}`,
+    "Version": "2021-07-28",
+    "Content-Type": "application/json",
+  };
+
+  const existing = await findOpenGHLOpportunity(env, contactId);
+
+  if (existing) {
+    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/${existing.id}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        pipelineId,
+        pipelineStageId: existing.pipelineStageId || defaultStageId,
+        name,
+        monetaryValue: monetaryValue || 0,
+        status: "open",
+      }),
+    });
+    if (!res.ok) throw new Error(`GHL Opportunity update error ${res.status}: ${await res.text()}`);
+    return;
+  }
+
   const res = await fetch("https://services.leadconnectorhq.com/opportunities/", {
     method: "POST",
-    headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
-      pipelineId: env.GHL_PIPELINE_ID,
-      pipelineStageId: env.GHL_PIPELINE_STAGE_ID,
+      pipelineId,
+      pipelineStageId: defaultStageId,
       locationId: env.GHL_LOCATION_ID,
       contactId, name,
       monetaryValue: monetaryValue || 0,
@@ -1441,15 +1477,6 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
     console.error(`Resend error ${res.status} sending to ${to}: ${body}`);
     throw new Error(`Resend ${res.status}: ${body}`);
   }
-}
-
-async function createClickUpTask(apiKey, { name, description, listId }) {
-  const res = await fetch(`https://api.clickup.com/api/v2/list/${listId}/task`, {
-    method: "POST",
-    headers: { "Authorization": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ name, description }),
-  });
-  if (!res.ok) throw new Error(`ClickUp error: ${await res.text()}`);
 }
 
 function jsonResponse(data, status = 200) {
