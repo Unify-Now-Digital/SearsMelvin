@@ -1378,16 +1378,71 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
   return body.contact?.id || null;
 }
 
+/**
+ * Find this contact's existing open opportunity, if any.
+ * Returns { id, pipelineStageId } or null. Fails open (returns null) on any
+ * error: a duplicate opportunity is recoverable, a silently dropped lead is not.
+ */
+async function findOpenGHLOpportunity(env, contactId) {
+  const params = new URLSearchParams({
+    location_id: env.GHL_LOCATION_ID,
+    contact_id: contactId,
+    status: "open",
+    limit: "1",
+  });
+  try {
+    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/search?${params}`, {
+      headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28" },
+    });
+    if (!res.ok) return null;
+    const found = (await res.json())?.opportunities?.[0];
+    return found ? { id: found.id, pipelineStageId: found.pipelineStageId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upsert, not create. One contact submitting four quote configurations in a day
+ * (which happens — see Annette McDonald, 28–29 Jul 2026) must produce ONE
+ * opportunity, not four. On update the existing stage is preserved: a deal
+ * already moved to Quoted or Invoiced must not be dragged back by a new
+ * submission.
+ */
 async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
   const pipelineId = env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT;
-  const pipelineStageId = env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT;
+  const defaultStageId = env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT;
+  const headers = {
+    "Authorization": `Bearer ${env.GHL_API_KEY}`,
+    "Version": "2021-07-28",
+    "Content-Type": "application/json",
+  };
+
+  const existing = await findOpenGHLOpportunity(env, contactId);
+
+  if (existing) {
+    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/${existing.id}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        pipelineId,
+        pipelineStageId: existing.pipelineStageId || defaultStageId,
+        name,
+        monetaryValue: monetaryValue || 0,
+        status: "open",
+      }),
+    });
+    if (!res.ok) throw new Error(`GHL Opportunity update error ${res.status}: ${await res.text()}`);
+    return;
+  }
+
   const res = await fetch("https://services.leadconnectorhq.com/opportunities/", {
     method: "POST",
-    headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       pipelineId,
-      pipelineStageId,
+      pipelineStageId: defaultStageId,
       locationId: env.GHL_LOCATION_ID,
       contactId, name,
       monetaryValue: monetaryValue || 0,
