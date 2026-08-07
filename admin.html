@@ -763,7 +763,7 @@
                 var badgeClass = person.is_customer ? 'partner-badge approved' : 'partner-badge pending';
                 var msg = e.message ? e.message.substring(0, 160) + (e.message.length > 160 ? '…' : '') : '';
                 var photoThumbs = (e.photo_signed_urls || []).slice(0, 4).map(function(u) {
-                    return '<img src="' + u + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:4px;margin-right:4px;">';
+                    return '<img src="' + esc(u) + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:4px;margin-right:4px;">';
                 }).join('');
                 return '<div class="partner-card">'
                     + '<div class="partner-info">'
