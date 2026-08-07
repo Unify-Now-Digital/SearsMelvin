@@ -138,9 +138,29 @@
         var footer = document.querySelector('footer');
         if (!footer) return;
 
-        // 1) Add Terms + Privacy to the footer link list, if not already there.
+        function hasFooterLink(list, word) {
+            if (!list) return false;
+            var anchors = list.querySelectorAll('a');
+            for (var i = 0; i < anchors.length; i++) {
+                var href = (anchors[i].getAttribute('href') || '').toLowerCase();
+                var text = (anchors[i].textContent || '').trim().toLowerCase();
+                if (href.indexOf(word) !== -1 || text === word) return true;
+            }
+            return false;
+        }
+
+        // 1) Keep the four practical footer destinations present on every
+        // public page. Individual templates used to vary slightly.
         var linkList = footer.querySelector('.footer-links');
-        if (linkList && !linkList.querySelector('a[href="/terms"]')) {
+        if (linkList && !hasFooterLink(linkList, 'contact')) {
+            var contactLi = document.createElement('li');
+            var contactA = document.createElement('a');
+            contactA.href = '/contact';
+            contactA.textContent = 'Contact';
+            contactLi.appendChild(contactA);
+            linkList.insertBefore(contactLi, linkList.firstChild);
+        }
+        if (linkList && !hasFooterLink(linkList, 'terms')) {
             var li = document.createElement('li');
             var a = document.createElement('a');
             a.href = '/terms';
@@ -148,7 +168,7 @@
             li.appendChild(a);
             linkList.appendChild(li);
         }
-        if (linkList && !linkList.querySelector('a[href="/privacy"]')) {
+        if (linkList && !hasFooterLink(linkList, 'privacy')) {
             var liP = document.createElement('li');
             var aP = document.createElement('a');
             aP.href = '/privacy';
@@ -179,6 +199,9 @@
     // and CSS, so we centralise the spacing/structure tweaks here rather
     // than touching 11 files.
     function compactFooter() {
+        // The memorial product page has a purpose-built responsive footer.
+        // Do not inject the generic footer rules over its mobile layout.
+        if (document.body && document.body.classList.contains('memorial-page')) return;
         var footer = document.querySelector('footer');
         if (footer) {
             var contact = footer.querySelector('.footer-contact');
@@ -216,6 +239,84 @@
         document.head.appendChild(style);
     }
 
+    // The public pages were built as individual documents, but they all share
+    // the same header and footer patterns. Apply the small-screen rules once
+    // here so visitors receive the same hierarchy, spacing and touch targets
+    // wherever they enter the site. The memorial detail page owns its more
+    // specialised conversion layout and is deliberately left alone.
+    function applyPublicResponsiveBaseline() {
+        if (document.body && document.body.classList.contains('memorial-page')) return;
+
+        var footer = document.querySelector('footer');
+        if (footer) {
+            var links = footer.querySelectorAll('.footer-links a');
+            for (var i = 0; i < links.length; i++) {
+                var link = links[i];
+                var href = (link.getAttribute('href') || '').toLowerCase();
+                var text = (link.textContent || '').trim().toLowerCase();
+                var item = link.closest ? link.closest('li') : link;
+                var destination = '';
+                if (href.indexOf('contact') !== -1 || text === 'contact') destination = 'contact';
+                else if (href.indexOf('track') !== -1 || text === 'track order') destination = 'track';
+                else if (href.indexOf('terms') !== -1 || text === 'terms') destination = 'terms';
+                else if (href.indexOf('privacy') !== -1 || text === 'privacy') destination = 'privacy';
+                var essential = destination !== '';
+                if (item && destination) item.classList.add('sm-footer-' + destination);
+                if (!essential) {
+                    if (item) item.classList.add('sm-footer-secondary');
+                }
+            }
+        }
+
+        if (document.getElementById('sm-public-responsive-style')) return;
+        var style = document.createElement('style');
+        style.id = 'sm-public-responsive-style';
+        style.textContent = [
+            ':where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #8B7355!important;outline-offset:3px!important;}',
+            '@media (max-width:768px){',
+            'body:not(.memorial-page) nav:not(.mobile-bottom-nav){min-height:68px!important;padding:0.75rem 1rem!important;}',
+            'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .mobile-menu-btn{width:44px!important;height:44px!important;padding:8px!important;align-items:center!important;justify-content:center!important;}',
+            'body:not(.memorial-page) footer{padding:1.25rem 1rem 1rem!important;}',
+            'body:not(.memorial-page) footer .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
+            'html,body{overflow-x:clip!important;}',
+            'body:not(.memorial-page) footer .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
+            'body:not(.memorial-page) footer .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
+            'body:not(.memorial-page) footer .sm-footer-secondary{display:none!important;}',
+            'body:not(.memorial-page) footer .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer .sm-footer-track{order:2!important;}body:not(.memorial-page) footer .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer .sm-footer-privacy{order:4!important;}',
+            'body:not(.memorial-page) footer .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
+            'body:not(.memorial-page) footer .footer-legal{font-size:0.7rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',
+            '}',
+            '@media (max-width:480px){',
+            'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .nav-accred{display:none!important;}',
+            'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .nav-accred-label{display:none!important;}',
+            'body:not(.memorial-page) .site-trust-bar{padding:0.6rem 1rem!important;}',
+            'body:not(.memorial-page) .site-trust-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.6rem 0.75rem!important;}',
+            'body:not(.memorial-page) .site-trust-item{flex-direction:row!important;justify-content:flex-start!important;gap:0.45rem!important;font-size:0.82rem!important;line-height:1.2!important;font-weight:600!important;text-align:left!important;}',
+            'body:not(.memorial-page) .site-trust-item svg{width:20px!important;height:20px!important;}',
+            '}'
+        ].join('');
+        document.head.appendChild(style);
+    }
+
+    function keepMobileMenuStateAccessible() {
+        if (document.body && document.body.classList.contains('memorial-page')) return;
+        var button = document.querySelector('.mobile-menu-btn');
+        var menu = document.getElementById('mobileNav');
+        if (!button || !menu || button.getAttribute('data-sm-menu-state')) return;
+
+        function sync() {
+            button.setAttribute('aria-expanded', menu.classList.contains('active') ? 'true' : 'false');
+        }
+
+        sync();
+        button.addEventListener('click', function () {
+            // The existing inline handler toggles the panel first; this keeps
+            // its accessible state in step without rewriting every template.
+            sync();
+        });
+        button.setAttribute('data-sm-menu-state', '1');
+    }
+
     function ensureSkipLink() {
         if (document.querySelector('a.sm-skip-link')) return;
         var main = document.querySelector('main');
@@ -250,6 +351,8 @@
         ensureSkipLink();
         ensureFooterDisclosures();
         compactFooter();
+        applyPublicResponsiveBaseline();
+        keepMobileMenuStateAccessible();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });

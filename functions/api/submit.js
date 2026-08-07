@@ -55,7 +55,7 @@ export async function onRequestPost(context) {
   let data;
   try { data = await request.json(); }
   catch { return jsonResponse({ ok: false, error: "Invalid JSON" }, 400); }
-  if (!data.name || !data.email)
+  if (!data.name || (!data.email && !data.phone))
     return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
   const submittedAt = new Date().toLocaleString("en-GB", {
     timeZone: "Europe/London", dateStyle: "medium", timeStyle: "short",
@@ -130,18 +130,12 @@ async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
   cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
 }) {
-  await Promise.allSettled([
+  const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
       subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
       html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt }),
-    })),
-    bg("quote customer email", () => sendEmail(env.RESEND_API_KEY, {
-      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-      to:      email,
-      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation, editToken, email }),
     })),
     bg("ghl quote contact+opportunity", async () => {
       const ghlExtraFields = [
@@ -167,7 +161,18 @@ async function quoteSideEffects({
         });
       }
     }),
-  ]);
+  ];
+  // Phone-only requests are valid. In that case there is no customer email to
+  // send, but the business notification and GHL hand-off must still complete.
+  if (email) {
+    sideEffects.splice(1, 0, bg("quote customer email", () => sendEmail(env.RESEND_API_KEY, {
+      from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to:      email,
+      subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation, editToken, email }),
+    })));
+  }
+  await Promise.allSettled(sideEffects);
 }
 
 async function handleEnquiry(ctx, data, submittedAt) {

@@ -140,6 +140,7 @@
         h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
         p { color: var(--color-text-muted); }
         a { color: inherit; text-decoration: none; }
+        a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
         /* Animations */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -149,15 +150,15 @@
         .animate-delay-3 { animation-delay: 0.3s; }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
-        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; min-height: 72px; padding: 1rem 2rem; display: flex; align-items: center; gap: 1.25rem; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; flex: 0 0 auto; white-space: nowrap; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
-        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links { display: flex; gap: clamp(1rem, 1.8vw, 2rem); list-style: none; align-items: center; flex: 0 0 auto; }
         .nav-links a { font-size: 1rem; color: var(--color-text); letter-spacing: 0; transition: color 0.3s; }
         .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 72px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -218,6 +219,11 @@
         
 
         .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+        .product-lead { font-size: 1.12rem; line-height: 1.6; color: var(--color-text); margin: 0 0 1.25rem; }
+        .product-quote-intro { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 1.25rem 0; margin: 0 0 1.5rem; }
+        .product-quote-intro .btn { width: 100%; }
+        .product-reassurance { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.55rem; font-size: 0.87rem; }
+        .product-reassurance li::before { content: '✓'; color: var(--color-accent-dark); font-weight: 700; margin-right: 0.55rem; }
 
         /* Option Groups */
         .option-group { margin-bottom: 2rem; }
@@ -254,6 +260,12 @@
         .colour-group-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; border-radius: 99px; background: var(--color-accent); color: white; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; }
         .colour-group-note { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--color-accent-dark); }
         .colour-swatch-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .colour-tier { flex-basis: 100%; border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
+        .colour-tier summary { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; list-style: none; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); }
+        .colour-tier summary::-webkit-details-marker { display: none; }
+        .colour-tier summary::after { content: '+'; margin-left: auto; font-size: 1.1rem; line-height: 1; font-weight: 400; }
+        .colour-tier[open] summary { margin-bottom: 0.9rem; }
+        .colour-tier[open] summary::after { content: '−'; }
 
         /* Visual Size Selector */
         .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
@@ -299,6 +311,17 @@
         .char-bar-fill.warning { background: #c9a227; }
         .char-bar-fill.over { background: #b44; }
 
+        /* Optional personalisation keeps the quote path focused while making
+           inscription and lettering easy to add when the customer is ready. */
+        .personalisation-panel { margin: 0 0 2rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+        .personalisation-panel summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; padding: 1rem 0; }
+        .personalisation-panel summary::-webkit-details-marker { display: none; }
+        .personalisation-panel summary::after { content: '+'; font-size: 1.35rem; color: var(--color-accent-dark); font-weight: 300; }
+        .personalisation-panel[open] summary::after { content: '−'; }
+        .personalisation-title { display: block; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-stone); }
+        .personalisation-note { display: block; margin-top: 0.2rem; font-size: 0.82rem; color: var(--color-text-muted); }
+        .personalisation-content { padding-bottom: 0.25rem; }
+
 
         /* Add-ons */
         .addons-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
@@ -326,12 +349,12 @@
         }
         .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
 
-        .price-breakdown { flex: 1; }
+        .price-breakdown { flex: 0 1 auto; }
         .price-row { display: none; }
-        .price-row.total { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; color: var(--color-stone); border-top: none; padding-top: 0; margin-top: 0; }
+        .price-row.total { display: flex; align-items: baseline; justify-content: flex-start; gap: 0.85rem; font-size: 0.95rem; font-weight: 600; color: var(--color-stone); border-top: none; padding-top: 0; margin-top: 0; }
         .price-total-display { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-stone); }
 
-        .price-actions { display: flex; gap: 1rem; }
+        .price-actions { display: flex; gap: 1rem; margin-left: auto; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 1.75rem; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.03em; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
         .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
         .btn-primary { background: var(--color-stone); color: white; }
@@ -375,26 +398,28 @@
             .price-actions .btn { flex: 1; }
         }
         @media (max-width: 768px) {
+            nav { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
             .nav-links { display: none; }
             .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
             .logo span { display: none; }
             .mobile-menu-btn { display: flex; }
-            .size-visual { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
             .human-reference { display: none; }
             .addons-grid { grid-template-columns: 1fr; }
             #infillTypeGrid { grid-template-columns: repeat(2, 1fr) !important; }
             .trust-badges { flex-direction: column; gap: 1rem; }
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
-            .mobile-bottom-bar { display: flex; }
+            .mobile-bottom-nav { display: none !important; }
+            .mobile-bottom-bar { display: none; }
+            .mobile-bottom-bar.is-visible { display: flex; }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
-            /* Body has to clear both the fixed bottom-nav (~70px) and the floating bottom-bar above it (~70px) plus safe-area inset */
-            body { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
+            body { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
             .gallery-thumbs { gap: 0.5rem; }
             .gallery-thumb { width: 60px; height: 60px; }
             .product-info h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
             .product-category { font-size: 0.7rem; margin-bottom: 0.3rem; letter-spacing: 0.1em; }
+            .product-lead { font-size: 1rem; line-height: 1.55; }
             .product-description { font-size: 0.95rem; line-height: 1.65; margin-bottom: 1.25rem; padding-bottom: 1.25rem; }
             .option-group { margin-bottom: 1.25rem; }
             /* Optional extras as a compact 4-up grid on mobile (Garden Kerb keeps its full-width override via inline style) */
@@ -414,8 +439,10 @@
             #kerbAddonCard .addon-desc { display: block; }
             #kerbAddonCard .addon-check { position: static; width: 22px; height: 22px; margin-left: 0.5rem; }
             #kerbAddonCard.selected .addon-check::after { font-size: 12px; }
-            .footer-container { flex-direction: column; text-align: center; }
+            .footer-container { display: block; text-align: center; }
             .footer-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
+            .footer-meta { display: flex; flex-direction: column; margin-top: 1rem; }
+            .footer-legal { text-align: center; margin-top: 0.75rem; }
         }
 
         /* Quote Modal */
@@ -491,18 +518,54 @@
         @media (max-width: 600px) { .save-toast { bottom: 140px; max-width: calc(100vw - 2rem); } }
 
         /* Footer */
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
-        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+        footer { padding: 1.15rem 2rem 0.75rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 0; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0.75rem 2rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .footer-links { display: flex; gap: 2rem; list-style: none; }
+        .footer-links { display: flex; gap: 1.35rem; list-style: none; }
         .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
-        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 1rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.78rem; margin: 0; }
+        .footer-contact { font-size: 0.82rem; line-height: 1.65; margin-top: 0.4rem; }
+        .footer-legal { grid-column: 1 / -1; font-size:0.68rem; line-height:1.45; text-align:left; margin:0; color:rgba(255,255,255,0.45); }
         .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
+
+        /* Footer rules live after the desktop footer styles so they cannot be
+           overridden by source order at narrow widths. */
+        @media (max-width: 768px) {
+            body.memorial-page footer { padding: 1.25rem 1rem 1rem !important; }
+            body.memorial-page .footer-container { display: block !important; text-align: left; }
+            body.memorial-page .footer-links { margin-top: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 1rem !important; }
+            body.memorial-page .footer-links a { display: flex; align-items: center; min-height: 44px !important; padding: 0 !important; }
+            body.memorial-page .footer-nav-secondary { display: none; }
+            body.memorial-page .footer-meta { display: block; margin-top: 1rem; padding-top: 0.75rem; }
+            body.memorial-page .footer-legal { margin-top: 0.5rem; text-align: left; }
+            .mobile-nav { top: 64px; }
+            .mobile-menu-btn { width: 44px; height: 44px; align-items: center; justify-content: center; }
+        }
+
+        @media (min-width: 540px) and (max-width: 768px) {
+            .footer-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 480px) {
+            .nav-accred { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            /* The product CTA repeats these guarantees at a readable size. */
+            body.memorial-page .site-trust-bar { display: none; }
+        }
+
+        @media (max-width: 1024px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: flex; }
+            .nav-accred-label { display: none; }
+            .nav-accred { margin-left: auto; }
+        }
 
         /* Search Button in Nav */
         .nav-search-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
@@ -569,7 +632,7 @@
             }
         }
         /* Navbar accreditation chips */
-        .nav-accred { display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 1.25rem; font-size: 0.7rem; color: var(--color-text-muted); letter-spacing: 0.06em; text-transform: uppercase; flex-wrap: nowrap; }
+        .nav-accred { display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 0; font-size: 0.7rem; color: var(--color-text-muted); letter-spacing: 0.06em; text-transform: uppercase; flex-wrap: nowrap; }
         .nav-accred-label { font-weight: 600; }
         .nav-accred-chip { border: 1px solid var(--color-border); padding: 0.2rem 0.55rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--color-stone); background: white; white-space: nowrap; }
         .nav-accred-chip strong { font-weight: 700; }
@@ -582,7 +645,7 @@
             .nav-accred { display: none; }
         }
             /* Site-wide Trust Bar */
-        .site-trust-bar { background: var(--color-cream); border-bottom: 1px solid var(--color-border); padding: 0.85rem 2rem 0.7rem; margin-top: 60px; }
+        .site-trust-bar { background: var(--color-cream); border-bottom: 1px solid var(--color-border); padding: 0.85rem 2rem 0.7rem; margin-top: 72px; }
         .site-trust-row { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         .site-trust-item { display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--color-stone); font-size: 0.98rem; font-weight: 600; letter-spacing: 0.01em; position: relative; padding: 0.15rem 0; }
         .site-trust-item + .site-trust-item::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 1px; background: var(--color-border); }
@@ -592,7 +655,7 @@
         .site-trust-chip { border: 1px solid var(--color-border); padding: 0.25rem 0.6rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--color-stone); background: white; }
         .site-trust-chip strong { font-weight: 700; color: var(--color-stone); }
         @media (max-width: 768px) {
-            .site-trust-bar { padding: 0.45rem 0.75rem 0.4rem; margin-top: 56px; }
+            .site-trust-bar { padding: 0.45rem 0.75rem 0.4rem; margin-top: 64px; }
             .site-trust-row { grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
             .site-trust-item { font-size: 0.65rem; gap: 0.3rem; flex-direction: column; text-align: center; line-height: 1.15; font-weight: 500; padding: 0; }
             .site-trust-item span { display: block; }
@@ -653,7 +716,7 @@
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
 </head>
-<body class="has-mobile-bottom-bar">
+<body class="has-mobile-bottom-bar memorial-page">
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -697,7 +760,7 @@
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/><path d="M9.5 12.5l2 2 4-4"/></svg>
-                <span>We Handle Permits</span>
+                <span>Cemetery Checks</span>
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -768,8 +831,15 @@
             <div class="product-info">
                 <span class="product-category animate-in" id="productCategory">Loading...</span>
                 <h1 class="animate-in animate-delay-1" id="productName">Loading...</h1>
-                
-
+                <p class="product-lead animate-in animate-delay-2" id="productLead">Loading...</p>
+                <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
+                    <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
+                    <ul class="product-reassurance">
+                        <li>Fully installed across England &amp; Wales</li>
+                        <li>30-year material &amp; workmanship guarantee</li>
+                        <li>10-year fixing guarantee</li>
+                    </ul>
+                </div>
                 <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
 
                 <!-- Stone Colour - Live Updates SVG -->
@@ -783,41 +853,40 @@
                     </div>
                 </div>
 
-                <!-- Visual Size Selector with Human Reference -->
-                <div class="option-group" id="sizeOptionGroup">
-                    <div class="option-header">
-                        <span class="option-label">Memorial Size</span>
-                        <span class="option-value" id="selectedSizeName">Loading...</span>
-                    </div>
-                    <div class="size-visual" id="sizeOptions">
-                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading sizes...</span>
-                    </div>
-                </div>
+                <!-- The catalogue default size is retained for pricing and the quote record,
+                     but is not a customer-facing product choice. -->
+                <div id="sizeOptions" hidden aria-hidden="true"></div>
+                <span id="selectedSizeName" hidden></span>
 
-                <!-- Live Inscription Preview -->
-                <div class="option-group">
-                    <div class="option-header">
-                        <span class="option-label">Inscription</span>
-                        <span class="option-value"><span id="charCount">0</span> / 100 included</span>
-                    </div>
-                    <div class="inscription-container">
-                        <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="400"></textarea>
-                        <div class="inscription-meta">
-                            <div class="char-bar">
-                                <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
+                <!-- Personalisation is intentionally optional: customers can quote
+                     without it, or paste wording when they have it to hand. -->
+                <details class="personalisation-panel">
+                    <summary>
+                        <span><span class="personalisation-title">Personalise this memorial</span><span class="personalisation-note">Optional — add inscription or lettering</span></span>
+                    </summary>
+                    <div class="personalisation-content">
+                        <div class="option-group">
+                            <div class="option-header">
+                                <span class="option-label">Inscription</span>
+                                <span class="option-value"><span id="charCount">0</span> / 100 included</span>
                             </div>
-                            <span class="char-counter" id="charCounter">100 characters included, then £1.95 each</span>
+                            <div class="inscription-container">
+                                <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="400"></textarea>
+                                <div class="inscription-meta">
+                                    <div class="char-bar">
+                                        <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
+                                    </div>
+                                    <span class="char-counter" id="charCounter">100 characters included, then £1.95 each</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Add-ons -->
-                <div class="option-group">
-                    <div class="option-header">
-                        <span class="option-label">Lettering Colour</span>
-                        <span class="option-value" id="selectedLetterColourName">Gold (included)</span>
-                    </div>
-                    <div class="colour-options">
+                        <div class="option-group">
+                            <div class="option-header">
+                                <span class="option-label">Lettering Colour</span>
+                                <span class="option-value" id="selectedLetterColourName">Gold (included)</span>
+                            </div>
+                            <div class="colour-options">
                         <label class="colour-option">
                             <input type="radio" name="letterColour" value="gold" data-name="Gold" data-price="0" checked onchange="updateLetterColour(this)">
                             <div class="colour-wrapper">
@@ -846,8 +915,10 @@
                                 <span class="colour-name">Black</span>
                             </div>
                         </label>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </details>
 
                 <!-- Add-ons -->
                 <div class="option-group">
@@ -1024,18 +1095,16 @@
                     <div class="trust-badge">
                         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         <div class="trust-badge-text">
-                            <strong>We Handle Permits</strong>
-                            <span>Application service included (cemetery fee separate)</span>
+                            <strong>We Handle Cemetery Requirements</strong>
+                            <span>We’ll confirm what applies before you proceed</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Features -->
-                <div class="features-section" id="featuresSection">
+                <div class="features-section" id="featuresSection" hidden>
                     <h2 class="features-title">What's Included</h2>
-                    <div class="features-grid" id="featuresGrid">
-                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
-                    </div>
+                    <div class="features-grid" id="featuresGrid"></div>
                 </div>
             </div>
         </div>
@@ -1064,15 +1133,10 @@
                         <span id="addonsLabel">Optional extras</span>
                         <span id="priceAddons">+£0</span>
                     </div>
-                    <div class="price-row" id="pricePermitRow" style="display: none;">
-                        <span>Cemetery permit fee (est.)</span>
-                        <span id="pricePermitFee">+£0</span>
-                    </div>
                     <div class="price-row total">
                         <span>Guide total (installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
-                    <p id="permitNote" style="font-size: 0.7rem; color: var(--color-text-muted); margin: 0.15rem 0 0; display: none;">*Permit fee varies by cemetery — select a cemetery for an estimate</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -1081,7 +1145,7 @@
                     </button>
                     <button class="btn btn-primary" onclick="openQuoteModal()">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Request Quote
+                        Request your quote
                     </button>
                 </div>
             </div>
@@ -1097,7 +1161,7 @@
             <button class="btn btn-secondary" onclick="saveMemorial()" style="padding:0.5rem;" aria-label="Save">
                 <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
-            <button class="btn btn-primary" onclick="openQuoteModal()">Request Quote</button>
+            <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
         </div>
     </div>
 
@@ -1120,18 +1184,19 @@
                 </div>
             </div>
             <ul class="footer-links">
-                <li><a href="/#about">About</a></li>
-                <li><a href="/memorials">Memorials</a></li>
-                <li><a href="/#process">Process</a></li>
+                <li class="footer-nav-secondary"><a href="/#about">About</a></li>
+                <li class="footer-nav-secondary"><a href="/memorials">Memorials</a></li>
+                <li class="footer-nav-secondary"><a href="/#process">Process</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
-                <li><a href="/partner">Partner Portal</a></li>
+                <li class="footer-nav-secondary"><a href="/partner">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
                 <li><a href="/privacy">Privacy</a></li>
             </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);"><span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;">Accredited</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">NAMM</strong> Member</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">RQMF</strong> Registered</span></div>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            <div class="footer-meta">
+                <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
+            </div>
+            <p class="footer-legal">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. <a href="/terms">Company details</a></p>
         </div>
     </footer>
 
@@ -1141,7 +1206,7 @@
             <div class="quote-modal-header">
                 <div>
                     <h2>Request a Free Quote</h2>
-                    <p class="quote-modal-subtitle">No payment required today — we'll send your personalised quote within 24 hours</p>
+                    <p class="quote-modal-subtitle">We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.</p>
                 </div>
                 <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
                     <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1157,57 +1222,45 @@
                 <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
                 <div class="quote-config-row" id="qsInfillRow" style="display:none"><span>Kerb Infill</span><span id="qsInfill">—</span></div>
                 <div id="qsExtrasContainer"></div>
-                <div class="quote-config-row" id="qsPermitFeeRow" style="display:none"><span>Cemetery permit fee (est.)</span><span id="qsPermitFee">—</span></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
             </div>
             <div class="quote-form-body">
                 <form id="quoteForm" novalidate>
-                    <div class="quote-form-row">
-                        <div class="quote-form-group">
-                            <label>First Name <span class="quote-required">*</span></label>
-                            <input type="text" id="qFirstName" placeholder="Your first name" required>
-                        </div>
-                        <div class="quote-form-group">
-                            <label>Last Name <span class="quote-required">*</span></label>
-                            <input type="text" id="qLastName" placeholder="Your last name" required>
-                        </div>
+                    <div class="quote-form-group">
+                        <label>Your name <span class="quote-required">*</span></label>
+                        <input type="text" id="qName" placeholder="Your name" required autocomplete="name">
                     </div>
                     <div class="quote-form-row">
                         <div class="quote-form-group">
-                            <label>Email Address <span class="quote-required">*</span></label>
-                            <input type="email" id="qEmail" placeholder="your@email.com" required>
+                            <label>Email Address</label>
+                            <input type="email" id="qEmail" placeholder="your@email.com" autocomplete="email">
                         </div>
                         <div class="quote-form-group">
                             <label>Phone Number</label>
-                            <input type="tel" id="qPhone" placeholder="07123 456 789">
+                            <input type="tel" id="qPhone" placeholder="07123 456 789" autocomplete="tel" inputmode="tel">
                         </div>
                     </div>
                     <div class="quote-form-group">
-                        <label>Cemetery</label>
+                        <label>Cemetery <span style="font-weight:400">(optional)</span></label>
                         <div class="cem-autocomplete">
-                            <input type="text" id="qCemeteryInput" placeholder="Search cemetery name…" autocomplete="off" oninput="searchQuoteCemetery(this.value)" onfocus="searchQuoteCemetery(this.value)">
+                            <input type="text" id="qCemeteryInput" placeholder="Search cemetery name, or leave blank if you’re unsure" autocomplete="off" oninput="searchQuoteCemetery(this.value)" onfocus="searchQuoteCemetery(this.value)">
                             <div class="cem-suggestions" id="qCemSuggestions"></div>
                         </div>
-                        <div id="qCemeteryMap"></div>
                         <input type="hidden" id="qCemeteryName">
-                    </div>
-                    <div class="quote-form-group">
-                        <label>Plot number &amp; any other details</label>
-                        <textarea id="qMessage" placeholder="Grave section/plot number, or any questions…"></textarea>
                     </div>
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on +44 20 3835 2548.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
                         <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        <span id="quoteSubmitLabel">Send Quote Request</span>
+                        <span id="quoteSubmitLabel">Request your quote</span>
                     </button>
-                    <p class="quote-form-note">We'll email you a copy of your quote and our team will be in touch within 24 hours. <a href="/privacy">Privacy Policy</a></p>
+                    <p class="quote-form-note">By requesting a quote, you agree that we may contact you about your enquiry by phone, email or SMS. <a href="/privacy">Privacy Policy</a></p>
                 </form>
                 <div class="quote-success" id="quoteSuccess">
                     <div class="quote-success-icon">
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
                     <h3>Quote request sent</h3>
-                    <p id="quoteSuccessMsg">We've sent a confirmation to your email and will be in touch within 24 hours.</p>
+                    <p id="quoteSuccessMsg">We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.</p>
                     <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
                 </div>
             </div>
@@ -1422,7 +1475,14 @@
                 var catSlug = product.product_categories?.slug || '';
                 document.getElementById('productCategory').textContent = catName;
                 document.getElementById('productName').textContent = product.name;
-                document.getElementById('productDescription').textContent = ((product.description || '') + ' Price includes nationwide installation and our 30-year guarantee.').trim();
+                var shortDescription = (product.short_description || '').trim();
+                var longDescription = (product.description || '').trim();
+                if (shortDescription && longDescription.indexOf(shortDescription) === 0) {
+                    longDescription = longDescription.slice(shortDescription.length).trim();
+                }
+                document.getElementById('productLead').textContent = shortDescription || longDescription || 'Hand-finished memorial, professionally installed.';
+                document.getElementById('productDescription').textContent = longDescription;
+                document.getElementById('productDescription').style.display = longDescription ? '' : 'none';
                 document.getElementById('priceBaseName').textContent = product.name;
                 document.getElementById('priceBase').textContent = '£' + state.basePrice.toLocaleString();
 
@@ -1511,10 +1571,11 @@
             }
             // Premium tiers share one surcharge; the tag carries the tier name.
             function premiumGroup(tag, list) {
-                return '<div class="colour-group"><span class="colour-group-label">'
+                var open = window.matchMedia('(min-width: 769px)').matches ? ' open' : '';
+                return '<details class="colour-tier"' + open + '><summary>'
                      + '<span class="colour-group-tag">' + tag + '</span>'
                      + '<span class="colour-group-note">+£' + surcharge + '</span>'
-                     + '</span>' + row(list) + '</div>';
+                     + '</summary>' + row(list) + '</details>';
             }
 
             let html;
@@ -1535,36 +1596,19 @@
 
         function renderSizes(sizes) {
             const container = document.getElementById('sizeOptions');
-            const group = document.getElementById('sizeOptionGroup');
-            if (!sizes.length) { if (group) group.style.display = 'none'; document.getElementById('selectedSizeName').textContent = ''; return; }
-            // Size picker hidden on the front end (per request). The radios are
-            // still rendered (hidden) so the default size stays selected and
-            // pricing/summary keep working — this is a front-end-only change.
-            if (group) group.style.display = 'none';
-            const scaleMap = { 0: 1, 1: 1.15, 2: 1.3 };
-            const heightMap = { 0: 75, 1: 88, 2: 100 };
+            if (!sizes.length) {
+                document.getElementById('selectedSizeName').textContent = '';
+                return;
+            }
+            // The catalogue default is deliberately kept in the quote payload
+            // and guide total, without presenting size as a customer decision.
             let html = '';
-            sizes.forEach(function(s, i) {
+            sizes.forEach(function(s) {
                 const price = parseFloat(s.price_adjustment) || 0;
                 const dims  = s.dimensions || '';
-                const scale = scaleMap[i] || (1 + i * 0.15);
-                const h = heightMap[i] || (75 + i * 13);
-                const w = Math.round(h * 0.8);
-                const vw = Math.round(w * 0.75);
-                const vh = Math.round(h * 1.1);
-                const priceLabel = price > 0 ? ' +£' + price.toLocaleString() : '';
-                html += '<label class="size-preview">'
-                    + '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + dims.replace(/"/g, '&quot;') + '" data-price="' + price + '" data-scale="' + scale + '"' + (s.is_default ? ' checked' : '') + ' onchange="updateSize(this)">'
-                    + '<div class="size-memorial" style="height: ' + h + 'px;">'
-                    + '<svg viewBox="0 0 ' + vw + ' ' + vh + '" width="' + w + '" height="' + h + '">'
-                    + '<path d="M5 ' + (vh-8) + ' L5 ' + Math.round(vh*0.28) + ' Q5 ' + Math.round(vh*0.1) + ' ' + Math.round(vw*0.25) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw*0.5) + ' ' + Math.round(-vh*0.06) + ' ' + Math.round(vw*0.75) + ' ' + Math.round(vh*0.05) + ' Q' + Math.round(vw-5) + ' ' + Math.round(vh*0.1) + ' ' + (vw-5) + ' ' + Math.round(vh*0.28) + ' L' + (vw-5) + ' ' + (vh-8) + ' Z" fill="var(--stone-primary)"/>'
-                    + '<rect x="2" y="' + (vh-8) + '" width="' + (vw-4) + '" height="' + Math.round(vh*0.07) + '" fill="var(--stone-secondary)"/>'
-                    + '</svg></div>'
-                    + '<div class="size-label"><strong>' + s.size_name + priceLabel + '</strong>'
-                    + '<span class="size-dimensions">' + dims + '</span></div></label>';
+                html += '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + dims.replace(/"/g, '&quot;') + '" data-price="' + price + '"' + (s.is_default ? ' checked' : '') + '>';
             });
             container.innerHTML = html;
-            // Set initial size label
             var defaultSize = sizes.find(function(s) { return s.is_default; }) || sizes[0];
             document.getElementById('selectedSizeName').textContent = defaultSize.size_name + (defaultSize.dimensions ? ' (' + defaultSize.dimensions + ')' : '');
         }
@@ -1611,10 +1655,10 @@
             const container = document.getElementById('featuresGrid');
             const section = document.getElementById('featuresSection');
             if (!features || !features.length) {
-                if (section) section.style.display = 'none';
+                if (section) section.hidden = true;
                 return;
             }
-            if (section) section.style.display = '';
+            if (section) section.hidden = false;
             const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
             container.innerHTML = features.map(function(f) {
                 return '<div class="feature-item">' + checkSvg + esc(f) + '</div>';
@@ -2035,10 +2079,9 @@
             }).join('');
 
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-            // Reset permit fee for fresh modal open (user can select cemetery below)
+            // A cemetery helps the team confirm requirements, but it does not
+            // change the guide total shown at quote-request stage.
             _selectedCemeteryFee = 0;
-            var permitRow = document.getElementById('qsPermitFeeRow');
-            if (permitRow) permitRow.style.display = 'none';
             document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
 
             document.getElementById('quoteForm').reset();
@@ -2049,18 +2092,51 @@
             if (_qSubmitBtn) {
                 _qSubmitBtn.disabled = false;
                 var _qSubmitSpan = _qSubmitBtn.querySelector('span');
-                if (_qSubmitSpan) _qSubmitSpan.textContent = 'Send Quote Request';
+                if (_qSubmitSpan) _qSubmitSpan.textContent = 'Request your quote';
             }
             document.getElementById('quoteForm').style.display    = '';
             document.getElementById('quoteSuccess').style.display = 'none';
             document.getElementById('quoteError').style.display   = 'none';
             document.getElementById('quoteOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
+            syncMobileQuoteBar();
         }
 
         function closeQuoteModal() {
             document.getElementById('quoteOverlay').classList.remove('active');
             document.body.style.overflow = '';
+            syncMobileQuoteBar();
+        }
+
+        let mobileQuoteCtaEligible = false;
+        let mobileQuoteFooterVisible = false;
+        function syncMobileQuoteBar() {
+            const bar = document.querySelector('.mobile-bottom-bar');
+            const overlay = document.getElementById('quoteOverlay');
+            const cookieBanner = document.getElementById('cookieConsent');
+            if (!bar) return;
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const modalOpen = overlay && overlay.classList.contains('active');
+            const cookieVisible = cookieBanner && getComputedStyle(cookieBanner).display !== 'none';
+            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !mobileQuoteFooterVisible && !modalOpen && !cookieVisible));
+        }
+
+        function setupMobileQuoteBar() {
+            const intro = document.getElementById('quoteIntro');
+            if (!intro || !('IntersectionObserver' in window)) return;
+            new IntersectionObserver(function(entries) {
+                mobileQuoteCtaEligible = !entries[0].isIntersecting;
+                syncMobileQuoteBar();
+            }, { threshold: 0.15 }).observe(intro);
+            const footer = document.querySelector('footer');
+            if (footer) {
+                new IntersectionObserver(function(entries) {
+                    mobileQuoteFooterVisible = entries[0].isIntersecting;
+                    syncMobileQuoteBar();
+                }, { threshold: 0.05 }).observe(footer);
+            }
+            window.addEventListener('resize', syncMobileQuoteBar);
+            syncMobileQuoteBar();
         }
 
         // ==================== INIT ====================
@@ -2149,6 +2225,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await loadProduct();
             loadConfig();
+            setupMobileQuoteBar();
 
             const initialColour = document.querySelector('input[name="colour"]:checked');
             if (initialColour) updateColour(initialColour);
@@ -2162,10 +2239,17 @@
                 btn.querySelector('span').textContent = 'Sending…';
                 document.getElementById('quoteError').style.display = 'none';
 
-                const firstName = document.getElementById('qFirstName').value.trim();
-                const lastName  = document.getElementById('qLastName').value.trim();
+                const name      = document.getElementById('qName').value.trim();
                 const email     = document.getElementById('qEmail').value.trim();
                 const phone     = document.getElementById('qPhone').value.trim();
+                if (!name || (!email && !phone)) {
+                    btn.disabled = false;
+                    btn.querySelector('span').textContent = 'Request your quote';
+                    var validationError = document.getElementById('quoteError');
+                    validationError.textContent = !name ? 'Please add your name so we know who to reply to.' : 'Please add an email address or phone number so we can reply to your request.';
+                    validationError.style.display = 'block';
+                    return;
+                }
                 // Read the cemetery from whichever holder is populated. The field can be
                 // backed by three different widgets depending on load state, so every lookup
                 // is optional-chained — the old `qCemeteryInput` is destroyed once Google's
@@ -2180,11 +2264,10 @@
                                   || document.getElementById('qCemeteryInput')?.value?.trim()
                                   || document.getElementById('qCemeteryAuto')?.value?.trim()
                                   || '';
-                const message   = document.getElementById('qMessage').value.trim();
+                const message   = '';
 
                 const colour = document.getElementById('selectedColourName').textContent;
                 const total  = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-                const name   = (firstName + ' ' + lastName).trim();
 
                 const lineItems = getAddonLineItems();
                 if (state.colourPrice > 0) lineItems.push({ name: 'Premium colour — ' + colour, price: state.colourPrice });
@@ -2226,17 +2309,17 @@
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
                         var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
-                        var trackLink = '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>';
+                        var trackLink = email ? '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>' : '';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
-                            "Your quote has been submitted — we've sent a copy to your email. There's nothing more you need to do right now; our team will be in touch within 24 hours." + editLink + trackLink;
+                            "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation." + editLink + trackLink;
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
                 } catch (err) {
                     console.error('Quote submission failed:', err);
                     btn.disabled = false;
-                    btn.querySelector('span').textContent = 'Send Quote Request';
+                    btn.querySelector('span').textContent = 'Request your quote';
                     var errEl = document.getElementById('quoteError');
                     if (errEl && err && err.message) {
                         errEl.textContent = err.message.length > 200 ? 'Sorry, something went wrong. Please try again or call us on +44 20 3835 2548.' : err.message;
@@ -2274,13 +2357,6 @@
             </a>
         </div>
     </nav>
-    <style>
-        @media (max-width: 768px) {
-            /* Sit comfortably above the fixed bottom nav (~70px content) plus its safe-area inset, with a small gap */
-            .mobile-bottom-bar { bottom: calc(70px + env(safe-area-inset-bottom)); }
-        }
-    </style>
-
     <!-- Cemetery map feature for RAQ modal -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
@@ -2370,21 +2446,11 @@
         }
 
         function updatePermitFeeRow() {
-            var row = document.getElementById('qsPermitFeeRow');
             var totalEl = document.getElementById('qsTotal');
-            var noteEl = document.getElementById('permitNote');
-            if (_selectedCemeteryFee > 0 && row) {
-                document.getElementById('qsPermitFee').textContent = '£' + _selectedCemeteryFee.toLocaleString();
-                row.style.display = '';
-                if (noteEl) noteEl.style.display = 'none';
-            } else if (row) {
-                row.style.display = 'none';
-                if (noteEl) noteEl.style.display = '';
-            }
-            // Recalculate total with permit fee
+            // Cemetery choice helps the team confirm requirements; it does not
+            // alter the customer-facing guide total at quote-request stage.
             var memorialTotal = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-            var grandTotal = memorialTotal + _selectedCemeteryFee;
-            if (totalEl) totalEl.textContent = '£' + grandTotal.toLocaleString();
+            if (totalEl) totalEl.textContent = '£' + memorialTotal.toLocaleString();
         }
 
         // Close suggestions when clicking outside
@@ -2428,11 +2494,13 @@ function acceptCookies() {
     localStorage.setItem('cookieConsent', 'accepted');
     document.getElementById('cookieConsent').style.display = 'none';
     pushConsent(true);
+    if (typeof syncMobileQuoteBar === 'function') syncMobileQuoteBar();
 }
 function declineCookies() {
     localStorage.setItem('cookieConsent', 'declined');
     document.getElementById('cookieConsent').style.display = 'none';
     pushConsent(false);
+    if (typeof syncMobileQuoteBar === 'function') syncMobileQuoteBar();
 }
 
         // ==================== SITE SEARCH ==
