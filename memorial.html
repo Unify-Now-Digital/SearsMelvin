@@ -2109,7 +2109,6 @@
         }
 
         let mobileQuoteCtaEligible = false;
-        let mobileQuoteFooterVisible = false;
         function syncMobileQuoteBar() {
             const bar = document.querySelector('.mobile-bottom-bar');
             const overlay = document.getElementById('quoteOverlay');
@@ -2118,7 +2117,10 @@
             const isMobile = window.matchMedia('(max-width: 768px)').matches;
             const modalOpen = overlay && overlay.classList.contains('active');
             const cookieVisible = cookieBanner && getComputedStyle(cookieBanner).display !== 'none';
-            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !mobileQuoteFooterVisible && !modalOpen && !cookieVisible));
+            // Keep the quote action available through the end of the product
+            // journey. Hiding it when the footer appears left customers with
+            // no conversion action after they had reviewed every option.
+            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen && !cookieVisible));
         }
 
         function setupMobileQuoteBar() {
@@ -2128,13 +2130,6 @@
                 mobileQuoteCtaEligible = !entries[0].isIntersecting;
                 syncMobileQuoteBar();
             }, { threshold: 0.15 }).observe(intro);
-            const footer = document.querySelector('footer');
-            if (footer) {
-                new IntersectionObserver(function(entries) {
-                    mobileQuoteFooterVisible = entries[0].isIntersecting;
-                    syncMobileQuoteBar();
-                }, { threshold: 0.05 }).observe(footer);
-            }
             window.addEventListener('resize', syncMobileQuoteBar);
             syncMobileQuoteBar();
         }
