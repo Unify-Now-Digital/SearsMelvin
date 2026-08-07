@@ -178,7 +178,8 @@
         .order-panel.active { transform: translateX(0); }
         .panel-header { padding: 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: flex-start; }
         .panel-header h2 { font-size: 1.4rem; }
-        .panel-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted); padding: 0.25rem; line-height: 1; }
+        .panel-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted); width: 44px; height: 44px; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--color-stone); outline-offset: 3px; }
         .panel-body { padding: 1.5rem; }
         .detail-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem 1rem; font-size: 0.9rem; margin-bottom: 1.5rem; }
         .detail-label { color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
