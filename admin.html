@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Consent Mode default — denied until the user accepts the cookie banner -->
     <script>
     window.dataLayer = window.dataLayer || [];
@@ -87,20 +86,126 @@
         .admin-nav-btn:hover { border-color: white; }
 
         /* Login */
-        .login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
-        .login-card { background: white; border-radius: 12px; padding: 3rem 2.5rem; max-width: 400px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.08); text-align: center; }
-        .login-card h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-        .login-card .subtitle { color: var(--color-text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
-        .login-field { margin-bottom: 1rem; text-align: left; }
-        .login-field label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.3rem; }
-        .login-field input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 1rem; font-family: var(--font-body); }
-        .login-field input:focus { outline: none; border-color: var(--color-accent); }
-        .login-btn { width: 100%; padding: 0.9rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 1rem; font-family: var(--font-body); cursor: pointer; margin-top: 0.5rem; }
-        .login-btn:hover { background: var(--color-stone-light); }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
-        .login-home-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--color-text-muted); text-decoration: none; }
+        .login-wrapper {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: clamp(1rem, 3vw, 2.5rem);
+            overflow: auto;
+            background:
+                radial-gradient(circle at 8% 10%, rgba(139,115,85,0.18), transparent 28rem),
+                radial-gradient(circle at 92% 88%, rgba(44,44,44,0.10), transparent 30rem),
+                var(--color-cream);
+        }
+        .login-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            background-image: linear-gradient(rgba(44,44,44,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(44,44,44,0.035) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(to bottom right, black, transparent 72%);
+        }
+        .login-shell {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(310px, 0.9fr) minmax(440px, 1.1fr);
+            width: min(1040px, 100%);
+            min-height: min(680px, calc(100svh - 3rem));
+            overflow: hidden;
+            border: 1px solid rgba(107,88,64,0.16);
+            border-radius: 24px;
+            background: white;
+            box-shadow: 0 28px 80px rgba(44,44,44,0.14), 0 8px 24px rgba(44,44,44,0.08);
+        }
+        .login-brand-panel {
+            position: relative;
+            isolation: isolate;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: clamp(2.25rem, 5vw, 4.25rem);
+            overflow: hidden;
+            color: white;
+            background: linear-gradient(150deg, #35322f 0%, #242321 58%, #171716 100%);
+        }
+        .login-brand-panel::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            width: 430px;
+            height: 430px;
+            right: -230px;
+            bottom: -175px;
+            border: 1px solid rgba(196,174,143,0.28);
+            border-radius: 50%;
+            box-shadow: 0 0 0 58px rgba(196,174,143,0.055), 0 0 0 116px rgba(196,174,143,0.035);
+        }
+        .login-brand-panel::after {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: 0;
+            opacity: 0.11;
+            background: linear-gradient(118deg, transparent 46%, rgba(255,255,255,0.45) 47%, transparent 48%);
+            background-size: 120px 120px;
+        }
+        .login-brand-lockup { display: flex; align-items: center; gap: 0.85rem; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.01em; }
+        .login-brand-monogram { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.35); border-radius: 50%; color: #d7c3a7; font-size: 1rem; letter-spacing: 0.08em; }
+        .login-brand-copy { max-width: 27rem; margin: auto 0; padding: 4rem 0; }
+        .login-brand-eyebrow { margin-bottom: 1rem; color: #c9b393; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+        .login-brand-copy h2 { max-width: 9ch; margin-bottom: 1.25rem; color: white; font-size: clamp(2.65rem, 5vw, 4rem); line-height: 0.98; letter-spacing: -0.025em; }
+        .login-brand-copy p { max-width: 29rem; color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.8; }
+        .login-brand-footer { display: flex; align-items: center; gap: 0.65rem; color: rgba(255,255,255,0.52); font-size: 0.74rem; letter-spacing: 0.02em; }
+        .login-brand-footer::before { content: ""; width: 24px; height: 1px; background: #a58b67; }
+        .login-card { display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem, 6vw, 4.75rem); background: rgba(255,255,255,0.98); }
+        .login-card-inner { width: min(100%, 410px); margin: 0 auto; }
+        .login-home-link { display: flex; align-items: center; gap: 0.45rem; width: fit-content; margin-bottom: 2.25rem; color: var(--color-text-muted); font-size: 0.78rem; font-weight: 500; text-decoration: none; }
         .login-home-link:hover { color: var(--color-accent-dark); }
+        .login-home-link:focus-visible, .login-btn:focus-visible, .login-retry:focus-visible, .login-alternatives summary:focus-visible { outline: 3px solid rgba(139,115,85,0.28); outline-offset: 3px; }
+        .login-access-label { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; color: var(--color-accent-dark); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+        .login-access-label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 0 4px rgba(74,124,89,0.12); }
+        .login-card h1 { margin-bottom: 0.55rem; font-size: clamp(2.35rem, 5vw, 3.2rem); line-height: 1; letter-spacing: -0.025em; }
+        .login-card .subtitle { max-width: 36rem; margin-bottom: 2rem; color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.65; }
+        .google-auth-section { padding: 1.15rem; border: 1px solid rgba(66,133,244,0.18); border-radius: 14px; background: linear-gradient(145deg, rgba(66,133,244,0.045), #fff 55%); box-shadow: 0 8px 24px rgba(44,44,44,0.045); }
+        .google-auth-heading { margin-bottom: 1rem; }
+        .google-auth-heading strong { display: block; margin-bottom: 0.2rem; color: var(--color-stone); font-size: 0.88rem; }
+        .google-auth-heading span { display: block; color: var(--color-text-muted); font-size: 0.74rem; line-height: 1.5; }
+        .google-signin-wrap { min-height: 44px; display: grid; place-items: center; }
+        #googleSignInBtn { display: none; justify-content: center; width: 100%; min-height: 44px; }
+        #googleSignInBtn > div { max-width: 100%; }
+        .google-loading { display: flex; align-items: center; justify-content: center; gap: 0.7rem; width: 100%; min-height: 44px; border: 1px solid #d8dce0; border-radius: 4px; color: #4c5157; font-size: 0.88rem; font-weight: 500; }
+        .google-loading[hidden] { display: none; }
+        .login-spinner { width: 16px; height: 16px; border: 2px solid #d7dce1; border-top-color: #4285f4; border-radius: 50%; animation: login-spin 0.85s linear infinite; }
+        @keyframes login-spin { to { transform: rotate(360deg); } }
+        .google-status { margin-top: 0.75rem; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.5; text-align: center; }
+        .google-status.error { color: var(--color-error); }
+        .login-retry { display: none; margin: 0.65rem auto 0; border: 0; border-bottom: 1px solid currentColor; background: none; color: var(--color-accent-dark); font: 600 0.76rem var(--font-body); cursor: pointer; }
+        .login-field { margin-bottom: 1rem; text-align: left; }
+        .login-field label { display: block; margin-bottom: 0.4rem; color: var(--color-stone); font-size: 0.76rem; font-weight: 600; letter-spacing: 0.02em; }
+        .login-field input { width: 100%; min-height: 48px; padding: 0.75rem 0.9rem; border: 1px solid #d7d2ca; border-radius: 8px; background: #fdfcfb; color: var(--color-text); font: 0.95rem var(--font-body); transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; }
+        .login-field input::placeholder { color: #99958f; }
+        .login-field input:hover { border-color: #bdb5aa; }
+        .login-field input:focus { outline: none; border-color: var(--color-accent); background: white; box-shadow: 0 0 0 4px rgba(139,115,85,0.12); }
+        .login-btn { width: 100%; min-height: 48px; padding: 0.8rem 1rem; border: 1px solid var(--color-stone); border-radius: 8px; background: var(--color-stone); color: white; font: 600 0.9rem var(--font-body); cursor: pointer; transition: transform 0.18s, background 0.18s, border-color 0.18s; }
+        .login-btn:hover { border-color: var(--color-stone-light); background: var(--color-stone-light); transform: translateY(-1px); }
+        .login-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+        .login-error { display: none; margin-top: 1rem; padding: 0.75rem 0.9rem; border: 1px solid rgba(192,57,43,0.2); border-radius: 8px; background: rgba(192,57,43,0.055); color: var(--color-error); font-size: 0.8rem; line-height: 1.5; }
+        .login-alternatives { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); }
+        .login-alternatives summary { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-muted); font-size: 0.78rem; font-weight: 500; cursor: pointer; list-style: none; }
+        .login-alternatives summary::-webkit-details-marker { display: none; }
+        .login-alternatives summary::after { content: "+"; color: var(--color-accent-dark); font-size: 1rem; }
+        .login-alternatives[open] summary::after { content: "\2212"; }
+        .login-alternative-content { display: grid; gap: 0.85rem; padding-top: 1rem; }
+        .login-alt-note { color: var(--color-text-muted); font-size: 0.74rem; line-height: 1.5; }
+        .login-alt-btn { background: white; color: var(--color-stone); border-color: var(--color-border); }
+        .login-alt-btn:hover { background: var(--color-cream); border-color: var(--color-accent-light); }
+        .login-security-note { display: flex; align-items: flex-start; gap: 0.55rem; margin-top: 1.5rem; color: #7c7770; font-size: 0.72rem; line-height: 1.55; }
+        .login-security-note svg { flex: 0 0 auto; margin-top: 0.15rem; color: var(--color-success); }
 
         /* Dashboard */
         .dashboard { display: none; }
@@ -227,8 +332,29 @@
         /* Loading */
         .loading { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 
+        @media (max-width: 920px) {
+            .login-wrapper { padding: 1rem; }
+            .login-shell { grid-template-columns: 1fr; width: min(590px, 100%); min-height: auto; }
+            .login-brand-panel { min-height: 220px; padding: 2rem 2.25rem; }
+            .login-brand-copy { padding: 2.5rem 0 1rem; }
+            .login-brand-copy h2 { max-width: none; font-size: 2.8rem; }
+            .login-brand-copy p { display: none; }
+            .login-brand-footer { display: none; }
+            .login-card { padding: 2.5rem 2.25rem 3rem; }
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
+            .login-wrapper { display: block; min-height: 100svh; padding: 0; background: white; }
+            .login-wrapper::before { display: none; }
+            .login-shell { width: 100%; min-height: 100svh; border: 0; border-radius: 0; box-shadow: none; }
+            .login-brand-panel { min-height: 178px; padding: 1.5rem; }
+            .login-brand-copy { padding: 1.7rem 0 0; }
+            .login-brand-copy h2 { margin: 0; font-size: 2.35rem; }
+            .login-brand-eyebrow { margin-bottom: 0.6rem; }
+            .login-card { justify-content: flex-start; padding: 2rem 1.5rem 2.5rem; }
+            .login-card-inner { width: 100%; }
+            .login-home-link { margin-bottom: 1.6rem; }
             .admin-nav { padding: 0.75rem 1rem; }
             .dash-content { padding: 1rem; }
             .stats-row { grid-template-columns: repeat(2, 1fr); }
@@ -240,6 +366,15 @@
             .btn-approve, .btn-decline { flex: 1; text-align: center; }
             .admin-tabs { overflow-x: auto; }
             .orders-table { display: block; overflow-x: auto; }
+        }
+
+        @media (max-width: 420px) {
+            .login-brand-panel { min-height: 154px; }
+            .login-brand-copy { padding-top: 1.2rem; }
+            .login-brand-copy h2 { font-size: 2rem; }
+            .login-brand-lockup { font-size: 1.05rem; }
+            .login-brand-monogram { width: 36px; height: 36px; }
+            .login-card { padding-inline: 1.15rem; }
         }
     
         @media (prefers-reduced-motion: reduce) {
@@ -264,43 +399,72 @@
 
 <!-- ==================== LOGIN ==================== -->
 <div id="loginScreen" class="login-wrapper">
-    <div class="login-card">
-        <a href="/" class="login-home-link">&larr; Back to searsmelvin.co.uk</a>
-        <h1>Admin Dashboard</h1>
-        <p class="subtitle">Sears Melvin Memorials</p>
-
-        <div id="googleSignInWrap" style="display:none;margin-bottom:1.25rem;">
-            <div id="googleSignInBtn" style="display:flex;justify-content:center;"></div>
-        </div>
-
-        <form onsubmit="emailLogin(event)">
-            <div class="login-field">
-                <label>Email</label>
-                <input type="email" id="emailLoginInput" required autocomplete="username" placeholder="you@searsmelvin.co.uk" value="arin@searsmelvin.co.uk">
+    <main class="login-shell" aria-labelledby="loginTitle">
+        <section class="login-brand-panel" aria-label="Sears Melvin Memorials">
+            <div class="login-brand-lockup">
+                <span class="login-brand-monogram" aria-hidden="true">SM</span>
+                <span>Sears Melvin Memorials</span>
             </div>
-            <div class="login-field">
-                <label>Password</label>
-                <input type="password" id="emailPasswordInput" required autocomplete="current-password" placeholder="Enter your password">
+            <div class="login-brand-copy">
+                <p class="login-brand-eyebrow">Staff portal</p>
+                <h2>Every detail, cared for.</h2>
+                <p>One secure place to manage families, memorial orders, partner requests and the work entrusted to our team.</p>
             </div>
-            <button type="submit" class="login-btn" id="emailLoginBtn">Sign In</button>
-        </form>
-        <p class="login-error" id="loginError"></p>
+            <p class="login-brand-footer">Private and secure administration</p>
+        </section>
 
-        <details style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-border);">
-            <summary style="cursor:pointer;color:var(--color-text-muted);font-size:0.85rem;">Other sign-in options</summary>
-            <form onsubmit="adminLogin(event)" style="margin-top:1rem;">
-                <div class="login-field">
-                    <label>Admin Key</label>
-                    <input type="password" id="adminKeyInput" autocomplete="off" placeholder="Enter your admin key">
+        <section class="login-card">
+            <div class="login-card-inner">
+                <a href="/" class="login-home-link" aria-label="Back to Sears Melvin home">
+                    <span aria-hidden="true">&larr;</span> Back to the website
+                </a>
+                <p class="login-access-label">Authorised access</p>
+                <h1 id="loginTitle">Welcome back</h1>
+                <p class="subtitle">Sign in to the Sears Melvin admin dashboard with an approved account.</p>
+
+                <div class="google-auth-section">
+                    <div class="google-auth-heading">
+                        <strong>Continue securely with Google</strong>
+                        <span>Your Google password is never shared with or stored by Sears Melvin.</span>
+                    </div>
+                    <div id="googleSignInWrap" class="google-signin-wrap" aria-busy="true">
+                        <div id="googleSignInLoading" class="google-loading" role="status">
+                            <span class="login-spinner" aria-hidden="true"></span>
+                            <span>Connecting to Google</span>
+                        </div>
+                        <div id="googleSignInBtn"></div>
+                    </div>
+                    <p id="googleSignInStatus" class="google-status" aria-live="polite">Use an approved Sears Melvin Google account.</p>
+                    <button type="button" id="googleSignInRetry" class="login-retry" onclick="initGoogleSignIn()">Try Google again</button>
                 </div>
-                <button type="submit" class="login-btn" id="loginBtn">Sign In with Admin Key</button>
-            </form>
-            <div style="margin-top:1rem;">
-                <button class="login-btn" id="magicLinkBtn" onclick="sendMagicLink()" style="background:var(--color-accent);">Send Login Link</button>
-                <p id="magicLinkMsg" style="font-size:0.85rem;margin-top:0.75rem;display:none;"></p>
+                <p class="login-error" id="loginError" role="alert" aria-live="assertive"></p>
+
+                <details class="login-alternatives">
+                    <summary>Can't use Google?</summary>
+                    <div class="login-alternative-content">
+                        <div>
+                            <button type="button" class="login-btn login-alt-btn" id="magicLinkBtn" onclick="sendMagicLink()">Email a one-time login link</button>
+                            <p class="login-alt-note">A 15-minute sign-in link will be sent to the main Sears Melvin administration inbox.</p>
+                            <p id="magicLinkMsg" class="login-alt-note" style="display:none;" aria-live="polite"></p>
+                        </div>
+                        <form onsubmit="adminLogin(event)">
+                            <div class="login-field">
+                                <label for="adminKeyInput">Admin key</label>
+                                <input type="password" id="adminKeyInput" autocomplete="off" placeholder="Enter your admin key">
+                            </div>
+                            <button type="submit" class="login-btn login-alt-btn" id="loginBtn">Continue with admin key</button>
+                        </form>
+                    </div>
+                </details>
+
+                <p class="login-security-note">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>Google credentials are verified on the server. Access is restricted to approved accounts and sessions expire automatically.</span>
+                </p>
+                <noscript><p class="login-error" style="display:block;">JavaScript is required to access the admin dashboard.</p></noscript>
             </div>
-        </details>
-    </div>
+        </section>
+    </main>
 </div>
 
 <!-- ==================== DASHBOARD ==================== -->
@@ -436,6 +600,8 @@
     var adminToken = localStorage.getItem('admin_token');
     var allPartners = [];
     var partnerFilter = 'all';
+    var googleIdentityPromise = null;
+    var googleLoginInFlight = false;
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
@@ -452,29 +618,116 @@
     });
 
     // ==================== AUTH ====================
+    function loadGoogleIdentityServices() {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            return Promise.resolve();
+        }
+        if (googleIdentityPromise) return googleIdentityPromise;
+
+        googleIdentityPromise = new Promise(function(resolve, reject) {
+            var script = document.getElementById('googleIdentityServices');
+            if (script) script.remove();
+
+            script = document.createElement('script');
+            script.id = 'googleIdentityServices';
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+
+            var timeout = setTimeout(function() {
+                googleIdentityPromise = null;
+                reject(new Error('Google sign-in took too long to load'));
+            }, 10000);
+
+            script.onload = function() {
+                clearTimeout(timeout);
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    resolve();
+                } else {
+                    googleIdentityPromise = null;
+                    reject(new Error('Google sign-in did not initialise'));
+                }
+            };
+            script.onerror = function() {
+                clearTimeout(timeout);
+                googleIdentityPromise = null;
+                reject(new Error('Google sign-in could not be loaded'));
+            };
+            document.head.appendChild(script);
+        });
+
+        return googleIdentityPromise;
+    }
+
     async function initGoogleSignIn() {
+        var wrap = document.getElementById('googleSignInWrap');
+        var loading = document.getElementById('googleSignInLoading');
+        var button = document.getElementById('googleSignInBtn');
+        var status = document.getElementById('googleSignInStatus');
+        var retry = document.getElementById('googleSignInRetry');
+
+        wrap.setAttribute('aria-busy', 'true');
+        loading.hidden = false;
+        button.style.display = 'none';
+        button.replaceChildren();
+        retry.style.display = 'none';
+        status.classList.remove('error');
+        status.textContent = 'Use an approved Sears Melvin Google account.';
+
         try {
-            var res = await fetch('/api/config');
+            var res = await fetch('/api/config', { cache: 'no-store', credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Google sign-in configuration is unavailable');
             var cfg = await res.json();
-            if (!cfg.googleClientId || !window.google) return;
+            if (!cfg.googleClientId) throw new Error('Google sign-in is not configured');
+
+            await loadGoogleIdentityServices();
             google.accounts.id.initialize({
                 client_id: cfg.googleClientId,
-                callback: googleLoginCallback
+                callback: googleLoginCallback,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                itp_support: true
             });
-            document.getElementById('googleSignInWrap').style.display = 'block';
-            google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), {
-                theme: 'outline', size: 'large', width: 300, text: 'signin_with'
+
+            var buttonWidth = Math.max(240, Math.min(376, button.parentElement.clientWidth - 2));
+            google.accounts.id.renderButton(button, {
+                type: 'standard',
+                theme: 'outline',
+                size: 'large',
+                width: buttonWidth,
+                text: 'continue_with',
+                shape: 'rectangular',
+                logo_alignment: 'left'
             });
-        } catch (e) {}
+            loading.hidden = true;
+            button.style.display = 'flex';
+            wrap.setAttribute('aria-busy', 'false');
+            status.textContent = 'Only approved Sears Melvin Google accounts can continue.';
+        } catch (error) {
+            loading.hidden = true;
+            wrap.setAttribute('aria-busy', 'false');
+            status.textContent = 'Google sign-in is temporarily unavailable. Try again or use a secure recovery option below.';
+            status.classList.add('error');
+            retry.style.display = 'block';
+        }
     }
 
     async function googleLoginCallback(response) {
+        if (googleLoginInFlight) return;
         var errEl = document.getElementById('loginError');
+        var status = document.getElementById('googleSignInStatus');
+        var wrap = document.getElementById('googleSignInWrap');
         errEl.style.display = 'none';
+        status.classList.remove('error');
+        status.textContent = 'Verifying your Google account...';
+        wrap.setAttribute('aria-busy', 'true');
+        googleLoginInFlight = true;
         try {
+            if (!response || !response.credential) throw new Error('Google did not return a valid sign-in response');
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({ action: 'google-login', credential: response.credential })
             });
             var data = await res.json();
@@ -485,36 +738,12 @@
         } catch (err) {
             errEl.textContent = err.message;
             errEl.style.display = 'block';
+            status.classList.add('error');
+            status.textContent = 'Only approved Sears Melvin Google accounts can continue.';
+        } finally {
+            googleLoginInFlight = false;
+            wrap.setAttribute('aria-busy', 'false');
         }
-    }
-
-    async function emailLogin(e) {
-        e.preventDefault();
-        var email = document.getElementById('emailLoginInput').value.trim();
-        var password = document.getElementById('emailPasswordInput').value;
-        var btn = document.getElementById('emailLoginBtn');
-        var errEl = document.getElementById('loginError');
-        btn.disabled = true;
-        btn.textContent = 'Signing in...';
-        errEl.style.display = 'none';
-
-        try {
-            var res = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'email-login', email: email, password: password })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Login failed');
-            adminToken = data.token;
-            localStorage.setItem('admin_token', data.token);
-            showDashboard();
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
     }
 
     async function adminLogin(e) {
@@ -542,7 +771,7 @@
             errEl.style.display = 'block';
         }
         btn.disabled = false;
-        btn.textContent = 'Sign In with Admin Key';
+        btn.textContent = 'Continue with admin key';
     }
 
     async function sendMagicLink() {
