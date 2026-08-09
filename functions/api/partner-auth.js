@@ -1,10 +1,9 @@
 /**
  * Partner Auth API — /api/partner-auth
  *
- * POST { action: "login", email, password }  → authenticate partner, return session token
- * POST { action: "verify", token }           → verify session token, return partner info
- * POST { action: "logout", token }           → invalidate session
- * POST { action: "register", email, password, name, company, adminKey } → create partner (admin only)
+ * POST { action: "login", email, password }  → authenticate partner, set HttpOnly session cookie
+ * POST { action: "verify" }                  → verify session cookie, return partner info
+ * POST { action: "logout" }                  → invalidate session
  * POST { action: "request", email, password, name, company, phone, message } → self-service request (pending approval)
  * POST { action: "forgot-password", email }      → send password reset email
  * POST { action: "reset-password", token, password } → set new password using reset token
@@ -15,6 +14,10 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+const PARTNER_COOKIE = "__Host-sm_partner_session";
+const PARTNER_SESSION_SECONDS = 12 * 60 * 60;
+const MIN_PASSWORD_LENGTH = 12;
+const MAX_PASSWORD_LENGTH = 128;
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS });
@@ -24,6 +27,9 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method !== "POST") {
     return json({ ok: false, error: "Method not allowed" }, 405);
+  }
+  if (!isSameOriginRequest(request)) {
+    return json({ ok: false, error: "Forbidden" }, 403);
   }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     return json({ ok: false, error: "Server config error" }, 500);
@@ -36,9 +42,8 @@ export async function onRequest(context) {
   const { action } = data;
 
   if (action === "login") return handleLogin(env, data);
-  if (action === "verify") return handleVerify(env, data);
-  if (action === "logout") return handleLogout(env, data);
-  if (action === "register") return handleRegister(env, data);
+  if (action === "verify") return handleVerify(env, request, data);
+  if (action === "logout") return handleLogout(env, request, data);
   if (action === "request") return handleRequest(env, data);
   if (action === "forgot-password") return handleForgotPassword(env, data);
   if (action === "reset-password") return handleResetPassword(env, data);
@@ -49,29 +54,22 @@ export async function onRequest(context) {
 // ==================== LOGIN ====================
 async function handleLogin(env, { email, password }) {
   if (!email || !password) return json({ ok: false, error: "Email and password required" }, 400);
+  if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > MAX_PASSWORD_LENGTH) {
+    return json({ ok: false, error: "Invalid email or password" }, 401);
+  }
 
   const headers = sbHeaders(env);
+  const normalisedEmail = email.trim().toLowerCase();
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&active=eq.true&status=eq.approved&select=id,email,name,company,password_hash&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(normalisedEmail)}&active=eq.true&status=eq.approved&select=id,email,name,company,password_hash&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
   const rows = await res.json();
   if (rows.length === 0) {
-    // Check if they exist but are pending/declined
-    const checkRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=status&limit=1`,
-      { headers },
-    );
-    if (checkRes.ok) {
-      const checkRows = await checkRes.json();
-      if (checkRows.length > 0 && checkRows[0].status === "pending") {
-        return json({ ok: false, error: "Your account is awaiting approval. We'll be in touch soon." }, 401);
-      }
-      if (checkRows.length > 0 && checkRows[0].status === "declined") {
-        return json({ ok: false, error: "Your account request was not approved. Please contact us for more information." }, 401);
-      }
-    }
+    // Do comparable password work even when no approved account exists so
+    // response timing does not reveal whether an address is registered.
+    await hashPassword(password, "00000000000000000000000000000000");
     return json({ ok: false, error: "Invalid email or password" }, 401);
   }
 
@@ -98,24 +96,25 @@ async function handleLogin(env, { email, password }) {
 
   // Create session token
   const token = generateToken(64);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+  const tokenHash = await hashOpaqueToken(token);
+  const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
 
   const sessRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ partner_id: partner.id, token, expires_at: expiresAt }),
+    body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
   });
   if (!sessRes.ok) return json({ ok: false, error: "Failed to create session" }, 500);
 
   return json({
     ok: true,
-    token,
     partner: { id: partner.id, email: partner.email, name: partner.name, company: partner.company },
-  });
+  }, 200, { "Set-Cookie": sessionCookie(PARTNER_COOKIE, token, PARTNER_SESSION_SECONDS) });
 }
 
 // ==================== VERIFY ====================
-async function handleVerify(env, { token }) {
+async function handleVerify(env, request, data) {
+  const token = getCookie(request, PARTNER_COOKIE) || data.token;
   if (!token) return json({ ok: false, error: "Token required" }, 400);
   const partner = await getPartnerFromToken(env, token);
   if (!partner) return json({ ok: false, error: "Invalid or expired session" }, 401);
@@ -123,50 +122,13 @@ async function handleVerify(env, { token }) {
 }
 
 // ==================== LOGOUT ====================
-async function handleLogout(env, { token }) {
-  if (!token) return json({ ok: true });
+async function handleLogout(env, request, data) {
+  const token = getCookie(request, PARTNER_COOKIE) || data.token;
+  if (!token) return json({ ok: true }, 200, { "Set-Cookie": clearCookie(PARTNER_COOKIE) });
   const headers = sbHeaders(env);
-  await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}`, {
-    method: "DELETE",
-    headers,
-  });
-  return json({ ok: true });
-}
-
-// ==================== REGISTER (admin only) ====================
-async function handleRegister(env, { email, password, name, company, adminKey }) {
-  // Require admin key to create partners
-  if (!adminKey || adminKey !== env.PARTNER_ADMIN_KEY) {
-    return json({ ok: false, error: "Unauthorized" }, 403);
-  }
-  if (!email || !password || !name) {
-    return json({ ok: false, error: "Email, password, and name required" }, 400);
-  }
-
-  const headers = sbHeaders(env);
-  const hash = await hashPassword(password);
-
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=representation" },
-    body: JSON.stringify({
-      email: email.toLowerCase(),
-      password_hash: hash,
-      name,
-      company: company || null,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    if (errText.includes("duplicate")) {
-      return json({ ok: false, error: "A partner with this email already exists" }, 409);
-    }
-    return json({ ok: false, error: "Failed to create partner" }, 500);
-  }
-
-  const rows = await res.json();
-  return json({ ok: true, partner: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
+  const tokenHash = await hashOpaqueToken(token);
+  await deleteSessionByEitherToken(env, tokenHash, token, headers);
+  return json({ ok: true }, 200, { "Set-Cookie": clearCookie(PARTNER_COOKIE) });
 }
 
 // ==================== REQUEST (self-service, pending approval) ====================
@@ -179,8 +141,11 @@ async function handleRequest(env, { email, password, name, company, phone, messa
   if (!company || !String(company).trim()) {
     return json({ ok: false, error: "Company / business name is required" }, 400);
   }
-  if (typeof password !== "string" || password.length < 6) {
-    return json({ ok: false, error: "Password must be at least 6 characters" }, 400);
+  if (!validPassword(password)) {
+    return json({ ok: false, error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters` }, 400);
+  }
+  if (typeof email !== "string" || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) {
+    return json({ ok: false, error: "A valid email address is required" }, 400);
   }
 
   const headers = sbHeaders(env);
@@ -251,11 +216,11 @@ async function handleRequest(env, { email, password, name, company, phone, messa
 async function handleForgotPassword(env, { email }) {
   // Always return success to prevent email enumeration
   const successMsg = "If an account with that email exists, we've sent a password reset link.";
-  if (!email) return json({ ok: true, message: successMsg });
+  if (!email || typeof email !== "string" || email.length > 254) return json({ ok: true, message: successMsg });
 
   const headers = sbHeaders(env);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,name,email&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.trim().toLowerCase())}&active=eq.true&status=eq.approved&select=id,name,email&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: true, message: successMsg });
@@ -264,13 +229,14 @@ async function handleForgotPassword(env, { email }) {
 
   const partner = rows[0];
   const token = generateToken(32);
+  const tokenHash = await hashOpaqueToken(token);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
   // Save reset token
   const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ partner_id: partner.id, token, expires_at: expiresAt }),
+    body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
   });
   if (!insertRes.ok) {
     const errBody = await insertRes.text();
@@ -282,7 +248,9 @@ async function handleForgotPassword(env, { email }) {
   if (!env.RESEND_API_KEY) {
     console.error("RESEND_API_KEY not set — cannot send password reset email");
   } else {
-    const resetUrl = `https://searsmelvin.co.uk/partner?reset=${token}`;
+    // Keep the one-time token in the URL fragment so it is not sent in HTTP
+    // requests, server logs, analytics URLs or Referer headers.
+    const resetUrl = `https://searsmelvin.co.uk/partner#reset=${token}`;
     const firstName = (partner.name || "").split(" ")[0] || "there";
     try {
       const emailRes = await fetch("https://api.resend.com/emails", {
@@ -294,7 +262,7 @@ async function handleForgotPassword(env, { email }) {
           subject: "Password Reset — Sears Melvin Partner Portal",
           html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
             <h2 style="font-family:Georgia,serif;color:#2C2C2C;font-weight:400;">Password Reset</h2>
-            <p>Hi ${firstName},</p>
+            <p>Hi ${esc(firstName)},</p>
             <p>We received a request to reset your Partner Portal password. Click the button below to set a new password:</p>
             <p style="text-align:center;margin:2rem 0;">
               <a href="${resetUrl}" style="background:#2C2C2C;color:white;padding:0.75rem 2rem;border-radius:6px;text-decoration:none;font-size:1rem;display:inline-block;">Reset Password</a>
@@ -320,22 +288,40 @@ async function handleForgotPassword(env, { email }) {
 // ==================== RESET PASSWORD ====================
 async function handleResetPassword(env, { token, password }) {
   if (!token || !password) return json({ ok: false, error: "Token and new password are required" }, 400);
-  if (password.length < 6) return json({ ok: false, error: "Password must be at least 6 characters" }, 400);
+  if (typeof token !== "string" || token.length > 256 || !validPassword(password)) {
+    return json({ ok: false, error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters` }, 400);
+  }
 
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
 
   // Find valid reset token
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&used=eq.false&expires_at=gt.${now}&select=id,partner_id&limit=1`,
-    { headers },
-  );
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
-  const rows = await res.json();
+  const tokenHash = await hashOpaqueToken(token);
+  let rows = await findResetToken(env, tokenHash, now, headers);
+  if (rows === null) return json({ ok: false, error: "Database error" }, 500);
+  // Compatibility for reset links issued before token hashing. New tokens are
+  // always stored hashed and cannot be recovered from a database read.
+  if (rows.length === 0) rows = await findResetToken(env, token, now, headers) || [];
   if (rows.length === 0) return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
 
   const resetRecord = rows[0];
   const hash = await hashPassword(password);
+
+  // Atomically consume the one-time token before changing the password. A
+  // concurrent replay receives no row and cannot reset the account twice.
+  const consumeRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}&used=eq.false`,
+    {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({ used: true }),
+    },
+  );
+  if (!consumeRes.ok) return json({ ok: false, error: "Failed to consume reset token" }, 500);
+  const consumedRows = await consumeRes.json();
+  if (consumedRows.length === 0) {
+    return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
+  }
 
   // Update partner password
   const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${resetRecord.partner_id}`, {
@@ -344,13 +330,6 @@ async function handleResetPassword(env, { token, password }) {
     body: JSON.stringify({ password_hash: hash }),
   });
   if (!updateRes.ok) return json({ ok: false, error: "Failed to update password" }, 500);
-
-  // Mark token as used
-  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, {
-    method: "PATCH",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ used: true }),
-  });
 
   // Invalidate all existing sessions for this partner (security)
   await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?partner_id=eq.${resetRecord.partner_id}`, {
@@ -366,12 +345,12 @@ async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
 
-  const sessRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${now}&select=partner_id&limit=1`,
-    { headers },
-  );
-  if (!sessRes.ok) return null;
-  const sessRows = await sessRes.json();
+  const tokenHash = await hashOpaqueToken(token);
+  let sessRows = await findPartnerSession(env, tokenHash, now, headers);
+  if (sessRows === null) return null;
+  // Compatibility for sessions issued before cookie/hash hardening. They expire
+  // within seven days and are never issued by the new code.
+  if (sessRows.length === 0) sessRows = await findPartnerSession(env, token, now, headers) || [];
   if (sessRows.length === 0) return null;
 
   const partnerId = sessRows[0].partner_id;
@@ -457,6 +436,58 @@ function generateToken(length = 64) {
   return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function validPassword(password) {
+  return typeof password === "string"
+    && password.length >= MIN_PASSWORD_LENGTH
+    && password.length <= MAX_PASSWORD_LENGTH;
+}
+
+async function hashOpaqueToken(token) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return "sha256:" + bytesToHex(new Uint8Array(digest));
+}
+
+function getCookie(request, name) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const index = part.indexOf("=");
+    if (index < 0) continue;
+    if (part.slice(0, index).trim() === name) return decodeURIComponent(part.slice(index + 1).trim());
+  }
+  return "";
+}
+
+function sessionCookie(name, value, maxAge) {
+  return `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+
+function clearCookie(name) {
+  return `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+}
+
+async function findPartnerSession(env, token, now, headers) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${encodeURIComponent(now)}&select=partner_id&limit=1`,
+    { headers },
+  );
+  return res.ok ? res.json() : null;
+}
+
+async function findResetToken(env, token, now, headers) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&used=eq.false&expires_at=gt.${encodeURIComponent(now)}&select=id,partner_id&limit=1`,
+    { headers },
+  );
+  return res.ok ? res.json() : null;
+}
+
+async function deleteSessionByEitherToken(env, tokenHash, legacyToken, headers) {
+  await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(tokenHash)}`, { method: "DELETE", headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(legacyToken)}`, { method: "DELETE", headers }),
+  ]);
+}
+
 function sbHeaders(env) {
   return {
     "apikey": env.SUPABASE_SERVICE_KEY,
@@ -465,11 +496,24 @@ function sbHeaders(env) {
   };
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      ...CORS,
+      ...extraHeaders,
+    },
   });
+}
+
+function isSameOriginRequest(request) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== new URL(request.url).origin) return false;
+  const fetchSite = request.headers.get("Sec-Fetch-Site");
+  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
 }
 
 function esc(str) {
