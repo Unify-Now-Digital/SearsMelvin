@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Consent Mode default — denied until the user accepts the cookie banner -->
     <script>
     window.dataLayer = window.dataLayer || [];
@@ -267,19 +268,38 @@
         <a href="/" class="login-home-link">&larr; Back to searsmelvin.co.uk</a>
         <h1>Admin Dashboard</h1>
         <p class="subtitle">Sears Melvin Memorials</p>
-        <form onsubmit="adminLogin(event)">
-            <div class="login-field">
-                <label>Admin Key</label>
-                <input type="password" id="adminKeyInput" required autocomplete="current-password" placeholder="Enter your admin key">
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
-            <p class="login-error" id="loginError"></p>
-        </form>
-        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-border);">
-            <p style="color:var(--color-text-muted);font-size:0.85rem;margin-bottom:0.75rem;">Or sign in with email</p>
-            <button class="login-btn" id="magicLinkBtn" onclick="sendMagicLink()" style="background:var(--color-accent);">Send Login Link</button>
-            <p id="magicLinkMsg" style="font-size:0.85rem;margin-top:0.75rem;display:none;"></p>
+
+        <div id="googleSignInWrap" style="display:none;margin-bottom:1.25rem;">
+            <div id="googleSignInBtn" style="display:flex;justify-content:center;"></div>
         </div>
+
+        <form onsubmit="emailLogin(event)">
+            <div class="login-field">
+                <label>Email</label>
+                <input type="email" id="emailLoginInput" required autocomplete="username" placeholder="you@searsmelvin.co.uk" value="arin@searsmelvin.co.uk">
+            </div>
+            <div class="login-field">
+                <label>Password</label>
+                <input type="password" id="emailPasswordInput" required autocomplete="current-password" placeholder="Enter your password">
+            </div>
+            <button type="submit" class="login-btn" id="emailLoginBtn">Sign In</button>
+        </form>
+        <p class="login-error" id="loginError"></p>
+
+        <details style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-border);">
+            <summary style="cursor:pointer;color:var(--color-text-muted);font-size:0.85rem;">Other sign-in options</summary>
+            <form onsubmit="adminLogin(event)" style="margin-top:1rem;">
+                <div class="login-field">
+                    <label>Admin Key</label>
+                    <input type="password" id="adminKeyInput" autocomplete="off" placeholder="Enter your admin key">
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">Sign In with Admin Key</button>
+            </form>
+            <div style="margin-top:1rem;">
+                <button class="login-btn" id="magicLinkBtn" onclick="sendMagicLink()" style="background:var(--color-accent);">Send Login Link</button>
+                <p id="magicLinkMsg" style="font-size:0.85rem;margin-top:0.75rem;display:none;"></p>
+            </div>
+        </details>
     </div>
 </div>
 
@@ -428,9 +448,75 @@
         } else if (adminToken) {
             verifyAdminSession();
         }
+        initGoogleSignIn();
     });
 
     // ==================== AUTH ====================
+    async function initGoogleSignIn() {
+        try {
+            var res = await fetch('/api/config');
+            var cfg = await res.json();
+            if (!cfg.googleClientId || !window.google) return;
+            google.accounts.id.initialize({
+                client_id: cfg.googleClientId,
+                callback: googleLoginCallback
+            });
+            document.getElementById('googleSignInWrap').style.display = 'block';
+            google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), {
+                theme: 'outline', size: 'large', width: 300, text: 'signin_with'
+            });
+        } catch (e) {}
+    }
+
+    async function googleLoginCallback(response) {
+        var errEl = document.getElementById('loginError');
+        errEl.style.display = 'none';
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'google-login', credential: response.credential })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Google sign-in failed');
+            adminToken = data.token;
+            localStorage.setItem('admin_token', data.token);
+            showDashboard();
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+    }
+
+    async function emailLogin(e) {
+        e.preventDefault();
+        var email = document.getElementById('emailLoginInput').value.trim();
+        var password = document.getElementById('emailPasswordInput').value;
+        var btn = document.getElementById('emailLoginBtn');
+        var errEl = document.getElementById('loginError');
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        errEl.style.display = 'none';
+
+        try {
+            var res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'email-login', email: email, password: password })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Login failed');
+            adminToken = data.token;
+            localStorage.setItem('admin_token', data.token);
+            showDashboard();
+        } catch (err) {
+            errEl.textContent = err.message;
+            errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    }
+
     async function adminLogin(e) {
         e.preventDefault();
         var key = document.getElementById('adminKeyInput').value.trim();
@@ -456,7 +542,7 @@
             errEl.style.display = 'block';
         }
         btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.textContent = 'Sign In with Admin Key';
     }
 
     async function sendMagicLink() {

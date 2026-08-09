@@ -4,6 +4,8 @@
  * All requests require admin authentication via PARTNER_ADMIN_KEY.
  *
  * POST { action: "login", adminKey }                    → get admin session token
+ * POST { action: "google-login", credential }           → sign in with a Google ID token (allowed emails only)
+ * POST { action: "email-login", email, password }       → sign in with a preset per-user password
  * POST { action: "verify", token }                      → verify admin session
  * POST { action: "logout", token }                      → end admin session
  * POST { action: "list-partners", token }               → list all partners with stats
@@ -47,6 +49,8 @@ export async function onRequest(context) {
   const { action } = data;
 
   if (action === "login") return handleAdminLogin(env, data);
+  if (action === "google-login") return handleGoogleLogin(env, data);
+  if (action === "email-login") return handleEmailLogin(env, data);
   if (action === "send-magic-link") return handleSendMagicLink(env, request);
   if (action === "verify-magic-link") return handleVerifyMagicLink(env, data);
   if (action === "verify") return handleAdminVerify(env, data);
@@ -75,11 +79,12 @@ export async function onRequest(context) {
 }
 
 // ==================== ADMIN AUTH ====================
-async function handleAdminLogin(env, { adminKey }) {
-  if (!adminKey || adminKey !== env.PARTNER_ADMIN_KEY) {
-    return json({ ok: false, error: "Invalid admin key" }, 401);
-  }
 
+// Emails allowed to sign in via Google or a preset password. Google sign-in additionally
+// requires the token's email_verified flag and audience (client ID) to match.
+const ALLOWED_ADMIN_LOGIN_EMAILS = ["arin@searsmelvin.co.uk"];
+
+async function createAdminSession(env) {
   const token = generateToken(64);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
@@ -89,7 +94,72 @@ async function handleAdminLogin(env, { adminKey }) {
     headers: { ...headers, "Prefer": "return=minimal" },
     body: JSON.stringify({ token, expires_at: expiresAt }),
   });
-  if (!res.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+  if (!res.ok) return null;
+  return token;
+}
+
+async function handleAdminLogin(env, { adminKey }) {
+  if (!adminKey || adminKey !== env.PARTNER_ADMIN_KEY) {
+    return json({ ok: false, error: "Invalid admin key" }, 401);
+  }
+
+  const token = await createAdminSession(env);
+  if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  return json({ ok: true, token });
+}
+
+// Verifies a Google Identity Services ID token server-side (signature, audience,
+// expiry) via Google's tokeninfo endpoint, then checks the email against the allowlist.
+async function handleGoogleLogin(env, { credential }) {
+  if (!credential) return json({ ok: false, error: "Missing credential" }, 400);
+  if (!env.GOOGLE_CLIENT_ID) return json({ ok: false, error: "Google sign-in not configured" }, 500);
+
+  let payload;
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!res.ok) return json({ ok: false, error: "Invalid Google credential" }, 401);
+    payload = await res.json();
+  } catch {
+    return json({ ok: false, error: "Could not verify Google credential" }, 502);
+  }
+
+  if (payload.aud !== env.GOOGLE_CLIENT_ID) {
+    return json({ ok: false, error: "Invalid Google credential" }, 401);
+  }
+  if (payload.email_verified !== "true" && payload.email_verified !== true) {
+    return json({ ok: false, error: "Google email is not verified" }, 401);
+  }
+  const email = String(payload.email || "").toLowerCase();
+  if (!ALLOWED_ADMIN_LOGIN_EMAILS.includes(email)) {
+    return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
+  }
+
+  const token = await createAdminSession(env);
+  if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  return json({ ok: true, token });
+}
+
+// Preset per-user password login. Password is checked against ADMIN_PASSWORD_<LOCAL_PART>,
+// e.g. arin@searsmelvin.co.uk -> env.ADMIN_PASSWORD_ARIN. Nothing is stored in the codebase.
+async function handleEmailLogin(env, { email, password }) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail || !password) {
+    return json({ ok: false, error: "Email and password required" }, 400);
+  }
+  if (!ALLOWED_ADMIN_LOGIN_EMAILS.includes(normalizedEmail)) {
+    return json({ ok: false, error: "Invalid email or password" }, 401);
+  }
+
+  const envVarName = "ADMIN_PASSWORD_" + normalizedEmail.split("@")[0].toUpperCase();
+  const expectedPassword = env[envVarName];
+  if (!expectedPassword || password !== expectedPassword) {
+    return json({ ok: false, error: "Invalid email or password" }, 401);
+  }
+
+  const token = await createAdminSession(env);
+  if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
 
   return json({ ok: true, token });
 }
@@ -177,13 +247,8 @@ async function handleVerifyMagicLink(env, { magicToken }) {
   });
 
   // Create a proper session token (24hr)
-  const sessionToken = generateToken(64);
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ token: sessionToken, expires_at: expiresAt }),
-  });
+  const sessionToken = await createAdminSession(env);
+  if (!sessionToken) return json({ ok: false, error: "Failed to create session" }, 500);
 
   return json({ ok: true, token: sessionToken });
 }
