@@ -5,6 +5,9 @@
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "GOOGLE_CLIENT_ID": "319514824800-fbfkndi500m9b8tm7vueu04vbg2bqjus.apps.googleusercontent.com"
+  },
   "assets": {
     "directory": "."
   },
