@@ -2,6 +2,16 @@
  * Sears Melvin Memorials — Cloudflare Pages Function
  * Route: /api/submit (POST)
  */
+import {
+  RequestValidationError,
+  checkRateLimit,
+  getClientAddress,
+  hardenedJson,
+  isSameOriginRequest,
+  rateLimitResponse,
+  readBoundedJson,
+} from "./_security.js";
+
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
@@ -32,18 +42,13 @@ const STONE_COLOURS = {
   "Tropical Green": "#2a4a3a",
 };
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+  return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
 }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  if (!isSameOriginRequest(request)) return jsonResponse({ ok: false, error: "Forbidden" }, 403);
   if (!env.RESEND_API_KEY) {
     console.error("RESEND_API_KEY is not set");
     return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
@@ -52,11 +57,37 @@ export async function onRequestPost(context) {
     console.error("Supabase / SM_ORG_ID env not configured");
     return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
   }
+  const ipLimit = await checkRateLimit(env, request, "public-submission-ip", getClientAddress(request), {
+    maxAttempts: 20,
+    windowSeconds: 3600,
+    blockSeconds: 3600,
+    failClosed: true,
+  });
+  if (!ipLimit.allowed) return rateLimitResponse(jsonResponse, ipLimit.retryAfter);
+
   let data;
-  try { data = await request.json(); }
-  catch { return jsonResponse({ ok: false, error: "Invalid JSON" }, 400); }
+  try { data = await readBoundedJson(request, 64 * 1024); }
+  catch (error) {
+    const status = error instanceof RequestValidationError ? error.status : 400;
+    return jsonResponse({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
+  }
+  const validation = validateSubmission(data, env.SM_ORG_ID);
+  if (!validation.ok) return jsonResponse({ ok: false, error: validation.error }, 400);
+  data = validation.data;
+  if (!await verifyPhotoSubmissionCapabilities(env, data.photo_urls, data.photo_tokens)) {
+    return jsonResponse({ ok: false, error: "Invalid photo attachment capability" }, 403);
+  }
   if (!data.name || (!data.email && !data.phone))
     return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
+  if (data.email) {
+    const emailLimit = await checkRateLimit(env, request, "public-submission-email", data.email, {
+      maxAttempts: 5,
+      windowSeconds: 3600,
+      blockSeconds: 3600,
+      failClosed: true,
+    });
+    if (!emailLimit.allowed) return rateLimitResponse(jsonResponse, emailLimit.retryAfter);
+  }
   const submittedAt = new Date().toLocaleString("en-GB", {
     timeZone: "Europe/London", dateStyle: "medium", timeStyle: "short",
   });
@@ -72,7 +103,7 @@ export async function onRequestPost(context) {
 // hand it to ctx.waitUntil. Preserves error logging.
 function bg(label, task) {
   return Promise.resolve().then(task).catch(err => {
-    console.error(`[bg ${label}]`, err);
+    console.error(JSON.stringify({ message: "background_task_failed", task: label }));
   });
 }
 
@@ -109,9 +140,9 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
         },
       }),
     });
-    if (!res.ok) throw new Error(`create_quote RPC ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`create_quote RPC returned ${res.status}`);
   } catch (err) {
-    console.error("Supabase quote save failed:", err);
+    console.error(JSON.stringify({ message: "quote_save_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
   }
 
@@ -222,7 +253,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
       details: mergedDetails,
     });
   } catch (err) {
-    console.error("Supabase insert failed:", err);
+    console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
 
@@ -255,7 +286,7 @@ async function enquirySideEffects({
       let photoSignedUrls = [];
       if (Array.isArray(photo_urls) && photo_urls.length > 0) {
         try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
-        catch (err) { console.error("Failed to sign enquiry photo URLs:", err); }
+        catch { console.error(JSON.stringify({ message: "enquiry_photo_sign_failed" })); }
       }
       await sendEmail(env.RESEND_API_KEY, {
         from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
@@ -351,7 +382,7 @@ async function handleAppointment(ctx, data, submittedAt) {
       appointment_kind: appointment_type || null,
     });
   } catch (err) {
-    console.error("Supabase appointment insert failed:", err);
+    console.error(JSON.stringify({ message: "appointment_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
   }
 
@@ -376,7 +407,7 @@ async function appointmentSideEffects({
   try {
     calendarLink = await createGoogleCalendarEvent(env, { name, email, phone, appointment_type, appointment_date, appointment_time, notes, typeLabel });
   } catch (err) {
-    console.error("Google Calendar event creation failed:", err);
+    console.error(JSON.stringify({ message: "calendar_event_create_failed" }));
   }
 
   await Promise.allSettled([
@@ -470,8 +501,7 @@ async function createGoogleCalendarEvent(env, { name, email, phone, appointment_
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Google Calendar API error ${res.status}: ${errText}`);
+    throw new Error(`Google Calendar API returned ${res.status}`);
   }
 
   const created = await res.json();
@@ -491,7 +521,7 @@ async function getOAuthAccessToken(env) {
     }),
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error("OAuth token refresh failed: " + JSON.stringify(data));
+  if (!data.access_token) throw new Error("OAuth token refresh failed");
   return data.access_token;
 }
 
@@ -517,7 +547,7 @@ async function getServiceAccountAccessToken(serviceAccount) {
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
   const tokenData = await tokenRes.json();
-  if (!tokenData.access_token) throw new Error("Service account token failed: " + JSON.stringify(tokenData));
+  if (!tokenData.access_token) throw new Error("Service account token failed");
   return tokenData.access_token;
 }
 
@@ -955,7 +985,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
               <tr>
                 <td style="padding:14px 18px;font-family:Arial,sans-serif;">
                   <p style="font-size:13px;color:#555555;margin:0 0 8px;line-height:1.5;">Changed your mind about colour, size, or extras? You can update your quote at any time:</p>
-                  <a href="https://searsmelvin.co.uk/quote?token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
+                  <a href="https://searsmelvin.co.uk/quote#token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
                 </td>
               </tr>
             </table>
@@ -966,7 +996,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
         <tr>
           <td style="padding:0 28px 16px;">
             <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
-              ${email ? `<a href="https://searsmelvin.co.uk/quote?email=${encodeURIComponent(email)}" style="color:#8B7355;text-decoration:none;">View all your quotes</a> &middot; Quote reference available in your account` : ""}
+              ${email ? `<a href="https://searsmelvin.co.uk/quote" style="color:#8B7355;text-decoration:none;">Access your quotes securely</a> &middot; Quote reference available in your account` : ""}
             </p>
           </td>
         </tr>
@@ -1181,10 +1211,9 @@ function formatEnquiryTypeLabel(slug) {
 // Storage bucket where the contact form's renovation photos live. Kept in
 // sync with /api/upload-photo's BUCKET constant.
 const ENQUIRY_PHOTO_BUCKET = "enquiry-photos";
-// Sign for 1 year so the team can re-open old enquiry emails without the
-// thumbnail links breaking. If the team needs longer-lived access, regenerate
-// from the admin viewer (which signs on demand).
-const ENQUIRY_PHOTO_SIGN_TTL_S = 60 * 60 * 24 * 365;
+// Email is easy to forward. Keep embedded photo capabilities short-lived;
+// authorised staff can regenerate one-hour links from the admin viewer.
+const ENQUIRY_PHOTO_SIGN_TTL_S = 60 * 60 * 24 * 7;
 
 // Resolve raw storage paths to fully qualified signed URLs the email client
 // can render. Uses the batch-sign endpoint to keep this to a single round-trip
@@ -1202,7 +1231,7 @@ async function signEnquiryPhotoUrls(env, paths) {
     },
   );
   if (!res.ok) {
-    console.error(`Storage batch-sign error ${res.status}: ${await res.text()}`);
+    console.error(JSON.stringify({ message: "storage_batch_sign_failed", status: res.status }));
     return [];
   }
   const rows = await res.json();
@@ -1255,7 +1284,7 @@ export async function upsertPerson(env, { name, email, phone }) {
     `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer&limit=1`,
     { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
   );
-  if (!existingRes.ok) throw new Error(`Supabase people lookup error ${existingRes.status}: ${await existingRes.text()}`);
+  if (!existingRes.ok) throw new Error(`Supabase people lookup returned ${existingRes.status}`);
   const existing = (await existingRes.json())[0] || null;
 
   if (existing) {
@@ -1268,7 +1297,7 @@ export async function upsertPerson(env, { name, email, phone }) {
         `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
         { method: "PATCH", headers, body: JSON.stringify(patchBody) }
       );
-      if (!patchRes.ok) throw new Error(`Supabase people update error ${patchRes.status}: ${await patchRes.text()}`);
+      if (!patchRes.ok) throw new Error(`Supabase people update returned ${patchRes.status}`);
     }
     return { id: existing.id, is_customer: !!existing.is_customer };
   }
@@ -1317,7 +1346,7 @@ async function createEnquiry(env, payload) {
     upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone }),
     cemeteryNeeded
       ? lookupCemeteryIdByName(env, payload.location).catch(err => {
-          console.error("Cemetery name lookup failed (non-fatal):", err);
+          console.error(JSON.stringify({ message: "cemetery_lookup_failed" }));
           return null;
         })
       : Promise.resolve(null),
@@ -1346,7 +1375,7 @@ async function createEnquiry(env, payload) {
     headers: supabaseHeaders(env),
     body: JSON.stringify(enqBody),
   });
-  if (!enqRes.ok) throw new Error(`Supabase enquiries error ${enqRes.status}: ${await enqRes.text()}`);
+  if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
   return { personId: person.id };
 }
 
@@ -1378,7 +1407,7 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
       email, phone: phone || undefined, source: "Website", tags, customFields,
     }),
   });
-  if (!res.ok) throw new Error(`GHL error ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`GHL returned ${res.status}`);
   const body = await res.json();
   return body.contact?.id || null;
 }
@@ -1438,7 +1467,7 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
         status: "open",
       }),
     });
-    if (!res.ok) throw new Error(`GHL Opportunity update error ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`GHL Opportunity update returned ${res.status}`);
     return;
   }
 
@@ -1455,10 +1484,117 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
       status: "open",
     }),
   });
-  if (!res.ok) throw new Error(`GHL Opportunity error ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`GHL Opportunity returned ${res.status}`);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function validateSubmission(input, organizationId) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { ok: false, error: "Invalid submission" };
+  }
+  const data = { ...input };
+  const channel = String(data.channel || data.type || "").trim().toLowerCase();
+  if (!["quote", "appointment", "call", "contact", "shortlist"].includes(channel)) {
+    return { ok: false, error: "Invalid enquiry type" };
+  }
+  data.channel = channel;
+  if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 120) {
+    return { ok: false, error: "A valid name is required" };
+  }
+  data.name = data.name.trim();
+  if (data.email !== undefined && data.email !== null && data.email !== "") {
+    if (typeof data.email !== "string") return { ok: false, error: "Invalid email address" };
+    data.email = data.email.trim().toLowerCase();
+    if (data.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      return { ok: false, error: "Invalid email address" };
+    }
+  } else {
+    data.email = "";
+  }
+  if (data.phone !== undefined && data.phone !== null && data.phone !== "") {
+    if (typeof data.phone !== "string" || data.phone.length > 40) {
+      return { ok: false, error: "Invalid phone number" };
+    }
+    data.phone = data.phone.trim();
+  } else {
+    data.phone = "";
+  }
+  const boundedText = [
+    ["message", 5000],
+    ["sub_type", 120],
+    ["enquiry_type", 120],
+    ["source_page", 300],
+    ["location", 250],
+    ["cemetery", 250],
+    ["grave_number", 120],
+  ];
+  for (const [key, max] of boundedText) {
+    if (data[key] === undefined || data[key] === null) continue;
+    if (typeof data[key] !== "string" || data[key].length > max) {
+      return { ok: false, error: `${key.replace(/_/g, " ")} is too long` };
+    }
+    data[key] = data[key].trim();
+  }
+  if (data.photo_urls !== undefined && data.photo_urls !== null) {
+    if (!Array.isArray(data.photo_urls) || data.photo_urls.length > 10) {
+      return { ok: false, error: "Too many photo attachments" };
+    }
+    const safeOrganizationId = String(organizationId).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const photoPathPattern = new RegExp(
+      "^" + safeOrganizationId + "/\\d{4}/(?:0[1-9]|1[0-2])/[0-9a-f-]{36}-[A-Za-z0-9_.-]{1,80}$",
+    );
+    if (!data.photo_urls.every(path =>
+      typeof path === "string"
+      && path.length <= 300
+      && photoPathPattern.test(path)
+    )) {
+      return { ok: false, error: "Invalid photo attachment" };
+    }
+    if (!Array.isArray(data.photo_tokens)
+        || data.photo_tokens.length !== data.photo_urls.length
+        || !data.photo_tokens.every(token => typeof token === "string" && /^[0-9a-f]{64}$/.test(token))) {
+      return { ok: false, error: "Invalid photo attachment capability" };
+    }
+  } else if (data.photo_tokens !== undefined && data.photo_tokens !== null) {
+    return { ok: false, error: "Invalid photo attachment capability" };
+  }
+  if (data.product !== undefined && (
+    !data.product || typeof data.product !== "object" || Array.isArray(data.product)
+  )) {
+    return { ok: false, error: "Invalid product configuration" };
+  }
+  return { ok: true, data };
+}
+
+async function verifyPhotoSubmissionCapabilities(env, paths, tokens) {
+  if (!Array.isArray(paths) || paths.length === 0) return true;
+  if (!Array.isArray(tokens) || tokens.length !== paths.length) return false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.SUPABASE_SERVICE_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  for (let index = 0; index < paths.length; index++) {
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(`enquiry-photo-submit:${paths[index]}`),
+    );
+    const expected = Array.from(new Uint8Array(signature), byte => byte.toString(16).padStart(2, "0")).join("");
+    if (!timingSafeEqual(expected, tokens[index])) return false;
+  }
+  return true;
+}
+
+function timingSafeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let index = 0; index < a.length; index++) diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return diff === 0;
+}
+
 function formatPrice(str) {
   const n = parseFloat(str);
   if (isNaN(n)) return str || "—";
@@ -1478,15 +1614,11 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
     body: JSON.stringify({ from, to, subject, html }),
   });
   if (!res.ok) {
-    const body = await res.text();
-    console.error(`Resend error ${res.status} sending to ${to}: ${body}`);
-    throw new Error(`Resend ${res.status}: ${body}`);
+    console.error(JSON.stringify({ message: "resend_request_failed", status: res.status }));
+    throw new Error(`Resend request failed with status ${res.status}`);
   }
 }
 
 function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS },
-  });
+  return hardenedJson(data, status);
 }

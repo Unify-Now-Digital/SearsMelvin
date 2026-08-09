@@ -11,14 +11,32 @@
  * body-token fallback only preserves sessions issued before this hardening.
  */
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import {
+  RequestValidationError,
+  checkRateLimit,
+  getClientAddress,
+  hardenedJson,
+  isSameOriginRequest,
+  queueSecurityEvent,
+  rateLimitResponse,
+  readBoundedJson,
+  sha256Hex,
+  supabaseHeaders,
+} from "./_security.js";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const STAGE_VALUES = new Set([
+  "quote_received", "deposit_paid", "design_in_progress", "proof_ready",
+  "inscription_approved", "in_production", "installation_scheduled", "completed",
+]);
+const INSCRIPTION_STATUS_VALUES = new Set(["pending", "awaiting_approval", "approved", "change_requested"]);
+const PARTNER_STATUS_VALUES = new Set(["pending", "approved", "declined"]);
+const ENQUIRY_CHANNEL_VALUES = new Set(["quote", "contact", "appointment", "call", "shortlist"]);
+const CUSTOMER_EMAIL_KINDS = new Set(["proof_ready", "tracking", "inscription_confirm"]);
+const PBKDF2_ITERATIONS = 600000;
 
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+  return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
 }
 
 export async function onRequest(context) {
@@ -29,19 +47,55 @@ export async function onRequest(context) {
   if (!isSameOriginRequest(request)) {
     return json({ ok: false, error: "Forbidden" }, 403);
   }
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !UUID_RE.test(String(env.SM_ORG_ID || ""))) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
 
+  const broadLimit = await checkRateLimit(env, request, "admin-api-ip", getClientAddress(request), {
+    maxAttempts: 600,
+    windowSeconds: 300,
+    blockSeconds: 300,
+    failClosed: true,
+  });
+  if (!broadLimit.allowed) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "admin_api_rate_limited",
+      actorType: "anonymous",
+      success: false,
+      metadata: { retry_after: broadLimit.retryAfter },
+    });
+    return rateLimitResponse(json, broadLimit.retryAfter);
+  }
+
   let data;
-  try { data = await request.json(); }
-  catch { return json({ ok: false, error: "Invalid JSON" }, 400); }
+  try { data = await readBoundedJson(request); }
+  catch (error) {
+    const status = error instanceof RequestValidationError ? error.status : 400;
+    return json({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
+  }
 
   const { action } = data;
 
-  if (action === "google-login") return handleGoogleLogin(env, data);
+  if (action === "google-login") {
+    const loginLimit = await checkRateLimit(env, request, "admin-google-login-ip", getClientAddress(request), {
+      maxAttempts: 10,
+      windowSeconds: 900,
+      blockSeconds: 1800,
+      failClosed: true,
+    });
+    if (!loginLimit.allowed) {
+      queueSecurityEvent(context, env, request, {
+        eventType: "admin_login_rate_limited",
+        actorType: "anonymous",
+        success: false,
+        metadata: { retry_after: loginLimit.retryAfter },
+      });
+      return rateLimitResponse(json, loginLimit.retryAfter);
+    }
+    return handleGoogleLogin(context, env, request, data);
+  }
   if (action === "verify") return handleAdminVerify(env, request, data);
-  if (action === "logout") return handleAdminLogout(env, request, data);
+  if (action === "logout") return handleAdminLogout(context, env, request, data);
 
   // All other actions require valid admin session
   const valid = await verifyAdminToken(env, getCookie(request, ADMIN_COOKIE) || data.token);
@@ -72,6 +126,7 @@ export async function onRequest(context) {
 const ADMIN_DOMAIN = "searsmelvin.co.uk";
 const ADMIN_COOKIE = "__Host-sm_admin_session";
 const ADMIN_SESSION_SECONDS = 8 * 60 * 60;
+const TRACKING_TOKEN_SECONDS = 30 * 24 * 60 * 60;
 const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 let googleJwksCache = null;
 
@@ -191,7 +246,11 @@ async function verifyGoogleIdToken(credential, expectedAudience) {
   if (!Number.isFinite(Number(payload.exp)) || Number(payload.exp) <= now) {
     throw new Error("Invalid Google credential");
   }
-  if (!Number.isFinite(Number(payload.iat)) || Number(payload.iat) > now + 120) {
+  if (!Number.isFinite(Number(payload.iat))
+      || Number(payload.iat) > now + 120
+      || Number(payload.iat) < now - 7200
+      || Number(payload.exp) > now + 7200
+      || Number(payload.exp) <= Number(payload.iat)) {
     throw new Error("Invalid Google credential");
   }
   if (payload.nbf != null && Number(payload.nbf) > now + 120) {
@@ -205,7 +264,7 @@ async function verifyGoogleIdToken(credential, expectedAudience) {
 
 // Verifies a Google Identity Services ID token locally against Google's rotating
 // public signing keys, then requires the Workspace hosted-domain claim.
-async function handleGoogleLogin(env, { credential }) {
+async function handleGoogleLogin(context, env, request, { credential }) {
   if (!credential) return json({ ok: false, error: "Missing credential" }, 400);
   if (!env.GOOGLE_CLIENT_ID) return json({ ok: false, error: "Google sign-in not configured" }, 500);
 
@@ -216,18 +275,43 @@ async function handleGoogleLogin(env, { credential }) {
     if (error instanceof GoogleVerificationUnavailable) {
       return json({ ok: false, error: "Google verification is temporarily unavailable" }, 502);
     }
+    queueSecurityEvent(context, env, request, {
+      eventType: "admin_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      metadata: { reason: "invalid_google_credential" },
+    });
     return json({ ok: false, error: "Invalid Google credential" }, 401);
   }
   if (payload.email_verified !== "true" && payload.email_verified !== true) {
     return json({ ok: false, error: "Google email is not verified" }, 401);
   }
-  const email = String(payload.email || "").toLowerCase();
-  if (!email.endsWith(`@${ADMIN_DOMAIN}`) || payload.hd !== ADMIN_DOMAIN) {
+  if (typeof payload.email !== "string" || payload.email.length > 254) {
+    return json({ ok: false, error: "Invalid Google credential" }, 401);
+  }
+  const email = payload.email.toLowerCase();
+  const identifierHash = await sha256Hex(email);
+  const domainEmail = new RegExp(`^[a-z0-9._%+-]{1,64}@${ADMIN_DOMAIN.replaceAll(".", "\\.")}$`);
+  if (!domainEmail.test(email) || payload.hd !== ADMIN_DOMAIN) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "admin_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      identifierHash,
+      metadata: { reason: "workspace_domain" },
+    });
     return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
   }
 
   const token = await createAdminSession(env);
   if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  queueSecurityEvent(context, env, request, {
+    eventType: "admin_login_succeeded",
+    actorType: "admin",
+    success: true,
+    identifierHash,
+  });
 
   return json({ ok: true }, 200, { "Set-Cookie": sessionCookie(ADMIN_COOKIE, token, ADMIN_SESSION_SECONDS) });
 }
@@ -240,14 +324,22 @@ async function handleAdminVerify(env, request, data) {
   return json({ ok: true });
 }
 
-async function handleAdminLogout(env, request, data) {
+async function handleAdminLogout(context, env, request, data) {
   const token = getCookie(request, ADMIN_COOKIE) || data.token;
   const headers = sbHeaders(env);
   if (token) {
     const tokenHash = await hashSessionToken(token);
     await deleteSessionByEitherToken(env, "admin_sessions", tokenHash, token, headers);
   }
-  return json({ ok: true }, 200, { "Set-Cookie": clearCookie(ADMIN_COOKIE) });
+  queueSecurityEvent(context, env, request, {
+    eventType: "admin_logout",
+    actorType: "admin",
+    success: true,
+  });
+  return json({ ok: true }, 200, {
+    "Set-Cookie": clearCookie(ADMIN_COOKIE),
+    "Clear-Site-Data": '"cache", "storage"',
+  });
 }
 
 async function verifyAdminToken(env, token) {
@@ -263,6 +355,9 @@ async function verifyAdminToken(env, token) {
 
 // ==================== LIST PARTNERS ====================
 async function listPartners(env, { filter }) {
+  if (filter && filter !== "all" && !PARTNER_STATUS_VALUES.has(filter)) {
+    return json({ ok: false, error: "Invalid partner filter" }, 400);
+  }
   const headers = sbHeaders(env);
 
   let url = `${env.SUPABASE_URL}/rest/v1/partners?select=id,email,name,company,phone,status,active,notes,created_at,approved_at,declined_at&order=created_at.desc`;
@@ -276,7 +371,7 @@ async function listPartners(env, { filter }) {
 
   // Get order counts per partner
   const orderRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?partner_id=not.is.null&select=partner_id,id,value,status`,
+    `${env.SUPABASE_URL}/rest/v1/orders?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=not.is.null&select=partner_id,id,value,status`,
     { headers },
   );
   let ordersByPartner = {};
@@ -304,16 +399,42 @@ async function listPartners(env, { filter }) {
 
 // ==================== APPROVE PARTNER ====================
 async function approvePartner(env, { partnerId }) {
-  if (!partnerId) return json({ ok: false, error: "Partner ID required" }, 400);
+  if (!isPositiveInteger(partnerId)) return json({ ok: false, error: "Valid partner ID required" }, 400);
 
   const headers = sbHeaders(env);
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}`, {
+  const lookupRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}&select=id,email,name,company&limit=1`,
+    { headers },
+  );
+  if (!lookupRes.ok) return json({ ok: false, error: "Failed to load partner" }, 500);
+  const existing = await lookupRes.json();
+  if (existing.length === 0) return json({ ok: false, error: "Partner not found" }, 404);
+  const partner = existing[0];
+
+  const setupToken = generateToken(32);
+  const setupTokenHash = await hashSessionToken(setupToken);
+  const disabledPasswordHash = await hashGeneratedPassword(generateToken(32));
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?partner_id=eq.${partner.id}`, {
+    method: "DELETE",
+    headers,
+  });
+  const tokenRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ partner_id: partner.id, token: setupTokenHash, expires_at: expiresAt }),
+  });
+  if (!tokenRes.ok) return json({ ok: false, error: "Failed to create partner setup link" }, 500);
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}&select=id,email,name,company,status,active,approved_at,declined_at`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
       status: "approved",
       active: true,
       approved_at: new Date().toISOString(),
+      password_hash: disabledPasswordHash,
     }),
   });
 
@@ -321,15 +442,32 @@ async function approvePartner(env, { partnerId }) {
   const rows = await res.json();
   if (rows.length === 0) return json({ ok: false, error: "Partner not found" }, 404);
 
-  return json({ ok: true, partner: rows[0] });
+  // A pending account should never have a session, but delete any stale rows
+  // defensively before activation.
+  await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?partner_id=eq.${partner.id}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  let setupEmailSent = false;
+  if (env.RESEND_API_KEY) {
+    try {
+      await sendPartnerSetupEmail(env.RESEND_API_KEY, partner, setupToken);
+      setupEmailSent = true;
+    } catch {
+      console.error(JSON.stringify({ message: "partner_setup_email_failed", partner_id: partner.id }));
+    }
+  }
+
+  return json({ ok: true, partner: rows[0], setupEmailSent });
 }
 
 // ==================== DECLINE PARTNER ====================
 async function declinePartner(env, { partnerId }) {
-  if (!partnerId) return json({ ok: false, error: "Partner ID required" }, 400);
+  if (!isPositiveInteger(partnerId)) return json({ ok: false, error: "Valid partner ID required" }, 400);
 
   const headers = sbHeaders(env);
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}`, {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}&select=id,email,name,company,status,active,approved_at,declined_at`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
@@ -369,7 +507,7 @@ async function getDashboard(env) {
 
   // Get all orders with partner_id
   const orderRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?select=id,partner_id,value,status,created_at&order=created_at.desc&limit=200`,
+    `${env.SUPABASE_URL}/rest/v1/orders?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=id,partner_id,value,status,created_at&order=created_at.desc&limit=200`,
     { headers },
   );
   let orderStats = { total: 0, partnerOrders: 0, totalValue: 0, partnerValue: 0, pending: 0, completed: 0 };
@@ -400,19 +538,31 @@ async function getDashboard(env) {
 
 // ==================== LIST ORDERS ====================
 async function listOrders(env, { filter, search, partnerId, dateFrom, dateTo, offset, limit }) {
+  if (filter && filter !== "all" && !STAGE_VALUES.has(filter)) {
+    return json({ ok: false, error: "Invalid order filter" }, 400);
+  }
+  if (partnerId && !isPositiveInteger(partnerId)) {
+    return json({ ok: false, error: "Invalid partner ID" }, 400);
+  }
+  if (search !== undefined && (typeof search !== "string" || search.length > 200)) {
+    return json({ ok: false, error: "Invalid search" }, 400);
+  }
+  if ((dateFrom && !isIsoDate(dateFrom)) || (dateTo && !isIsoDate(dateTo))) {
+    return json({ ok: false, error: "Invalid date filter" }, 400);
+  }
   const headers = sbHeaders(env);
   const select = [
     "id", "order_number", "person_id",
     "people(id,first_name,last_name,email,phone,is_customer)",
     "sku", "color", "value", "permit_fee", "status", "stage",
-    "location", "tracking_token", "inscription_text", "inscription_status",
+    "location", "inscription_text", "inscription_status",
     "proof_url", "proof_uploaded_at", "proof_notes",
     "estimated_completion", "installation_date",
     "partner_id", "admin_notes", "product_config", "notes",
-    "edit_token", "order_type", "created_at", "updated_at",
+    "order_type", "created_at", "updated_at",
     "partners(id,name,company,email)"
   ].join(",");
-  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${env.SM_ORG_ID}` : "";
+  const orgFilter = `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`;
   const pageSize = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 200);
   const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
   let url = `${env.SUPABASE_URL}/rest/v1/orders?select=${select}&order=created_at.desc&limit=${pageSize}&offset=${pageOffset}${orgFilter}`;
@@ -467,6 +617,12 @@ function personFullName(p) {
 
 // ==================== LIST ENQUIRIES ====================
 async function listEnquiries(env, { channel, status, limit, offset }) {
+  if (channel && channel !== "all" && !ENQUIRY_CHANNEL_VALUES.has(channel)) {
+    return json({ ok: false, error: "Invalid enquiry channel" }, 400);
+  }
+  if (status && status !== "all" && (typeof status !== "string" || !/^[a-z][a-z_]{0,31}$/.test(status))) {
+    return json({ ok: false, error: "Invalid enquiry status" }, 400);
+  }
   const headers = sbHeaders(env);
   const pageSize = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 200);
   const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
@@ -476,12 +632,12 @@ async function listEnquiries(env, { channel, status, limit, offset }) {
     limit: String(pageSize),
     offset: String(pageOffset),
   });
-  if (env.SM_ORG_ID) params.append("organization_id", `eq.${env.SM_ORG_ID}`);
+  params.append("organization_id", `eq.${env.SM_ORG_ID}`);
   if (channel && channel !== "all") params.append("channel", `eq.${channel}`);
   if (status && status !== "all") params.append("status", `eq.${status}`);
 
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?${params}`, { headers });
-  if (!res.ok) return json({ ok: false, error: "Database error", detail: await res.text() }, 500);
+  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
   const enquiries = await res.json();
 
   // Sign every photo path across every enquiry in a single batch call, then redistribute.
@@ -520,7 +676,7 @@ async function signPhotoPaths(env, paths) {
     body: JSON.stringify({ expiresIn: 3600, paths }),
   });
   if (!res.ok) {
-    console.error(`Storage sign failed ${res.status}: ${await res.text()}`);
+    console.error(JSON.stringify({ message: "storage_sign_failed", status: res.status }));
     return paths.map(() => null);
   }
   const rows = await res.json();
@@ -538,7 +694,9 @@ async function listProducts(env) {
 
 // ==================== GET PRODUCT (admin, by slug, includes hidden) ====================
 async function getProduct(env, { slug }) {
-  if (!slug) return json({ ok: false, error: "Slug required" }, 400);
+  if (typeof slug !== "string" || !/^[a-z0-9-]{1,120}$/.test(slug)) {
+    return json({ ok: false, error: "Valid slug required" }, 400);
+  }
   const headers = sbHeaders(env);
   const productRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&select=*,product_categories(name,slug)&limit=1`,
@@ -559,13 +717,30 @@ async function getProduct(env, { slug }) {
 
 // ==================== UPDATE ORDER ====================
 async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate, adminNotes }) {
-  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  if (!UUID_RE.test(String(orderId || ""))) return json({ ok: false, error: "Valid order ID required" }, 400);
+  if (stage !== undefined && !STAGE_VALUES.has(stage)) return json({ ok: false, error: "Invalid order stage" }, 400);
+  if (inscriptionStatus !== undefined && !INSCRIPTION_STATUS_VALUES.has(inscriptionStatus)) {
+    return json({ ok: false, error: "Invalid inscription status" }, 400);
+  }
+  if (!isNullableText(inscriptionText, 5000)) return json({ ok: false, error: "Invalid inscription text" }, 400);
+  if (!isNullableText(proofNotes, 2000)) return json({ ok: false, error: "Invalid proof notes" }, 400);
+  if (!isNullableText(estimatedCompletion, 120)) return json({ ok: false, error: "Invalid estimated completion" }, 400);
+  if (!isNullableText(adminNotes, 5000)) return json({ ok: false, error: "Invalid admin notes" }, 400);
+  if (proofUrl !== undefined && !isAllowedProofUrl(proofUrl, env)) {
+    return json({ ok: false, error: "Proof URL must use approved Sears Melvin storage" }, 400);
+  }
+  if (installationDate !== undefined && installationDate !== null && !isIsoDate(installationDate)) {
+    return json({ ok: false, error: "Installation date must be YYYY-MM-DD" }, 400);
+  }
+  if ([stage, inscriptionText, inscriptionStatus, proofUrl, proofNotes, estimatedCompletion, installationDate, adminNotes].every(value => value === undefined)) {
+    return json({ ok: false, error: "No order changes supplied" }, 400);
+  }
 
   const headers = sbHeaders(env);
 
   // Fetch the row first so we can produce a meaningful audit trail.
   const beforeRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=stage,inscription_text,inscription_status,proof_url,proof_notes,estimated_completion,installation_date,admin_notes&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=stage,inscription_text,inscription_status,proof_url,proof_notes,estimated_completion,installation_date,admin_notes&limit=1`,
     { headers }
   );
   const beforeRows = beforeRes.ok ? await beforeRes.json() : [];
@@ -573,19 +748,19 @@ async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionSt
 
   const updates = {};
   if (stage !== undefined) updates.stage = stage;
-  if (inscriptionText !== undefined) updates.inscription_text = inscriptionText;
+  if (inscriptionText !== undefined) updates.inscription_text = normaliseNullableText(inscriptionText);
   if (inscriptionStatus !== undefined) updates.inscription_status = inscriptionStatus;
   if (proofUrl !== undefined) {
-    updates.proof_url = proofUrl;
-    updates.proof_uploaded_at = new Date().toISOString();
+    updates.proof_url = normaliseNullableText(proofUrl);
+    updates.proof_uploaded_at = proofUrl ? new Date().toISOString() : null;
   }
-  if (proofNotes !== undefined) updates.proof_notes = proofNotes;
-  if (estimatedCompletion !== undefined) updates.estimated_completion = estimatedCompletion;
+  if (proofNotes !== undefined) updates.proof_notes = normaliseNullableText(proofNotes);
+  if (estimatedCompletion !== undefined) updates.estimated_completion = normaliseNullableText(estimatedCompletion);
   if (installationDate !== undefined) updates.installation_date = installationDate;
-  if (adminNotes !== undefined) updates.admin_notes = adminNotes;
+  if (adminNotes !== undefined) updates.admin_notes = normaliseNullableText(adminNotes);
   updates.updated_at = new Date().toISOString();
 
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify(updates),
@@ -630,33 +805,22 @@ async function updateOrder(env, { orderId, stage, inscriptionText, inscriptionSt
 
 // ==================== GENERATE TRACKING TOKEN ====================
 async function generateTracking(env, { orderId }) {
-  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  if (!UUID_RE.test(String(orderId || ""))) return json({ ok: false, error: "Valid order ID required" }, 400);
 
   const headers = sbHeaders(env);
 
-  // Check if order already has a tracking token
+  // Confirm the order belongs to this organisation before issuing a capability.
   const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,tracking_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=id&limit=1`,
     { headers },
   );
   if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
   const rows = await checkRes.json();
   if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
 
-  if (rows[0].tracking_token) {
-    return json({ ok: true, trackingToken: rows[0].tracking_token, alreadyExists: true });
-  }
-
-  const token = generateToken(32);
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
-    method: "PATCH",
-    headers: { ...headers, "Prefer": "return=representation" },
-    body: JSON.stringify({ tracking_token: token }),
-  });
-
-  if (!res.ok) return json({ ok: false, error: "Failed to generate token" }, 500);
-
-  return json({ ok: true, trackingToken: token });
+  const issued = await issueTrackingToken(env, orderId, headers);
+  if (!issued) return json({ ok: false, error: "Failed to generate token" }, 500);
+  return json({ ok: true, trackingToken: issued.token, expiresAt: issued.expiresAt });
 }
 
 // ==================== LIST INSCRIPTION REQUESTS ====================
@@ -667,7 +831,8 @@ async function listInscriptionRequests(env) {
   const res = await fetch(
     `${env.SUPABASE_URL}/rest/v1/inscription_requests?status=eq.pending` +
       `&select=id,order_id,requested_text,reason,created_at,` +
-      `orders(id,sku,inscription_text,people(first_name,last_name,email))` +
+      `orders!inner(id,sku,inscription_text,organization_id,people(first_name,last_name,email))` +
+      `&orders.organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
       `&order=created_at.desc&limit=50`,
     { headers },
   );
@@ -680,13 +845,14 @@ async function listInscriptionRequests(env) {
 
 // ==================== RESOLVE INSCRIPTION REQUEST ====================
 async function resolveInscription(env, { requestId, accept }) {
-  if (!requestId) return json({ ok: false, error: "Request ID required" }, 400);
+  if (!isPositiveInteger(requestId)) return json({ ok: false, error: "Valid request ID required" }, 400);
+  if (typeof accept !== "boolean") return json({ ok: false, error: "A true/false decision is required" }, 400);
 
   const headers = sbHeaders(env);
 
   // Get the request
   const reqRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${encodeURIComponent(requestId)}&select=id,order_id,requested_text&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/inscription_requests?id=eq.${encodeURIComponent(requestId)}&select=id,order_id,requested_text,orders!inner(organization_id)&orders.organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&limit=1`,
     { headers },
   );
   if (!reqRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -707,7 +873,7 @@ async function resolveInscription(env, { requestId, accept }) {
 
   // If accepted, update the order's inscription text
   if (accept) {
-    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(inscReq.order_id)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
       method: "PATCH",
       headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({
@@ -718,7 +884,7 @@ async function resolveInscription(env, { requestId, accept }) {
     });
   } else {
     // Declined — revert to previous status
-    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${inscReq.order_id}`, {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(inscReq.order_id)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
       method: "PATCH",
       headers: { ...headers, "Prefer": "return=minimal" },
       body: JSON.stringify({
@@ -749,13 +915,16 @@ async function logOrderEvents(env, orderId, events) {
     });
   } catch (err) {
     // Non-fatal: don't block the user-visible action if logging fails.
-    console.error("Failed to log order events:", err);
+    console.error(JSON.stringify({ message: "order_event_log_failed" }));
   }
 }
 
 async function listOrderEvents(env, { orderId }) {
-  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  if (!UUID_RE.test(String(orderId || ""))) return json({ ok: false, error: "Valid order ID required" }, 400);
   const headers = sbHeaders(env);
+  if (!await orderBelongsToOrganization(env, orderId, headers)) {
+    return json({ ok: false, error: "Order not found" }, 404);
+  }
   const res = await fetch(
     `${env.SUPABASE_URL}/rest/v1/order_events?order_id=eq.${encodeURIComponent(orderId)}&select=*&order=created_at.desc&limit=200`,
     { headers }
@@ -766,12 +935,13 @@ async function listOrderEvents(env, { orderId }) {
 
 // ==================== SEND CUSTOMER EMAIL ====================
 async function sendCustomerEmail(env, { orderId, kind }) {
-  if (!orderId) return json({ ok: false, error: "Order ID required" }, 400);
+  if (!UUID_RE.test(String(orderId || ""))) return json({ ok: false, error: "Valid order ID required" }, 400);
+  if (!CUSTOMER_EMAIL_KINDS.has(kind)) return json({ ok: false, error: "Unknown email kind" }, 400);
   if (!env.RESEND_API_KEY) return json({ ok: false, error: "Email not configured" }, 500);
 
   const headers = sbHeaders(env);
   const orderRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,people(first_name,last_name,email),sku,proof_url,proof_notes,inscription_text,tracking_token&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=id,people(first_name,last_name,email),sku,proof_url,proof_notes,inscription_text&limit=1`,
     { headers }
   );
   if (!orderRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -782,18 +952,13 @@ async function sendCustomerEmail(env, { orderId, kind }) {
   const customerName = personFullName(order.people);
   if (!customerEmail) return json({ ok: false, error: "Order has no customer email" }, 400);
 
-  // Generate a tracking token if one doesn't exist yet (used by tracking + proof emails).
-  let trackingToken = order.tracking_token;
-  if (!trackingToken && (kind === "tracking" || kind === "proof_ready" || kind === "inscription_confirm")) {
-    trackingToken = generateToken(32);
-    await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
-      method: "PATCH",
-      headers: { ...headers, "Prefer": "return=minimal" },
-      body: JSON.stringify({ tracking_token: trackingToken }),
-    });
-  }
+  // Every email rotates the link. A forwarded or older email stops working,
+  // while the database stores only a 30-day SHA-256 digest.
+  const issued = await issueTrackingToken(env, orderId, headers);
+  if (!issued) return json({ ok: false, error: "Failed to create secure tracking link" }, 500);
+  const trackingToken = issued.token;
 
-  const trackUrl = `https://searsmelvin.co.uk/track?token=${encodeURIComponent(trackingToken || "")}`;
+  const trackUrl = `https://searsmelvin.co.uk/track#token=${encodeURIComponent(trackingToken || "")}`;
   const greeting = customerName ? `Dear ${customerName},` : "Hello,";
 
   let subject, html;
@@ -835,8 +1000,8 @@ async function sendCustomerEmail(env, { orderId, kind }) {
       subject,
       html,
     });
-  } catch (err) {
-    return json({ ok: false, error: "Email failed: " + err.message }, 500);
+  } catch {
+    return json({ ok: false, error: "Email delivery failed" }, 500);
   }
 
   await logOrderEvents(env, orderId, [{
@@ -880,7 +1045,26 @@ async function sendResend(apiKey, { from, to, subject, html }) {
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from, to, subject, html }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new Error(`Email provider returned ${res.status}`);
+}
+
+async function sendPartnerSetupEmail(apiKey, partner, token) {
+  const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
+  const setupUrl = `https://searsmelvin.co.uk/partner#reset=${encodeURIComponent(token)}`;
+  await sendResend(apiKey, {
+    from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+    to: partner.email,
+    subject: "Set up your Sears Melvin Partner Portal password",
+    html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F5F3F0;font-family:-apple-system,sans-serif;color:#2C2C2C;">
+      <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:32px;">
+        <h2 style="font-family:Georgia,serif;font-weight:400;">Partner access approved</h2>
+        <p>Hi ${escapeHtml(firstName)},</p>
+        <p>Your Sears Melvin Partner Portal request has been approved. Use the one-time button below to create your password and verify this mailbox.</p>
+        <p style="text-align:center;margin:28px 0;"><a href="${setupUrl}" style="display:inline-block;background:#2C2C2C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;">Create my password</a></p>
+        <p style="font-size:13px;color:#666;">This link expires in 24 hours. If you did not request partner access, please ignore this email and contact info@searsmelvin.co.uk.</p>
+      </div>
+    </body></html>`,
+  });
 }
 
 function escapeHtml(s) {
@@ -893,6 +1077,53 @@ function escapeHtml(s) {
 }
 
 // ==================== HELPERS ====================
+function isPositiveInteger(value) {
+  return Number.isSafeInteger(Number(value)) && Number(value) > 0 && String(value).trim() === String(Number(value));
+}
+
+function isNullableText(value, maxLength) {
+  return value === undefined || value === null || (typeof value === "string" && value.length <= maxLength);
+}
+
+function normaliseNullableText(value) {
+  if (value === null) return null;
+  const clean = String(value).trim();
+  return clean || null;
+}
+
+function isAllowedProofUrl(value, env) {
+  if (value === null || value === "") return true;
+  if (typeof value !== "string" || value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    const storageHost = new URL(env.SUPABASE_URL).hostname;
+    const allowedHosts = new Set([storageHost, "searsmelvin.co.uk", "www.searsmelvin.co.uk"]);
+    return url.protocol === "https:"
+      && !url.username
+      && !url.password
+      && !url.port
+      && allowedHosts.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isIsoDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+async function orderBelongsToOrganization(env, orderId, headers = sbHeaders(env)) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=id&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return false;
+  const rows = await res.json();
+  return rows.length > 0;
+}
+
 function generateToken(length = 64) {
   const arr = new Uint8Array(length);
   crypto.getRandomValues(arr);
@@ -902,6 +1133,42 @@ function generateToken(length = 64) {
 async function hashSessionToken(token) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return "sha256:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function issueTrackingToken(env, orderId, headers = sbHeaders(env)) {
+  const token = generateToken(32);
+  const tokenHash = await hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + TRACKING_TOKEN_SECONDS * 1000).toISOString();
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/order_tracking_tokens?on_conflict=order_id`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      order_id: orderId,
+      organization_id: env.SM_ORG_ID,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  return response.ok ? { token, expiresAt } : null;
+}
+
+async function hashGeneratedPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const derived = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    baseKey,
+    256,
+  );
+  const toHex = bytes => Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${toHex(salt)}$${toHex(new Uint8Array(derived))}`;
 }
 
 function getCookie(request, name) {
@@ -940,29 +1207,9 @@ async function deleteSessionByEitherToken(env, table, tokenHash, legacyToken, he
 }
 
 function sbHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-    "Content-Type": "application/json",
-  };
+  return supabaseHeaders(env);
 }
 
 function json(data, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      ...CORS,
-      ...extraHeaders,
-    },
-  });
-}
-
-function isSameOriginRequest(request) {
-  const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) return false;
-  const fetchSite = request.headers.get("Sec-Fetch-Site");
-  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
+  return hardenedJson(data, status, extraHeaders);
 }

@@ -259,14 +259,7 @@
                 <label>Phone</label>
                 <input type="tel" id="reqPhone">
             </div>
-            <div class="login-field">
-                <label>Password * <span style="color:var(--color-text-muted);font-weight:normal;font-size:0.78rem;">(12-128 characters)</span></label>
-                <input type="password" id="reqPassword" required autocomplete="new-password" minlength="12" maxlength="128">
-            </div>
-            <div class="login-field">
-                <label>Confirm Password *</label>
-                <input type="password" id="reqPasswordConfirm" required autocomplete="new-password" minlength="12" maxlength="128">
-            </div>
+            <p style="font-size:0.82rem;color:var(--color-text-muted);line-height:1.5;margin:0.25rem 0 1rem;">If approved, we will email you a one-time link to create your password. This confirms you control the business mailbox.</p>
             <div class="login-field">
                 <label>Message (optional)</label>
                 <textarea id="reqMessage" style="width:100%;padding:0.8rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.9rem;font-family:var(--font-body);resize:vertical;min-height:60px;" placeholder="Tell us about your business..."></textarea>
@@ -565,19 +558,6 @@
         errEl.style.display = 'none';
         successEl.style.display = 'none';
 
-        var pw = document.getElementById('reqPassword').value;
-        var pwConfirm = document.getElementById('reqPasswordConfirm').value;
-        if (pw.length < 12 || pw.length > 128) {
-            errEl.textContent = 'Password must be 12-128 characters.';
-            errEl.style.display = 'block';
-            return;
-        }
-        if (pw !== pwConfirm) {
-            errEl.textContent = 'Passwords do not match.';
-            errEl.style.display = 'block';
-            return;
-        }
-
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
@@ -591,7 +571,6 @@
                     company: document.getElementById('reqCompany').value.trim(),
                     email: document.getElementById('reqEmail').value.trim(),
                     phone: document.getElementById('reqPhone').value.trim(),
-                    password: pw,
                     message: document.getElementById('reqMessage').value.trim(),
                 })
             });
@@ -725,7 +704,7 @@
         tbody.innerHTML = orders.map(function(o) {
             var statusClass = o.status === 'completed' ? 'completed' : o.status === 'partial' ? 'partial' : 'pending';
             var statusLabel = o.status === 'completed' ? 'Completed' : o.status === 'partial' ? 'Deposit Paid' : 'Pending';
-            return '<tr onclick="openOrderDetail(' + o.id + ')">'
+            return '<tr data-order-id="' + esc(o.id) + '">'
                 + '<td><div class="order-name">' + esc(o.customer_name) + '</div><div class="order-email">' + esc(o.customer_email || '') + '</div></td>'
                 + '<td class="order-product">' + esc(o.product || '—') + (o.colour ? '<br><span style="color:var(--color-text-muted);font-size:0.8rem;">' + esc(o.colour) + '</span>' : '') + '</td>'
                 + '<td>' + esc(o.location || '—') + '</td>'
@@ -734,6 +713,9 @@
                 + '<td style="font-size:0.8rem;color:var(--color-text-muted);white-space:nowrap;">' + formatDate(o.created_at) + '</td>'
                 + '</tr>';
         }).join('');
+        tbody.querySelectorAll('tr[data-order-id]').forEach(function(row) {
+            row.addEventListener('click', function() { openOrderDetail(row.dataset.orderId); });
+        });
     }
 
     function filterOrders(status, btn) {
@@ -759,7 +741,7 @@
         body.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--color-text-muted);">Loading...</p>';
 
         try {
-            var res = await fetch('/api/partner-orders?id=' + orderId, { credentials: 'same-origin' });
+            var res = await fetch('/api/partner-orders?id=' + encodeURIComponent(orderId), { credentials: 'same-origin' });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
 
@@ -810,10 +792,13 @@
 
         html += '<div class="comment-form">'
             + '<textarea id="commentText" placeholder="Add a comment..."></textarea>'
-            + '<button id="commentBtn" onclick="submitComment(' + order.id + ')">Send</button>'
+            + '<button id="commentBtn" data-order-id="' + esc(order.id) + '">Send</button>'
             + '</div></div>';
 
         body.innerHTML = html;
+        document.getElementById('commentBtn').addEventListener('click', function(event) {
+            submitComment(event.currentTarget.dataset.orderId);
+        });
     }
 
     function row(label, value) {

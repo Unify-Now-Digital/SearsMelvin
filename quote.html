@@ -535,11 +535,11 @@
 
         <!-- Email lookup (default view) -->
         <div id="emailLookup" class="email-lookup">
-            <h2>Track Your Quotes</h2>
-            <p>Enter the email address you used when submitting your quote to view all your quotes.</p>
+            <h2>Get Your Secure Portal Link</h2>
+            <p>Enter the email address you used for your quote. We will email your private link so quote details are never exposed by email lookup alone.</p>
             <div class="email-lookup-form">
                 <input type="email" id="lookupEmail" placeholder="Your email address" required>
-                <button id="lookupBtn" onclick="lookupQuotes()">Find Quotes</button>
+                <button id="lookupBtn" onclick="lookupQuotes()">Email Secure Link</button>
             </div>
             <p id="lookupError" style="color:#c0392b;margin-top:1rem;display:none;"></p>
         </div>
@@ -652,51 +652,53 @@
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', function() {
             var params = new URLSearchParams(window.location.search);
-            var token = params.get('token');
+            var fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+            var token = fragment.get('token') || params.get('token');
             var email = params.get('email');
 
             if (token) {
                 currentToken = token;
+                if (!window.location.hash) {
+                    history.replaceState({}, '', window.location.pathname + '#token=' + encodeURIComponent(token));
+                }
                 loadQuoteByToken(token);
             } else if (email) {
                 document.getElementById('lookupEmail').value = email;
+                history.replaceState({}, '', window.location.pathname);
                 lookupQuotes();
             }
         });
 
-        // ==================== LOOKUP BY EMAIL ====================
+        // ==================== EMAIL SECURE PORTAL LINK ====================
         async function lookupQuotes() {
             var email = document.getElementById('lookupEmail').value.trim();
             if (!email) return;
             var btn = document.getElementById('lookupBtn');
             var errEl = document.getElementById('lookupError');
             btn.disabled = true;
-            btn.textContent = 'Searching…';
+            btn.textContent = 'Sending…';
             errEl.style.display = 'none';
 
             try {
-                var res = await fetch('/api/quotes?email=' + encodeURIComponent(email));
-                if (!res.ok) throw new Error('Server returned ' + res.status);
+                var res = await fetch('/api/customer-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'send-portal-link', email: email })
+                });
                 var data = await res.json();
                 if (!data.ok) throw new Error(data.error || 'Unknown error');
-
-                if (!data.quotes || data.quotes.length === 0) {
-                    errEl.textContent = 'No quotes found for this email address. Quotes appear here after you submit a quote request.';
-                    errEl.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = 'Find Quotes';
-                    return;
-                }
-
-                document.getElementById('emailLookup').style.display = 'none';
-                renderQuotesList(data.quotes, email);
+                errEl.style.color = '#2e7d32';
+                errEl.textContent = data.message || 'If that email is in our records, a secure portal link is on its way.';
+                errEl.style.display = 'block';
             } catch (e) {
                 console.error('Quote lookup error:', e);
-                errEl.textContent = 'Sorry, something went wrong (' + e.message + '). Please try again.';
+                errEl.style.color = '#c0392b';
+                errEl.textContent = 'Sorry, we could not send the link. Please try again.';
                 errEl.style.display = 'block';
             }
             btn.disabled = false;
-            btn.textContent = 'Find Quotes';
+            btn.textContent = 'Email Secure Link';
         }
 
         function renderQuotesList(quotes, email) {
@@ -742,7 +744,12 @@
             document.getElementById('pageSubtitle').textContent = 'View and update your quote details.';
 
             try {
-                var res = await fetch('/api/quotes?token=' + encodeURIComponent(token));
+                var res = await fetch('/api/quotes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'get-quote', token: token })
+                });
                 var data = await res.json();
                 document.getElementById('quoteLoading').style.display = 'none';
 

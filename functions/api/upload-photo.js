@@ -7,11 +7,16 @@
  * signed URLs at read time.
  */
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
-  "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import {
+  RequestValidationError,
+  checkRateLimit,
+  getClientAddress,
+  hardenedJson,
+  isSameOriginRequest,
+  queueSecurityEvent,
+  rateLimitResponse,
+  readBoundedJson,
+} from "./_security.js";
 
 const BUCKET = "enquiry-photos";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -23,13 +28,40 @@ const ALLOWED_MIME = new Set([
 ]);
 
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+  return new Response(null, { status: 204, headers: { "Allow": "POST, DELETE, OPTIONS" } });
 }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  if (!isSameOriginRequest(request)) return json({ ok: false, error: "Forbidden" }, 403);
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
     return json({ ok: false, error: "Server configuration error" }, 500);
+  }
+  const limit = await checkRateLimit(env, request, "enquiry-photo-upload-ip", getClientAddress(request), {
+    maxAttempts: 20,
+    windowSeconds: 3600,
+    blockSeconds: 3600,
+    failClosed: true,
+  });
+  if (!limit.allowed) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "photo_upload_rate_limited",
+      actorType: "anonymous",
+      success: false,
+      metadata: { retry_after: limit.retryAfter },
+    });
+    return rateLimitResponse(json, limit.retryAfter);
+  }
+  const dailyLimit = await checkRateLimit(env, request, "enquiry-photo-upload-daily-ip", getClientAddress(request), {
+    maxAttempts: 40,
+    windowSeconds: 86400,
+    blockSeconds: 86400,
+    failClosed: true,
+  });
+  if (!dailyLimit.allowed) return rateLimitResponse(json, dailyLimit.retryAfter);
+  const contentLength = Number(request.headers.get("Content-Length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_BYTES + 1024 * 1024) {
+    return json({ ok: false, error: "Request body too large" }, 413);
   }
 
   let form;
@@ -49,6 +81,9 @@ export async function onRequestPost(context) {
   const mime = file.type || "application/octet-stream";
   if (!ALLOWED_MIME.has(mime)) {
     return json({ ok: false, error: "Unsupported image type" }, 415);
+  }
+  if (!await hasExpectedImageSignature(file, mime)) {
+    return json({ ok: false, error: "File content does not match its image type" }, 415);
   }
 
   const now = new Date();
@@ -73,28 +108,60 @@ export async function onRequestPost(context) {
   );
 
   if (!uploadRes.ok) {
-    const body = await uploadRes.text();
-    console.error(`Storage upload failed ${uploadRes.status}: ${body}`);
+    console.error(JSON.stringify({ message: "storage_upload_failed", status: uploadRes.status }));
     return json({ ok: false, error: "Upload failed" }, 502);
   }
 
-  return json({ ok: true, path });
+  queueSecurityEvent(context, env, request, {
+    eventType: "enquiry_photo_uploaded",
+    actorType: "anonymous",
+    success: true,
+    metadata: { bytes: file.size, mime },
+  });
+  const [deleteToken, submissionToken] = await Promise.all([
+    createObjectToken(env, "delete", path),
+    createObjectToken(env, "submit", path),
+  ]);
+  return json({ ok: true, path, deleteToken, submissionToken });
 }
 
-// DELETE /api/upload-photo?path=<storage path>
+// DELETE /api/upload-photo with { path, deleteToken }
 // Used by the contact form when a customer removes a preview before submitting.
-// Path must live under the customer's org prefix; we reject anything trying to
-// escape the bucket layout we wrote in onRequestPost.
-export async function onRequestDelete({ request, env }) {
+// The HMAC capability means merely learning an object's path is not enough to
+// delete it. Path and token are sent in the body so they do not enter URL logs.
+export async function onRequestDelete(context) {
+  const { request, env } = context;
+  if (!isSameOriginRequest(request)) return json({ ok: false, error: "Forbidden" }, 403);
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
     return json({ ok: false, error: "Server configuration error" }, 500);
   }
-  const url = new URL(request.url);
-  const path = url.searchParams.get("path") || "";
-  if (!path) return json({ ok: false, error: "Missing path" }, 400);
-  // Defence in depth: only allow paths under the configured org prefix and reject traversal.
-  if (path.includes("..") || !path.startsWith(`${env.SM_ORG_ID}/`)) {
+  const limit = await checkRateLimit(env, request, "enquiry-photo-delete-ip", getClientAddress(request), {
+    maxAttempts: 40,
+    windowSeconds: 3600,
+    blockSeconds: 3600,
+    failClosed: true,
+  });
+  if (!limit.allowed) return rateLimitResponse(json, limit.retryAfter);
+  let data;
+  try { data = await readBoundedJson(request, 4096); }
+  catch (error) {
+    const status = error instanceof RequestValidationError ? error.status : 400;
+    return json({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
+  }
+  const path = typeof data.path === "string" ? data.path : "";
+  const deleteToken = typeof data.deleteToken === "string" ? data.deleteToken : "";
+  if (!path || !/^[0-9a-f]{64}$/.test(deleteToken)) {
+    return json({ ok: false, error: "Invalid deletion capability" }, 403);
+  }
+  const expectedPath = new RegExp(
+    "^" + escapeRegex(env.SM_ORG_ID) + "/\\d{4}/(?:0[1-9]|1[0-2])/[0-9a-f-]{36}-[A-Za-z0-9_.-]{1,80}$",
+  );
+  if (!expectedPath.test(path)) {
     return json({ ok: false, error: "Invalid path" }, 400);
+  }
+  const expectedToken = await createObjectToken(env, "delete", path);
+  if (!timingSafeEqual(expectedToken, deleteToken)) {
+    return json({ ok: false, error: "Invalid deletion capability" }, 403);
   }
   const delRes = await fetch(
     `${env.SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURI(path)}`,
@@ -104,10 +171,62 @@ export async function onRequestDelete({ request, env }) {
     },
   );
   if (!delRes.ok && delRes.status !== 404) {
-    console.error(`Storage delete failed ${delRes.status}: ${await delRes.text()}`);
+    console.error(JSON.stringify({ message: "storage_delete_failed", status: delRes.status }));
     return json({ ok: false, error: "Delete failed" }, 502);
   }
+  queueSecurityEvent(context, env, request, {
+    eventType: "enquiry_photo_deleted",
+    actorType: "anonymous",
+    success: true,
+  });
   return json({ ok: true });
+}
+
+async function createObjectToken(env, purpose, path) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.SUPABASE_SERVICE_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`enquiry-photo-${purpose}:${path}`),
+  );
+  return Array.from(new Uint8Array(signature), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let index = 0; index < a.length; index++) {
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
+async function hasExpectedImageSignature(file, mime) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (mime === "image/jpeg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mime === "image/png") {
+    return [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+      .every((value, index) => bytes[index] === value);
+  }
+  if (mime === "image/webp") {
+    return new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF"
+      && new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP";
+  }
+  if (mime === "image/heic") {
+    const brand = new TextDecoder().decode(bytes.slice(4, 12));
+    return /^ftyp(?:heic|heix|hevc|hevx|mif1|msf1)$/.test(brand);
+  }
+  return false;
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function sanitiseFilename(name) {
@@ -119,8 +238,5 @@ function sanitiseFilename(name) {
 }
 
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS },
-  });
+  return hardenedJson(data, status);
 }

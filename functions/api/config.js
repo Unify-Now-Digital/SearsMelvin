@@ -1,19 +1,30 @@
-const CORS = {
-  'Access-Control-Allow-Origin': 'https://searsmelvin.co.uk',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { hardenedJson, isSameOriginRequest } from "./_security.js";
 
-export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+function publicValue(value, maxLength) {
+  return typeof value === "string" && value.length <= maxLength ? value : "";
 }
 
-export async function onRequestGet({ env }) {
-  return new Response(JSON.stringify({
-    stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY || '',
-    googleMapsKey:        env.GOOGLE_MAPS_KEY        || '',
-    googleClientId:       env.GOOGLE_CLIENT_ID        || '',
-  }), {
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Allow": "GET, OPTIONS",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+export async function onRequestGet({ request, env }) {
+  if (!isSameOriginRequest(request)) {
+    return hardenedJson({ ok: false, error: "Cross-origin request rejected" }, 403);
+  }
+
+  // These three values are intentionally public browser identifiers. Secrets such
+  // as Stripe's secret key and Google OAuth refresh tokens must never be added here.
+  return hardenedJson({
+    stripePublishableKey: publicValue(env.STRIPE_PUBLISHABLE_KEY, 256),
+    googleMapsKey: publicValue(env.GOOGLE_MAPS_KEY, 256),
+    googleClientId: publicValue(env.GOOGLE_CLIENT_ID, 512),
   });
 }

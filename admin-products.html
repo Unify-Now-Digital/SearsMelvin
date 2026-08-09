@@ -589,6 +589,45 @@
         let categoryNames = {};
         let products = [];
 
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+        function safeSlug(value) {
+            const slug = String(value == null ? '' : value).toLowerCase();
+            return /^[a-z0-9-]{1,120}$/.test(slug) ? slug : '';
+        }
+        function safeId(value) {
+            const id = String(value == null ? '' : value);
+            return /^[a-zA-Z0-9_-]{1,80}$/.test(id) ? id : '';
+        }
+        function safeHex(value) {
+            const hex = String(value == null ? '' : value);
+            return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(hex) ? hex : '#d0cbc3';
+        }
+        function safeImageUrl(value) {
+            if (!value) return '';
+            try {
+                const url = new URL(String(value), window.location.origin);
+                if (url.protocol !== 'https:' || url.username || url.password) return '';
+                return url.href.slice(0, 2048);
+            } catch (_) { return ''; }
+        }
+        function safeShortlistItem(item) {
+            if (!item || typeof item !== 'object') return null;
+            const id = safeId(item.id);
+            if (!id) return null;
+            return {
+                id,
+                slug: safeSlug(item.slug),
+                name: String(item.name || '').slice(0, 120),
+                price: String(item.price || '').slice(0, 40),
+                type: String(item.type || '').slice(0, 120),
+                image: safeImageUrl(item.image)
+            };
+        }
+
         // ==================== DATA LOADING ====================
         async function loadData() {
             try {
@@ -614,7 +653,7 @@
                 state.categories = categories;
                 state.colours = colours;
 
-                colours.forEach(c => { colourNames[c.slug] = c.name; });
+                colours.forEach(c => { colourNames[safeSlug(c.slug)] = String(c.name || '').slice(0, 120); });
                 categories.forEach(c => { categoryNames[c.id] = c.name; });
 
                 state.productsData = productsData;
@@ -643,15 +682,18 @@
             let typeHTML = '';
             categoriesWithProducts.forEach(cat => {
                 const count = state.productsData.filter(p => p.category_id === cat.id).length;
-                typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + cat.slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + cat.name + '<span class="filter-count">(' + count + ')</span></label>';
+                const slug = safeSlug(cat.slug);
+                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
             });
             typeContainer.innerHTML = typeHTML;
 
             const colourContainer = document.getElementById('colourFilters');
             let colourHTML = '';
             state.colours.forEach(colour => {
-                const secondaryHex = colour.hex_secondary || colour.hex_primary;
-                colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + colour.slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + colour.hex_primary + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + colour.name + '</span></span></label>';
+                const slug = safeSlug(colour.slug);
+                const primaryHex = safeHex(colour.hex_primary);
+                const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
+                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
             });
             colourContainer.innerHTML = colourHTML;
 
@@ -681,21 +723,27 @@
 
             let productsHTML = '';
             state.productsData.forEach((product, index) => {
-                const categorySlug = product.product_categories?.slug || 'default';
-                const categoryName = product.product_categories?.name || 'Memorial';
+                const id = safeId(product.id);
+                const slug = safeSlug(product.slug);
+                if (!id || !slug) return;
+                const categorySlug = safeSlug(product.product_categories?.slug) || 'default';
+                const categoryName = String(product.product_categories?.name || 'Memorial').slice(0, 120);
                 const price = parseFloat(product.base_price);
+                if (!Number.isFinite(price) || price < 0 || price > 1000000) return;
                 const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
-                const productImage = product.image_url ? '<img src="' + product.image_url + '" alt="' + product.name + '" loading="lazy">' : '';
+                const imageUrl = safeImageUrl(product.image_url);
+                const productName = String(product.name || '').slice(0, 120);
+                const productImage = imageUrl ? '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(productName) + '" loading="lazy">' : '';
                 let badge = '';
                 if (product.is_active === false) badge = '<span class="product-badge admin-hidden-badge">Hidden</span>';
                 else if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
                 const colourDots = state.colours.map(c =>
-                    '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
+                    '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
                 ).join('');
                 const adminClass = product.is_active === false ? ' admin-hidden' : '';
 
-                productsHTML += '<a href="/memorials/' + product.slug + '" class="product-card' + adminClass + '" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card' + adminClass + '" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -761,8 +809,8 @@
             container.classList.toggle('has-filters', hasFilters);
             if (!hasFilters) { container.innerHTML = '<span class="active-filters-label">Active filters:</span>'; return; }
             let html = '<span class="active-filters-label">Active filters:</span>';
-            state.filters.type.forEach(t => html += '<span class="filter-tag">' + t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
-            state.filters.colour.forEach(c => html += '<span class="filter-tag">' + (colourNames[c] || c) + '<button onclick="removeFilter(\'colour\', \'' + c + '\')">&times;</button></span>');
+            state.filters.type.forEach(t => html += '<span class="filter-tag">' + escapeHtml(t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())) + '<button onclick="removeFilter(\'type\', \'' + safeSlug(t) + '\')">&times;</button></span>');
+            state.filters.colour.forEach(c => html += '<span class="filter-tag">' + escapeHtml(colourNames[c] || c) + '<button onclick="removeFilter(\'colour\', \'' + safeSlug(c) + '\')">&times;</button></span>');
             state.filters.price.forEach(p => {
                 let label = p === 'under-1000' ? 'Under £1,000' : p === 'over-3000' ? 'Over £3,000' : '£' + p.replace('-', ' - £');
                 html += '<span class="filter-tag">' + label + '<button onclick="removeFilter(\'price\', \'' + p + '\')">&times;</button></span>';
@@ -771,7 +819,10 @@
         }
 
         function removeFilter(type, value) {
-            const checkbox = document.querySelector('input[data-filter="' + type + '"][value="' + value + '"]');
+            const safeType = ['type', 'colour', 'price'].includes(type) ? type : '';
+            const safeValue = safeSlug(value);
+            if (!safeType || !safeValue) return;
+            const checkbox = document.querySelector('input[data-filter="' + safeType + '"][value="' + CSS.escape(safeValue) + '"]');
             if (checkbox) { checkbox.checked = false; applyFilters(); }
         }
 
@@ -804,7 +855,7 @@
             var msgEl = document.getElementById('saveToastMsg');
             if (!toast || !msgEl) return;
             clearTimeout(_saveToastTimer);
-            msgEl.innerHTML = msg;
+            msgEl.textContent = String(msg || '').slice(0, 120);
             toast.classList.add('visible');
             _saveToastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 3000);
         }
@@ -818,11 +869,11 @@
                 btn.classList.remove('active');
                 showSaveToast('Removed from shortlist');
             } else {
-                state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                state.shortlist.push(safeShortlistItem({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' }));
                 btn.classList.add('active');
                 btn.classList.add('animate');
                 setTimeout(function() { btn.classList.remove('animate'); }, 500);
-                showSaveToast('Saved to shortlist — <a href="javascript:openShortlist()">view list</a>');
+                showSaveToast('Saved to shortlist');
             }
             updateShortlistUI();
             saveShortlistToStorage();
@@ -844,15 +895,15 @@
             } else {
                 let html = '';
                 state.shortlist.forEach(item => {
-                    var sImg = item.image ? '<img src="' + item.image + '" alt="' + item.name + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
-                    var link = item.slug ? '/memorials/' + item.slug : '#';
-                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + item.name + '</h4></a><p>' + item.price + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + (item.type || '') + '</span></div><button class=\"shortlist-item-remove\" aria-label=\"Remove from shortlist\" onclick=\"removeFromShortlist(\'' + item.id + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+                    var sImg = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">' : '';
+                    var link = item.slug ? '/memorials/' + safeSlug(item.slug) : '#';
+                    html += '<div class="shortlist-item"><a href="' + link + '" class="shortlist-item-image" style="display:block;">' + sImg + '</a><div class="shortlist-item-info"><a href="' + link + '" style="text-decoration:none;color:inherit;"><h4>' + escapeHtml(item.name) + '</h4></a><p>' + escapeHtml(item.price) + '</p><span style="font-size:0.72rem;color:var(--color-text-muted);">' + escapeHtml(item.type || '') + '</span></div><button class=\"shortlist-item-remove\" aria-label=\"Remove from shortlist\" onclick=\"removeFromShortlist(\'' + safeId(item.id) + '\')"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
                 });
                 content.innerHTML = html;
             }
             if (count > 0) {
-                const slugs = state.shortlist.map(i => i.slug || i.id).join(',');
-                document.getElementById('shareLink').value = window.location.origin + '/memorials?shortlist=' + slugs;
+                const slugs = state.shortlist.map(i => i.slug || i.id).filter(Boolean).join(',');
+                document.getElementById('shareLink').value = window.location.origin + '/memorials?shortlist=' + encodeURIComponent(slugs);
             }
             var enqPanel = document.getElementById('shortlistEnquiry');
             if (enqPanel) enqPanel.style.display = count > 0 ? 'block' : 'none';
@@ -860,7 +911,7 @@
 
         function removeFromShortlist(id) {
             state.shortlist = state.shortlist.filter(item => item.id !== id);
-            const btn = document.querySelector('.product-card[data-id="' + id + '"] .save-btn');
+            const btn = document.querySelector('.product-card[data-id="' + CSS.escape(safeId(id)) + '"] .save-btn');
             if (btn) btn.classList.remove('active');
             updateShortlistUI();
             saveShortlistToStorage();
@@ -954,9 +1005,15 @@
         function loadShortlistFromStorage() {
             const saved = localStorage.getItem('sm_shortlist');
             if (saved) {
-                state.shortlist = JSON.parse(saved);
+                try {
+                    const parsed = JSON.parse(saved);
+                    state.shortlist = Array.isArray(parsed) ? parsed.slice(0, 50).map(safeShortlistItem).filter(Boolean) : [];
+                } catch (_) {
+                    state.shortlist = [];
+                    localStorage.removeItem('sm_shortlist');
+                }
                 state.shortlist.forEach(item => {
-                    const btn = document.querySelector('.product-card[data-id="' + item.id + '"] .save-btn');
+                    const btn = document.querySelector('.product-card[data-id="' + CSS.escape(item.id) + '"] .save-btn');
                     if (btn) btn.classList.add('active');
                 });
                 updateShortlistUI();
@@ -991,7 +1048,7 @@
             const params = new URLSearchParams(window.location.search);
             const typeParam = params.get('type');
             if (typeParam) {
-                const checkbox = document.querySelector('input[data-filter="type"][value="' + typeParam + '"]');
+                const checkbox = document.querySelector('input[data-filter="type"][value="' + CSS.escape(safeSlug(typeParam)) + '"]');
                 if (checkbox) {
                     checkbox.checked = true;
                     applyFilters();
@@ -1022,13 +1079,15 @@
                         // Clear existing shortlist so shared link shows exactly what was shared
                         state.shortlist = [];
                         document.querySelectorAll('.save-btn.active').forEach(btn => btn.classList.remove('active'));
-                        shortlistIds.split(',').forEach(key => {
+                        shortlistIds.split(',').slice(0, 50).forEach(rawKey => {
+                            const key = safeId(rawKey) || safeSlug(rawKey);
+                            if (!key) return;
                             // Match by slug or id
-                            const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
+                            const card = document.querySelector('.product-card[data-slug="' + CSS.escape(key) + '"]') || document.querySelector('.product-card[data-id="' + CSS.escape(key) + '"]');
                             if (card) {
                                 const id = card.dataset.id;
                                 if (!state.shortlist.some(s => s.id === id)) {
-                                    state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
+                                    state.shortlist.push(safeShortlistItem({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' }));
                                     const btn = card.querySelector('.save-btn');
                                     if (btn) btn.classList.add('active');
                                 }
@@ -1206,8 +1265,9 @@ function declineCookies() {
                     products.slice(0, 5).forEach(function(product) {
                         var category = 'Memorial';
                         function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
-                        var imageHTML = product.image_url
-                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
+                        var safeSearchImage = safeImageUrl(product.image_url);
+                        var imageHTML = safeSearchImage
+                            ? '<img src="' + _smEscAttr(safeSearchImage) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
                             : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
                         html += '<a href="/memorials/' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
                     });

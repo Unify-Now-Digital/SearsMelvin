@@ -327,8 +327,17 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         var params = new URLSearchParams(window.location.search);
-        portalToken = params.get('portal');
-        trackingToken = params.get('token');
+        var fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        portalToken = fragment.get('portal') || params.get('portal');
+        trackingToken = fragment.get('token') || params.get('token');
+
+        // Move legacy query-string capability links into the URL fragment so
+        // tokens are not sent in subsequent HTTP requests or Referer headers.
+        if (!window.location.hash && (portalToken || trackingToken)) {
+            var key = portalToken ? 'portal' : 'token';
+            var value = portalToken || trackingToken;
+            history.replaceState({}, '', window.location.pathname + '#' + key + '=' + encodeURIComponent(value));
+        }
 
         if (portalToken) {
             loadPortal();
@@ -380,7 +389,13 @@
         try {
             var controller = new AbortController();
             var timeout = setTimeout(function() { controller.abort(); }, 15000);
-            var res = await fetch('/api/customer-order?portal=' + encodeURIComponent(portalToken), { signal: controller.signal });
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'get-portal', portal: portalToken }),
+                signal: controller.signal
+            });
             clearTimeout(timeout);
             var data = await res.json();
             if (!data.ok) { showError(data.error || 'Could not load your portal.'); return; }
@@ -469,19 +484,17 @@
                 var il = { pending: 'Pending Review', awaiting_approval: 'Awaiting Approval', approved: 'Approved', change_requested: 'Change Requested' };
                 html += '<div style="margin-top:1rem;"><div class="card-label">Inscription <span class="badge badge-' + is + '" style="margin-left:0.5rem;">' + (il[is] || is) + '</span></div>';
                 html += '<div class="quote-inscription"><div class="quote-inscription-text">' + esc(o.inscription.text) + '</div></div>';
-                if (o.trackingToken) {
-                    var canEdit = o.stage !== 'in_production' && o.stage !== 'installation_scheduled' && o.stage !== 'completed';
-                    if (canEdit) {
-                        html += '<div class="quote-actions">';
-                        if (is === 'awaiting_approval' || is === 'pending') html += '<button class="btn btn-success" onclick="approveInscription(\'' + esc(o.trackingToken) + '\', this)">Approve Inscription</button>';
-                        html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.trackingToken) + '\')">Request Change</button></div>';
-                        html += '<div class="edit-form" id="editOrder_' + esc(o.trackingToken) + '">';
-                        html += '<textarea id="editOrderText_' + esc(o.trackingToken) + '">' + esc(o.inscription.text) + '</textarea>';
-                        html += '<input type="text" id="editOrderReason_' + esc(o.trackingToken) + '" placeholder="Reason for change (optional)" style="width:100%;padding:0.6rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-top:0.5rem;">';
-                        html += '<div class="form-actions"><button class="btn btn-primary" onclick="submitOrderChange(\'' + esc(o.trackingToken) + '\')">Submit Change</button>';
-                        html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.trackingToken) + '\')">Cancel</button></div>';
-                        html += '<div class="form-msg" id="editOrderMsg_' + esc(o.trackingToken) + '"></div></div>';
-                    }
+                var canEdit = o.stage !== 'in_production' && o.stage !== 'installation_scheduled' && o.stage !== 'completed';
+                if (canEdit) {
+                    html += '<div class="quote-actions">';
+                    if (is === 'awaiting_approval' || is === 'pending') html += '<button class="btn btn-success" onclick="approveInscription(\'' + esc(o.id) + '\', this)">Approve Inscription</button>';
+                    html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.id) + '\')">Request Change</button></div>';
+                    html += '<div class="edit-form" id="editOrder_' + esc(o.id) + '">';
+                    html += '<textarea id="editOrderText_' + esc(o.id) + '">' + esc(o.inscription.text) + '</textarea>';
+                    html += '<input type="text" id="editOrderReason_' + esc(o.id) + '" placeholder="Reason for change (optional)" style="width:100%;padding:0.6rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-top:0.5rem;">';
+                    html += '<div class="form-actions"><button class="btn btn-primary" onclick="submitOrderChange(\'' + esc(o.id) + '\')">Submit Change</button>';
+                    html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.id) + '\')">Cancel</button></div>';
+                    html += '<div class="form-msg" id="editOrderMsg_' + esc(o.id) + '"></div></div>';
                 }
                 html += '</div>';
             }
@@ -498,7 +511,13 @@
         try {
             var controller = new AbortController();
             var timeout = setTimeout(function() { controller.abort(); }, 15000);
-            var res = await fetch('/api/customer-order?token=' + encodeURIComponent(trackingToken), { signal: controller.signal });
+            var res = await fetch('/api/customer-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'get-order-status', token: trackingToken }),
+                signal: controller.signal
+            });
             clearTimeout(timeout);
             var data = await res.json();
             if (!data.ok) { showError(data.error || 'Order not found.'); return; }
@@ -578,13 +597,13 @@
         } catch (err) { alert('Something went wrong.'); btn.disabled = false; btn.textContent = 'Accept Quote'; }
     }
 
-    async function approveInscription(token, btn) {
+    async function approveInscription(orderId, btn) {
         if (!confirm('Approve this inscription? Once approved, it will go into production.')) return;
         btn.disabled = true; btn.textContent = 'Approving...';
         try {
             var res = await fetch('/api/customer-order', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'approve-inscription', token: token })
+                body: JSON.stringify({ action: 'approve-inscription', portal: portalToken, orderId: orderId })
             });
             var data = await res.json();
             if (data.ok) { btn.textContent = 'Approved!'; setTimeout(loadPortal, 1500); }
@@ -592,15 +611,15 @@
         } catch (err) { alert('Something went wrong.'); btn.disabled = false; btn.textContent = 'Approve Inscription'; }
     }
 
-    async function submitOrderChange(token) {
-        var text = document.getElementById('editOrderText_' + token).value.trim();
-        var reason = document.getElementById('editOrderReason_' + token).value.trim();
-        var msgEl = document.getElementById('editOrderMsg_' + token);
+    async function submitOrderChange(orderId) {
+        var text = document.getElementById('editOrderText_' + orderId).value.trim();
+        var reason = document.getElementById('editOrderReason_' + orderId).value.trim();
+        var msgEl = document.getElementById('editOrderMsg_' + orderId);
         if (!text) { msgEl.textContent = 'Please enter the inscription text.'; msgEl.className = 'form-msg error'; msgEl.style.display = 'block'; return; }
         try {
             var res = await fetch('/api/customer-order', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'request-inscription-change', token: token, text: text, reason: reason || null })
+                body: JSON.stringify({ action: 'request-inscription-change', portal: portalToken, orderId: orderId, text: text, reason: reason || null })
             });
             var data = await res.json();
             if (data.ok) { msgEl.textContent = data.message; msgEl.className = 'form-msg success'; msgEl.style.display = 'block'; setTimeout(loadPortal, 2000); }

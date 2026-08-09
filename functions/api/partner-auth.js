@@ -9,18 +9,26 @@
  * POST { action: "reset-password", token, password } → set new password using reset token
  */
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import {
+  RequestValidationError,
+  checkRateLimit,
+  getClientAddress,
+  hardenedJson,
+  isSameOriginRequest,
+  queueSecurityEvent,
+  rateLimitResponse,
+  readBoundedJson,
+  sha256Hex as hashIdentifier,
+  supabaseHeaders,
+} from "./_security.js";
+
 const PARTNER_COOKIE = "__Host-sm_partner_session";
 const PARTNER_SESSION_SECONDS = 12 * 60 * 60;
 const MIN_PASSWORD_LENGTH = 12;
 const MAX_PASSWORD_LENGTH = 128;
 
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+  return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
 }
 
 export async function onRequest(context) {
@@ -35,31 +43,113 @@ export async function onRequest(context) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
 
+  const broadLimit = await checkRateLimit(env, request, "partner-auth-ip", getClientAddress(request), {
+    maxAttempts: 300,
+    windowSeconds: 300,
+    blockSeconds: 300,
+    failClosed: true,
+  });
+  if (!broadLimit.allowed) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_auth_rate_limited",
+      actorType: "anonymous",
+      success: false,
+      metadata: { retry_after: broadLimit.retryAfter },
+    });
+    return rateLimitResponse(json, broadLimit.retryAfter);
+  }
+
   let data;
-  try { data = await request.json(); }
-  catch { return json({ ok: false, error: "Invalid JSON" }, 400); }
+  try { data = await readBoundedJson(request); }
+  catch (error) {
+    const status = error instanceof RequestValidationError ? error.status : 400;
+    return json({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
+  }
 
   const { action } = data;
 
-  if (action === "login") return handleLogin(env, data);
+  if (action === "login") {
+    const normalisedEmail = normaliseEmail(data.email);
+    const [ipLimit, emailLimit] = await Promise.all([
+      checkRateLimit(env, request, "partner-login-ip", getClientAddress(request), {
+        maxAttempts: 15, windowSeconds: 900, blockSeconds: 1800, failClosed: true,
+      }),
+      checkRateLimit(env, request, "partner-login-email", normalisedEmail || "invalid", {
+        maxAttempts: 8, windowSeconds: 900, blockSeconds: 1800, failClosed: true,
+      }),
+    ]);
+    const denied = !ipLimit.allowed ? ipLimit : !emailLimit.allowed ? emailLimit : null;
+    if (denied) {
+      queueSecurityEvent(context, env, request, {
+        eventType: "partner_login_rate_limited",
+        actorType: "anonymous",
+        success: false,
+        identifierHash: await hashIdentifier(normalisedEmail || "invalid"),
+        metadata: { retry_after: denied.retryAfter },
+      });
+      return rateLimitResponse(json, denied.retryAfter);
+    }
+    return handleLogin(context, env, request, data);
+  }
   if (action === "verify") return handleVerify(env, request, data);
-  if (action === "logout") return handleLogout(env, request, data);
-  if (action === "request") return handleRequest(env, data);
-  if (action === "forgot-password") return handleForgotPassword(env, data);
-  if (action === "reset-password") return handleResetPassword(env, data);
+  if (action === "logout") return handleLogout(context, env, request, data);
+  if (action === "request") {
+    const normalisedEmail = normaliseEmail(data.email);
+    const [ipLimit, emailLimit] = await Promise.all([
+      checkRateLimit(env, request, "partner-request-ip", getClientAddress(request), {
+        maxAttempts: 5, windowSeconds: 86400, blockSeconds: 86400, failClosed: true,
+      }),
+      checkRateLimit(env, request, "partner-request-email", normalisedEmail || "invalid", {
+        maxAttempts: 3, windowSeconds: 86400, blockSeconds: 86400, failClosed: true,
+      }),
+    ]);
+    const denied = !ipLimit.allowed ? ipLimit : !emailLimit.allowed ? emailLimit : null;
+    if (denied) return rateLimitResponse(json, denied.retryAfter);
+    return handleRequest(context, env, request, data);
+  }
+  if (action === "forgot-password") {
+    const normalisedEmail = normaliseEmail(data.email);
+    const [ipLimit, emailLimit] = await Promise.all([
+      checkRateLimit(env, request, "partner-forgot-ip", getClientAddress(request), {
+        maxAttempts: 8, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
+      }),
+      checkRateLimit(env, request, "partner-forgot-email", normalisedEmail || "invalid", {
+        maxAttempts: 3, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
+      }),
+    ]);
+    if (!ipLimit.allowed || !emailLimit.allowed) {
+      queueSecurityEvent(context, env, request, {
+        eventType: "partner_password_reset_rate_limited",
+        actorType: "anonymous",
+        success: false,
+        identifierHash: await hashIdentifier(normalisedEmail || "invalid"),
+      });
+      return json({ ok: true, message: forgotPasswordMessage() });
+    }
+    return handleForgotPassword(context, env, request, data);
+  }
+  if (action === "reset-password") {
+    const tokenIdentifier = typeof data.token === "string" ? data.token : "invalid";
+    const resetLimit = await checkRateLimit(env, request, "partner-reset-token", tokenIdentifier, {
+      maxAttempts: 5, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
+    });
+    if (!resetLimit.allowed) return rateLimitResponse(json, resetLimit.retryAfter);
+    return handleResetPassword(context, env, request, data);
+  }
 
   return json({ ok: false, error: "Unknown action" }, 400);
 }
 
 // ==================== LOGIN ====================
-async function handleLogin(env, { email, password }) {
+async function handleLogin(context, env, request, { email, password }) {
   if (!email || !password) return json({ ok: false, error: "Email and password required" }, 400);
   if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > MAX_PASSWORD_LENGTH) {
     return json({ ok: false, error: "Invalid email or password" }, 401);
   }
 
   const headers = sbHeaders(env);
-  const normalisedEmail = email.trim().toLowerCase();
+  const normalisedEmail = normaliseEmail(email);
+  const identifierHash = await hashIdentifier(normalisedEmail);
   const res = await fetch(
     `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(normalisedEmail)}&active=eq.true&status=eq.approved&select=id,email,name,company,password_hash&limit=1`,
     { headers },
@@ -70,6 +160,13 @@ async function handleLogin(env, { email, password }) {
     // Do comparable password work even when no approved account exists so
     // response timing does not reveal whether an address is registered.
     await hashPassword(password, "00000000000000000000000000000000");
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      identifierHash,
+      metadata: { reason: "invalid_credentials" },
+    });
     return json({ ok: false, error: "Invalid email or password" }, 401);
   }
 
@@ -77,6 +174,13 @@ async function handleLogin(env, { email, password }) {
 
   const verified = await verifyPassword(password, partner.password_hash);
   if (!verified) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      identifierHash,
+      metadata: { reason: "invalid_credentials" },
+    });
     return json({ ok: false, error: "Invalid email or password" }, 401);
   }
 
@@ -89,8 +193,8 @@ async function handleLogin(env, { email, password }) {
         headers: { ...headers, "Prefer": "return=minimal" },
         body: JSON.stringify({ password_hash: upgraded }),
       });
-    } catch (err) {
-      console.error("Password hash upgrade failed:", err);
+    } catch {
+      console.error(JSON.stringify({ message: "password_hash_upgrade_failed" }));
     }
   }
 
@@ -105,6 +209,14 @@ async function handleLogin(env, { email, password }) {
     body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
   });
   if (!sessRes.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_login_succeeded",
+    actorType: "partner",
+    success: true,
+    identifierHash,
+    metadata: { partner_id: partner.id },
+  });
 
   return json({
     ok: true,
@@ -122,79 +234,107 @@ async function handleVerify(env, request, data) {
 }
 
 // ==================== LOGOUT ====================
-async function handleLogout(env, request, data) {
+async function handleLogout(context, env, request, data) {
   const token = getCookie(request, PARTNER_COOKIE) || data.token;
-  if (!token) return json({ ok: true }, 200, { "Set-Cookie": clearCookie(PARTNER_COOKIE) });
+  const logoutHeaders = {
+    "Set-Cookie": clearCookie(PARTNER_COOKIE),
+    "Clear-Site-Data": '"cache", "storage"',
+  };
+  if (!token) return json({ ok: true }, 200, logoutHeaders);
   const headers = sbHeaders(env);
   const tokenHash = await hashOpaqueToken(token);
   await deleteSessionByEitherToken(env, tokenHash, token, headers);
-  return json({ ok: true }, 200, { "Set-Cookie": clearCookie(PARTNER_COOKIE) });
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_logout",
+    actorType: "partner",
+    success: true,
+  });
+  return json({ ok: true }, 200, logoutHeaders);
 }
 
 // ==================== REQUEST (self-service, pending approval) ====================
-async function handleRequest(env, { email, password, name, company, phone, message }) {
-  if (!email || !password || !name) {
-    return json({ ok: false, error: "Name, email, and password are required" }, 400);
+async function handleRequest(context, env, request, { email, name, company, phone, message }) {
+  if (!email || !name) {
+    return json({ ok: false, error: "Name and email are required" }, 400);
   }
   // The signup form marks company required; enforce here so a scripted POST
   // can't slip an empty company through.
   if (!company || !String(company).trim()) {
     return json({ ok: false, error: "Company / business name is required" }, 400);
   }
-  if (!validPassword(password)) {
-    return json({ ok: false, error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters` }, 400);
-  }
   if (typeof email !== "string" || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) {
     return json({ ok: false, error: "A valid email address is required" }, 400);
   }
 
+  const cleanEmail = normaliseEmail(email);
+  const cleanName = boundedText(name, 120);
+  const cleanCompany = boundedText(company, 160);
+  const cleanPhone = boundedText(phone, 40, true);
+  const cleanMessage = boundedText(message, 2000, true);
+  if (!cleanName || !cleanCompany) {
+    return json({ ok: false, error: "Name and company are required" }, 400);
+  }
+  if (cleanPhone === null || cleanMessage === null) {
+    return json({ ok: false, error: "One or more fields are too long" }, 400);
+  }
   const headers = sbHeaders(env);
 
   // Check if email already exists
   const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,status&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(cleanEmail)}&select=id,status&limit=1`,
     { headers },
   );
   if (checkRes.ok) {
     const existing = await checkRes.json();
     if (existing.length > 0) {
       if (existing[0].status === "pending") {
-        return json({ ok: false, error: "A request with this email is already pending approval." }, 409);
+        return json({ ok: true, message: partnerRequestMessage() });
       }
       if (existing[0].status === "approved") {
-        return json({ ok: false, error: "An account with this email already exists. Please sign in." }, 409);
+        return json({ ok: true, message: partnerRequestMessage() });
       }
       // If declined, allow re-request by updating. Preserve declined_at as audit history.
-      const hash = await hashPassword(password);
+      const hash = await hashPassword(generateToken(32));
       await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${existing[0].id}`, {
         method: "PATCH",
         headers: { ...headers, "Prefer": "return=minimal" },
         body: JSON.stringify({
           password_hash: hash,
-          name,
-          company: company || null,
-          phone: phone || null,
-          notes: message || null,
+          name: cleanName,
+          company: cleanCompany,
+          phone: cleanPhone || null,
+          notes: cleanMessage || null,
           status: "pending",
           active: true,
         }),
       });
-      await sendPartnerRequestEmails(env, { name, email, company, phone, message });
-      return json({ ok: true, message: "Your request has been resubmitted and is pending approval." });
+      await sendPartnerRequestEmails(env, {
+        name: cleanName, email: cleanEmail, company: cleanCompany, phone: cleanPhone, message: cleanMessage,
+      });
+      queueSecurityEvent(context, env, request, {
+        eventType: "partner_access_requested",
+        actorType: "anonymous",
+        success: true,
+        identifierHash: await hashIdentifier(cleanEmail),
+        metadata: { resubmitted: true },
+      });
+      return json({ ok: true, message: partnerRequestMessage() });
     }
   }
 
-  const hash = await hashPassword(password);
+  // Access requests do not establish credentials. The value is random and
+  // unknowable; approval sends a one-time password-setup link to the mailbox.
+  const hash = await hashPassword(generateToken(32));
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      email: email.toLowerCase(),
+      email: cleanEmail,
       password_hash: hash,
-      name,
-      company: company || null,
-      phone: phone || null,
-      notes: message || null,
+      name: cleanName,
+      company: cleanCompany,
+      phone: cleanPhone || null,
+      notes: cleanMessage || null,
       status: "pending",
       active: true,
     }),
@@ -203,19 +343,28 @@ async function handleRequest(env, { email, password, name, company, phone, messa
   if (!res.ok) {
     const errText = await res.text();
     if (errText.includes("duplicate")) {
-      return json({ ok: false, error: "A request with this email already exists." }, 409);
+      return json({ ok: true, message: partnerRequestMessage() });
     }
     return json({ ok: false, error: "Failed to submit request" }, 500);
   }
 
-  await sendPartnerRequestEmails(env, { name, email, company, phone, message });
-  return json({ ok: true, message: "Your request has been submitted. We'll review it and get back to you soon." });
+  await sendPartnerRequestEmails(env, {
+    name: cleanName, email: cleanEmail, company: cleanCompany, phone: cleanPhone, message: cleanMessage,
+  });
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_access_requested",
+    actorType: "anonymous",
+    success: true,
+    identifierHash: await hashIdentifier(cleanEmail),
+    metadata: { resubmitted: false },
+  });
+  return json({ ok: true, message: partnerRequestMessage() });
 }
 
 // ==================== FORGOT PASSWORD ====================
-async function handleForgotPassword(env, { email }) {
+async function handleForgotPassword(context, env, request, { email }) {
   // Always return success to prevent email enumeration
-  const successMsg = "If an account with that email exists, we've sent a password reset link.";
+  const successMsg = forgotPasswordMessage();
   if (!email || typeof email !== "string" || email.length > 254) return json({ ok: true, message: successMsg });
 
   const headers = sbHeaders(env);
@@ -232,6 +381,13 @@ async function handleForgotPassword(env, { email }) {
   const tokenHash = await hashOpaqueToken(token);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
+  // Keep only one live reset token per partner. A newly requested link
+  // invalidates older links, reducing replay and mailbox-forwarding risk.
+  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?partner_id=eq.${partner.id}`, {
+    method: "DELETE",
+    headers,
+  });
+
   // Save reset token
   const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
     method: "POST",
@@ -239,8 +395,7 @@ async function handleForgotPassword(env, { email }) {
     body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
   });
   if (!insertRes.ok) {
-    const errBody = await insertRes.text();
-    console.error(`Failed to save reset token (${insertRes.status}): ${errBody}`);
+    console.error(JSON.stringify({ message: "password_reset_token_write_failed", status: insertRes.status }));
     return json({ ok: true, message: successMsg });
   }
 
@@ -274,19 +429,26 @@ async function handleForgotPassword(env, { email }) {
         }),
       });
       if (!emailRes.ok) {
-        const body = await emailRes.text();
-        console.error(`Resend error ${emailRes.status} sending reset to ${partner.email}: ${body}`);
+        console.error(JSON.stringify({ message: "password_reset_email_failed", status: emailRes.status }));
       }
-    } catch (err) {
-      console.error("Failed to send reset email:", err);
+    } catch {
+      console.error(JSON.stringify({ message: "password_reset_email_unavailable" }));
     }
   }
+
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_password_reset_requested",
+    actorType: "anonymous",
+    success: true,
+    identifierHash: await hashIdentifier(partner.email.toLowerCase()),
+    metadata: { partner_id: partner.id },
+  });
 
   return json({ ok: true, message: successMsg });
 }
 
 // ==================== RESET PASSWORD ====================
-async function handleResetPassword(env, { token, password }) {
+async function handleResetPassword(context, env, request, { token, password }) {
   if (!token || !password) return json({ ok: false, error: "Token and new password are required" }, 400);
   if (typeof token !== "string" || token.length > 256 || !validPassword(password)) {
     return json({ ok: false, error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters` }, 400);
@@ -305,6 +467,25 @@ async function handleResetPassword(env, { token, password }) {
   if (rows.length === 0) return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
 
   const resetRecord = rows[0];
+  const compromised = await isCompromisedPassword(password);
+  if (compromised === null) {
+    return json({
+      ok: false,
+      error: "Password safety checking is temporarily unavailable. Please try again shortly.",
+    }, 503);
+  }
+  if (compromised) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_password_rejected",
+      actorType: "partner",
+      success: false,
+      metadata: { partner_id: resetRecord.partner_id, reason: "known_breach" },
+    });
+    return json({
+      ok: false,
+      error: "Choose a password that has not appeared in known data breaches.",
+    }, 400);
+  }
   const hash = await hashPassword(password);
 
   // Atomically consume the one-time token before changing the password. A
@@ -314,7 +495,7 @@ async function handleResetPassword(env, { token, password }) {
     {
       method: "PATCH",
       headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({ used: true }),
+      body: JSON.stringify({ used: true, used_at: new Date().toISOString() }),
     },
   );
   if (!consumeRes.ok) return json({ ok: false, error: "Failed to consume reset token" }, 500);
@@ -327,7 +508,7 @@ async function handleResetPassword(env, { token, password }) {
   const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${resetRecord.partner_id}`, {
     method: "PATCH",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ password_hash: hash }),
+    body: JSON.stringify({ password_hash: hash, updated_at: new Date().toISOString() }),
   });
   if (!updateRes.ok) return json({ ok: false, error: "Failed to update password" }, 500);
 
@@ -337,10 +518,51 @@ async function handleResetPassword(env, { token, password }) {
     headers,
   });
 
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_password_reset_succeeded",
+    actorType: "partner",
+    success: true,
+    metadata: { partner_id: resetRecord.partner_id },
+  });
+
   return json({ ok: true, message: "Password updated successfully. You can now sign in with your new password." });
 }
 
 // ==================== HELPERS ====================
+async function isCompromisedPassword(password) {
+  try {
+    // HIBP's k-anonymity API only receives the first five characters of a
+    // SHA-1 hash. The password and complete hash never leave this Worker.
+    const digest = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(password));
+    const fullHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase();
+    const prefix = fullHash.slice(0, 5);
+    const suffix = fullHash.slice(5);
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      headers: {
+        "Add-Padding": "true",
+        "User-Agent": "SearsMelvin-PartnerPortal/1.0",
+      },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) {
+      console.error(JSON.stringify({ message: "pwned_password_check_failed", status: response.status }));
+      return null;
+    }
+    const range = await response.text();
+    return range.split(/\r?\n/).some((line) => {
+      const [candidate, count] = line.split(":", 2);
+      return candidate === suffix && Number(count) > 0;
+    });
+  } catch {
+    // Fail closed: a password is not accepted unless its breach status was
+    // actually checked. The one-time reset token remains unused for a retry.
+    console.error(JSON.stringify({ message: "pwned_password_check_unavailable" }));
+    return null;
+  }
+}
+
 async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
@@ -397,7 +619,8 @@ async function verifyPassword(password, stored) {
   const parts = stored.split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
   const iterations = parseInt(parts[1], 10);
-  if (!Number.isFinite(iterations) || iterations <= 0) return false;
+  if (!Number.isFinite(iterations) || iterations < 100000 || iterations > 1000000) return false;
+  if (!/^[0-9a-f]{32}$/i.test(parts[2]) || !/^[0-9a-f]{64}$/i.test(parts[3])) return false;
   const candidate = await hashPassword(password, parts[2], iterations);
   return timingSafeEqual(candidate, stored);
 }
@@ -489,31 +712,31 @@ async function deleteSessionByEitherToken(env, tokenHash, legacyToken, headers) 
 }
 
 function sbHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-    "Content-Type": "application/json",
-  };
+  return supabaseHeaders(env);
 }
 
 function json(data, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      ...CORS,
-      ...extraHeaders,
-    },
-  });
+  return hardenedJson(data, status, extraHeaders);
 }
 
-function isSameOriginRequest(request) {
-  const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) return false;
-  const fetchSite = request.headers.get("Sec-Fetch-Site");
-  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
+function normaliseEmail(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function boundedText(value, maxLength, optional = false) {
+  if (value == null || value === "") return optional ? "" : null;
+  if (typeof value !== "string") return null;
+  const clean = value.trim();
+  if (clean.length === 0) return optional ? "" : null;
+  return clean.length <= maxLength ? clean : null;
+}
+
+function forgotPasswordMessage() {
+  return "If an account with that email exists, we've sent a password reset link.";
+}
+
+function partnerRequestMessage() {
+  return "If this request can be accepted, our team will review it and contact you shortly.";
 }
 
 function esc(str) {
@@ -572,11 +795,10 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       }),
     });
     if (!emailRes.ok) {
-      const body = await emailRes.text();
-      console.error(`Resend error ${emailRes.status} sending partner request business email: ${body}`);
+      console.error(JSON.stringify({ message: "partner_request_notification_failed", status: emailRes.status }));
     }
-  } catch (err) {
-    console.error("Failed to send partner request business email:", err);
+  } catch {
+    console.error(JSON.stringify({ message: "partner_request_notification_unavailable" }));
   }
 
   // Confirm to the requester
@@ -602,7 +824,7 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       Thank you for requesting access to the Sears Melvin Partner Portal. Our team will review your application and get back to you shortly.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
-      Once approved, you'll be able to sign in at <a href="https://searsmelvin.co.uk/partner" style="color:#8B7355;font-weight:600;">searsmelvin.co.uk/partner</a> using the email and password you provided.
+      If approved, we'll email this address a one-time link to create your password. This verifies that you control the partner mailbox before access begins.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:20px 0 0;">
       If you have any questions, please contact us at <a href="mailto:info@searsmelvin.co.uk" style="color:#8B7355;">info@searsmelvin.co.uk</a>.
@@ -618,12 +840,11 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       }),
     });
     if (!emailRes.ok) {
-      const body = await emailRes.text();
-      console.error(`Resend error ${emailRes.status} sending partner request confirmation: ${body}`);
+      console.error(JSON.stringify({ message: "partner_request_confirmation_failed", status: emailRes.status }));
     }
-  } catch (err) {
-    console.error("Failed to send partner request confirmation email:", err);
+  } catch {
+    console.error(JSON.stringify({ message: "partner_request_confirmation_unavailable" }));
   }
 }
 
-export { getPartnerFromToken, sbHeaders, json, CORS };
+export { getPartnerFromToken, sbHeaders, json };
