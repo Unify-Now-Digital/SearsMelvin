@@ -60,6 +60,7 @@
     .auth-tab.active{color:var(--ink);box-shadow:inset 0 -2px var(--gold)}
     .auth-form{display:grid;gap:16px}.auth-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .text-btn{border:0;background:none;padding:6px 0;color:var(--gold-2);font-size:12px;font-weight:600;min-height:44px}
+    .staff-auth{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--surface-2);margin-bottom:18px}.staff-auth-head{display:flex;align-items:flex-start;gap:11px;margin-bottom:13px}.staff-auth-mark{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-weight:600;color:#4285f4;flex:0 0 auto}.staff-auth strong{display:block;font-size:13px}.staff-auth p{margin:2px 0 0;color:var(--ink-3);font-size:12px}.google-signin-wrap{min-height:44px;display:grid;place-items:center}.google-signin-loading{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;width:100%;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink-2);font-size:12px}.google-signin-loading[hidden]{display:none}.google-signin-button{display:none;justify-content:center;width:100%;min-height:44px}.google-signin-status{margin:9px 0 0!important;text-align:center}.google-signin-status.error{color:var(--red)}.google-signin-retry{display:none;margin:8px auto 0;border:0;background:none;color:var(--gold-2);font-size:12px;font-weight:600}.auth-divider{display:flex;align-items:center;gap:11px;margin:0 0 17px;color:var(--ink-3);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--line);flex:1}
     .auth-art{position:relative;overflow:hidden;background:linear-gradient(155deg,#2b2a27,#45413a);color:#fff;display:flex;align-items:flex-end;padding:clamp(40px,6vw,88px)}
     .auth-art:before,.auth-art:after{content:"";position:absolute;border:1px solid rgba(222,205,179,.21);border-radius:48% 48% 7% 7%}
     .auth-art:before{width:48%;height:70%;top:14%;right:18%}.auth-art:after{width:31%;height:52%;top:25%;right:26.5%}
@@ -191,7 +192,17 @@
         <button class="auth-tab" type="button" data-auth-view="request">Request access</button>
       </div>
       <form class="auth-form" id="loginForm">
-        <p class="muted" style="margin:0 0 16px;line-height:1.6">Enter the approved email address for this workspace. We will send a secure, one-time sign-in link—no password needed.</p>
+        <section class="staff-auth" aria-labelledby="staffSignInTitle">
+          <div class="staff-auth-head"><span class="staff-auth-mark" aria-hidden="true">G</span><div><strong id="staffSignInTitle">Sears Melvin staff</strong><p>Use your searsmelvin.co.uk Google Workspace account.</p></div></div>
+          <div class="google-signin-wrap" id="googleSignInWrap" aria-busy="true">
+            <div class="google-signin-loading" id="googleSignInLoading" role="status"><span class="spinner" aria-hidden="true"></span>Connecting to Google</div>
+            <div class="google-signin-button" id="googleSignInButton"></div>
+          </div>
+          <p class="google-signin-status" id="googleSignInStatus" aria-live="polite">Only Sears Melvin Workspace accounts can continue.</p>
+          <button class="google-signin-retry" id="googleSignInRetry" type="button">Try Google again</button>
+        </section>
+        <div class="auth-divider"><span>Funeral director partners</span></div>
+        <p class="muted" style="margin:0;line-height:1.6">Enter your approved partner email address. We will send a secure, one-time sign-in link—no password needed.</p>
         <div class="field"><label class="required" for="loginEmail">Email address</label><input class="input" id="loginEmail" name="email" type="email" autocomplete="username" required></div>
         <div class="auth-actions"><span class="muted">Link expires after 15 minutes</span><button class="btn btn-primary" type="submit">Email sign-in link</button></div>
         <div class="notice notice-error hidden" id="loginError" role="alert"></div>
@@ -284,6 +295,7 @@
   (function(){
     "use strict";
     var state={partner:null,workspace:{mode:"partner",capabilities:{}},orders:[],stats:{},invoices:[],products:[],cemeteries:[],view:"overview",filter:"all",search:"",wizardStep:0,draft:{billingParty:"family"},currentOrder:null};
+    var googleIdentityPromise=null,googleLoginInFlight=false,googleIdentityInitialised=false;
     var stages=[
       {key:"submitted",label:"Submitted",copy:"Order received by Sears Melvin"},
       {key:"proof_approval",label:"Proof approval",copy:"Inscription design reviewed and approved"},
@@ -315,7 +327,7 @@
     function toast(message,type){var el=document.createElement("div");el.className="toast "+(type||"");el.textContent=message;q("#toasts").appendChild(el);setTimeout(function(){el.remove()},4200)}
     function setBusy(button,busy,label){if(!button)return;button.disabled=busy;if(!button.dataset.label)button.dataset.label=button.textContent;button.textContent=busy?(label||"Working…"):button.dataset.label}
     function showBox(el,message,type){el.textContent=message;el.className="notice "+(type==="error"?"notice-error":type==="success"?"notice-success":"")}
-    function showAuth(){q("#authScreen").classList.remove("hidden");q("#appShell").classList.add("hidden")}
+    function showAuth(){q("#authScreen").classList.remove("hidden");q("#appShell").classList.add("hidden");if(!googleIdentityInitialised)initGoogleSignIn()}
     function showApp(){q("#authScreen").classList.add("hidden");q("#appShell").classList.remove("hidden")}
 
     async function boot(){
@@ -325,6 +337,21 @@
         var result=await authApi({action:"verify"});
         state.partner=result.partner;await enterApp();
       }catch(e){showAuth()}
+    }
+    function loadGoogleIdentityServices(){
+      if(window.google&&window.google.accounts&&window.google.accounts.id)return Promise.resolve();if(googleIdentityPromise)return googleIdentityPromise;
+      googleIdentityPromise=new Promise(function(resolve,reject){var script=q("#googleIdentityServices");if(script)script.remove();script=document.createElement("script");script.id="googleIdentityServices";script.src="https://accounts.google.com/gsi/client";script.async=true;script.defer=true;var timeout=setTimeout(function(){googleIdentityPromise=null;reject(new Error("Google sign-in took too long to load"))},10000);script.onload=function(){clearTimeout(timeout);if(window.google&&window.google.accounts&&window.google.accounts.id)resolve();else{googleIdentityPromise=null;reject(new Error("Google sign-in did not initialise"))}};script.onerror=function(){clearTimeout(timeout);googleIdentityPromise=null;reject(new Error("Google sign-in could not be loaded"))};document.head.appendChild(script)});return googleIdentityPromise;
+    }
+    async function initGoogleSignIn(){
+      var wrap=q("#googleSignInWrap"),loading=q("#googleSignInLoading"),button=q("#googleSignInButton"),status=q("#googleSignInStatus"),retry=q("#googleSignInRetry");wrap.setAttribute("aria-busy","true");loading.hidden=false;button.style.display="none";button.replaceChildren();retry.style.display="none";status.classList.remove("error");status.textContent="Only Sears Melvin Workspace accounts can continue.";
+      try{var response=await fetch("/api/config",{cache:"no-store",credentials:"same-origin"});if(!response.ok)throw new Error("Google sign-in configuration is unavailable");var config=await response.json();if(!config.googleClientId)throw new Error("Google sign-in is not configured");await loadGoogleIdentityServices();google.accounts.id.initialize({client_id:config.googleClientId,callback:googleLoginCallback,hd:"searsmelvin.co.uk",auto_select:false,cancel_on_tap_outside:true,itp_support:true});var width=Math.max(240,Math.min(390,wrap.clientWidth-2));google.accounts.id.renderButton(button,{type:"standard",theme:"outline",size:"large",width:width,text:"continue_with",shape:"rectangular",logo_alignment:"left"});loading.hidden=true;button.style.display="flex";wrap.setAttribute("aria-busy","false");googleIdentityInitialised=true}
+      catch(error){loading.hidden=true;wrap.setAttribute("aria-busy","false");status.textContent="Google sign-in is temporarily unavailable. Partner email links still work below.";status.classList.add("error");retry.style.display="block"}
+    }
+    async function googleLoginCallback(response){
+      if(googleLoginInFlight)return;var status=q("#googleSignInStatus"),wrap=q("#googleSignInWrap");q("#loginError").classList.add("hidden");status.classList.remove("error");status.textContent="Verifying your Sears Melvin account…";wrap.setAttribute("aria-busy","true");googleLoginInFlight=true;
+      try{if(!response||!response.credential)throw new Error("Google did not return a valid sign-in response");var result=await authApi({action:"google-login",credential:response.credential});state.partner=result.partner;await enterApp()}
+      catch(error){showBox(q("#loginError"),error.message||"Google sign-in failed.","error");status.classList.add("error");status.textContent="Only authorised searsmelvin.co.uk Workspace accounts can continue."}
+      finally{googleLoginInFlight=false;wrap.setAttribute("aria-busy","false")}
     }
     async function consumeMagicLink(token){
       showAuth();var btn=q('#loginForm button[type="submit"]');var email=q("#loginEmail");email.disabled=true;setBusy(btn,true,"Verifying secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");
@@ -494,10 +521,11 @@
       q("#"+(view==="request"?"requestForm":"loginForm")).classList.remove("hidden");
     }
     qa("[data-auth-view]").forEach(function(b){b.addEventListener("click",function(){setAuthView(b.dataset.authView)})});
+    q("#googleSignInRetry").addEventListener("click",initGoogleSignIn);
     q("#loginForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#loginForm button[type="submit"]');setBusy(btn,true,"Sending secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");try{var d=await authApi({action:"request-magic-link",email:q("#loginEmail").value.trim()});showBox(q("#loginMessage"),d.message,"success")}catch(err){showBox(q("#loginError"),"Unable to send a sign-in link right now. Please try again.","error")}finally{setBusy(btn,false)}});
     q("#requestForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#requestForm button[type="submit"]');setBusy(btn,true,"Submitting…");var fd=new FormData(e.target);try{var d=await authApi({action:"request",name:fd.get("name"),company:fd.get("company"),email:fd.get("email"),phone:fd.get("phone"),message:fd.get("message")});showBox(q("#requestMessageBox"),d.message,"success");e.target.reset()}catch(err){showBox(q("#requestMessageBox"),err.message,"error")}finally{setBusy(btn,false)}});
     qa(".nav-btn").forEach(function(b){b.addEventListener("click",function(){state.view=b.dataset.view;renderView()})});
-    q("#logoutBtn").addEventListener("click",async function(){try{await authApi({action:"logout"})}catch(e){}state.partner=null;state.orders=[];showAuth()});
+    q("#logoutBtn").addEventListener("click",async function(){try{await authApi({action:"logout"})}catch(e){}if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();state.partner=null;state.orders=[];showAuth()});
     q("#drawerScrim").addEventListener("click",closeOrder);q("#closeDrawer").addEventListener("click",closeOrder);q("#closeWizard").addEventListener("click",closeWizard);q("#wizardSave").addEventListener("click",closeWizard);q("#wizardBack").addEventListener("click",function(){captureStep();state.wizardStep=Math.max(0,state.wizardStep-1);renderWizard()});q("#wizardNext").addEventListener("click",wizardNext);
     q("#orderWizard").addEventListener("cancel",function(e){e.preventDefault();closeWizard()});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&q("#orderDrawer").classList.contains("open"))closeOrder()});
     boot();

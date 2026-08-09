@@ -69,12 +69,15 @@ try {
   assert.equal(partnerHtml.includes('type="password"'), false);
   assert.equal(partnerHtml.includes("request-magic-link"), true);
   assert.equal(partnerHtml.includes("consume-magic-link"), true);
+  assert.equal(partnerHtml.includes("google-login"), true);
+  assert.equal(partnerHtml.includes("accounts.google.com/gsi/client"), true);
   assert.equal(partnerHtml.includes("#reset="), false);
   assert.equal(partnerAuthApi.includes("password_hash"), false);
   assert.equal(partnerAuthApi.includes("forgot-password"), false);
   assert.equal(partnerAuthApi.includes("reset-password"), false);
   assert.equal(partnerAuthApi.includes("pwnedpasswords"), false);
   assert.equal(partnerAuthApi.includes("token_hash"), true);
+  assert.equal(partnerAuthApi.includes("payload.hd !== SM_WORKSPACE_DOMAIN"), true);
   assert.equal(adminApi.includes("password_hash"), false);
   assert.equal(adminApi.includes("#reset="), false);
   assert.equal(publicMemorialFunction.includes("env.SUPABASE_SERVICE_KEY"), false);

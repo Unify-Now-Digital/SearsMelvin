@@ -18,6 +18,8 @@ The portal derives seven independent lanes: specification, permit, proof, materi
 - The Sears Melvin workspace sees non-test orders for the configured organisation where `partner_id` is null or the Sears Melvin internal partner ID.
 - Orders belonging to other funeral-director partners are excluded.
 - External partner workspaces remain restricted to their own partner ID.
+- Sears Melvin staff authenticate with a verified `searsmelvin.co.uk` Google Workspace identity and are mapped to the existing internal partner record; funeral-director partners retain one-time email links.
+- Google establishes an individual identity at sign-in, but V2 deliberately does not claim per-user permissions or audit attribution until named staff records exist.
 - Material readiness is advisory. V2 cannot order material or lock a specification.
 - Proof decisions are disabled by default and remain unavailable to the shared Sears Melvin login.
 - Permit upload, named-user permissions and commission settlement are visibly marked as not connected.
