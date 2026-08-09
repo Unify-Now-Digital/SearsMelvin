@@ -733,10 +733,8 @@ async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
   const tokenHash = await hashOpaqueToken(token);
-  let sessions = await findPartnerSession(env, tokenHash, now, headers);
+  const sessions = await findPartnerSession(env, tokenHash, now, headers);
   if (sessions === null) return null;
-  // Compatibility for sessions issued before tokens were hashed at rest.
-  if (sessions.length === 0) sessions = await findPartnerSession(env, token, now, headers) || [];
   if (sessions.length === 0) return null;
   const partnerRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessions[0].partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company,phone,status&limit=1`, { headers });
   if (!partnerRes.ok) return null;
@@ -748,10 +746,9 @@ function publicPartner(partner) {
 }
 
 function getWorkspace(env, partner) {
-  // SM_INTERNAL_PARTNER_ID should be configured in Cloudflare. The existing
-  // approved Sears Melvin account is id 1, retained as an MVP fallback so the
-  // internal workspace is usable before deployment configuration is updated.
-  const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "1").trim();
+  // Fail closed if the internal partner mapping is not configured: no partner
+  // should silently gain the broader internal order scope.
+  const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "").trim();
   const internal = String(partner.id) === internalPartnerId;
   const proofDecisionEnabled = !internal && String(env.PARTNER_PROOF_DECISIONS_ENABLED || "").toLowerCase() === "true";
   return {

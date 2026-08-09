@@ -15,6 +15,7 @@ const env = {
   SUPABASE_URL: "https://example.supabase.co",
   SUPABASE_SERVICE_KEY: "test-service-role-key",
   SM_ORG_ID: "3770972d-1bbd-417b-b413-297e844db285",
+  SM_INTERNAL_PARTNER_ID: "1",
   RESEND_API_KEY: "test-resend-key",
   STRIPE_SECRET_KEY: "test-stripe-key",
 };

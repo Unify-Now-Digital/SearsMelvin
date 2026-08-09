@@ -7,8 +7,7 @@
  * POST { action: "google-login", credential }           → sign in with a Sears Melvin Workspace account
  * POST { action: "verify" }                             → verify the HttpOnly admin session cookie
  * POST { action: "logout" }                             → end the admin session
- * All remaining actions require the valid admin session cookie. A temporary
- * body-token fallback only preserves sessions issued before this hardening.
+ * All remaining actions require the valid admin session cookie.
  */
 
 import {
@@ -98,7 +97,7 @@ export async function onRequest(context) {
   if (action === "logout") return handleAdminLogout(context, env, request, data);
 
   // All other actions require valid admin session
-  const valid = await verifyAdminToken(env, getCookie(request, ADMIN_COOKIE) || data.token);
+  const valid = await verifyAdminToken(env, getCookie(request, ADMIN_COOKIE));
   if (!valid) return json({ ok: false, error: "Unauthorized" }, 401);
 
   if (action === "list-partners") return listPartners(env, data);
@@ -198,7 +197,7 @@ async function handleGoogleLogin(context, env, request, { credential }) {
 }
 
 async function handleAdminVerify(env, request, data) {
-  const token = getCookie(request, ADMIN_COOKIE) || data.token;
+  const token = getCookie(request, ADMIN_COOKIE);
   if (!token) return json({ ok: false, error: "Token required" }, 400);
   const valid = await verifyAdminToken(env, token);
   if (!valid) return json({ ok: false, error: "Invalid or expired session" }, 401);
@@ -206,11 +205,11 @@ async function handleAdminVerify(env, request, data) {
 }
 
 async function handleAdminLogout(context, env, request, data) {
-  const token = getCookie(request, ADMIN_COOKIE) || data.token;
+  const token = getCookie(request, ADMIN_COOKIE);
   const headers = sbHeaders(env);
   if (token) {
     const tokenHash = await hashSessionToken(token);
-    await deleteSessionByEitherToken(env, "admin_sessions", tokenHash, token, headers);
+    await deleteSession(env, "admin_sessions", tokenHash, headers);
   }
   queueSecurityEvent(context, env, request, {
     eventType: "admin_logout",
@@ -228,10 +227,7 @@ async function verifyAdminToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
   const tokenHash = await hashSessionToken(token);
-  if (await sessionExists(env, "admin_sessions", tokenHash, now, headers)) return true;
-  // Compatibility for sessions issued before cookie/hash hardening. These expire
-  // within 24 hours and are never issued by the new code.
-  return sessionExists(env, "admin_sessions", token, now, headers);
+  return sessionExists(env, "admin_sessions", tokenHash, now, headers);
 }
 
 // ==================== LIST PARTNERS ====================
@@ -281,6 +277,11 @@ async function listPartners(env, { filter }) {
 // ==================== APPROVE PARTNER ====================
 async function approvePartner(env, { partnerId }) {
   if (!isPositiveInteger(partnerId)) return json({ ok: false, error: "Valid partner ID required" }, 400);
+  const internalPartnerId = getInternalPartnerId(env);
+  if (!internalPartnerId) return json({ ok: false, error: "Internal workspace is not configured" }, 500);
+  if (String(partnerId) === internalPartnerId) {
+    return json({ ok: false, error: "Sears Melvin staff access is managed through Google Workspace" }, 400);
+  }
 
   const headers = sbHeaders(env);
   const lookupRes = await fetch(
@@ -1070,11 +1071,16 @@ async function sessionExists(env, table, token, now, headers) {
   return rows.length > 0;
 }
 
-async function deleteSessionByEitherToken(env, table, tokenHash, legacyToken, headers) {
-  await Promise.all([
-    fetch(`${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(tokenHash)}`, { method: "DELETE", headers }),
-    fetch(`${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(legacyToken)}`, { method: "DELETE", headers }),
-  ]);
+async function deleteSession(env, table, tokenHash, headers) {
+  await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(tokenHash)}`, {
+    method: "DELETE",
+    headers,
+  });
+}
+
+function getInternalPartnerId(env) {
+  const value = String(env.SM_INTERNAL_PARTNER_ID || "").trim();
+  return /^[1-9]\d{0,9}$/.test(value) ? value : "";
 }
 
 function sbHeaders(env) {
