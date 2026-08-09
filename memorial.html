@@ -1272,7 +1272,6 @@
         const SUPABASE_URL  = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
         const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
         const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
-        const ADMIN_TOKEN = localStorage.getItem('admin_token');
 
         async function supabaseFetch(table, params) {
             const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
@@ -1357,20 +1356,19 @@
             try {
                 let product;
                 let adminSizes = null;
-                if (ADMIN_TOKEN) {
-                    // Admin context: fetch via /api/admin so RLS doesn't hide inactive products/sizes
-                    const adminRes = await fetch('/api/admin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'get-product', slug: slug, token: ADMIN_TOKEN })
-                    }).then(r => r.json());
-                    if (adminRes && adminRes.ok) {
-                        product = adminRes.product;
-                        adminSizes = adminRes.sizes || [];
-                        showAdminPreviewBanner(product);
-                    } else if (adminRes && adminRes.error === 'Unauthorized') {
-                        localStorage.removeItem('admin_token');
-                    }
+                // An HttpOnly admin cookie cannot be read by JavaScript. Try the
+                // protected preview endpoint; ordinary visitors receive 401 and
+                // continue through the public active-product query below.
+                const adminRes = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'get-product', slug: slug })
+                }).then(r => r.json());
+                if (adminRes && adminRes.ok) {
+                    product = adminRes.product;
+                    adminSizes = adminRes.sizes || [];
+                    showAdminPreviewBanner(product);
                 }
                 if (!product) {
                     const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true', limit: '1' });

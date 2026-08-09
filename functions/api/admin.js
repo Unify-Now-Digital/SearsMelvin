@@ -4,23 +4,11 @@
  * Sign-in actions establish a short-lived admin session. All other actions
  * require a valid, unexpired session token.
  *
- * POST { action: "login", adminKey }                    → get admin session token
- * POST { action: "google-login", credential }           → sign in with a Google ID token (allowed emails only)
- * POST { action: "verify", token }                      → verify admin session
- * POST { action: "logout", token }                      → end admin session
- * POST { action: "list-partners", token }               → list all partners with stats
- * POST { action: "approve-partner", token, partnerId }  → approve a pending partner
- * POST { action: "decline-partner", token, partnerId }  → decline a pending partner
- * POST { action: "dashboard", token }                   → get overview stats
- * POST { action: "list-orders", token }                 → list all orders with tracking info
- * POST { action: "update-order", token, orderId, ... }  → update order stage, inscription, proof, dates
- * POST { action: "generate-tracking", token, orderId }  → generate tracking token for customer
- * POST { action: "list-inscription-requests", token }   → list pending inscription change requests
- * POST { action: "resolve-inscription", token, requestId, accept } → accept/decline inscription change
- * POST { action: "list-products", token }                → list all products incl. hidden (bypasses RLS)
- * POST { action: "get-product", token, slug }             → fetch one product (with sizes) by slug, incl. hidden
- * POST { action: "list-order-events", token, orderId }    → fetch chronological event log for an order
- * POST { action: "send-customer-email", token, orderId, kind } → email customer (proof_ready|tracking|inscription_confirm)
+ * POST { action: "google-login", credential }           → sign in with a Sears Melvin Workspace account
+ * POST { action: "verify" }                             → verify the HttpOnly admin session cookie
+ * POST { action: "logout" }                             → end the admin session
+ * All remaining actions require the valid admin session cookie. A temporary
+ * body-token fallback only preserves sessions issued before this hardening.
  */
 
 const CORS = {
@@ -41,7 +29,7 @@ export async function onRequest(context) {
   if (!isSameOriginRequest(request)) {
     return json({ ok: false, error: "Forbidden" }, 403);
   }
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.PARTNER_ADMIN_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
 
@@ -51,15 +39,12 @@ export async function onRequest(context) {
 
   const { action } = data;
 
-  if (action === "login") return handleAdminLogin(env, data);
   if (action === "google-login") return handleGoogleLogin(env, data);
-  if (action === "send-magic-link") return handleSendMagicLink(env, request);
-  if (action === "verify-magic-link") return handleVerifyMagicLink(env, data);
-  if (action === "verify") return handleAdminVerify(env, data);
-  if (action === "logout") return handleAdminLogout(env, data);
+  if (action === "verify") return handleAdminVerify(env, request, data);
+  if (action === "logout") return handleAdminLogout(env, request, data);
 
   // All other actions require valid admin session
-  const valid = await verifyAdminToken(env, data.token);
+  const valid = await verifyAdminToken(env, getCookie(request, ADMIN_COOKIE) || data.token);
   if (!valid) return json({ ok: false, error: "Unauthorized" }, 401);
 
   if (action === "list-partners") return listPartners(env, data);
@@ -83,37 +68,26 @@ export async function onRequest(context) {
 // ==================== ADMIN AUTH ====================
 
 // Google sign-in also requires a valid signature, issuer, audience, lifetime and
-// verified email. The Sears Melvin address must be backed by its Workspace domain.
-const ALLOWED_ADMIN_LOGIN_EMAILS = [
-  "arin@searsmelvin.co.uk",
-  "arinmelvin@gmail.com",
-];
+// verified email. Access is limited to the Sears Melvin Google Workspace domain.
+const ADMIN_DOMAIN = "searsmelvin.co.uk";
+const ADMIN_COOKIE = "__Host-sm_admin_session";
+const ADMIN_SESSION_SECONDS = 8 * 60 * 60;
 const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 let googleJwksCache = null;
 
 async function createAdminSession(env) {
   const token = generateToken(64);
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+  const tokenHash = await hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + ADMIN_SESSION_SECONDS * 1000).toISOString();
 
   const headers = sbHeaders(env);
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ token, expires_at: expiresAt }),
+    body: JSON.stringify({ token: tokenHash, expires_at: expiresAt }),
   });
   if (!res.ok) return null;
   return token;
-}
-
-async function handleAdminLogin(env, { adminKey }) {
-  if (!adminKey || adminKey !== env.PARTNER_ADMIN_KEY) {
-    return json({ ok: false, error: "Invalid admin key" }, 401);
-  }
-
-  const token = await createAdminSession(env);
-  if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
-
-  return json({ ok: true, token });
 }
 
 class GoogleVerificationUnavailable extends Error {}
@@ -230,7 +204,7 @@ async function verifyGoogleIdToken(credential, expectedAudience) {
 }
 
 // Verifies a Google Identity Services ID token locally against Google's rotating
-// public signing keys, then applies the explicit admin account allowlist.
+// public signing keys, then requires the Workspace hosted-domain claim.
 async function handleGoogleLogin(env, { credential }) {
   if (!credential) return json({ ok: false, error: "Missing credential" }, 400);
   if (!env.GOOGLE_CLIENT_ID) return json({ ok: false, error: "Google sign-in not configured" }, 500);
@@ -248,144 +222,43 @@ async function handleGoogleLogin(env, { credential }) {
     return json({ ok: false, error: "Google email is not verified" }, 401);
   }
   const email = String(payload.email || "").toLowerCase();
-  if (!ALLOWED_ADMIN_LOGIN_EMAILS.includes(email)) {
-    return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
-  }
-  if (email.endsWith("@searsmelvin.co.uk") && payload.hd !== "searsmelvin.co.uk") {
+  if (!email.endsWith(`@${ADMIN_DOMAIN}`) || payload.hd !== ADMIN_DOMAIN) {
     return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
   }
 
   const token = await createAdminSession(env);
   if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
 
-  return json({ ok: true, token });
+  return json({ ok: true }, 200, { "Set-Cookie": sessionCookie(ADMIN_COOKIE, token, ADMIN_SESSION_SECONDS) });
 }
 
-async function handleAdminVerify(env, { token }) {
+async function handleAdminVerify(env, request, data) {
+  const token = getCookie(request, ADMIN_COOKIE) || data.token;
   if (!token) return json({ ok: false, error: "Token required" }, 400);
   const valid = await verifyAdminToken(env, token);
   if (!valid) return json({ ok: false, error: "Invalid or expired session" }, 401);
   return json({ ok: true });
 }
 
-async function handleAdminLogout(env, { token }) {
-  if (!token) return json({ ok: true });
+async function handleAdminLogout(env, request, data) {
+  const token = getCookie(request, ADMIN_COOKIE) || data.token;
   const headers = sbHeaders(env);
-  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(token)}`, {
-    method: "DELETE",
-    headers,
-  });
-  return json({ ok: true });
-}
-
-const ADMIN_EMAIL = "info@searsmelvin.co.uk";
-
-async function handleSendMagicLink(env, request) {
-  if (!env.RESEND_API_KEY) return json({ ok: false, error: "Email not configured" }, 500);
-
-  const token = generateToken(48);
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
-
-  const headers = sbHeaders(env);
-  // Prefix token so we can identify magic links on verify
-  const magicTokenValue = "magic_" + token;
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ token: magicTokenValue, expires_at: expiresAt }),
-  });
-  if (!res.ok) return json({ ok: false, error: "Failed to create magic link" }, 500);
-
-  const origin = new URL(request.url).origin;
-  const magicUrl = `${origin}/admin.html?magic=${magicTokenValue}`;
-
-  const emailRes = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
-      to: ADMIN_EMAIL,
-      subject: "Admin login link — Sears Melvin Memorials",
-      html: magicLinkEmail(magicUrl),
-    }),
-  });
-  if (!emailRes.ok) {
-    const errBody = await emailRes.text();
-    console.error("Magic link email failed:", errBody);
-    return json({ ok: false, error: "Failed to send email" }, 500);
+  if (token) {
+    const tokenHash = await hashSessionToken(token);
+    await deleteSessionByEitherToken(env, "admin_sessions", tokenHash, token, headers);
   }
-
-  return json({ ok: true });
-}
-
-async function handleVerifyMagicLink(env, { magicToken }) {
-  if (!magicToken) return json({ ok: false, error: "Token required" }, 400);
-  // Magic link tokens are prefixed with "magic_"
-  if (!magicToken.startsWith("magic_")) {
-    return json({ ok: false, error: "Invalid magic link" }, 401);
-  }
-
-  const headers = sbHeaders(env);
-  const now = new Date().toISOString();
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(magicToken)}&expires_at=gt.${now}&select=id&limit=1`,
-    { headers },
-  );
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
-  const rows = await res.json();
-  if (rows.length === 0) {
-    return json({ ok: false, error: "Invalid or expired magic link" }, 401);
-  }
-
-  // Delete the one-time magic link token
-  await fetch(`${env.SUPABASE_URL}/rest/v1/admin_sessions?id=eq.${rows[0].id}`, {
-    method: "DELETE",
-    headers,
-  });
-
-  // Create a proper session token (24hr)
-  const sessionToken = await createAdminSession(env);
-  if (!sessionToken) return json({ ok: false, error: "Failed to create session" }, 500);
-
-  return json({ ok: true, token: sessionToken });
-}
-
-function magicLinkEmail(url) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#F5F3F0;font-family:-apple-system,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3F0;padding:24px 0;">
-<tr><td align="center">
-<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-  <tr><td style="background:#2C2C2C;padding:20px 28px;">
-    <span style="font-family:Georgia,serif;font-size:18px;color:#fff;">Sears Melvin <span style="opacity:0.55;">Memorials</span></span>
-  </td></tr>
-  <tr><td style="padding:32px 28px;">
-    <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Admin Login</h2>
-    <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">Click the button below to sign in to the admin dashboard. This link expires in 15 minutes.</p>
-    <a href="${url}" style="display:inline-block;background:#2C2C2C;color:#fff;padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;text-decoration:none;">Sign In to Dashboard</a>
-    <p style="color:#999;font-size:12px;margin-top:24px;">If you didn't request this, you can safely ignore this email.</p>
-  </td></tr>
-  <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-    <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials</span>
-  </td></tr>
-</table>
-</td></tr></table></body></html>`;
+  return json({ ok: true }, 200, { "Set-Cookie": clearCookie(ADMIN_COOKIE) });
 }
 
 async function verifyAdminToken(env, token) {
   if (!token) return false;
-  // Magic-link tokens travel in URLs (referrer leakage, history). Force a one-time
-  // exchange via verify-magic-link instead of letting them act as session tokens.
-  if (typeof token === "string" && token.startsWith("magic_")) return false;
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${now}&select=id&limit=1`,
-    { headers },
-  );
-  if (!res.ok) return false;
-  const rows = await res.json();
-  return rows.length > 0;
+  const tokenHash = await hashSessionToken(token);
+  if (await sessionExists(env, "admin_sessions", tokenHash, now, headers)) return true;
+  // Compatibility for sessions issued before cookie/hash hardening. These expire
+  // within 24 hours and are never issued by the new code.
+  return sessionExists(env, "admin_sessions", token, now, headers);
 }
 
 // ==================== LIST PARTNERS ====================
@@ -1026,6 +899,46 @@ function generateToken(length = 64) {
   return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function hashSessionToken(token) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return "sha256:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getCookie(request, name) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const index = part.indexOf("=");
+    if (index < 0) continue;
+    if (part.slice(0, index).trim() === name) return decodeURIComponent(part.slice(index + 1).trim());
+  }
+  return "";
+}
+
+function sessionCookie(name, value, maxAge) {
+  return `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+
+function clearCookie(name) {
+  return `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+}
+
+async function sessionExists(env, table, token, now, headers) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(token)}&expires_at=gt.${encodeURIComponent(now)}&select=id&limit=1`,
+    { headers },
+  );
+  if (!res.ok) return false;
+  const rows = await res.json();
+  return rows.length > 0;
+}
+
+async function deleteSessionByEitherToken(env, table, tokenHash, legacyToken, headers) {
+  await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(tokenHash)}`, { method: "DELETE", headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/${table}?token=eq.${encodeURIComponent(legacyToken)}`, { method: "DELETE", headers }),
+  ]);
+}
+
 function sbHeaders(env) {
   return {
     "apikey": env.SUPABASE_SERVICE_KEY,
@@ -1034,7 +947,7 @@ function sbHeaders(env) {
   };
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -1042,6 +955,7 @@ function json(data, status = 200) {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       ...CORS,
+      ...extraHeaders,
     },
   });
 }

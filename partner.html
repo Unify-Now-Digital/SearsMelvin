@@ -1,73 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage:           'denied',
-      analytics_storage:    'denied',
-      ad_user_data:         'denied',
-      ad_personalization:   'denied',
-      functionality_storage:'granted',
-      security_storage:     'granted',
-      wait_for_update: 500
-    });
-    try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
-        gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
-        });
-      }
-    } catch (_e) {}
-    </script>
-    <!-- Google Tag Manager — deferred until first interaction or 3s idle -->
-    <script>
-      (function(){
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
-      })();
-    </script>
-    <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
-         long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
-         scroll events during measurement and idle for ~3s, so the previous
-         shared loader caused the chat widget to mount inside the LCP window
-         and inflate the metric. Real users still get chat as soon as they
-         tap or type. -->
-    <script>
-      (function(){
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var lc = document.createElement('script');
-          lc.src = 'https://widgets.leadconnectorhq.com/loader.js';
-          lc.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
-          lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
-          document.body.appendChild(lc);
-        }
-        var evts = ['pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        setTimeout(load, 10000);
-      })();
-    </script>
-    <!-- End Google Tag Manager + LeadConnector -->
+    <!-- No analytics or chat scripts on authenticated partner pages. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partner Portal | Sears Melvin Memorials</title>
@@ -244,10 +178,6 @@
     <link rel="stylesheet" href="/chat-widget.css?v=2">
 </head>
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
 
 <!-- ==================== LOGIN SCREEN ==================== -->
 <div id="loginScreen" class="login-wrapper">
@@ -300,11 +230,11 @@
             <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your new password below.</p>
             <div class="login-field">
                 <label>New Password</label>
-                <input type="password" id="resetPassword" required autocomplete="new-password" minlength="6">
+                <input type="password" id="resetPassword" required autocomplete="new-password" minlength="12" maxlength="128">
             </div>
             <div class="login-field">
                 <label>Confirm Password</label>
-                <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="6">
+                <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="12" maxlength="128">
             </div>
             <button type="submit" class="login-btn" id="resetBtn">Set New Password</button>
             <p class="login-error" id="resetError"></p>
@@ -330,12 +260,12 @@
                 <input type="tel" id="reqPhone">
             </div>
             <div class="login-field">
-                <label>Password * <span style="color:var(--color-text-muted);font-weight:normal;font-size:0.78rem;">(at least 6 characters)</span></label>
-                <input type="password" id="reqPassword" required autocomplete="new-password" minlength="6">
+                <label>Password * <span style="color:var(--color-text-muted);font-weight:normal;font-size:0.78rem;">(12-128 characters)</span></label>
+                <input type="password" id="reqPassword" required autocomplete="new-password" minlength="12" maxlength="128">
             </div>
             <div class="login-field">
                 <label>Confirm Password *</label>
-                <input type="password" id="reqPasswordConfirm" required autocomplete="new-password" minlength="6">
+                <input type="password" id="reqPasswordConfirm" required autocomplete="new-password" minlength="12" maxlength="128">
             </div>
             <div class="login-field">
                 <label>Message (optional)</label>
@@ -495,7 +425,6 @@
 
 <script>
     // ==================== STATE ====================
-    var sessionToken = localStorage.getItem('partner_token');
     var currentPartner = null;
     var allOrders = [];
     var currentFilter = 'all';
@@ -507,14 +436,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Check for password reset token in URL
         var params = new URLSearchParams(window.location.search);
-        resetToken = params.get('reset');
+        var fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        resetToken = fragment.get('reset') || params.get('reset');
         if (resetToken) {
+            // Remove the one-time token from the address bar/history as soon as
+            // the application has captured it in memory.
+            history.replaceState(null, '', '/partner');
             showResetForm();
             return;
         }
-        if (sessionToken) {
-            verifySession();
-        }
+        verifySession();
     });
 
     // ==================== TAB SWITCHING ====================
@@ -594,8 +525,8 @@
             errEl.style.display = 'block';
             return;
         }
-        if (pw.length < 6) {
-            errEl.textContent = 'Password must be at least 6 characters.';
+        if (pw.length < 12 || pw.length > 128) {
+            errEl.textContent = 'Password must be 12-128 characters.';
             errEl.style.display = 'block';
             return;
         }
@@ -636,8 +567,8 @@
 
         var pw = document.getElementById('reqPassword').value;
         var pwConfirm = document.getElementById('reqPasswordConfirm').value;
-        if (pw.length < 6) {
-            errEl.textContent = 'Password must be at least 6 characters.';
+        if (pw.length < 12 || pw.length > 128) {
+            errEl.textContent = 'Password must be 12-128 characters.';
             errEl.style.display = 'block';
             return;
         }
@@ -699,8 +630,6 @@
             var data = await res.json();
             if (!data.ok) throw new Error(data.error || 'Login failed');
 
-            sessionToken = data.token;
-            localStorage.setItem('partner_token', data.token);
             currentPartner = data.partner;
             showDashboard();
         } catch (err) {
@@ -716,15 +645,15 @@
             var res = await fetch('/api/partner-auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'verify', token: sessionToken })
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'verify' })
             });
             var data = await res.json();
             if (!data.ok) throw new Error('Invalid session');
             currentPartner = data.partner;
             showDashboard();
         } catch (err) {
-            localStorage.removeItem('partner_token');
-            sessionToken = null;
+            // No valid HttpOnly session cookie; keep the login screen visible.
         }
     }
 
@@ -733,11 +662,10 @@
             await fetch('/api/partner-auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'logout', token: sessionToken })
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'logout' })
             });
         } catch (e) {}
-        localStorage.removeItem('partner_token');
-        sessionToken = null;
         currentPartner = null;
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('dashboardScreen').style.display = 'none';
@@ -758,9 +686,7 @@
             var url = '/api/partner-orders?status=' + currentFilter;
             if (search) url += '&search=' + encodeURIComponent(search);
 
-            var res = await fetch(url, {
-                headers: { 'Authorization': 'Bearer ' + sessionToken }
-            });
+            var res = await fetch(url, { credentials: 'same-origin' });
             var data = await res.json();
             if (!data.ok) {
                 if (res.status === 401) return handleLogout();
@@ -833,9 +759,7 @@
         body.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--color-text-muted);">Loading...</p>';
 
         try {
-            var res = await fetch('/api/partner-orders?id=' + orderId, {
-                headers: { 'Authorization': 'Bearer ' + sessionToken }
-            });
+            var res = await fetch('/api/partner-orders?id=' + orderId, { credentials: 'same-origin' });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
 
@@ -912,7 +836,8 @@
         try {
             var res = await fetch('/api/partner-orders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({ action: 'comment', orderId: orderId, comment: text })
             });
             var data = await res.json();
@@ -965,7 +890,8 @@
         try {
             var res = await fetch('/api/partner-orders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     action: 'create',
                     customerName: name,

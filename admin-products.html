@@ -1,50 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage:           'denied',
-      analytics_storage:    'denied',
-      ad_user_data:         'denied',
-      ad_personalization:   'denied',
-      functionality_storage:'granted',
-      security_storage:     'granted',
-      wait_for_update: 500
-    });
-    try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
-        gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
-        });
-      }
-    } catch (_e) {}
-    </script>
-    <!-- Google Tag Manager + LeadConnector — deferred until first interaction or 3s idle -->
-    <script>
-      (function(){
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
-      })();
-    </script>
-    <!-- End Google Tag Manager + LeadConnector -->
+    <!-- No analytics or chat scripts on authenticated administration pages. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Products (Admin) | Sears Melvin Memorials</title>
@@ -392,10 +349,6 @@
     </style>
 </head>
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <!-- Admin banner -->
     <div style="background:#2C2C2C;color:#fff;padding:0.6rem 1.25rem;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;font-size:0.85rem;position:sticky;top:0;z-index:1000;flex-wrap:wrap;gap:0.5rem;">
         <span><strong style="background:#c0392b;padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.05em;font-size:0.7rem;text-transform:uppercase;margin-right:0.5rem;">Admin</strong>All products view &mdash; includes hidden &amp; inactive items</span>
@@ -596,9 +549,18 @@
 
     <script>
         // ==================== ADMIN AUTH GATE ====================
-        const ADMIN_TOKEN = localStorage.getItem('admin_token');
-        if (!ADMIN_TOKEN) {
-            window.location.href = '/admin';
+        async function requireAdminSession() {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'verify' })
+            });
+            if (!res.ok) {
+                window.location.replace('/admin');
+                return false;
+            }
+            return true;
         }
 
         // ==================== SUPABASE CONFIG ====================
@@ -638,12 +600,11 @@
                     fetch('/api/admin', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'list-products', token: ADMIN_TOKEN })
+                        body: JSON.stringify({ action: 'list-products' })
                     }).then(r => r.json())
                 ]);
                 if (!productsRes || !productsRes.ok) {
                     if (productsRes && productsRes.error === 'Unauthorized') {
-                        localStorage.removeItem('admin_token');
                         window.location.href = '/admin';
                         return;
                     }
@@ -1039,7 +1000,8 @@
         }
 
         // ==================== INIT ====================
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAdminSession()) return;
             // Loading timeout - show error if data doesn't load within 15s
             const loadingTimeout = setTimeout(() => {
                 const loadingEl = document.getElementById('productsLoading');

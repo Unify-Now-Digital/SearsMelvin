@@ -1,50 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage:           'denied',
-      analytics_storage:    'denied',
-      ad_user_data:         'denied',
-      ad_personalization:   'denied',
-      functionality_storage:'granted',
-      security_storage:     'granted',
-      wait_for_update: 500
-    });
-    try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
-        gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
-        });
-      }
-    } catch (_e) {}
-    </script>
-    <!-- Google Tag Manager + LeadConnector — deferred until first interaction or 3s idle -->
-    <script>
-      (function(){
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
-      })();
-    </script>
-    <!-- End Google Tag Manager + LeadConnector -->
+    <!-- No analytics or chat scripts on authenticated administration pages. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Sears Melvin Memorials</title>
@@ -392,10 +349,6 @@
     </style>
 </head>
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
 
 <!-- ==================== LOGIN ==================== -->
 <div id="loginScreen" class="login-wrapper">
@@ -434,32 +387,14 @@
                         </div>
                         <div id="googleSignInBtn"></div>
                     </div>
-                    <p id="googleSignInStatus" class="google-status" aria-live="polite">Use an approved Sears Melvin Google account.</p>
+                    <p id="googleSignInStatus" class="google-status" aria-live="polite">Use your searsmelvin.co.uk Google Workspace account.</p>
                     <button type="button" id="googleSignInRetry" class="login-retry" onclick="initGoogleSignIn()">Try Google again</button>
                 </div>
                 <p class="login-error" id="loginError" role="alert" aria-live="assertive"></p>
 
-                <details class="login-alternatives">
-                    <summary>Can't use Google?</summary>
-                    <div class="login-alternative-content">
-                        <div>
-                            <button type="button" class="login-btn login-alt-btn" id="magicLinkBtn" onclick="sendMagicLink()">Email a one-time login link</button>
-                            <p class="login-alt-note">A 15-minute sign-in link will be sent to the main Sears Melvin administration inbox.</p>
-                            <p id="magicLinkMsg" class="login-alt-note" style="display:none;" aria-live="polite"></p>
-                        </div>
-                        <form onsubmit="adminLogin(event)">
-                            <div class="login-field">
-                                <label for="adminKeyInput">Admin key</label>
-                                <input type="password" id="adminKeyInput" autocomplete="off" placeholder="Enter your admin key">
-                            </div>
-                            <button type="submit" class="login-btn login-alt-btn" id="loginBtn">Continue with admin key</button>
-                        </form>
-                    </div>
-                </details>
-
                 <p class="login-security-note">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span>Google credentials are verified on the server. Access is restricted to approved accounts and sessions expire automatically.</span>
+                    <span>Google credentials are verified on the server. Only searsmelvin.co.uk Workspace accounts are accepted, and secure sessions expire automatically.</span>
                 </p>
                 <noscript><p class="login-error" style="display:block;">JavaScript is required to access the admin dashboard.</p></noscript>
             </div>
@@ -597,7 +532,6 @@
 </div>
 
 <script>
-    var adminToken = localStorage.getItem('admin_token');
     var allPartners = [];
     var partnerFilter = 'all';
     var googleIdentityPromise = null;
@@ -605,15 +539,7 @@
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
-        var params = new URLSearchParams(window.location.search);
-        var magicToken = params.get('magic');
-        if (magicToken) {
-            // Clean URL
-            window.history.replaceState({}, '', window.location.pathname);
-            verifyMagicLink(magicToken);
-        } else if (adminToken) {
-            verifyAdminSession();
-        }
+        verifyAdminSession();
         initGoogleSignIn();
     });
 
@@ -672,7 +598,7 @@
         button.replaceChildren();
         retry.style.display = 'none';
         status.classList.remove('error');
-        status.textContent = 'Use an approved Sears Melvin Google account.';
+        status.textContent = 'Use your searsmelvin.co.uk Google Workspace account.';
 
         try {
             var res = await fetch('/api/config', { cache: 'no-store', credentials: 'same-origin' });
@@ -684,6 +610,7 @@
             google.accounts.id.initialize({
                 client_id: cfg.googleClientId,
                 callback: googleLoginCallback,
+                hd: 'searsmelvin.co.uk',
                 auto_select: false,
                 cancel_on_tap_outside: true,
                 itp_support: true
@@ -702,11 +629,11 @@
             loading.hidden = true;
             button.style.display = 'flex';
             wrap.setAttribute('aria-busy', 'false');
-            status.textContent = 'Only approved Sears Melvin Google accounts can continue.';
+            status.textContent = 'Only searsmelvin.co.uk Google Workspace accounts can continue.';
         } catch (error) {
             loading.hidden = true;
             wrap.setAttribute('aria-busy', 'false');
-            status.textContent = 'Google sign-in is temporarily unavailable. Try again or use a secure recovery option below.';
+            status.textContent = 'Google sign-in is temporarily unavailable. Please try again.';
             status.classList.add('error');
             retry.style.display = 'block';
         }
@@ -732,90 +659,15 @@
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error || 'Google sign-in failed');
-            adminToken = data.token;
-            localStorage.setItem('admin_token', data.token);
             showDashboard();
         } catch (err) {
             errEl.textContent = err.message;
             errEl.style.display = 'block';
             status.classList.add('error');
-            status.textContent = 'Only approved Sears Melvin Google accounts can continue.';
+            status.textContent = 'Only searsmelvin.co.uk Google Workspace accounts can continue.';
         } finally {
             googleLoginInFlight = false;
             wrap.setAttribute('aria-busy', 'false');
-        }
-    }
-
-    async function adminLogin(e) {
-        e.preventDefault();
-        var key = document.getElementById('adminKeyInput').value.trim();
-        var btn = document.getElementById('loginBtn');
-        var errEl = document.getElementById('loginError');
-        btn.disabled = true;
-        btn.textContent = 'Signing in...';
-        errEl.style.display = 'none';
-
-        try {
-            var res = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'login', adminKey: key })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Login failed');
-            adminToken = data.token;
-            localStorage.setItem('admin_token', data.token);
-            showDashboard();
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Continue with admin key';
-    }
-
-    async function sendMagicLink() {
-        var btn = document.getElementById('magicLinkBtn');
-        var msg = document.getElementById('magicLinkMsg');
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-        msg.style.display = 'none';
-        try {
-            var res = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'send-magic-link' })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Failed to send');
-            msg.textContent = 'Login link sent to info@searsmelvin.co.uk — check your inbox.';
-            msg.style.color = 'var(--color-success)';
-            msg.style.display = 'block';
-        } catch (err) {
-            msg.textContent = err.message;
-            msg.style.color = 'var(--color-error)';
-            msg.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Send Login Link';
-    }
-
-    async function verifyMagicLink(magicToken) {
-        try {
-            var res = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'verify-magic-link', magicToken: magicToken })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Invalid link');
-            adminToken = data.token;
-            localStorage.setItem('admin_token', data.token);
-            showDashboard();
-        } catch (err) {
-            var errEl = document.getElementById('loginError');
-            errEl.textContent = 'Magic link expired or invalid. Please request a new one.';
-            errEl.style.display = 'block';
         }
     }
 
@@ -824,14 +676,14 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'verify', token: adminToken })
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'verify' })
             });
             var data = await res.json();
             if (!data.ok) throw new Error('Invalid');
             showDashboard();
         } catch (err) {
-            localStorage.removeItem('admin_token');
-            adminToken = null;
+            // The login screen remains visible when there is no valid cookie.
         }
     }
 
@@ -840,11 +692,11 @@
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'logout', token: adminToken })
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'logout' })
             });
         } catch (e) {}
-        localStorage.removeItem('admin_token');
-        adminToken = null;
+        if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('dashboardScreen').style.display = 'none';
     }
@@ -863,7 +715,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'dashboard', token: adminToken })
+                body: JSON.stringify({ action: 'dashboard' })
             });
             var data = await res.json();
             if (!data.ok) { if (res.status === 401) return adminLogout(); return; }
@@ -926,7 +778,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'list-partners', token: adminToken, filter: partnerFilter })
+                body: JSON.stringify({ action: 'list-partners', filter: partnerFilter })
             });
             var data = await res.json();
             if (!data.ok) { if (res.status === 401) return adminLogout(); return; }
@@ -995,7 +847,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'approve-partner', token: adminToken, partnerId: id })
+                body: JSON.stringify({ action: 'approve-partner', partnerId: id })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
@@ -1016,7 +868,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'decline-partner', token: adminToken, partnerId: id })
+                body: JSON.stringify({ action: 'decline-partner', partnerId: id })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
@@ -1058,7 +910,7 @@
         var list = document.getElementById('enquiryList');
         list.innerHTML = '<div class="loading">Loading enquiries...</div>';
         try {
-            var body = { action: 'list-enquiries', token: adminToken, limit: 100 };
+            var body = { action: 'list-enquiries', limit: 100 };
             if (enquiryFilter && enquiryFilter !== 'all') body.channel = enquiryFilter;
             var res = await fetch('/api/admin', {
                 method: 'POST',
@@ -1139,7 +991,7 @@
             var dateFrom = document.getElementById('orderDateFrom').value;
             var dateTo = document.getElementById('orderDateTo').value;
             if (!append) orderPage = { offset: 0, limit: 100, hasMore: false, all: [] };
-            var body = { action: 'list-orders', token: adminToken, filter: orderFilter, search: search, offset: orderPage.offset, limit: orderPage.limit };
+            var body = { action: 'list-orders', filter: orderFilter, search: search, offset: orderPage.offset, limit: orderPage.limit };
             if (partnerId) body.partnerId = parseInt(partnerId, 10);
             if (dateFrom) body.dateFrom = dateFrom;
             if (dateTo) body.dateTo = dateTo + 'T23:59:59';
@@ -1380,7 +1232,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'list-order-events', token: adminToken, orderId: orderId })
+                body: JSON.stringify({ action: 'list-order-events', orderId: orderId })
             });
             var data = await res.json();
             var el = document.getElementById('ord-timeline-' + orderId);
@@ -1402,7 +1254,7 @@
         var key = orderId + ':' + field;
         clearTimeout(inlineSaveTimers[key]);
         inlineSaveTimers[key] = setTimeout(async function() {
-            var body = { action: 'update-order', token: adminToken, orderId: orderId };
+            var body = { action: 'update-order', orderId: orderId };
             body[field] = (value === '' && field !== 'inscriptionText' && field !== 'adminNotes' && field !== 'proofNotes') ? null : value;
             try {
                 var res = await fetch('/api/admin', {
@@ -1454,7 +1306,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'update-order', token: adminToken, orderId: orderId, stage: newStage })
+                body: JSON.stringify({ action: 'update-order', orderId: orderId, stage: newStage })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
@@ -1475,7 +1327,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'send-customer-email', token: adminToken, orderId: orderId, kind: kind })
+                body: JSON.stringify({ action: 'send-customer-email', orderId: orderId, kind: kind })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
@@ -1496,7 +1348,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'generate-tracking', token: adminToken, orderId: orderId })
+                body: JSON.stringify({ action: 'generate-tracking', orderId: orderId })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
@@ -1555,7 +1407,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'list-inscription-requests', token: adminToken })
+                body: JSON.stringify({ action: 'list-inscription-requests' })
             });
             var data = await res.json();
             if (!data.ok) return;
@@ -1603,7 +1455,7 @@
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'resolve-inscription', token: adminToken, requestId: requestId, accept: accept })
+                body: JSON.stringify({ action: 'resolve-inscription', requestId: requestId, accept: accept })
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);

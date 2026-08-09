@@ -1,7 +1,7 @@
 /**
  * Partner Orders API — /api/partner-orders
  *
- * All requests require Authorization: Bearer <session-token>
+ * All requests require a valid HttpOnly partner session cookie.
  *
  * GET                        → list partner's orders
  * GET ?id=123                → single order detail with comments
@@ -16,6 +16,7 @@ const CORS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+const PARTNER_COOKIE = "__Host-sm_partner_session";
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS });
@@ -26,9 +27,13 @@ export async function onRequest(context) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
+  if (!isSameOriginRequest(request)) {
+    return json({ ok: false, error: "Forbidden" }, 403);
+  }
 
   // Authenticate
-  const token = (request.headers.get("Authorization") || "").replace("Bearer ", "");
+  const token = getCookie(request, PARTNER_COOKIE)
+    || (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return json({ ok: false, error: "Authentication required" }, 401);
 
   const partner = await getPartnerFromToken(env, token);
@@ -243,12 +248,11 @@ function mapOrder(row) {
 async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
-  const sessRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${now}&select=partner_id&limit=1`,
-    { headers },
-  );
-  if (!sessRes.ok) return null;
-  const sessRows = await sessRes.json();
+  const tokenHash = await hashOpaqueToken(token);
+  let sessRows = await findPartnerSession(env, tokenHash, now, headers);
+  if (sessRows === null) return null;
+  // Compatibility for pre-hardening sessions; no new plaintext token is stored.
+  if (sessRows.length === 0) sessRows = await findPartnerSession(env, token, now, headers) || [];
   if (sessRows.length === 0) return null;
 
   const partRes = await fetch(
@@ -264,6 +268,36 @@ function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
 }
 
+async function hashOpaqueToken(token) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return "sha256:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getCookie(request, name) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const index = part.indexOf("=");
+    if (index < 0) continue;
+    if (part.slice(0, index).trim() === name) return decodeURIComponent(part.slice(index + 1).trim());
+  }
+  return "";
+}
+
+async function findPartnerSession(env, token, now, headers) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${encodeURIComponent(now)}&select=partner_id&limit=1`,
+    { headers },
+  );
+  return res.ok ? res.json() : null;
+}
+
+function isSameOriginRequest(request) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== new URL(request.url).origin) return false;
+  const fetchSite = request.headers.get("Sec-Fetch-Site");
+  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
+}
+
 function sbHeaders(env) {
   return {
     "apikey": env.SUPABASE_SERVICE_KEY,
@@ -275,6 +309,11 @@ function sbHeaders(env) {
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      ...CORS,
+    },
   });
 }
