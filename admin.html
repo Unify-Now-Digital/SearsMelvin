@@ -171,7 +171,10 @@
         .login-access-label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 0 4px rgba(74,124,89,0.12); }
         .login-card h1 { margin-bottom: 0.55rem; font-size: clamp(2.35rem, 5vw, 3.2rem); line-height: 1; letter-spacing: -0.025em; }
         .login-card .subtitle { max-width: 36rem; margin-bottom: 2rem; color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.65; }
-        .google-auth-section { padding: 1rem; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; }
+        .google-auth-section { padding: 1.15rem; border: 1px solid rgba(66,133,244,0.18); border-radius: 14px; background: linear-gradient(145deg, rgba(66,133,244,0.045), #fff 55%); box-shadow: 0 8px 24px rgba(44,44,44,0.045); }
+        .google-auth-heading { margin-bottom: 1rem; }
+        .google-auth-heading strong { display: block; margin-bottom: 0.2rem; color: var(--color-stone); font-size: 0.88rem; }
+        .google-auth-heading span { display: block; color: var(--color-text-muted); font-size: 0.74rem; line-height: 1.5; }
         .google-signin-wrap { min-height: 44px; display: grid; place-items: center; }
         #googleSignInBtn { display: none; justify-content: center; width: 100%; min-height: 44px; }
         #googleSignInBtn > div { max-width: 100%; }
@@ -182,8 +185,6 @@
         .google-status { margin-top: 0.75rem; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.5; text-align: center; }
         .google-status.error { color: var(--color-error); }
         .login-retry { display: none; margin: 0.65rem auto 0; border: 0; border-bottom: 1px solid currentColor; background: none; color: var(--color-accent-dark); font: 600 0.76rem var(--font-body); cursor: pointer; }
-        .login-divider { display: flex; align-items: center; gap: 0.85rem; margin: 1.65rem 0 1.35rem; color: #8a8680; font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; }
-        .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--color-border); }
         .login-field { margin-bottom: 1rem; text-align: left; }
         .login-field label { display: block; margin-bottom: 0.4rem; color: var(--color-stone); font-size: 0.76rem; font-weight: 600; letter-spacing: 0.02em; }
         .login-field input { width: 100%; min-height: 48px; padding: 0.75rem 0.9rem; border: 1px solid #d7d2ca; border-radius: 8px; background: #fdfcfb; color: var(--color-text); font: 0.95rem var(--font-body); transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; }
@@ -422,6 +423,10 @@
                 <p class="subtitle">Sign in to the Sears Melvin admin dashboard with an approved account.</p>
 
                 <div class="google-auth-section">
+                    <div class="google-auth-heading">
+                        <strong>Continue securely with Google</strong>
+                        <span>Your Google password is never shared with or stored by Sears Melvin.</span>
+                    </div>
                     <div id="googleSignInWrap" class="google-signin-wrap" aria-busy="true">
                         <div id="googleSignInLoading" class="google-loading" role="status">
                             <span class="login-spinner" aria-hidden="true"></span>
@@ -429,31 +434,17 @@
                         </div>
                         <div id="googleSignInBtn"></div>
                     </div>
-                    <p id="googleSignInStatus" class="google-status" aria-live="polite">Use your approved Google account for the quickest sign-in.</p>
+                    <p id="googleSignInStatus" class="google-status" aria-live="polite">Use an approved Sears Melvin Google account.</p>
                     <button type="button" id="googleSignInRetry" class="login-retry" onclick="initGoogleSignIn()">Try Google again</button>
                 </div>
-
-                <div class="login-divider"><span>or continue with email</span></div>
-
-                <form class="login-form" onsubmit="emailLogin(event)">
-                    <div class="login-field">
-                        <label for="emailLoginInput">Email address</label>
-                        <input type="email" id="emailLoginInput" required autocomplete="username" inputmode="email" placeholder="name@searsmelvin.co.uk">
-                    </div>
-                    <div class="login-field">
-                        <label for="emailPasswordInput">Password</label>
-                        <input type="password" id="emailPasswordInput" required autocomplete="current-password" placeholder="Enter your password">
-                    </div>
-                    <button type="submit" class="login-btn" id="emailLoginBtn">Continue with email</button>
-                </form>
                 <p class="login-error" id="loginError" role="alert" aria-live="assertive"></p>
 
                 <details class="login-alternatives">
-                    <summary>Other secure sign-in options</summary>
+                    <summary>Can't use Google?</summary>
                     <div class="login-alternative-content">
                         <div>
                             <button type="button" class="login-btn login-alt-btn" id="magicLinkBtn" onclick="sendMagicLink()">Email a one-time login link</button>
-                            <p class="login-alt-note">Sent to the main Sears Melvin administration inbox.</p>
+                            <p class="login-alt-note">A 15-minute sign-in link will be sent to the main Sears Melvin administration inbox.</p>
                             <p id="magicLinkMsg" class="login-alt-note" style="display:none;" aria-live="polite"></p>
                         </div>
                         <form onsubmit="adminLogin(event)">
@@ -468,7 +459,7 @@
 
                 <p class="login-security-note">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span>Access is restricted to authorised Sears Melvin accounts. Sign-in activity is protected and sessions expire automatically.</span>
+                    <span>Google credentials are verified on the server. Access is restricted to approved accounts and sessions expire automatically.</span>
                 </p>
                 <noscript><p class="login-error" style="display:block;">JavaScript is required to access the admin dashboard.</p></noscript>
             </div>
@@ -610,6 +601,7 @@
     var allPartners = [];
     var partnerFilter = 'all';
     var googleIdentityPromise = null;
+    var googleLoginInFlight = false;
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
@@ -680,7 +672,7 @@
         button.replaceChildren();
         retry.style.display = 'none';
         status.classList.remove('error');
-        status.textContent = 'Use your approved Google account for the quickest sign-in.';
+        status.textContent = 'Use an approved Sears Melvin Google account.';
 
         try {
             var res = await fetch('/api/config', { cache: 'no-store', credentials: 'same-origin' });
@@ -714,22 +706,28 @@
         } catch (error) {
             loading.hidden = true;
             wrap.setAttribute('aria-busy', 'false');
-            status.textContent = 'Google sign-in is temporarily unavailable. Continue with email or try again.';
+            status.textContent = 'Google sign-in is temporarily unavailable. Try again or use a secure recovery option below.';
             status.classList.add('error');
             retry.style.display = 'block';
         }
     }
 
     async function googleLoginCallback(response) {
+        if (googleLoginInFlight) return;
         var errEl = document.getElementById('loginError');
         var status = document.getElementById('googleSignInStatus');
+        var wrap = document.getElementById('googleSignInWrap');
         errEl.style.display = 'none';
         status.classList.remove('error');
         status.textContent = 'Verifying your Google account...';
+        wrap.setAttribute('aria-busy', 'true');
+        googleLoginInFlight = true;
         try {
+            if (!response || !response.credential) throw new Error('Google did not return a valid sign-in response');
             var res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({ action: 'google-login', credential: response.credential })
             });
             var data = await res.json();
@@ -740,37 +738,12 @@
         } catch (err) {
             errEl.textContent = err.message;
             errEl.style.display = 'block';
+            status.classList.add('error');
             status.textContent = 'Only approved Sears Melvin Google accounts can continue.';
+        } finally {
+            googleLoginInFlight = false;
+            wrap.setAttribute('aria-busy', 'false');
         }
-    }
-
-    async function emailLogin(e) {
-        e.preventDefault();
-        var email = document.getElementById('emailLoginInput').value.trim();
-        var password = document.getElementById('emailPasswordInput').value;
-        var btn = document.getElementById('emailLoginBtn');
-        var errEl = document.getElementById('loginError');
-        btn.disabled = true;
-        btn.textContent = 'Signing in...';
-        errEl.style.display = 'none';
-
-        try {
-            var res = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'email-login', email: email, password: password })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Login failed');
-            adminToken = data.token;
-            localStorage.setItem('admin_token', data.token);
-            showDashboard();
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Continue with email';
     }
 
     async function adminLogin(e) {

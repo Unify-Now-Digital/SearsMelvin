@@ -1,11 +1,11 @@
 /**
  * Admin API — /api/admin
  *
- * All requests require admin authentication via PARTNER_ADMIN_KEY.
+ * Sign-in actions establish a short-lived admin session. All other actions
+ * require a valid, unexpired session token.
  *
  * POST { action: "login", adminKey }                    → get admin session token
  * POST { action: "google-login", credential }           → sign in with a Google ID token (allowed emails only)
- * POST { action: "email-login", email, password }       → sign in with a preset per-user password
  * POST { action: "verify", token }                      → verify admin session
  * POST { action: "logout", token }                      → end admin session
  * POST { action: "list-partners", token }               → list all partners with stats
@@ -38,6 +38,9 @@ export async function onRequest(context) {
   if (request.method !== "POST") {
     return json({ ok: false, error: "Method not allowed" }, 405);
   }
+  if (!isSameOriginRequest(request)) {
+    return json({ ok: false, error: "Forbidden" }, 403);
+  }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.PARTNER_ADMIN_KEY) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
@@ -50,7 +53,6 @@ export async function onRequest(context) {
 
   if (action === "login") return handleAdminLogin(env, data);
   if (action === "google-login") return handleGoogleLogin(env, data);
-  if (action === "email-login") return handleEmailLogin(env, data);
   if (action === "send-magic-link") return handleSendMagicLink(env, request);
   if (action === "verify-magic-link") return handleVerifyMagicLink(env, data);
   if (action === "verify") return handleAdminVerify(env, data);
@@ -80,12 +82,14 @@ export async function onRequest(context) {
 
 // ==================== ADMIN AUTH ====================
 
-// Emails allowed to sign in via Google or a preset password. Google sign-in additionally
-// requires the token's email_verified flag and audience (client ID) to match.
+// Google sign-in also requires a valid signature, issuer, audience, lifetime and
+// verified email. The Sears Melvin address must be backed by its Workspace domain.
 const ALLOWED_ADMIN_LOGIN_EMAILS = [
   "arin@searsmelvin.co.uk",
   "arinmelvin@gmail.com",
 ];
+const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+let googleJwksCache = null;
 
 async function createAdminSession(env) {
   const token = generateToken(64);
@@ -112,25 +116,132 @@ async function handleAdminLogin(env, { adminKey }) {
   return json({ ok: true, token });
 }
 
-// Verifies a Google Identity Services ID token server-side (signature, audience,
-// expiry) via Google's tokeninfo endpoint, then checks the email against the allowlist.
+class GoogleVerificationUnavailable extends Error {}
+
+function decodeBase64Url(value) {
+  if (typeof value !== "string" || !value || !/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error("Invalid Google credential");
+  }
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, char => char.charCodeAt(0));
+}
+
+function decodeJwtPart(value) {
+  return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)));
+}
+
+async function getGoogleJwks(forceRefresh = false) {
+  if (!forceRefresh && googleJwksCache && googleJwksCache.expiresAt > Date.now()) {
+    return googleJwksCache.keys;
+  }
+
+  let response;
+  try {
+    response = await fetch(GOOGLE_JWKS_URL, { headers: { "Accept": "application/json" } });
+  } catch {
+    throw new GoogleVerificationUnavailable("Could not load Google signing keys");
+  }
+  if (!response.ok) throw new GoogleVerificationUnavailable("Could not load Google signing keys");
+
+  let body;
+  try { body = await response.json(); }
+  catch { throw new GoogleVerificationUnavailable("Invalid Google signing keys"); }
+  if (!Array.isArray(body.keys) || body.keys.length === 0) {
+    throw new GoogleVerificationUnavailable("Invalid Google signing keys");
+  }
+
+  const cacheControl = response.headers.get("Cache-Control") || "";
+  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/i);
+  const maxAgeSeconds = Math.min(Number(maxAgeMatch?.[1]) || 3600, 21600);
+  googleJwksCache = { keys: body.keys, expiresAt: Date.now() + maxAgeSeconds * 1000 };
+  return body.keys;
+}
+
+async function verifyGoogleIdToken(credential, expectedAudience) {
+  if (typeof credential !== "string" || credential.length > 12000) {
+    throw new Error("Invalid Google credential");
+  }
+  const parts = credential.split(".");
+  if (parts.length !== 3) throw new Error("Invalid Google credential");
+
+  let header, payload;
+  try {
+    header = decodeJwtPart(parts[0]);
+    payload = decodeJwtPart(parts[1]);
+  } catch {
+    throw new Error("Invalid Google credential");
+  }
+  if (header.alg !== "RS256" || !header.kid || (header.typ && header.typ !== "JWT")) {
+    throw new Error("Invalid Google credential");
+  }
+
+  let keys = await getGoogleJwks();
+  let jwk = keys.find(key => key.kid === header.kid && key.kty === "RSA");
+  if (!jwk) {
+    keys = await getGoogleJwks(true);
+    jwk = keys.find(key => key.kid === header.kid && key.kty === "RSA");
+  }
+  if (!jwk) throw new Error("Invalid Google credential");
+
+  let signatureValid = false;
+  try {
+    const publicKey = await crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    signatureValid = await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5",
+      publicKey,
+      decodeBase64Url(parts[2]),
+      new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+    );
+  } catch {
+    throw new Error("Invalid Google credential");
+  }
+  if (!signatureValid) throw new Error("Invalid Google credential");
+
+  const now = Math.floor(Date.now() / 1000);
+  const audienceMatches = payload.aud === expectedAudience
+    || (Array.isArray(payload.aud) && payload.aud.includes(expectedAudience));
+  if (!audienceMatches || (payload.azp && payload.azp !== expectedAudience)) {
+    throw new Error("Invalid Google credential");
+  }
+  if (payload.iss !== "accounts.google.com" && payload.iss !== "https://accounts.google.com") {
+    throw new Error("Invalid Google credential");
+  }
+  if (!Number.isFinite(Number(payload.exp)) || Number(payload.exp) <= now) {
+    throw new Error("Invalid Google credential");
+  }
+  if (!Number.isFinite(Number(payload.iat)) || Number(payload.iat) > now + 120) {
+    throw new Error("Invalid Google credential");
+  }
+  if (payload.nbf != null && Number(payload.nbf) > now + 120) {
+    throw new Error("Invalid Google credential");
+  }
+  if (typeof payload.sub !== "string" || !/^\d{6,32}$/.test(payload.sub)) {
+    throw new Error("Invalid Google credential");
+  }
+  return payload;
+}
+
+// Verifies a Google Identity Services ID token locally against Google's rotating
+// public signing keys, then applies the explicit admin account allowlist.
 async function handleGoogleLogin(env, { credential }) {
   if (!credential) return json({ ok: false, error: "Missing credential" }, 400);
   if (!env.GOOGLE_CLIENT_ID) return json({ ok: false, error: "Google sign-in not configured" }, 500);
 
   let payload;
   try {
-    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
-    if (!res.ok) return json({ ok: false, error: "Invalid Google credential" }, 401);
-    payload = await res.json();
-  } catch {
-    return json({ ok: false, error: "Could not verify Google credential" }, 502);
-  }
-
-  if (payload.aud !== env.GOOGLE_CLIENT_ID) {
-    return json({ ok: false, error: "Invalid Google credential" }, 401);
-  }
-  if (payload.iss !== "accounts.google.com" && payload.iss !== "https://accounts.google.com") {
+    payload = await verifyGoogleIdToken(credential, env.GOOGLE_CLIENT_ID);
+  } catch (error) {
+    if (error instanceof GoogleVerificationUnavailable) {
+      return json({ ok: false, error: "Google verification is temporarily unavailable" }, 502);
+    }
     return json({ ok: false, error: "Invalid Google credential" }, 401);
   }
   if (payload.email_verified !== "true" && payload.email_verified !== true) {
@@ -140,28 +251,8 @@ async function handleGoogleLogin(env, { credential }) {
   if (!ALLOWED_ADMIN_LOGIN_EMAILS.includes(email)) {
     return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
   }
-
-  const token = await createAdminSession(env);
-  if (!token) return json({ ok: false, error: "Failed to create session" }, 500);
-
-  return json({ ok: true, token });
-}
-
-// Preset per-user password login. Password is checked against ADMIN_PASSWORD_<LOCAL_PART>,
-// e.g. arin@searsmelvin.co.uk -> env.ADMIN_PASSWORD_ARIN. Nothing is stored in the codebase.
-async function handleEmailLogin(env, { email, password }) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
-  if (!normalizedEmail || !password) {
-    return json({ ok: false, error: "Email and password required" }, 400);
-  }
-  if (!ALLOWED_ADMIN_LOGIN_EMAILS.includes(normalizedEmail)) {
-    return json({ ok: false, error: "Invalid email or password" }, 401);
-  }
-
-  const envVarName = "ADMIN_PASSWORD_" + normalizedEmail.split("@")[0].toUpperCase();
-  const expectedPassword = env[envVarName];
-  if (!expectedPassword || password !== expectedPassword) {
-    return json({ ok: false, error: "Invalid email or password" }, 401);
+  if (email.endsWith("@searsmelvin.co.uk") && payload.hd !== "searsmelvin.co.uk") {
+    return json({ ok: false, error: "This Google account is not authorised for admin access" }, 403);
   }
 
   const token = await createAdminSession(env);
@@ -946,6 +1037,18 @@ function sbHeaders(env) {
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      ...CORS,
+    },
   });
+}
+
+function isSameOriginRequest(request) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== new URL(request.url).origin) return false;
+  const fetchSite = request.headers.get("Sec-Fetch-Site");
+  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
 }
