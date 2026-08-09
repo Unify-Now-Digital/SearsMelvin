@@ -102,7 +102,7 @@ export async function onRequest(context) {
 async function getPartnerInvoices(env, partner, workspace) {
   const headers = sbHeaders(env);
   const select = "id,order_id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at,created_at,orders!inner(order_number,person_name)";
-  const base = `${env.SUPABASE_URL}/rest/v1/invoices?deleted_at=is.null&select=${select}&order=created_at.desc&limit=500`;
+  const base = `${env.SUPABASE_URL}/rest/v1/invoices?deleted_at=is.null&is_test=eq.false&select=${select}&order=created_at.desc&limit=500`;
   // Two explicit internal queries keep external partner invoices out without
   // relying on an embedded-resource OR filter that is difficult to audit.
   const urls = workspace.mode === "internal"
@@ -132,7 +132,7 @@ async function getCatalog(env) {
   const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
   const [productsRes, cemeteriesRes] = await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/products?is_active=eq.true&is_listed=eq.true${orgFilter}&select=id,name,slug,short_description,base_price,image_url,sku,inscription_chars_included,inscription_price_per_char,product_sizes(id,size_name,size_code,dimensions,price_adjustment,is_default,display_order)&order=display_order.asc,name.asc&limit=200`, { headers }),
-    fetch(`${env.SUPABASE_URL}/rest/v1/cemeteries?is_active=eq.true${orgFilter}&select=id,name,area,postcode,address,permit_fee,processing_weeks,kerb_allowed,lawn_section,cremation_section,governing_body,regulation_notes,max_height_mm,max_width_mm,allowed_typefaces&order=display_order.asc,name.asc&limit=250`, { headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/cemeteries?is_active=eq.true&is_test=eq.false${orgFilter}&select=id,name,area,postcode,address,permit_fee,processing_weeks,kerb_allowed,lawn_section,cremation_section,governing_body,regulation_notes,max_height_mm,max_width_mm,allowed_typefaces&order=display_order.asc,name.asc&limit=250`, { headers }),
   ]);
 
   if (!productsRes.ok || !cemeteriesRes.ok) {
@@ -238,7 +238,7 @@ async function getOrderDetail(env, partner, workspace, orderId) {
     internal ? fetch(`${base}/order_payments?order_id=eq.${encodedId}&select=id,amount,currency,payment_type,reference,status,received_at,created_at&order=received_at.desc&limit=50`, { headers }) : emptyRows(),
     internal ? fetch(`${base}/order_additional_options?order_id=eq.${encodedId}&select=id,name,description,cost&order=created_at.asc`, { headers }) : emptyRows(),
     internal ? fetch(`${base}/order_events?order_id=eq.${encodedId}&select=id,event_type,summary,detail,created_at&order=created_at.desc&limit=50`, { headers }) : emptyRows(),
-    fetch(`${base}/invoices?order_id=eq.${encodedId}&deleted_at=is.null&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&order=created_at.desc&limit=10`, { headers }),
+    fetch(`${base}/invoices?order_id=eq.${encodedId}&deleted_at=is.null&is_test=eq.false&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&order=created_at.desc&limit=10`, { headers }),
   ];
 
   const responses = await Promise.all(requests);
@@ -247,10 +247,12 @@ async function getOrderDetail(env, partner, workspace, orderId) {
   );
 
   if (invoices.length === 0 && row.invoice_id) {
-    const invoiceRes = await fetch(`${base}/invoices?id=eq.${encodeURIComponent(row.invoice_id)}&deleted_at=is.null&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&limit=1`, { headers });
+    const invoiceRes = await fetch(`${base}/invoices?id=eq.${encodeURIComponent(row.invoice_id)}&deleted_at=is.null&is_test=eq.false&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&limit=1`, { headers });
     if (invoiceRes.ok) invoices.push(...await invoiceRes.json());
   }
 
+  const latestProof = proofs[0] || null;
+  const latestPermit = permits[0] || null;
   const order = mapOrder(row, workspace);
   return json({
     ok: true,
@@ -263,6 +265,7 @@ async function getOrderDetail(env, partner, workspace, orderId) {
     options: options.map((option) => ({ ...option, cost: numberOrNull(option.cost) })),
     events,
     invoices: invoices.map(mapInvoice),
+    workflow: deriveWorkflow(row, latestProof, latestPermit, invoices, payments, workspace),
   });
 }
 
@@ -445,8 +448,8 @@ async function addComment(env, partner, workspace, data) {
 }
 
 async function updateProof(env, partner, workspace, data, nextState) {
-  if (workspace.mode === "internal") {
-    return json({ ok: false, error: "Proof decisions must be recorded by the authorised approver" }, 403);
+  if (!workspace.proofDecisionEnabled) {
+    return json({ ok: false, error: "Proof decisions are unavailable until authorised approvers are configured" }, 403);
   }
   const orderId = clean(data.orderId, 80);
   const note = clean(data.note, 2000);
@@ -517,7 +520,8 @@ function mapOrder(row, workspace = { mode: "partner", actionOwner: "partner" }) 
   const config = row.product_config ? safeParse(row.product_config) : null;
   const latestProof = (row.order_proofs || []).slice().sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")))[0] || null;
   const stage = derivePortalStage(row, latestProof);
-  const action = deriveAction(row, stage, latestProof, workspace);
+  const workflow = deriveWorkflow(row, latestProof, null, [], [], workspace);
+  const action = deriveAction(row, stage, latestProof, workspace, workflow);
   return {
     id: row.id,
     ref: row.order_number ? `ORD-${String(row.order_number).padStart(6, "0")}` : `SM-${String(row.id).slice(0, 8).toUpperCase()}`,
@@ -558,6 +562,7 @@ function mapOrder(row, workspace = { mode: "partner", actionOwner: "partner" }) 
     dueDate: row.due_date || null,
     installationDate: row.installation_date || null,
     notes: workspace.mode === "internal" ? row.notes || null : null,
+    workflow,
     nextAction: action.label,
     actionOwner: action.owner,
     createdAt: row.created_at,
@@ -586,23 +591,123 @@ function derivePortalStage(row, latestProof) {
   return deriveStage(row);
 }
 
-function deriveAction(row, stage, latestProof, workspace) {
+function deriveAction(row, stage, latestProof, workspace, workflow) {
   if (stage === "complete") return { owner: "none", label: "Complete" };
   const proofState = latestProof?.state || row.inscription_status;
   if (workspace.mode === "internal") {
-    if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "external", label: "Proof awaiting authorised approval" };
+    if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "external", label: "Confirm who is authorised to approve the proof" };
     if (proofState === "changes_requested") return { owner: "team", label: "Revise the inscription proof" };
-    if (row.permit_status !== "approved") return { owner: "team", label: "Permit information outstanding" };
+    if (workflow?.permit?.state !== "complete") return { owner: "team", label: workflow?.permit?.summary || "Permit information outstanding" };
+    if (workflow?.material?.state === "decision_required") return { owner: "team", label: "Confirm specification before ordering material" };
     if (stage === "in_production") return { owner: "team", label: "Monitor production progress" };
     if (stage === "installation") return { owner: "team", label: "Confirm installation arrangements" };
     return { owner: "team", label: "Review order specification" };
   }
-  if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "partner", label: "Review inscription proof" };
+  if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) {
+    return workspace.proofDecisionEnabled
+      ? { owner: "partner", label: "Review inscription proof" }
+      : { owner: "partner", label: "Confirm the authorised proof approver with Sears Melvin" };
+  }
   if (proofState === "changes_requested") return { owner: "sm", label: "Sears Melvin is revising the proof" };
-  if (row.permit_status !== "approved") return { owner: "partner", label: "Send the cemetery permit to Sears Melvin" };
+  if (workflow?.permit?.state !== "complete") return { owner: "partner", label: workflow?.permit?.summary || "Confirm permit responsibility with Sears Melvin" };
   if (stage === "in_production") return { owner: "sm", label: "Memorial is in production" };
   if (stage === "installation") return { owner: "sm", label: "Installation is being arranged" };
   return { owner: "sm", label: "Sears Melvin is reviewing the order" };
+}
+
+/**
+ * Derive a portal-only workflow view from current live fields. This is
+ * intentionally advisory: it does not write status, approve a proof, order
+ * material, lock a specification, issue an invoice or schedule installation.
+ */
+export function deriveWorkflow(row, latestProof = null, latestPermit = null, invoices = [], payments = [], workspace = { mode: "partner", proofDecisionEnabled: false }) {
+  const config = row.product_config ? safeParse(row.product_config) : null;
+  const proofState = String(latestProof?.state || row.inscription_status || row.proof_status || "not_started").toLowerCase();
+  const proofApproved = proofState === "approved" || Boolean(latestProof?.approved_at);
+  const permitPhase = String(latestPermit?.permit_phase || row.permit_status || "pending").toLowerCase();
+  const permitApproved = permitPhase === "approved" || Boolean(latestPermit?.approved_at);
+  const stoneState = String(row.stone_status || "NA");
+  const jobStage = String(row.jobs?.stage || row.stage || "").toLowerCase();
+  const complete = row.status === "completed" || ["complete", "completed"].includes(jobStage);
+  const installed = complete || jobStage === "fixed";
+  const specificationReady = Boolean(row.person_name && (row.product_id || row.custom_product_name || config?.name) && (row.cemetery_id || row.location));
+  const materialDecisionReady = proofApproved && permitApproved;
+  const liveInvoices = (invoices || []).filter((invoice) => !invoice.deleted_at);
+  const invoicePaid = liveInvoices.some((invoice) => [invoice.status, invoice.stripe_status].some((value) => String(value || "").toLowerCase() === "paid"));
+  const recordedPayment = (payments || []).some((payment) => ["matched", "confirmed", "paid"].includes(String(payment.status || "").toLowerCase()));
+  const permitOwner = workspace.mode === "partner" ? "partner" : "team";
+
+  const specification = {
+    key: "specification",
+    label: "Order specification",
+    state: specificationReady ? "complete" : "attention",
+    owner: workspace.mode === "partner" ? "shared" : "team",
+    summary: specificationReady ? "Core memorial, deceased and cemetery details are recorded." : "Core specification details still need confirmation.",
+  };
+  const permit = {
+    key: "permit",
+    label: "Cemetery permit",
+    state: permitApproved ? "complete" : (["submitted", "completing", "customer_completed", "with_customer", "form_sent"].includes(permitPhase) ? "in_progress" : "attention"),
+    owner: permitOwner,
+    summary: permitApproved ? "Permit approval is recorded." : (workspace.mode === "partner" ? "Confirm whether the funeral director or Sears Melvin owns the permit step." : "Confirm permit owner and record progress in the current operational process."),
+    uploadAvailable: false,
+  };
+  const proof = {
+    key: "proof",
+    label: "Design proof",
+    state: proofApproved ? "complete" : (proofState === "changes_requested" ? "attention" : (["sent", "draft", "generating", "proof_ready", "awaiting_approval"].includes(proofState) ? "in_progress" : "not_started")),
+    owner: proofApproved ? "none" : (proofState === "changes_requested" ? "team" : "authorised_approver"),
+    summary: proofApproved ? "The current proof is approved." : (proofState === "changes_requested" ? "Proof changes have been requested." : (proofState === "sent" ? "The proof is awaiting an authorised decision." : "A final proof decision has not been recorded.")),
+    decisionAvailable: Boolean(workspace.proofDecisionEnabled && latestProof?.state === "sent" && latestProof?.render_url),
+  };
+  const material = {
+    key: "material",
+    label: "Material decision",
+    state: stoneState === "In Stock" ? "complete" : (stoneState === "Ordered" ? "in_progress" : (materialDecisionReady ? "decision_required" : "blocked")),
+    owner: "team",
+    summary: stoneState === "In Stock" ? "Material is recorded as in stock." : (stoneState === "Ordered" ? "Material is recorded as ordered." : (materialDecisionReady ? "Proof and permit are ready; Sears Melvin must confirm the specification before ordering." : "Material ordering should wait for both proof and permit approval.")),
+    prerequisitesMet: materialDecisionReady,
+    locked: false,
+    actionAvailable: false,
+  };
+  const production = {
+    key: "production",
+    label: "Production",
+    state: complete || installed ? "complete" : (jobStage === "in_production" ? "in_progress" : (stoneState === "Ordered" || stoneState === "In Stock" ? "ready" : "blocked")),
+    owner: "team",
+    summary: jobStage === "in_production" ? "Production is underway." : (complete || installed ? "Production work is complete." : "Production follows the confirmed material decision."),
+  };
+  const installation = {
+    key: "installation",
+    label: "Installation handoff",
+    state: complete ? "complete" : (row.installation_date ? "scheduled" : (jobStage === "in_production" || stoneState === "In Stock" ? "ready" : "blocked")),
+    owner: "team",
+    summary: complete ? "The order is recorded as complete." : (row.installation_date ? "An installation date is recorded." : "Cemetery access, completed production and fixing arrangements must be confirmed."),
+  };
+  const commercial = {
+    key: "commercial",
+    label: "Invoice & payment",
+    state: invoicePaid || recordedPayment ? "complete" : (liveInvoices.length ? "in_progress" : "not_started"),
+    owner: "commercial",
+    summary: invoicePaid || recordedPayment ? "A payment is recorded." : (liveInvoices.length ? "An invoice is issued; use its recorded status for payment progress." : "No invoice is linked yet. Addressee and VAT treatment must be confirmed before issue."),
+    invoiceCount: liveInvoices.length,
+  };
+
+  return {
+    lanes: [specification, permit, proof, material, production, installation, commercial],
+    specification,
+    permit,
+    proof,
+    material,
+    production,
+    installation,
+    commercial,
+    materialDecisionReady,
+    materialLockEnforced: false,
+    blockingKeys: [specification, permit, proof, material, production, installation]
+      .filter((item) => ["attention", "blocked", "not_started"].includes(item.state))
+      .map((item) => item.key),
+  };
 }
 
 function mapInvoice(invoice) {
@@ -648,11 +753,13 @@ function getWorkspace(env, partner) {
   // internal workspace is usable before deployment configuration is updated.
   const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "1").trim();
   const internal = String(partner.id) === internalPartnerId;
+  const proofDecisionEnabled = !internal && String(env.PARTNER_PROOF_DECISIONS_ENABLED || "").toLowerCase() === "true";
   return {
     mode: internal ? "internal" : "partner",
     organizationId: env.SM_ORG_ID,
     actionOwner: internal ? "team" : "partner",
     includesExternalPartnerOrders: false,
+    proofDecisionEnabled,
   };
 }
 
@@ -670,8 +777,11 @@ function publicWorkspace(workspace) {
     label: workspace.mode === "internal" ? "Sears Melvin internal" : "Funeral director partner",
     capabilities: {
       viewExternalPartnerOrders: Boolean(workspace.includesExternalPartnerOrders),
-      decideProof: workspace.mode !== "internal",
+      decideProof: Boolean(workspace.proofDecisionEnabled),
       sendPartnerMessage: workspace.mode !== "internal",
+      uploadPermit: false,
+      lockMaterial: false,
+      manageNamedUsers: false,
     },
   };
 }
