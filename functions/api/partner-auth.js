@@ -1,6 +1,7 @@
 /**
  * Partner Auth API — /api/partner-auth
  *
+ * POST { action: "google-login", credential } → sign in SM staff with Google Workspace
  * POST { action: "request-magic-link", email } → email a short-lived link to an approved partner
  * POST { action: "consume-magic-link", token } → consume one-time link, set HttpOnly session cookie
  * POST { action: "verify" }                  → verify session cookie, return partner info
@@ -20,11 +21,13 @@ import {
   sha256Hex as hashIdentifier,
   supabaseHeaders,
 } from "./_security.js";
+import { GoogleVerificationUnavailable, verifyGoogleIdToken } from "./_google-identity.js";
 
 const PARTNER_COOKIE = "__Host-sm_partner_session";
 const PARTNER_SESSION_SECONDS = 12 * 60 * 60;
 const MAGIC_LINK_SECONDS = 15 * 60;
 const MAGIC_TOKEN_RE = /^[0-9a-f]{64}$/;
+const SM_WORKSPACE_DOMAIN = "searsmelvin.co.uk";
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
@@ -67,6 +70,21 @@ export async function onRequest(context) {
 
   const { action } = data;
 
+  if (action === "google-login") {
+    const loginLimit = await checkRateLimit(env, request, "partner-google-login-ip", getClientAddress(request), {
+      maxAttempts: 10, windowSeconds: 900, blockSeconds: 1800, failClosed: true,
+    });
+    if (!loginLimit.allowed) {
+      queueSecurityEvent(context, env, request, {
+        eventType: "partner_google_login_rate_limited",
+        actorType: "anonymous",
+        success: false,
+        metadata: { retry_after: loginLimit.retryAfter },
+      });
+      return rateLimitResponse(json, loginLimit.retryAfter);
+    }
+    return handleGoogleLogin(context, env, request, data);
+  }
   if (action === "request-magic-link") {
     const normalisedEmail = normaliseEmail(data.email);
     const [ipLimit, emailLimit] = await Promise.all([
@@ -115,7 +133,77 @@ export async function onRequest(context) {
   return json({ ok: false, error: "Unknown action" }, 400);
 }
 
-// ==================== PASSWORDLESS SIGN-IN ====================
+// ==================== GOOGLE WORKSPACE SIGN-IN ====================
+async function handleGoogleLogin(context, env, request, { credential }) {
+  if (!credential) return json({ ok: false, error: "Missing credential" }, 400);
+  if (!env.GOOGLE_CLIENT_ID) return json({ ok: false, error: "Google sign-in not configured" }, 500);
+
+  let payload;
+  try {
+    payload = await verifyGoogleIdToken(credential, env.GOOGLE_CLIENT_ID);
+  } catch (error) {
+    if (error instanceof GoogleVerificationUnavailable) {
+      return json({ ok: false, error: "Google verification is temporarily unavailable" }, 502);
+    }
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_google_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      metadata: { reason: "invalid_google_credential" },
+    });
+    return json({ ok: false, error: "Invalid Google credential" }, 401);
+  }
+
+  if (payload.email_verified !== "true" && payload.email_verified !== true) {
+    return json({ ok: false, error: "Google email is not verified" }, 401);
+  }
+  if (typeof payload.email !== "string" || payload.email.length > 254) {
+    return json({ ok: false, error: "Invalid Google credential" }, 401);
+  }
+
+  const email = normaliseEmail(payload.email);
+  const domainEmail = new RegExp(`^[a-z0-9._%+-]{1,64}@${SM_WORKSPACE_DOMAIN.replaceAll(".", "\\.")}$`);
+  if (!domainEmail.test(email) || payload.hd !== SM_WORKSPACE_DOMAIN) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_google_login_rejected",
+      actorType: "anonymous",
+      success: false,
+      identifierHash: await hashIdentifier(email || "invalid"),
+      metadata: { reason: "workspace_domain" },
+    });
+    return json({ ok: false, error: "Use an authorised searsmelvin.co.uk Google Workspace account" }, 403);
+  }
+
+  const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "1").trim();
+  if (!/^[1-9]\d{0,9}$/.test(internalPartnerId)) {
+    return json({ ok: false, error: "Internal workspace is not configured" }, 500);
+  }
+  const headers = sbHeaders(env);
+  const partnerRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(internalPartnerId)}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
+    { headers },
+  );
+  if (!partnerRes.ok) return json({ ok: false, error: "Internal workspace is temporarily unavailable" }, 503);
+  const partners = await partnerRes.json();
+  if (partners.length === 0) return json({ ok: false, error: "Internal workspace is not configured" }, 500);
+
+  const sessionToken = await createPartnerSession(env, partners[0].id, headers);
+  if (!sessionToken) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_google_login_succeeded",
+    actorType: "partner",
+    success: true,
+    identifierHash: await hashIdentifier(email),
+    metadata: { partner_id: partners[0].id, auth_method: "google_workspace" },
+  });
+
+  return json({ ok: true, partner: partners[0] }, 200, {
+    "Set-Cookie": sessionCookie(PARTNER_COOKIE, sessionToken, PARTNER_SESSION_SECONDS),
+  });
+}
+
+// ==================== PASSWORDLESS PARTNER SIGN-IN ====================
 async function handleMagicLinkRequest(context, env, request, { email }) {
   const success = json({ ok: true, message: magicLinkMessage() });
   if (typeof email !== "string" || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return success;
@@ -213,18 +301,8 @@ async function handleMagicLinkConsume(context, env, request, { token }) {
   const consumed = await consumeRes.json();
   if (consumed.length === 0) return invalidMagicLinkResponse();
 
-  const sessionToken = generateToken(64);
-  const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
-  const sessionRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({
-      partner_id: link.partner_id,
-      token: await hashOpaqueToken(sessionToken),
-      expires_at: expiresAt,
-    }),
-  });
-  if (!sessionRes.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+  const sessionToken = await createPartnerSession(env, link.partner_id, headers);
+  if (!sessionToken) return json({ ok: false, error: "Failed to create session" }, 500);
 
   const partner = partners[0];
   queueEmail(context, sendPartnerSignInNotice(env, partner));
@@ -396,6 +474,21 @@ async function getPartnerFromToken(env, token) {
   if (!partRes.ok) return null;
   const partRows = await partRes.json();
   return partRows.length > 0 ? partRows[0] : null;
+}
+
+async function createPartnerSession(env, partnerId, headers = sbHeaders(env)) {
+  const sessionToken = generateToken(64);
+  const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
+  const sessionRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      partner_id: partnerId,
+      token: await hashOpaqueToken(sessionToken),
+      expires_at: expiresAt,
+    }),
+  });
+  return sessionRes.ok ? sessionToken : null;
 }
 
 function bytesToHex(bytes) {
