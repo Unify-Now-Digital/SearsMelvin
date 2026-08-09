@@ -82,7 +82,10 @@ export async function onRequest(context) {
 
 // Emails allowed to sign in via Google or a preset password. Google sign-in additionally
 // requires the token's email_verified flag and audience (client ID) to match.
-const ALLOWED_ADMIN_LOGIN_EMAILS = ["arin@searsmelvin.co.uk"];
+const ALLOWED_ADMIN_LOGIN_EMAILS = [
+  "arin@searsmelvin.co.uk",
+  "arinmelvin@gmail.com",
+];
 
 async function createAdminSession(env) {
   const token = generateToken(64);
@@ -125,6 +128,9 @@ async function handleGoogleLogin(env, { credential }) {
   }
 
   if (payload.aud !== env.GOOGLE_CLIENT_ID) {
+    return json({ ok: false, error: "Invalid Google credential" }, 401);
+  }
+  if (payload.iss !== "accounts.google.com" && payload.iss !== "https://accounts.google.com") {
     return json({ ok: false, error: "Invalid Google credential" }, 401);
   }
   if (payload.email_verified !== "true" && payload.email_verified !== true) {
