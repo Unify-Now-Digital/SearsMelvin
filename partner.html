@@ -182,10 +182,11 @@
         <button class="auth-tab" type="button" data-auth-view="request">Request access</button>
       </div>
       <form class="auth-form" id="loginForm">
+        <p class="muted" style="margin:0 0 16px;line-height:1.6">Enter the approved email address for this workspace. We will send a secure, one-time sign-in link—no password needed.</p>
         <div class="field"><label class="required" for="loginEmail">Email address</label><input class="input" id="loginEmail" name="email" type="email" autocomplete="username" required></div>
-        <div class="field"><label class="required" for="loginPassword">Password</label><input class="input" id="loginPassword" name="password" type="password" autocomplete="current-password" required></div>
-        <div class="auth-actions"><button class="text-btn" id="forgotBtn" type="button">Forgot password?</button><button class="btn btn-primary" type="submit">Sign in securely</button></div>
+        <div class="auth-actions"><span class="muted">Link expires after 15 minutes</span><button class="btn btn-primary" type="submit">Email sign-in link</button></div>
         <div class="notice notice-error hidden" id="loginError" role="alert"></div>
+        <div class="notice notice-success hidden" id="loginMessage" role="status"></div>
       </form>
       <form class="auth-form hidden" id="requestForm">
         <div class="field-grid">
@@ -197,18 +198,6 @@
         </div>
         <button class="btn btn-primary" type="submit">Submit access request</button>
         <div class="notice hidden" id="requestMessageBox" role="status"></div>
-      </form>
-      <form class="auth-form hidden" id="forgotForm">
-        <button class="text-btn" data-auth-view="login" type="button">← Back to sign in</button>
-        <div class="field"><label class="required" for="forgotEmail">Email address</label><input class="input" id="forgotEmail" type="email" autocomplete="email" required></div>
-        <button class="btn btn-primary" type="submit">Send reset link</button>
-        <div class="notice hidden" id="forgotMessage" role="status"></div>
-      </form>
-      <form class="auth-form hidden" id="resetForm">
-        <div class="eyebrow">Set a new password</div>
-        <div class="field"><label class="required" for="resetPassword">New password</label><input class="input" id="resetPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" required><small class="muted">Use 12–128 characters and avoid a password used elsewhere.</small></div>
-        <button class="btn btn-primary" type="submit">Update password</button>
-        <div class="notice hidden" id="resetMessage" role="status"></div>
       </form>
     </div>
     <div class="auth-art" aria-hidden="true">
@@ -318,14 +307,17 @@
     function showApp(){q("#authScreen").classList.add("hidden");q("#appShell").classList.remove("hidden")}
 
     async function boot(){
-      var reset=new URLSearchParams(location.search).get("reset");
-      if(reset){setAuthView("reset");q("#resetForm").dataset.token=reset;return}
-      var legacy="";try{legacy=localStorage.getItem("partnerToken")||""}catch(e){}
+      var fragment=new URLSearchParams(location.hash.replace(/^#/,""));var loginToken=fragment.get("login");
+      if(loginToken){history.replaceState(null,"","/partner");await consumeMagicLink(loginToken);return}
       try{
-        var result=await authApi({action:"verify",token:legacy||undefined});
-        try{localStorage.removeItem("partnerToken")}catch(e){}
+        var result=await authApi({action:"verify"});
         state.partner=result.partner;await enterApp();
       }catch(e){showAuth()}
+    }
+    async function consumeMagicLink(token){
+      showAuth();var btn=q('#loginForm button[type="submit"]');var email=q("#loginEmail");email.disabled=true;setBusy(btn,true,"Verifying secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");
+      try{var result=await authApi({action:"consume-magic-link",token:token});state.partner=result.partner;await enterApp()}
+      catch(err){showBox(q("#loginError"),err.message||"This sign-in link is invalid or expired. Request a new one.","error");email.disabled=false;setBusy(btn,false);btn.textContent="Email a new sign-in link"}
     }
     async function enterApp(){
       showApp();q("#sideCompany").textContent=state.partner.company||state.partner.name;q("#sideUser").textContent=state.partner.name||state.partner.email;q("#sideAvatar").textContent=initials(state.partner.company||state.partner.name);
@@ -461,15 +453,12 @@
 
     function setAuthView(view){
       qa(".auth-tab").forEach(function(t){t.classList.toggle("active",t.dataset.authView===view)});
-      ["loginForm","requestForm","forgotForm","resetForm"].forEach(function(id){q("#"+id).classList.add("hidden")});
-      q("#authTabs").classList.toggle("hidden",view==="forgot"||view==="reset");
-      q("#"+(view==="request"?"requestForm":view==="forgot"?"forgotForm":view==="reset"?"resetForm":"loginForm")).classList.remove("hidden");
+      ["loginForm","requestForm"].forEach(function(id){q("#"+id).classList.add("hidden")});
+      q("#"+(view==="request"?"requestForm":"loginForm")).classList.remove("hidden");
     }
-    qa("[data-auth-view]").forEach(function(b){b.addEventListener("click",function(){setAuthView(b.dataset.authView)})});q("#forgotBtn").addEventListener("click",function(){setAuthView("forgot")});
-    q("#loginForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#loginForm button[type="submit"]');setBusy(btn,true,"Signing in…");q("#loginError").classList.add("hidden");try{var d=await authApi({action:"login",email:q("#loginEmail").value.trim(),password:q("#loginPassword").value});state.partner=d.partner;await enterApp()}catch(err){showBox(q("#loginError"),err.message,"error")}finally{setBusy(btn,false)}});
+    qa("[data-auth-view]").forEach(function(b){b.addEventListener("click",function(){setAuthView(b.dataset.authView)})});
+    q("#loginForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#loginForm button[type="submit"]');setBusy(btn,true,"Sending secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");try{var d=await authApi({action:"request-magic-link",email:q("#loginEmail").value.trim()});showBox(q("#loginMessage"),d.message,"success")}catch(err){showBox(q("#loginError"),"Unable to send a sign-in link right now. Please try again.","error")}finally{setBusy(btn,false)}});
     q("#requestForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#requestForm button[type="submit"]');setBusy(btn,true,"Submitting…");var fd=new FormData(e.target);try{var d=await authApi({action:"request",name:fd.get("name"),company:fd.get("company"),email:fd.get("email"),phone:fd.get("phone"),message:fd.get("message")});showBox(q("#requestMessageBox"),d.message,"success");e.target.reset()}catch(err){showBox(q("#requestMessageBox"),err.message,"error")}finally{setBusy(btn,false)}});
-    q("#forgotForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#forgotForm button[type="submit"]');setBusy(btn,true,"Sending…");try{var d=await authApi({action:"forgot-password",email:q("#forgotEmail").value.trim()});showBox(q("#forgotMessage"),d.message,"success")}catch(err){showBox(q("#forgotMessage"),err.message,"error")}finally{setBusy(btn,false)}});
-    q("#resetForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#resetForm button[type="submit"]');setBusy(btn,true,"Updating…");try{var d=await authApi({action:"reset-password",token:e.target.dataset.token,password:q("#resetPassword").value});showBox(q("#resetMessage"),d.message,"success");history.replaceState({},"","/partner");setTimeout(function(){setAuthView("login")},1700)}catch(err){showBox(q("#resetMessage"),err.message,"error")}finally{setBusy(btn,false)}});
     qa(".nav-btn").forEach(function(b){b.addEventListener("click",function(){state.view=b.dataset.view;renderView()})});
     q("#logoutBtn").addEventListener("click",async function(){try{await authApi({action:"logout"})}catch(e){}state.partner=null;state.orders=[];showAuth()});
     q("#drawerScrim").addEventListener("click",closeOrder);q("#closeDrawer").addEventListener("click",closeOrder);q("#closeWizard").addEventListener("click",closeWizard);q("#wizardSave").addEventListener("click",closeWizard);q("#wizardBack").addEventListener("click",function(){captureStep();state.wizardStep=Math.max(0,state.wizardStep-1);renderWizard()});q("#wizardNext").addEventListener("click",wizardNext);
