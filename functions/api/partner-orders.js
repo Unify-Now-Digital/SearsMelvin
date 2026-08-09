@@ -10,26 +10,41 @@
  */
 
 import { upsertPerson } from "./submit.js";
+import {
+  RequestValidationError,
+  checkRateLimit,
+  getClientAddress,
+  hardenedJson,
+  isSameOriginRequest,
+  queueSecurityEvent,
+  rateLimitResponse,
+  readBoundedJson,
+  supabaseHeaders,
+} from "./_security.js";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://searsmelvin.co.uk",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
 const PARTNER_COOKIE = "__Host-sm_partner_session";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS });
+  return new Response(null, { status: 204, headers: { "Allow": "GET, POST, OPTIONS" } });
 }
 
 export async function onRequest(context) {
   const { request, env } = context;
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !UUID_PATTERN.test(String(env.SM_ORG_ID || ""))) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
   if (!isSameOriginRequest(request)) {
     return json({ ok: false, error: "Forbidden" }, 403);
   }
+
+  const broadLimit = await checkRateLimit(env, request, "partner-orders-ip", getClientAddress(request), {
+    maxAttempts: 600,
+    windowSeconds: 300,
+    blockSeconds: 300,
+    failClosed: true,
+  });
+  if (!broadLimit.allowed) return rateLimitResponse(json, broadLimit.retryAfter);
 
   // Authenticate
   const token = getCookie(request, PARTNER_COOKIE)
@@ -39,18 +54,40 @@ export async function onRequest(context) {
   const partner = await getPartnerFromToken(env, token);
   if (!partner) return json({ ok: false, error: "Invalid or expired session" }, 401);
 
+  const partnerLimit = await checkRateLimit(env, request, "partner-orders-account", String(partner.id), {
+    maxAttempts: 300,
+    windowSeconds: 300,
+    blockSeconds: 300,
+    failClosed: true,
+  });
+  if (!partnerLimit.allowed) {
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_orders_rate_limited",
+      actorType: "partner",
+      success: false,
+      metadata: { partner_id: partner.id, retry_after: partnerLimit.retryAfter },
+    });
+    return rateLimitResponse(json, partnerLimit.retryAfter);
+  }
+
   const url = new URL(request.url);
 
   if (request.method === "GET") {
     const orderId = url.searchParams.get("id");
-    if (orderId) return getOrderDetail(env, partner, orderId);
+    if (orderId) {
+      if (!UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Invalid order ID" }, 400);
+      return getOrderDetail(env, partner, orderId);
+    }
     return listOrders(env, partner, url.searchParams);
   }
 
   if (request.method === "POST") {
     let data;
-    try { data = await request.json(); }
-    catch { return json({ ok: false, error: "Invalid JSON" }, 400); }
+    try { data = await readBoundedJson(request); }
+    catch (error) {
+      const status = error instanceof RequestValidationError ? error.status : 400;
+      return json({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
+    }
 
     if (data.action === "create") return createOrder(env, partner, data);
     if (data.action === "comment") return addComment(env, partner, data);
@@ -65,8 +102,10 @@ async function listOrders(env, partner, params) {
   const headers = sbHeaders(env);
   const status = params.get("status");
   const search = params.get("search");
+  if (search && search.length > 100) return json({ ok: false, error: "Search is too long" }, 400);
+  if (status && status.length > 40) return json({ ok: false, error: "Invalid status" }, 400);
 
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&order=created_at.desc&limit=50`;
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&order=created_at.desc&limit=50`;
   if (status && status !== "all") {
     url += `&status=eq.${encodeURIComponent(status)}`;
   }
@@ -107,7 +146,7 @@ async function getOrderDetail(env, partner, orderId) {
 
   // Get order (verify it belongs to this partner)
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&limit=1`,
     { headers },
   );
   if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -118,7 +157,7 @@ async function getOrderDetail(env, partner, orderId) {
 
   // Get comments
   const commentsRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partner_comments?order_id=eq.${orderId}&select=*&order=created_at.asc`,
+    `${env.SUPABASE_URL}/rest/v1/partner_comments?order_id=eq.${orderId}&partner_id=eq.${partner.id}&select=id,comment,created_at&order=created_at.asc`,
     { headers },
   );
   let comments = [];
@@ -137,8 +176,27 @@ async function getOrderDetail(env, partner, orderId) {
 async function createOrder(env, partner, data) {
   const { customerName, customerEmail, customerPhone, product, colour, size, location, value, notes } = data;
 
-  if (!customerName || !customerEmail) {
+  const cleanName = boundedText(customerName, 120);
+  const cleanEmail = typeof customerEmail === "string" ? customerEmail.trim().toLowerCase() : "";
+  const cleanPhone = boundedText(customerPhone, 40, true);
+  const cleanProduct = boundedText(product, 160, true);
+  const cleanColour = boundedText(colour, 80, true);
+  const cleanSize = boundedText(size, 80, true);
+  const cleanLocation = boundedText(location, 250, true);
+  const cleanNotes = boundedText(notes, 2000, true);
+  const numericValue = value === "" || value == null ? null : Number(value);
+
+  if (!cleanName || !cleanEmail) {
     return json({ ok: false, error: "Customer name and email are required" }, 400);
+  }
+  if (cleanEmail.length > 254 || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+    return json({ ok: false, error: "A valid customer email is required" }, 400);
+  }
+  if ([cleanPhone, cleanProduct, cleanColour, cleanSize, cleanLocation, cleanNotes].some(value => value === null)) {
+    return json({ ok: false, error: "One or more fields are too long" }, 400);
+  }
+  if (numericValue !== null && (!Number.isFinite(numericValue) || numericValue < 0 || numericValue > 1000000)) {
+    return json({ ok: false, error: "Invalid order value" }, 400);
   }
 
   const headers = sbHeaders(env);
@@ -147,12 +205,12 @@ async function createOrder(env, partner, data) {
   let person;
   try {
     person = await upsertPerson(env, {
-      name: customerName,
-      email: customerEmail,
-      phone: customerPhone,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
     });
-  } catch (err) {
-    return json({ ok: false, error: "Failed to register customer", detail: String(err) }, 500);
+  } catch {
+    return json({ ok: false, error: "Failed to register customer" }, 500);
   }
   if (!person) return json({ ok: false, error: "Failed to register customer" }, 500);
 
@@ -161,14 +219,19 @@ async function createOrder(env, partner, data) {
     organization_id: env.SM_ORG_ID,
     person_id: person.id,
     order_type: "quote",
-    sku: product || null,
-    color: colour || null,
-    value: value ? parseFloat(value) : null,
-    location: location || null,
+    sku: cleanProduct || null,
+    color: cleanColour || null,
+    value: numericValue,
+    location: cleanLocation || null,
     partner_id: partner.id,
     status: "pending",
-    notes: notes || null,
-    product_config: product ? JSON.stringify({ name: product, colour, size, price: value }) : null,
+    notes: cleanNotes || null,
+    product_config: cleanProduct ? JSON.stringify({
+      name: cleanProduct,
+      colour: cleanColour,
+      size: cleanSize,
+      price: numericValue,
+    }) : null,
   };
 
   const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,first_name,last_name,email,phone,is_customer)`, {
@@ -178,8 +241,7 @@ async function createOrder(env, partner, data) {
   });
 
   if (!orderRes.ok) {
-    const errText = await orderRes.text();
-    return json({ ok: false, error: "Failed to create order", detail: errText }, 500);
+    return json({ ok: false, error: "Failed to create order" }, 500);
   }
 
   const orderRows = await orderRes.json();
@@ -190,12 +252,17 @@ async function createOrder(env, partner, data) {
 async function addComment(env, partner, data) {
   const { orderId, comment } = data;
   if (!orderId || !comment) return json({ ok: false, error: "Order ID and comment required" }, 400);
+  if (typeof orderId !== "string" || !UUID_PATTERN.test(orderId)) {
+    return json({ ok: false, error: "Invalid order ID" }, 400);
+  }
+  const cleanComment = boundedText(comment, 2000);
+  if (!cleanComment) return json({ ok: false, error: "Comment must be 1-2000 characters" }, 400);
 
   const headers = sbHeaders(env);
 
   // Verify order belongs to partner
   const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&partner_id=eq.${partner.id}&select=id&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=id&limit=1`,
     { headers },
   );
   if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
@@ -208,7 +275,7 @@ async function addComment(env, partner, data) {
     body: JSON.stringify({
       order_id: orderId,
       partner_id: partner.id,
-      comment: comment.trim(),
+      comment: cleanComment,
     }),
   });
 
@@ -268,6 +335,14 @@ function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
 }
 
+function boundedText(value, maxLength, optional = false) {
+  if (value == null || value === "") return optional ? "" : null;
+  if (typeof value !== "string") return null;
+  const clean = value.trim();
+  if (clean.length === 0) return optional ? "" : null;
+  return clean.length <= maxLength ? clean : null;
+}
+
 async function hashOpaqueToken(token) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return "sha256:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
@@ -291,29 +366,10 @@ async function findPartnerSession(env, token, now, headers) {
   return res.ok ? res.json() : null;
 }
 
-function isSameOriginRequest(request) {
-  const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) return false;
-  const fetchSite = request.headers.get("Sec-Fetch-Site");
-  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
-}
-
 function sbHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-    "Content-Type": "application/json",
-  };
+  return supabaseHeaders(env);
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      ...CORS,
-    },
-  });
+function json(data, status = 200, extraHeaders = {}) {
+  return hardenedJson(data, status, extraHeaders);
 }

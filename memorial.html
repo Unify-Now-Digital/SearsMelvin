@@ -1335,6 +1335,21 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function safeImageUrl(value) {
+            if (typeof value !== 'string' || value.length > 2048) return '';
+            if (value.startsWith('/')) return value;
+            try {
+                var url = new URL(value);
+                return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
+            } catch (e) { return ''; }
+        }
+
+        function safeCssColour(value) {
+            return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)
+                ? value
+                : '#777777';
+        }
+
         // ==================== LOAD PRODUCT FROM SUPABASE ====================
         async function loadProduct() {
             const params = new URLSearchParams(window.location.search);
@@ -1404,7 +1419,7 @@
                     const url = 'https://searsmelvin.co.uk/memorials/' + encodeURIComponent(product.slug || '');
                     const title = product.name + ' | Sears Melvin Memorials';
                     const desc = (product.description || 'Hand-finished memorial with 30-year guarantee.').slice(0, 200);
-                    const img = product.image_url || 'https://searsmelvin.co.uk/sm-logo.svg';
+                    const img = safeImageUrl(product.image_url) || 'https://searsmelvin.co.uk/sm-logo.svg';
                     function setMeta(selector, attr, value) {
                         const el = document.querySelector(selector);
                         if (el) el.setAttribute(attr, value);
@@ -1546,13 +1561,14 @@
             const firstSlug = colours[0].slug;
 
             function swatch(c) {
-                const highlight = c.hex_secondary || c.hex_primary;
+                const primary = safeCssColour(c.hex_primary);
+                const highlight = safeCssColour(c.hex_secondary || c.hex_primary);
                 const price = c.is_premium ? surcharge : 0;
                 return '<label class="colour-option">'
-                    + '<input type="radio" name="colour" value="' + c.slug + '" data-name="' + c.name + '" data-primary="' + c.hex_primary + '" data-secondary="' + c.hex_secondary + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
+                    + '<input type="radio" name="colour" value="' + esc(c.slug) + '" data-name="' + esc(c.name) + '" data-primary="' + primary + '" data-secondary="' + safeCssColour(c.hex_secondary) + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
                     + '<div class="colour-wrapper">'
-                    + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + c.hex_primary + ' 0%, ' + highlight + ' 50%, ' + c.hex_primary + ' 100%);"></span>'
-                    + '<span class="colour-name">' + c.name + '</span>'
+                    + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + primary + ' 0%, ' + highlight + ' 50%, ' + primary + ' 100%);"></span>'
+                    + '<span class="colour-name">' + esc(c.name) + '</span>'
                     + '</div></label>';
             }
             function row(list) { return '<div class="colour-swatch-row">' + list.map(swatch).join('') + '</div>'; }
@@ -1604,7 +1620,7 @@
             sizes.forEach(function(s) {
                 const price = parseFloat(s.price_adjustment) || 0;
                 const dims  = s.dimensions || '';
-                html += '<input type="radio" name="size" value="' + s.size_code + '" data-name="' + s.size_name + '" data-dimensions="' + dims.replace(/"/g, '&quot;') + '" data-price="' + price + '"' + (s.is_default ? ' checked' : '') + '>';
+                html += '<input type="radio" name="size" value="' + esc(s.size_code) + '" data-name="' + esc(s.size_name) + '" data-dimensions="' + esc(dims) + '" data-price="' + price + '"' + (s.is_default ? ' checked' : '') + '>';
             });
             container.innerHTML = html;
             var defaultSize = sizes.find(function(s) { return s.is_default; }) || sizes[0];
@@ -1670,10 +1686,11 @@
 
             // Build list of all images: main image + gallery_images
             var images = [];
-            if (product.image_url) images.push(product.image_url);
+            if (safeImageUrl(product.image_url)) images.push(safeImageUrl(product.image_url));
             if (product.gallery_images && Array.isArray(product.gallery_images)) {
                 product.gallery_images.forEach(function(url) {
-                    if (url && images.indexOf(url) === -1) images.push(url);
+                    var safeUrl = safeImageUrl(url);
+                    if (safeUrl && images.indexOf(safeUrl) === -1) images.push(safeUrl);
                 });
             }
 
@@ -2301,8 +2318,8 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        var editLink = result.editToken ? '<br><a href="/quote?token=' + result.editToken + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
-                        var trackLink = email ? '<br><a href="/quote?email=' + encodeURIComponent(email) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Track all your quotes</a>' : '';
+                        var editLink = result.editToken ? '<br><a href="/quote#token=' + encodeURIComponent(result.editToken) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
+                        var trackLink = email ? '<br><a href="/quote" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Access your quotes securely</a>' : '';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
                             "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation." + editLink + trackLink;

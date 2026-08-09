@@ -17,6 +17,8 @@
 const BUSINESS_NAME  = "Sears Melvin Memorials";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL     = "info@searsmelvin.co.uk";
+const MAX_WEBHOOK_BYTES = 1024 * 1024;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // ── Stripe webhook signature verification (Web Crypto API) ─────────────────────
 async function verifyStripeSignature(rawBody, sigHeader, secret) {
@@ -32,8 +34,10 @@ async function verifyStripeSignature(rawBody, sigHeader, secret) {
   const signedPayload = `${timestamp}.${rawBody}`;
 
   // Reject events older than 5 minutes
-  const age = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
-  if (age > 300) return false;
+  const parsedTimestamp = Number(timestamp);
+  if (!Number.isSafeInteger(parsedTimestamp)) return false;
+  const age = Math.floor(Date.now() / 1000) - parsedTimestamp;
+  if (Math.abs(age) > 300) return false;
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -60,19 +64,35 @@ function timingSafeEqual(a, b) {
 
 // ── Main handler ────────────────────────────────────────────────────────────────
 export async function onRequestPost({ request, env }) {
+  if (!env.STRIPE_WEBHOOK_SECRET) {
+    console.error("Stripe webhook secret is not configured");
+    return new Response(JSON.stringify({ error: "Webhook unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+  const contentLength = Number(request.headers.get("Content-Length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_WEBHOOK_BYTES) {
+    return new Response(JSON.stringify({ error: "Payload too large" }), {
+      status: 413,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
   const rawBody    = await request.text();
+  if (new TextEncoder().encode(rawBody).byteLength > MAX_WEBHOOK_BYTES) {
+    return new Response(JSON.stringify({ error: "Payload too large" }), {
+      status: 413,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
   const sigHeader  = request.headers.get("stripe-signature") || "";
-  const webhookSecret = env.STRIPE_WEBHOOK_SECRET || "";
-
-  if (webhookSecret) {
-    const valid = await verifyStripeSignature(rawBody, sigHeader, webhookSecret);
-    if (!valid) {
-      console.error("Stripe webhook signature verification failed");
-      return new Response(JSON.stringify({ error: "Invalid signature" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  const valid = await verifyStripeSignature(rawBody, sigHeader, env.STRIPE_WEBHOOK_SECRET);
+  if (!valid) {
+    console.error("Stripe webhook signature verification failed");
+    return new Response(JSON.stringify({ error: "Invalid signature" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
   }
 
   let event;
@@ -90,9 +110,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (event.type === "payment_intent.payment_failed") {
-    const pi  = event.data.object;
-    const err = pi.last_payment_error?.message || "Unknown error";
-    console.error(`Payment failed for PI ${pi.id}: ${err}`);
+    console.error(JSON.stringify({ message: "stripe_payment_failed" }));
   }
 
   return new Response(JSON.stringify({ received: true }), {
@@ -108,17 +126,17 @@ async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
   if (!orderId) return;
   try {
     const orderRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}&select=person_id`,
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=person_id`,
       { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
     );
     if (!orderRes.ok) {
-      console.error(`is_customer flip: orders lookup ${orderRes.status}: ${await orderRes.text()}`);
+      console.error(JSON.stringify({ message: "customer_flag_order_lookup_failed", status: orderRes.status }));
       return;
     }
     const personId = (await orderRes.json())[0]?.person_id;
     if (!personId) return;
     const patchRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${personId}`,
+      `${env.SUPABASE_URL}/rest/v1/people?id=eq.${encodeURIComponent(personId)}`,
       {
         method: "PATCH",
         headers: { ...sbHeaders, Prefer: "return=minimal" },
@@ -126,10 +144,10 @@ async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
       },
     );
     if (!patchRes.ok) {
-      console.error(`is_customer flip: people PATCH ${patchRes.status}: ${await patchRes.text()}`);
+      console.error(JSON.stringify({ message: "customer_flag_update_failed", status: patchRes.status }));
     }
-  } catch (err) {
-    console.error("is_customer flip failed:", err);
+  } catch {
+    console.error(JSON.stringify({ message: "customer_flag_update_unavailable" }));
   }
 }
 
@@ -137,6 +155,8 @@ async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
 // invoice is created in submit.js). Returns "full" or "deposit" — defaults to
 // "deposit" when the PI isn't tied to an invoice or the call fails.
 async function fetchInvoiceType(env, pi) {
+  if (pi.metadata?.payment_type === "full") return "full";
+  if (pi.metadata?.payment_type === "deposit") return "deposit";
   if (!pi.invoice || !env.STRIPE_SECRET_KEY) return "deposit";
   try {
     const res = await fetch(`https://api.stripe.com/v1/invoices/${pi.invoice}`, {
@@ -145,10 +165,68 @@ async function fetchInvoiceType(env, pi) {
     if (!res.ok) return "deposit";
     const inv = await res.json();
     return inv.metadata?.invoice_type === "full" ? "full" : "deposit";
-  } catch (err) {
-    console.error("Failed to fetch Stripe invoice metadata:", err);
+  } catch {
+    console.error(JSON.stringify({ message: "stripe_invoice_metadata_unavailable" }));
     return "deposit";
   }
+}
+
+async function validatePaymentTarget(env, pi, invoiceId) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return null;
+  if (!UUID_RE.test(String(invoiceId || ""))) return null;
+  if (pi.currency !== "gbp" || !Number.isSafeInteger(pi.amount_received) || pi.amount_received <= 0) return null;
+
+  const paymentType = pi.metadata?.payment_type;
+  if (paymentType !== "deposit" && paymentType !== "full") return null;
+  if (pi.metadata?.organization_id !== env.SM_ORG_ID) return null;
+
+  const headers = {
+    apikey: env.SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+  };
+  const invoiceRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoiceId)}` +
+      `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
+      `&select=id,order_id,status&limit=1`,
+    { headers },
+  );
+  if (!invoiceRes.ok) return null;
+  const invoices = await invoiceRes.json();
+  const invoice = invoices[0];
+  if (!invoice?.order_id || String(pi.metadata?.order_id || "") !== String(invoice.order_id)) return null;
+
+  const orderRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(invoice.order_id)}` +
+      `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
+      `&select=id,value,permit_fee,status,sku,location,people(first_name,last_name,email)&limit=1`,
+    { headers },
+  );
+  if (!orderRes.ok) return null;
+  const orders = await orderRes.json();
+  const order = orders[0];
+  if (!order) return null;
+  if (paymentType === "deposit" && ["partial", "completed"].includes(order.status)) return null;
+  if (paymentType === "full" && order.status !== "partial") return null;
+
+  const memorialValue = Number(order.value);
+  const permitFee = Number(order.permit_fee || 0);
+  if (!Number.isFinite(memorialValue) || memorialValue <= 0 || !Number.isFinite(permitFee) || permitFee < 0) {
+    return null;
+  }
+  const expectedAmountPence = Math.round(
+    (paymentType === "full" ? memorialValue * 0.5 : memorialValue * 0.5 + permitFee) * 100,
+  );
+  if (pi.amount_received !== expectedAmountPence) return null;
+  if (String(pi.metadata?.expected_amount_pence || "") !== String(expectedAmountPence)) return null;
+
+  const person = order.people || {};
+  return {
+    paymentType,
+    name: [person.first_name, person.last_name].filter(Boolean).join(" "),
+    email: person.email || "",
+    cemetery: order.location || "",
+    product: order.sku || "Memorial",
+  };
 }
 
 // Stripe retries delivery aggressively, so dedupe by PaymentIntent id (stored
@@ -169,10 +247,19 @@ async function paymentAlreadyRecorded(env, sbHeaders, piId) {
 
 // ── Payment succeeded ───────────────────────────────────────────────────────────
 async function handlePaymentSucceeded(env, pi) {
-  const { customer_name: name, customer_email: email, cemetery, product,
-          invoice_id: invoiceId } = pi.metadata;
+  const invoiceId = pi.metadata?.invoice_id || "";
+  const verifiedTarget = await validatePaymentTarget(env, pi, invoiceId);
+  if (!verifiedTarget) {
+    console.error(JSON.stringify({
+      message: "stripe_payment_target_validation_failed",
+      payment_intent: String(pi.id || "").slice(0, 80),
+    }));
+    return;
+  }
+  const { name, email, cemetery, product } = verifiedTarget;
   const amountPaid = (pi.amount_received / 100).toFixed(2);
   const today      = new Date().toISOString().split("T")[0];
+  let paymentRecordedNow = false;
 
   // Idempotency gate. Stripe retries webhook delivery on any non-2xx or
   // timeout, so we may see the same payment_intent.succeeded multiple times.
@@ -186,7 +273,7 @@ async function handlePaymentSucceeded(env, pi) {
       Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
     };
     if (await paymentAlreadyRecorded(env, sbHeadersForCheck, pi.id)) {
-      console.log(`Webhook idempotent skip — PI ${pi.id} already recorded`);
+      console.log(JSON.stringify({ message: "stripe_webhook_duplicate_skipped" }));
       return;
     }
   }
@@ -200,7 +287,7 @@ async function handlePaymentSucceeded(env, pi) {
       "Content-Type":  "application/json",
     };
 
-    const invoiceType = await fetchInvoiceType(env, pi);
+    const invoiceType = verifiedTarget.paymentType || await fetchInvoiceType(env, pi);
     const isFull = invoiceType === "full";
     const orderStatus = isFull ? "completed" : "partial";
     const orderStage = "deposit_paid"; // either payment level unblocks production
@@ -214,7 +301,7 @@ async function handlePaymentSucceeded(env, pi) {
         // Invoice was created at quote time — update it to "partial"/"completed"
         // and record the payment against it.
         const patchRes = await fetch(
-          `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${invoiceId}&select=order_id`,
+          `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoiceId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=order_id`,
           {
             method:  "PATCH",
             headers: { ...sbHeaders, "Prefer": "return=representation" },
@@ -222,12 +309,12 @@ async function handlePaymentSucceeded(env, pi) {
           },
         );
         if (!patchRes.ok) {
-          console.error(`Supabase invoices PATCH error ${patchRes.status}: ${await patchRes.text()}`);
+          console.error(JSON.stringify({ message: "invoice_update_failed", status: patchRes.status }));
         } else {
           const invRows = await patchRes.json();
           const ordId = invRows[0]?.order_id;
           if (ordId) {
-            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${ordId}`, {
+            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(ordId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
               body: JSON.stringify({ status: orderStatus, stage: orderStage }),
@@ -250,7 +337,9 @@ async function handlePaymentSucceeded(env, pi) {
             }),
           });
           if (!payRes.ok) {
-            console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+            console.error(JSON.stringify({ message: "payment_insert_failed", status: payRes.status }));
+          } else {
+            paymentRecordedNow = true;
           }
         }
       } else {
@@ -260,7 +349,7 @@ async function handlePaymentSucceeded(env, pi) {
         if (email) {
           const normalisedEmail = email.trim().toLowerCase();
           const orderRes = await fetch(
-            `${env.SUPABASE_URL}/rest/v1/orders?select=id,people!inner(email)&people.email=eq.${encodeURIComponent(normalisedEmail)}&order=created_at.desc&limit=1`,
+            `${env.SUPABASE_URL}/rest/v1/orders?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=id,people!inner(email)&people.email=eq.${encodeURIComponent(normalisedEmail)}&order=created_at.desc&limit=1`,
             { headers: sbHeaders },
           );
           if (orderRes.ok) {
@@ -273,6 +362,7 @@ async function handlePaymentSucceeded(env, pi) {
           method:  "POST",
           headers: { ...sbHeaders, "Prefer": "return=representation" },
           body: JSON.stringify({
+            organization_id: env.SM_ORG_ID,
             order_id:       orderId,
             customer_name:  name || email || "Unknown",
             amount:         parseFloat(amountPaid),
@@ -283,7 +373,7 @@ async function handlePaymentSucceeded(env, pi) {
           }),
         });
         if (!invRes.ok) {
-          console.error(`Supabase invoices insert error ${invRes.status}: ${await invRes.text()}`);
+          console.error(JSON.stringify({ message: "invoice_insert_failed", status: invRes.status }));
         } else {
           const invoices     = await invRes.json();
           const newInvoiceId = invoices[0]?.id || null;
@@ -302,13 +392,15 @@ async function handlePaymentSucceeded(env, pi) {
               }),
             });
             if (!payRes.ok) {
-              console.error(`Supabase payments insert error ${payRes.status}: ${await payRes.text()}`);
+              console.error(JSON.stringify({ message: "payment_insert_failed", status: payRes.status }));
+            } else {
+              paymentRecordedNow = true;
             }
           }
 
           // Update orders.status to reflect payment
           if (orderId) {
-            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+            await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
               body: JSON.stringify({ status: orderStatus, stage: orderStage }),
@@ -317,10 +409,14 @@ async function handlePaymentSucceeded(env, pi) {
           }
         }
       }
-    } catch (err) {
-      console.error("Supabase invoice/payment insert failed:", err);
+    } catch {
+      console.error(JSON.stringify({ message: "invoice_payment_write_unavailable" }));
     }
   }
+
+  // Only the invocation that won the unique PaymentIntent reference insert
+  // may send confirmations. Concurrent Stripe deliveries exit here.
+  if (!paymentRecordedNow) return;
 
   // 2. Send payment confirmation email to customer (non-critical)
   if (env.RESEND_API_KEY && email) {
@@ -331,8 +427,8 @@ async function handlePaymentSucceeded(env, pi) {
         subject: `Deposit confirmed — ${BUSINESS_NAME}`,
         html:    depositConfirmationEmail({ name, email, amountPaid, product, cemetery }),
       });
-    } catch (err) {
-      console.error("Deposit confirmation email failed:", err);
+    } catch {
+      console.error(JSON.stringify({ message: "deposit_confirmation_email_failed" }));
     }
   }
 
@@ -345,8 +441,8 @@ async function handlePaymentSucceeded(env, pi) {
         subject: `Deposit received — £${amountPaid} — ${name || email}`,
         html:    depositBusinessEmail({ name, email, amountPaid, product, cemetery, piId: pi.id }),
       });
-    } catch (err) {
-      console.error("Deposit business email failed:", err);
+    } catch {
+      console.error(JSON.stringify({ message: "deposit_business_email_failed" }));
     }
   }
 }

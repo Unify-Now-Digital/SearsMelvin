@@ -873,11 +873,11 @@
                 suggestions.innerHTML = '<div class="cemetery-suggestion"><span class="cemetery-suggestion-text"><span class="cemetery-suggestion-name">No results found</span><span class="cemetery-suggestion-area">Try a different search</span></span></div>';
             } else {
                 suggestions.innerHTML = matches.map((c, i) => `
-                    <div class="cemetery-suggestion" data-idx="${i}" data-id="${c.id || ''}">
+                    <div class="cemetery-suggestion" data-idx="${i}">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="cemetery-suggestion-text">
-                            <span class="cemetery-suggestion-name">${c.name}</span>
-                            <span class="cemetery-suggestion-area">${c.area} · ${c.region}</span>
+                            <span class="cemetery-suggestion-name">${escAttr(c.name)}</span>
+                            <span class="cemetery-suggestion-area">${escAttr(c.area)} · ${escAttr(c.region)}</span>
                         </span>
                         <span class="cemetery-badge ${c.type}">${c.type === 'kerb' ? 'Kerb OK' : 'Lawn Only'}</span>
                     </div>
@@ -914,7 +914,8 @@
         // stores the returned storage path. Submission sends `photo_urls`
         // as an array of those paths.
         const fileUploadZone = document.getElementById('fileUploadZone');
-        // Each entry: { name, status: 'uploading'|'done'|'error', path: string|null }
+        // Each entry has separate object-specific capabilities for deletion and
+        // submission. Neither capability is stored with the enquiry.
         let uploadedPhotos = [];
 
         fileUploadZone.addEventListener('dragover', (e) => {
@@ -982,6 +983,8 @@
                 if (!res.ok || !result.ok) throw new Error(result.error || `Upload failed (${res.status})`);
                 entry.status = 'done';
                 entry.path = result.path;
+                entry.deleteToken = result.deleteToken;
+                entry.submissionToken = result.submissionToken;
             } catch (err) {
                 entry.status = 'error';
                 entry.error = err.message || 'Upload failed';
@@ -1016,9 +1019,13 @@
             uploadedPhotos.splice(index, 1);
             renderFilePreviews();
             // Free the storage object — fire-and-forget; the bucket would otherwise orphan it.
-            if (entry.status === 'done' && entry.path) {
+            if (entry.status === 'done' && entry.path && entry.deleteToken) {
                 try {
-                    await fetch('/api/upload-photo?path=' + encodeURIComponent(entry.path), { method: 'DELETE' });
+                    await fetch('/api/upload-photo', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: entry.path, deleteToken: entry.deleteToken })
+                    });
                 } catch (err) {
                     console.error('Photo delete failed:', err);
                 }
@@ -1095,6 +1102,7 @@
                 return;
             }
             const photoPaths = uploadedPhotos.filter(p => p.status === 'done' && p.path).map(p => p.path);
+            const photoTokens = uploadedPhotos.filter(p => p.status === 'done' && p.path).map(p => p.submissionToken);
 
             try {
                 const res = await fetch(WORKER_URL, {
@@ -1116,7 +1124,8 @@
                         source_page: window.location.pathname,
                         location: cemetery || null,
                         cemetery_id: selectedCemeteryId || null,
-                        photo_urls: photoPaths.length > 0 ? photoPaths : null
+                        photo_urls: photoPaths.length > 0 ? photoPaths : null,
+                        photo_tokens: photoTokens.length > 0 ? photoTokens : null
                     })
                 });
 

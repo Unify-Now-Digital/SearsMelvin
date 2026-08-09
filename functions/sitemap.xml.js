@@ -6,6 +6,8 @@
  */
 
 const BASE = "https://searsmelvin.co.uk";
+const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
+const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Static, hand-maintained set. Customer-facing only — never list /admin,
 // /track, /partner, /quote (all noindex or login-gated).
@@ -36,14 +38,13 @@ function escXml(s) {
 }
 
 async function fetchProducts(env) {
-  // Most Pages Functions configure SUPABASE_SERVICE_KEY for server-side use;
-  // accept either that or SUPABASE_ANON_KEY (read-only) so we don't depend on
-  // a separate env var that's easy to forget when provisioning a new env.
-  const key = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
-  if (!env.SUPABASE_URL || !key) return [];
+  // Public crawler route: use only the same public anon role as the catalogue,
+  // never the all-powerful service-role key.
+  const url = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
   try {
     const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/products?is_active=eq.true&select=slug,updated_at,created_at&order=display_order.asc`,
+      `${url}/rest/v1/products?is_active=eq.true&select=slug,updated_at,created_at&order=display_order.asc`,
       {
         headers: {
           apikey: key,

@@ -13,13 +13,15 @@
  * is ever bypassed.
  *
  * Failure modes: if Supabase is unreachable, the slug is unknown, or
- * env.SUPABASE_SERVICE_KEY isn't set, we fall through and serve the static
+ * the public catalogue is unreachable, we fall through and serve the static
  * memorial.html unchanged. The client JS shows "Product not found" or its
  * normal "no slug" message.
  */
 
 const BASE = "https://searsmelvin.co.uk";
 const FALLBACK_IMAGE = `${BASE}/sm-logo.svg`;
+const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
+const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Asset requests (favicon.svg, robots.txt, *.map …) can be resolved by the
 // browser against /memorials/<slug>/ and land on this route. They're never
@@ -29,12 +31,14 @@ function looksLikeAsset(slug) {
 }
 
 async function fetchProduct(env, slug) {
-  const key = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
-  if (!env.SUPABASE_URL || !key) return null;
+  // This is a public route: never make the service-role key available to it.
+  // Catalogue rows are intentionally readable through the public anon role.
+  const url = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
   if (looksLikeAsset(slug)) return null;
   try {
     const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&select=*,product_categories(name,slug)&limit=1`,
+      `${url}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&select=id,name,slug,description,image_url,base_price,product_categories(name,slug)&limit=1`,
       {
         headers: {
           apikey: key,

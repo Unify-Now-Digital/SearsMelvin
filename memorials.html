@@ -787,6 +787,32 @@
         let categoryNames = {};
         let products = [];
 
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+        function safeSlug(value) {
+            const slug = String(value == null ? '' : value).toLowerCase();
+            return /^[a-z0-9-]{1,120}$/.test(slug) ? slug : '';
+        }
+        function safeId(value) {
+            const id = String(value == null ? '' : value);
+            return /^[a-zA-Z0-9_-]{1,80}$/.test(id) ? id : '';
+        }
+        function safeHex(value) {
+            const hex = String(value == null ? '' : value);
+            return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(hex) ? hex : '#d0cbc3';
+        }
+        function safeImageUrl(value) {
+            if (!value || String(value).length > 2048) return '';
+            try {
+                const url = new URL(String(value), window.location.origin);
+                if (url.protocol !== 'https:' || url.username || url.password) return '';
+                return url.href;
+            } catch (_) { return ''; }
+        }
+
         // ==================== DATA LOADING ====================
         async function loadData() {
             try {
@@ -828,15 +854,18 @@
             let typeHTML = '';
             categoriesWithProducts.forEach(cat => {
                 const count = state.productsData.filter(p => p.category_id === cat.id).length;
-                typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + cat.slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + cat.name + '<span class="filter-count">(' + count + ')</span></label>';
+                const slug = safeSlug(cat.slug);
+                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
             });
             typeContainer.innerHTML = typeHTML;
 
             const colourContainer = document.getElementById('colourFilters');
             let colourHTML = '';
             state.colours.forEach(colour => {
-                const secondaryHex = colour.hex_secondary || colour.hex_primary;
-                colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + colour.slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + colour.hex_primary + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + colour.name + '</span></span></label>';
+                const slug = safeSlug(colour.slug);
+                const primaryHex = safeHex(colour.hex_primary);
+                const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
+                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
             });
             colourContainer.innerHTML = colourHTML;
 
@@ -866,23 +895,28 @@
 
             let productsHTML = '';
             state.productsData.forEach((product, index) => {
-                const categorySlug = product.product_categories?.slug || 'default';
-                const categoryName = product.product_categories?.name || 'Memorial';
+                const id = safeId(product.id);
+                const slug = safeSlug(product.slug);
+                if (!id || !slug) return;
+                const categorySlug = safeSlug(product.product_categories?.slug) || 'default';
+                const categoryName = String(product.product_categories?.name || 'Memorial').slice(0, 120);
                 const price = parseFloat(product.base_price);
+                if (!Number.isFinite(price) || price < 0 || price > 1000000) return;
                 const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
+                const imageUrl = safeImageUrl(product.image_url);
+                const productName = String(product.name || '').slice(0, 120);
                 const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
-                const imgSrc = supabaseImgUrl(product.image_url, 400);
-                const productImage = product.image_url
-                    ? '<img src="' + imgSrc + '" data-fallback="' + product.image_url + '" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="' + product.name + '" decoding="async"' + imgPriority + '>'
+                const productImage = imageUrl
+                    ? '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
                 const colourDots = state.colours.map(c =>
-                    '<span class="product-colour-dot" style="background:' + c.hex_primary + ';"></span>'
+                    '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
                 ).join('');
 
-                productsHTML += '<a href="/memorials/' + product.slug + '" class="product-card" data-id="' + product.id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => c.slug).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + product.name + '" data-image="' + (product.image_url || '') + '" data-slug="' + product.slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + categoryName + '</span><h3 class="product-name">' + product.name + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -1017,7 +1051,7 @@
             var msgEl = document.getElementById('saveToastMsg');
             if (!toast || !msgEl) return;
             clearTimeout(_saveToastTimer);
-            msgEl.innerHTML = msg;
+            msgEl.textContent = msg;
             toast.classList.add('visible');
             _saveToastTimer = setTimeout(function() { toast.classList.remove('visible'); }, 3000);
         }
@@ -1035,7 +1069,7 @@
                 btn.classList.add('active');
                 btn.classList.add('animate');
                 setTimeout(function() { btn.classList.remove('animate'); }, 500);
-                showSaveToast('Saved to shortlist — <a href="javascript:openShortlist()">view list</a>');
+                showSaveToast('Saved to shortlist — use the shortlist button to view it');
             }
             updateShortlistUI();
             saveShortlistToStorage();

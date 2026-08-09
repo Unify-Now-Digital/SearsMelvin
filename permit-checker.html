@@ -771,8 +771,8 @@
                 return;
             }
 
-            suggestions.innerHTML = matches.map(c => `
-                <div class="suggestion" onclick="selectCemetery('${esc(c.id)}')">
+            suggestions.innerHTML = matches.map((c, index) => `
+                <div class="suggestion" data-cemetery-index="${index}">
                     <div class="suggestion-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
@@ -783,6 +783,12 @@
                     <span class="suggestion-badge ${c.kerb ? 'kerb' : 'lawn'}">${c.kerb ? 'Kerb OK' : 'Lawn Only'}</span>
                 </div>
             `).join('');
+            suggestions.querySelectorAll('.suggestion[data-cemetery-index]').forEach(function(node) {
+                node.addEventListener('click', function() {
+                    var cemetery = matches[Number(node.dataset.cemeteryIndex)];
+                    if (cemetery) selectCemetery(cemetery.id);
+                });
+            });
             suggestions.classList.add('active');
         }
 

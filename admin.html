@@ -840,7 +840,7 @@
     }
 
     async function approvePartner(id, btn) {
-        if (!confirm('Approve this partner? They will be able to log in and place orders.')) return;
+        if (!confirm('Approve this partner and email their one-time password setup link?')) return;
         btn.disabled = true;
         btn.textContent = 'Approving...';
         try {
@@ -851,6 +851,9 @@
             });
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
+            if (!data.setupEmailSent) {
+                alert('Partner approved, but the setup email could not be sent. Ask them to use “Forgot password” on the partner sign-in page.');
+            }
             loadPartners();
             loadDashboard();
         } catch (err) {
@@ -1092,7 +1095,7 @@
                 +     '<strong>' + (o.value ? formatPrice(o.value) : '\u2014') + '</strong>'
                 +   '</div>'
                 + '</div>'
-                + '<div class="order-detail" id="ord-detail-' + o.id + '">' + (isOpen ? renderOrderDetail(o) : '') + '</div>'
+                + '<div class="order-detail" id="ord-detail-' + idQ + '">' + (isOpen ? renderOrderDetail(o) : '') + '</div>'
                 + '</div>';
         }).join('');
 
@@ -1120,6 +1123,8 @@
 
     function renderOrderDetail(o) {
         var stage = o.stage || 'quote_received';
+        var idQ = esc(String(o.id));
+        var idArg = '&quot;' + idQ + '&quot;';
         var stageOptions = STAGE_KEYS.map(function(s) {
             return '<option value="' + s + '"' + (stage === s ? ' selected' : '') + '>' + (STAGE_LABELS[s] || s) + '</option>';
         }).join('');
@@ -1188,43 +1193,41 @@
         // Quick actions
         var nextStage = STAGE_KEYS[Math.min(STAGE_KEYS.indexOf(stage) + 1, STAGE_KEYS.length - 1)];
         var nextStageLabel = STAGE_LABELS[nextStage];
-        var trackingLinkHtml = o.tracking_token
-            ? '<div class="tracking-link" id="trackingLink-' + o.id + '">' + location.origin + '/track?token=' + esc(o.tracking_token) + '<button class="btn-copy" onclick="copyTrackingLink(' + o.id + ')">Copy</button></div>'
-            : '<button class="qa-btn" id="genTrackingBtn-' + o.id + '" onclick="generateTrackingToken(' + o.id + ')">Generate tracking link</button>';
+        var trackingLinkHtml = '<button class="qa-btn" id="genTrackingBtn-' + idQ + '" onclick="generateTrackingToken(' + idArg + ')">Generate 30-day tracking link</button>';
 
         var quickActions = '<div class="quick-actions">'
-            + (nextStage !== stage ? '<button class="qa-btn primary" onclick="quickAdvanceStage(' + o.id + ',\'' + nextStage + '\', this)">Advance to ' + esc(nextStageLabel) + ' \u2192</button>' : '')
-            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'proof_ready\', this)" ' + (o.proof_url ? '' : 'disabled title="Add a proof URL first"') + '>Email proof to customer</button>'
-            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'tracking\', this)">Email tracking link</button>'
-            + '<button class="qa-btn" onclick="quickSendEmail(' + o.id + ',\'inscription_confirm\', this)" ' + (o.inscription_text ? '' : 'disabled title="Add inscription text first"') + '>Request inscription confirmation</button>'
+            + (nextStage !== stage ? '<button class="qa-btn primary" onclick="quickAdvanceStage(' + idArg + ',\'' + nextStage + '\', this)">Advance to ' + esc(nextStageLabel) + ' \u2192</button>' : '')
+            + '<button class="qa-btn" onclick="quickSendEmail(' + idArg + ',\'proof_ready\', this)" ' + (o.proof_url ? '' : 'disabled title="Add a proof URL first"') + '>Email proof to customer</button>'
+            + '<button class="qa-btn" onclick="quickSendEmail(' + idArg + ',\'tracking\', this)">Email tracking link</button>'
+            + '<button class="qa-btn" onclick="quickSendEmail(' + idArg + ',\'inscription_confirm\', this)" ' + (o.inscription_text ? '' : 'disabled title="Add inscription text first"') + '>Request inscription confirmation</button>'
             + '</div>';
 
         // Editable fields
         var editForm = '<div class="edit-row" style="margin-top:0.5rem;">'
-            + '<div class="edit-field"><label>Stage</label><select id="ord-stage-' + o.id + '" onchange="inlineSaveOrder(' + o.id + ', \'stage\', this.value, this)">' + stageOptions + '</select></div>'
-            + '<div class="edit-field"><label>Inscription Status</label><select id="ord-inscstatus-' + o.id + '" onchange="inlineSaveOrder(' + o.id + ', \'inscriptionStatus\', this.value, this)">' + inscOptions + '</select></div>'
+            + '<div class="edit-field"><label>Stage</label><select id="ord-stage-' + idQ + '" onchange="inlineSaveOrder(' + idArg + ', \'stage\', this.value, this)">' + stageOptions + '</select></div>'
+            + '<div class="edit-field"><label>Inscription Status</label><select id="ord-inscstatus-' + idQ + '" onchange="inlineSaveOrder(' + idArg + ', \'inscriptionStatus\', this.value, this)">' + inscOptions + '</select></div>'
             + '</div>'
             + '<div class="edit-field"><label>Inscription Text</label>'
-            +   '<textarea id="ord-insc-' + o.id + '" onblur="inlineSaveOrder(' + o.id + ', \'inscriptionText\', this.value, this)" placeholder="Enter inscription...">' + esc(o.inscription_text || '') + '</textarea>'
+            +   '<textarea id="ord-insc-' + idQ + '" onblur="inlineSaveOrder(' + idArg + ', \'inscriptionText\', this.value, this)" placeholder="Enter inscription...">' + esc(o.inscription_text || '') + '</textarea>'
             + '</div>'
             + '<div class="edit-row">'
-            +   '<div class="edit-field"><label>Proof Image URL</label><input type="url" id="ord-proofurl-' + o.id + '" value="' + esc(o.proof_url || '') + '" placeholder="https://..." onblur="inlineSaveOrder(' + o.id + ', \'proofUrl\', this.value, this)"></div>'
-            +   '<div class="edit-field"><label>Proof Notes (visible to customer)</label><input type="text" id="ord-proofnotes-' + o.id + '" value="' + esc(o.proof_notes || '') + '" placeholder="e.g. Please review the layout..." onblur="inlineSaveOrder(' + o.id + ', \'proofNotes\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Proof Image URL</label><input type="url" id="ord-proofurl-' + idQ + '" value="' + esc(o.proof_url || '') + '" placeholder="https://..." onblur="inlineSaveOrder(' + idArg + ', \'proofUrl\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Proof Notes (visible to customer)</label><input type="text" id="ord-proofnotes-' + idQ + '" value="' + esc(o.proof_notes || '') + '" placeholder="e.g. Please review the layout..." onblur="inlineSaveOrder(' + idArg + ', \'proofNotes\', this.value, this)"></div>'
             + '</div>'
             + '<div class="edit-row">'
-            +   '<div class="edit-field"><label>Estimated Completion</label><input type="text" id="ord-estcomp-' + o.id + '" value="' + esc(o.estimated_completion || '') + '" placeholder="e.g. Mid April 2026" onblur="inlineSaveOrder(' + o.id + ', \'estimatedCompletion\', this.value, this)"></div>'
-            +   '<div class="edit-field"><label>Installation Date</label><input type="text" id="ord-instdate-' + o.id + '" value="' + esc(o.installation_date || '') + '" placeholder="e.g. 20 April 2026" onblur="inlineSaveOrder(' + o.id + ', \'installationDate\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Estimated Completion</label><input type="text" id="ord-estcomp-' + idQ + '" value="' + esc(o.estimated_completion || '') + '" placeholder="e.g. Mid April 2026" onblur="inlineSaveOrder(' + idArg + ', \'estimatedCompletion\', this.value, this)"></div>'
+            +   '<div class="edit-field"><label>Installation Date</label><input type="date" id="ord-instdate-' + idQ + '" value="' + esc(o.installation_date || '') + '" onblur="inlineSaveOrder(' + idArg + ', \'installationDate\', this.value, this)"></div>'
             + '</div>'
             + '<div class="edit-field"><label>Internal Admin Notes (not shown to customer)</label>'
-            +   '<textarea id="ord-adminnotes-' + o.id + '" onblur="inlineSaveOrder(' + o.id + ', \'adminNotes\', this.value, this)" placeholder="Notes for the admin team only...">' + esc(o.admin_notes || '') + '</textarea>'
+            +   '<textarea id="ord-adminnotes-' + idQ + '" onblur="inlineSaveOrder(' + idArg + ', \'adminNotes\', this.value, this)" placeholder="Notes for the admin team only...">' + esc(o.admin_notes || '') + '</textarea>'
             + '</div>'
-            + '<div class="edit-field"><label>Customer Tracking Link</label><div id="trackWrap-' + o.id + '">' + trackingLinkHtml + '</div></div>';
+            + '<div class="edit-field"><label>Customer Tracking Link</label><div id="trackWrap-' + idQ + '">' + trackingLinkHtml + '</div></div>';
 
         return '<div class="order-grid">' + custBlock + partnerBlock + paymentBlock + '</div>'
             + quickActions
             + editForm
             + '<h4 style="margin-top:1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);">Activity</h4>'
-            + '<div class="timeline" id="ord-timeline-' + o.id + '"><div class="timeline-empty">Loading\u2026</div></div>';
+            + '<div class="timeline" id="ord-timeline-' + idQ + '"><div class="timeline-empty">Loading\u2026</div></div>';
     }
 
     async function loadOrderEvents(orderId) {
@@ -1354,9 +1357,8 @@
             if (!data.ok) throw new Error(data.error);
             var wrap = document.getElementById('trackWrap-' + orderId);
             if (wrap) {
-                wrap.innerHTML = '<div class="tracking-link" id="trackingLink-' + orderId + '">' + location.origin + '/track?token=' + esc(data.trackingToken) + '<button class="btn-copy" onclick="copyTrackingLink(' + orderId + ')">Copy</button></div>';
+                wrap.innerHTML = '<div class="tracking-link" id="trackingLink-' + orderId + '">' + location.origin + '/track#token=' + esc(data.trackingToken) + '<button class="btn-copy" onclick="copyTrackingLink(' + orderId + ')">Copy</button></div>';
             }
-            if (ordersById[orderId]) ordersById[orderId].tracking_token = data.trackingToken;
         } catch (err) {
             alert('Failed: ' + err.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Generate tracking link'; }

@@ -1423,6 +1423,21 @@
             return res.json();
         }
 
+        function homepageEsc(value) {
+            return String(value == null ? '' : value).replace(/[&<>"']/g, function(char) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+            });
+        }
+
+        function homepageImageUrl(value) {
+            if (typeof value !== 'string' || value.length > 2048) return '';
+            if (value.startsWith('/')) return value;
+            try {
+                var url = new URL(value);
+                return url.protocol === 'https:' && !url.username && !url.password ? url.href : '';
+            } catch (e) { return ''; }
+        }
+
         // ==================== LOAD HOMEPAGE PHOTOS ====================
         async function loadHomepagePhotos() {
             try {
@@ -1452,15 +1467,16 @@
                     var html = '';
                     categories.forEach(function(cat) {
                         var product = categoryImageMap[cat.slug];
-                        var imageHtml = product && product.image_url
-                            ? '<img src="' + product.image_url + '" alt="' + cat.name + '" loading="lazy">'
+                        var imageUrl = product ? homepageImageUrl(product.image_url) : '';
+                        var imageHtml = imageUrl
+                            ? '<img src="' + homepageEsc(imageUrl) + '" alt="' + homepageEsc(cat.name) + '" loading="lazy">'
                             : '<div style="width:100%;height:100%;background:linear-gradient(145deg,#e8e4dd,#d4cfc6);"></div>';
                         var price = categoryMinPrice[cat.slug]
                             ? 'From £' + Number(categoryMinPrice[cat.slug]).toLocaleString()
-                            : cat.description || '';
-                        html += '<a href="/memorials?type=' + cat.slug + '" class="category-card">'
+                            : homepageEsc(cat.description || '');
+                        html += '<a href="/memorials?type=' + encodeURIComponent(cat.slug || '') + '" class="category-card">'
                             + '<div class="category-image">' + imageHtml + '</div>'
-                            + '<div class="category-info"><h3>' + cat.name + '</h3><p>' + price + '</p></div>'
+                            + '<div class="category-info"><h3>' + homepageEsc(cat.name) + '</h3><p>' + price + '</p></div>'
                             + '</a>';
                     });
                     grid.innerHTML = html;
@@ -1475,8 +1491,13 @@
                     var aboutProduct = products.find(function(p) { return p.image_url && p.product_categories && p.product_categories.slug === 'kerb-sets'; })
                         || products.filter(function(p) { return p.image_url; })[1]
                         || products.find(function(p) { return p.image_url; });
-                    if (aboutProduct && aboutProduct.image_url) {
-                        aboutEl.innerHTML = '<img src="' + aboutProduct.image_url + '" alt="' + (aboutProduct.name || 'Memorial craftsmanship') + '" loading="lazy">';
+                    var aboutImageUrl = aboutProduct ? homepageImageUrl(aboutProduct.image_url) : '';
+                    if (aboutProduct && aboutImageUrl) {
+                        var aboutImage = document.createElement('img');
+                        aboutImage.src = aboutImageUrl;
+                        aboutImage.alt = aboutProduct.name || 'Memorial craftsmanship';
+                        aboutImage.loading = 'lazy';
+                        aboutEl.replaceChildren(aboutImage);
                     }
                 }
 
