@@ -840,7 +840,7 @@
     }
 
     async function approvePartner(id, btn) {
-        if (!confirm('Approve this partner and email their one-time password setup link?')) return;
+        if (!confirm('Approve this partner and email their one-time secure sign-in link?')) return;
         btn.disabled = true;
         btn.textContent = 'Approving...';
         try {
@@ -852,7 +852,7 @@
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
             if (!data.setupEmailSent) {
-                alert('Partner approved, but the setup email could not be sent. Ask them to use “Forgot password” on the partner sign-in page.');
+                alert('Partner approved, but the sign-in email could not be sent. Ask them to request a new secure link on the partner sign-in page.');
             }
             loadPartners();
             loadDashboard();

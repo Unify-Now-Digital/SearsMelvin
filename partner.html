@@ -198,47 +198,15 @@
         </div>
 
         <!-- Sign In form -->
-        <form id="signinForm" onsubmit="handleLogin(event)">
+        <form id="signinForm" onsubmit="handleMagicLinkRequest(event)">
+            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;line-height:1.55;">Enter your approved partner email. We will send a secure, one-time sign-in link—no password needed.</p>
             <div class="login-field">
                 <label>Email</label>
                 <input type="email" id="loginEmail" required autocomplete="email">
             </div>
-            <div class="login-field">
-                <label>Password</label>
-                <input type="password" id="loginPassword" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
-            <p class="login-error" id="loginError"></p>
-            <p style="margin-top:1rem;"><a href="#" onclick="showForgotForm(event)" style="color: var(--color-accent-dark);font-size:0.85rem;">Forgot your password?</a></p>
-        </form>
-
-        <!-- Forgot Password form -->
-        <form id="forgotForm" style="display:none;" onsubmit="handleForgotPassword(event)">
-            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your email and we'll send you a link to reset your password.</p>
-            <div class="login-field">
-                <label>Email</label>
-                <input type="email" id="forgotEmail" required autocomplete="email">
-            </div>
-            <button type="submit" class="login-btn" id="forgotBtn">Send Reset Link</button>
-            <p class="login-error" id="forgotError"></p>
-            <p class="login-success" id="forgotSuccess"></p>
-            <p style="margin-top:1rem;"><a href="#" onclick="showLoginTab('signin');event.preventDefault();" style="color: var(--color-accent-dark);font-size:0.85rem;">Back to Sign In</a></p>
-        </form>
-
-        <!-- Reset Password form (shown when arriving with ?reset=token) -->
-        <form id="resetForm" style="display:none;" onsubmit="handleResetPassword(event)">
-            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;">Enter your new password below.</p>
-            <div class="login-field">
-                <label>New Password</label>
-                <input type="password" id="resetPassword" required autocomplete="new-password" minlength="12" maxlength="128">
-            </div>
-            <div class="login-field">
-                <label>Confirm Password</label>
-                <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="12" maxlength="128">
-            </div>
-            <button type="submit" class="login-btn" id="resetBtn">Set New Password</button>
-            <p class="login-error" id="resetError"></p>
-            <p class="login-success" id="resetSuccess"></p>
+            <button type="submit" class="login-btn" id="loginBtn">Email Me a Sign-In Link</button>
+            <p class="login-error" id="loginError" role="alert"></p>
+            <p class="login-success" id="loginSuccess" role="status"></p>
         </form>
 
         <!-- Request Access form -->
@@ -259,7 +227,7 @@
                 <label>Phone</label>
                 <input type="tel" id="reqPhone">
             </div>
-            <p style="font-size:0.82rem;color:var(--color-text-muted);line-height:1.5;margin:0.25rem 0 1rem;">If approved, we will email you a one-time link to create your password. This confirms you control the business mailbox.</p>
+            <p style="font-size:0.82rem;color:var(--color-text-muted);line-height:1.5;margin:0.25rem 0 1rem;">If approved, this email can request short-lived, one-time sign-in links. This confirms you control the business mailbox.</p>
             <div class="login-field">
                 <label>Message (optional)</label>
                 <textarea id="reqMessage" style="width:100%;padding:0.8rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.9rem;font-family:var(--font-body);resize:vertical;min-height:60px;" placeholder="Tell us about your business..."></textarea>
@@ -423,19 +391,17 @@
     var currentFilter = 'all';
     var searchTimeout = null;
 
-    var resetToken = null;
-
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', function() {
-        // Check for password reset token in URL
-        var params = new URLSearchParams(window.location.search);
+        // The token is carried in the URL fragment so browsers do not send it
+        // to the server, request logs, analytics or Referer headers.
         var fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        resetToken = fragment.get('reset') || params.get('reset');
-        if (resetToken) {
+        var loginToken = fragment.get('login');
+        if (loginToken) {
             // Remove the one-time token from the address bar/history as soon as
             // the application has captured it in memory.
             history.replaceState(null, '', '/partner');
-            showResetForm();
+            consumeMagicLink(loginToken);
             return;
         }
         verifySession();
@@ -448,105 +414,11 @@
         tabs[1].classList.toggle('active', tab === 'request');
         document.getElementById('signinForm').style.display = tab === 'signin' ? 'block' : 'none';
         document.getElementById('requestForm').style.display = tab === 'request' ? 'block' : 'none';
-        document.getElementById('forgotForm').style.display = 'none';
-        document.getElementById('resetForm').style.display = 'none';
         // Clear messages
         document.getElementById('loginError').style.display = 'none';
+        document.getElementById('loginSuccess').style.display = 'none';
         document.getElementById('reqError').style.display = 'none';
         document.getElementById('reqSuccess').style.display = 'none';
-    }
-
-    function showForgotForm(e) {
-        if (e) e.preventDefault();
-        document.getElementById('signinForm').style.display = 'none';
-        document.getElementById('requestForm').style.display = 'none';
-        document.getElementById('forgotForm').style.display = 'block';
-        document.getElementById('resetForm').style.display = 'none';
-        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
-    }
-
-    function showResetForm() {
-        document.getElementById('signinForm').style.display = 'none';
-        document.getElementById('requestForm').style.display = 'none';
-        document.getElementById('forgotForm').style.display = 'none';
-        document.getElementById('resetForm').style.display = 'block';
-        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
-    }
-
-    // ==================== FORGOT PASSWORD ====================
-    async function handleForgotPassword(e) {
-        e.preventDefault();
-        var email = document.getElementById('forgotEmail').value.trim();
-        var btn = document.getElementById('forgotBtn');
-        var errEl = document.getElementById('forgotError');
-        var successEl = document.getElementById('forgotSuccess');
-        errEl.style.display = 'none';
-        successEl.style.display = 'none';
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'forgot-password', email: email })
-            });
-            var data = await res.json();
-            successEl.textContent = data.message || 'If an account exists, a reset link has been sent.';
-            successEl.style.display = 'block';
-        } catch (err) {
-            errEl.textContent = 'Something went wrong. Please try again.';
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Send Reset Link';
-    }
-
-    // ==================== RESET PASSWORD ====================
-    async function handleResetPassword(e) {
-        e.preventDefault();
-        var pw = document.getElementById('resetPassword').value;
-        var pwConfirm = document.getElementById('resetPasswordConfirm').value;
-        var btn = document.getElementById('resetBtn');
-        var errEl = document.getElementById('resetError');
-        var successEl = document.getElementById('resetSuccess');
-        errEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        if (pw !== pwConfirm) {
-            errEl.textContent = 'Passwords do not match.';
-            errEl.style.display = 'block';
-            return;
-        }
-        if (pw.length < 12 || pw.length > 128) {
-            errEl.textContent = 'Password must be 12-128 characters.';
-            errEl.style.display = 'block';
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Updating...';
-
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'reset-password', token: resetToken, password: pw })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error);
-            successEl.textContent = data.message || 'Password updated! You can now sign in.';
-            successEl.style.display = 'block';
-            btn.style.display = 'none';
-            // Clean URL and show sign-in after delay
-            history.replaceState(null, '', '/partner');
-            setTimeout(function() { showLoginTab('signin'); }, 3000);
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Set New Password';
     }
 
     // ==================== REQUEST ACCESS ====================
@@ -589,34 +461,61 @@
     }
 
     // ==================== AUTH ====================
-    async function handleLogin(e) {
+    async function handleMagicLinkRequest(e) {
         e.preventDefault();
         var email = document.getElementById('loginEmail').value.trim();
-        var password = document.getElementById('loginPassword').value;
         var btn = document.getElementById('loginBtn');
         var errEl = document.getElementById('loginError');
+        var successEl = document.getElementById('loginSuccess');
 
         btn.disabled = true;
-        btn.textContent = 'Signing in...';
+        btn.textContent = 'Sending secure link...';
         errEl.style.display = 'none';
+        successEl.style.display = 'none';
 
         try {
             var res = await fetch('/api/partner-auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'login', email: email, password: password })
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'request-magic-link', email: email })
             });
             var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Login failed');
-
-            currentPartner = data.partner;
-            showDashboard();
+            if (!data.ok) throw new Error(data.error || 'Unable to send sign-in link');
+            successEl.textContent = data.message;
+            successEl.style.display = 'block';
         } catch (err) {
-            errEl.textContent = err.message;
+            errEl.textContent = 'Unable to send a sign-in link right now. Please try again.';
             errEl.style.display = 'block';
         }
         btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.textContent = 'Email Me a Sign-In Link';
+    }
+
+    async function consumeMagicLink(token) {
+        var btn = document.getElementById('loginBtn');
+        var errEl = document.getElementById('loginError');
+        document.getElementById('loginEmail').disabled = true;
+        btn.disabled = true;
+        btn.textContent = 'Verifying secure link...';
+        try {
+            var res = await fetch('/api/partner-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'consume-magic-link', token: token })
+            });
+            var data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'This sign-in link could not be used.');
+            currentPartner = data.partner;
+            showDashboard();
+        } catch (err) {
+            errEl.textContent = err.message || 'This sign-in link is invalid or expired. Request a new one.';
+            errEl.style.display = 'block';
+            document.getElementById('loginEmail').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Email Me a New Sign-In Link';
+        }
     }
 
     async function verifySession() {
