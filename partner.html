@@ -1,878 +1,470 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <!-- No analytics or chat scripts on authenticated partner pages. -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partner Portal | Sears Melvin Memorials</title>
-    <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <style>
-        :root {
-            --color-stone: #2C2C2C;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #FAF8F5;
-            --color-warm: #E8E4DD;
-            --color-accent: #8B7355;
-            --color-accent-dark: #6B5840;
-            --color-accent-light: #A69070;
-            --color-text: #1A1A1A;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
-            --color-success: #4A7C59;
-            --color-error: #c0392b;
-            --font-display: 'Cormorant Garamond', Georgia, serif;
-            --font-body: 'DM Sans', -apple-system, sans-serif;
-        }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-body); background-color: #f5f3f0; color: var(--color-text); line-height: 1.6; min-height: 100vh; }
-        h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; color: var(--color-stone); }
-        a { color: inherit; text-decoration: none; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="same-origin">
+  <title>Order workspace | Sears Melvin Memorials</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:#262521; --ink-2:#53514b; --ink-3:#77736b;
+      --paper:#f5f3ee; --surface:#fff; --surface-2:#faf9f6;
+      --line:#dedad1; --line-2:#ebe8e1; --gold:#887254; --gold-2:#6e5a40;
+      --gold-pale:#eee8de; --green:#2f6b4f; --green-pale:#e8f2ec;
+      --amber:#9a641f; --amber-pale:#fbf0dd; --red:#a33d36; --red-pale:#f7e9e7;
+      --blue:#3e617d; --blue-pale:#e8eff5;
+      --serif:"Cormorant Garamond",Georgia,serif;
+      --sans:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      --shadow:0 20px 55px rgba(38,37,33,.12);
+    }
+    *{box-sizing:border-box} html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(136,114,84,.42);outline-offset:2px}
+    a{color:inherit} .hidden{display:none!important} .muted{color:var(--ink-3)}
+    .eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:600;color:var(--gold-2)}
+    .icon{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .btn{min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:.18s ease}
+    .btn:hover{border-color:#bdb6aa;background:var(--surface-2)} .btn-primary{background:var(--ink);border-color:var(--ink);color:#fff}
+    .btn-primary:hover{background:#3a3934;border-color:#3a3934}.btn-gold{background:var(--gold);border-color:var(--gold);color:#fff}
+    .btn-gold:hover{background:var(--gold-2);border-color:var(--gold-2)}.btn-danger{color:var(--red);border-color:#e7c7c3}
+    .btn-small{min-height:36px;padding:7px 11px;font-size:12px}.btn:disabled{opacity:.48;cursor:not-allowed}
+    .input,.select,.textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:8px;padding:11px 12px;min-height:44px}
+    .textarea{min-height:104px;resize:vertical}.input:hover,.select:hover,.textarea:hover{border-color:#bdb6aa}
+    .input:focus,.select:focus,.textarea:focus{border-color:var(--gold);outline:3px solid rgba(136,114,84,.15)}
+    .field{display:grid;gap:6px}.field label,.field-label{font-size:12px;font-weight:600;color:var(--ink-2)}
+    .field small{font-size:12px;color:var(--ink-3)}.required:after{content:" *";color:var(--red)}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field-grid .wide{grid-column:1/-1}
+    .notice{padding:13px 15px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);font-size:13px}
+    .notice-warning{background:var(--amber-pale);border-color:#ead3ad;color:#634619}.notice-error{background:var(--red-pale);border-color:#e8c7c2;color:#782c27}
+    .notice-success{background:var(--green-pale);border-color:#c9dfd1;color:#24533d}
+    .planned{display:inline-flex;align-items:center;gap:5px;border:1px dashed #b6a58c;background:#faf6ef;color:#705c41;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+    .planned:before{content:"";width:5px;height:5px;border-radius:50%;background:#b38b54}
 
-        /* Portal nav */
-        .portal-nav { background: var(--color-stone); color: white; padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .portal-nav-logo { font-family: var(--font-display); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
-        .portal-nav-logo span { font-weight: 300; opacity: 0.6; }
-        .portal-nav-badge { background: var(--color-accent); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-        .portal-nav-right { display: flex; align-items: center; gap: 1.5rem; font-size: 0.85rem; }
-        .portal-nav-user { opacity: 0.7; }
-        .portal-nav-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-family: var(--font-body); }
-        .portal-nav-btn:hover { border-color: white; }
+    /* Authentication */
+    .auth{min-height:100vh;display:grid;grid-template-columns:minmax(340px,520px) 1fr;background:var(--surface)}
+    .auth-panel{padding:clamp(28px,6vw,82px);display:flex;flex-direction:column;justify-content:center}
+    .auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:54px;text-decoration:none}
+    .auth-mark{width:39px;height:48px;border:1px solid var(--gold);border-radius:18px 18px 5px 5px;display:grid;place-items:center;font:600 20px var(--serif);color:var(--gold)}
+    .brand-name{font:500 22px var(--serif);letter-spacing:.01em}.brand-name span{color:var(--ink-3);font-weight:400}
+    .auth h1{font:500 clamp(37px,5vw,50px)/.98 var(--serif);margin:0 0 12px}
+    .auth-lede{color:var(--ink-2);font-size:15px;margin:0 0 30px;max-width:420px}
+    .auth-tabs{display:flex;gap:24px;border-bottom:1px solid var(--line);margin-bottom:24px}
+    .auth-tab{border:0;background:transparent;padding:0 0 10px;color:var(--ink-3);font-weight:600;min-height:44px}
+    .auth-tab.active{color:var(--ink);box-shadow:inset 0 -2px var(--gold)}
+    .auth-form{display:grid;gap:16px}.auth-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .text-btn{border:0;background:none;padding:6px 0;color:var(--gold-2);font-size:12px;font-weight:600;min-height:44px}
+    .auth-art{position:relative;overflow:hidden;background:linear-gradient(155deg,#2b2a27,#45413a);color:#fff;display:flex;align-items:flex-end;padding:clamp(40px,6vw,88px)}
+    .auth-art:before,.auth-art:after{content:"";position:absolute;border:1px solid rgba(222,205,179,.21);border-radius:48% 48% 7% 7%}
+    .auth-art:before{width:48%;height:70%;top:14%;right:18%}.auth-art:after{width:31%;height:52%;top:25%;right:26.5%}
+    .auth-art-copy{position:relative;z-index:1;max-width:520px}.auth-art h2{font:500 clamp(36px,5vw,64px)/.98 var(--serif);margin:12px 0 18px}
+    .auth-art p{color:rgba(255,255,255,.7);font-size:15px;max-width:450px}
 
-        /* Login screen */
-        .login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
-        .login-card { background: white; border-radius: 12px; padding: 3rem 2.5rem; max-width: 400px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.08); text-align: center; }
-        .login-card h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-        .login-card .subtitle { color: var(--color-text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
-        .login-field { margin-bottom: 1rem; text-align: left; }
-        .login-field label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.3rem; }
-        .login-field input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 1rem; font-family: var(--font-body); }
-        .login-field input:focus { outline: none; border-color: var(--color-accent); }
-        .login-btn { width: 100%; padding: 0.9rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 1rem; font-family: var(--font-body); cursor: pointer; margin-top: 0.5rem; }
-        .login-btn:hover { background: var(--color-stone-light); }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .login-error { color: var(--color-error); font-size: 0.85rem; margin-top: 1rem; display: none; }
-        .login-success { color: var(--color-success); font-size: 0.85rem; margin-top: 1rem; display: none; }
-        .login-logo { margin-bottom: 1.5rem; }
-        .login-logo svg { width: 40px; height: 52px; fill: var(--color-accent); }
-        .login-home-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--color-text-muted); text-decoration: none; }
-        .login-home-link:hover { color: var(--color-accent-dark); }
+    /* App shell */
+    .app{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#292824;color:#fff;padding:25px 18px;display:flex;flex-direction:column;z-index:30}
+    .side-brand{display:flex;align-items:center;gap:10px;padding:0 10px 29px;text-decoration:none}
+    .side-brand .auth-mark{width:32px;height:39px;color:#d3b98f;border-color:#9b8260;font-size:17px}.side-brand .brand-name{font-size:19px}
+    .side-brand .brand-name span{color:rgba(255,255,255,.45)}.workspace-badge{margin-left:auto;background:#514838;color:#d8c5a7;border-radius:4px;padding:3px 6px;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+    .side-label{color:rgba(255,255,255,.38);font-size:10px;text-transform:uppercase;letter-spacing:.15em;padding:10px 12px 7px}
+    .side-nav{display:grid;gap:4px}.nav-btn{border:0;background:transparent;color:rgba(255,255,255,.68);min-height:44px;border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:11px;text-align:left;font-weight:500}
+    .nav-btn:hover{background:rgba(255,255,255,.055);color:#fff}.nav-btn.active{background:#403d36;color:#fff}.nav-count{margin-left:auto;min-width:21px;height:21px;border-radius:11px;background:#61543f;color:#f2e6d3;display:grid;place-items:center;font-size:10px}
+    .side-bottom{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:17px}.partner-chip{padding:10px;display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:center}
+    .avatar{width:34px;height:34px;border-radius:50%;background:#5c503d;color:#f7ead5;display:grid;place-items:center;font-size:11px;font-weight:600}
+    .partner-chip strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.partner-chip span{display:block;color:rgba(255,255,255,.45);font-size:10px}
+    .logout-btn{width:100%;border:0;background:none;color:rgba(255,255,255,.52);padding:10px;display:flex;gap:9px;align-items:center;font-size:12px}.logout-btn:hover{color:#fff}
+    .topbar{margin-left:250px;height:69px;background:rgba(245,243,238,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;position:sticky;top:0;z-index:20}
+    .mobile-brand{display:none}.crumb{color:var(--ink-3);font-size:12px}.crumb strong{color:var(--ink);font-weight:600}
+    .top-actions{display:flex;align-items:center;gap:10px}.main{margin-left:250px;padding:34px;max-width:1550px}
+    .mobile-nav{display:none}
+    .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:25px}
+    .page-head h1{font:500 clamp(32px,4vw,44px)/1 var(--serif);margin:5px 0 6px}.page-head p{margin:0;color:var(--ink-2)}
 
-        /* Login/Request tabs */
-        .login-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-border); }
-        .login-tab { flex: 1; padding: 0.6rem; background: none; border: none; font-family: var(--font-body); font-size: 0.9rem; color: var(--color-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-        .login-tab.active { color: var(--color-stone); border-bottom-color: var(--color-accent); font-weight: 600; }
+    /* Overview */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+    .stat{background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:18px 19px;min-height:116px;position:relative}
+    .stat-label{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.09em}.stat-value{font:500 34px var(--serif);margin-top:9px}
+    .stat-note{font-size:12px;color:var(--ink-3);margin-top:2px}.stat-alert{border-color:#e7cfa8;background:#fffaf1}.stat-alert .stat-value{color:#81551b}
+    .overview-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.85fr);gap:18px}
+    .card{background:var(--surface);border:1px solid var(--line-2);border-radius:11px;overflow:hidden}
+    .card-head{padding:17px 19px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .card-head h2{font:600 19px var(--serif);margin:0}.card-body{padding:18px 19px}.link-btn{border:0;background:none;color:var(--gold-2);font-size:12px;font-weight:600}
+    .action-list{display:grid}.action-item{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line-2);text-decoration:none}
+    .action-item:last-child{border-bottom:0}.action-item:hover{background:var(--surface-2)}
+    .action-icon{width:36px;height:36px;border-radius:50%;background:var(--amber-pale);color:var(--amber);display:grid;place-items:center}.action-item strong{display:block;font-size:13px}.action-item span{font-size:12px;color:var(--ink-3)}
+    .action-arrow{color:var(--ink-3)}.empty{padding:43px 25px;text-align:center}.empty-icon{width:52px;height:52px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;margin:0 auto 13px;color:var(--gold)}
+    .empty h3{font:600 20px var(--serif);margin:0 0 5px}.empty p{color:var(--ink-3);font-size:12px;max-width:360px;margin:0 auto 16px}
+    .service-card{padding:20px;background:linear-gradient(145deg,#37352f,#262521);color:#fff}.service-card h3{font:500 25px var(--serif);margin:8px 0}.service-card p{color:rgba(255,255,255,.63);font-size:12px;margin:0 0 16px}
+    .service-meta{display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.12);padding-top:15px}.service-meta div{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,.76);font-size:12px}
 
-        /* Dashboard layout */
-        .dashboard { display: none; }
-        .dash-header { padding: 2rem 2rem 1rem; max-width: 1200px; margin: 0 auto; }
-        .dash-header h2 { font-size: 1.75rem; margin-bottom: 0.25rem; font-weight: 400; }
-        .dash-header p { color: var(--color-text-muted); font-size: 0.95rem; }
+    /* Tables */
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.toolbar-left{display:flex;align-items:center;gap:9px;flex:1}
+    .search{position:relative;max-width:360px;flex:1}.search .icon{position:absolute;left:12px;top:12px;color:var(--ink-3);width:18px}.search .input{padding-left:40px}
+    .filter-row{display:flex;gap:6px;flex-wrap:wrap}.filter{border:1px solid var(--line);background:var(--surface);min-height:36px;padding:7px 12px;border-radius:18px;font-size:11px;font-weight:600;color:var(--ink-2)}
+    .filter.active{background:var(--ink);border-color:var(--ink);color:#fff}
+    .table-wrap{background:var(--surface);border:1px solid var(--line-2);border-radius:10px;overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:850px}th{text-align:left;background:var(--surface-2);padding:11px 15px;color:var(--ink-3);font-size:10px;text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+    td{padding:14px 15px;border-top:1px solid var(--line-2);font-size:12px;vertical-align:middle}tbody tr{transition:.15s}tbody tr[data-order-id]{cursor:pointer}tbody tr:hover{background:#fcfbf8}
+    .cell-primary{font-weight:600;font-size:12px}.cell-secondary{font-size:12px;color:var(--ink-3);margin-top:2px}.money{font:600 16px var(--serif)}
+    .status{display:inline-flex;align-items:center;gap:6px;border-radius:13px;padding:4px 8px;font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;background:var(--blue-pale);color:var(--blue)}
+    .status:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.status.complete,.status.paid{background:var(--green-pale);color:var(--green)}
+    .status.action,.status.overdue{background:var(--amber-pale);color:var(--amber)}.status.cancelled{background:var(--red-pale);color:var(--red)}
+    .action-owner{font-size:12px;color:var(--ink-3);max-width:190px}.action-owner strong{display:block;color:var(--ink-2);font-size:12px}
 
-        /* Stats */
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; padding: 0 2rem 1.5rem; max-width: 1200px; margin: 0 auto; }
-        .stat-card { background: white; border-radius: 10px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .stat-card .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.25rem; }
-        .stat-card .stat-value { font-family: var(--font-display); font-size: 1.75rem; color: var(--color-stone); }
+    /* Drawers and dialogs */
+    .scrim{position:fixed;inset:0;background:rgba(24,23,21,.48);z-index:70;opacity:0;pointer-events:none;transition:.22s}.scrim.open{opacity:1;pointer-events:auto}
+    .drawer{position:fixed;top:0;right:0;bottom:0;width:min(680px,100%);background:var(--surface);z-index:80;transform:translateX(100%);transition:.28s ease;box-shadow:var(--shadow);display:flex;flex-direction:column}
+    .drawer.open{transform:none}.drawer-head{padding:21px 24px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+    .drawer-head h2{font:600 27px var(--serif);margin:3px 0}.drawer-scroll{padding:22px 24px 48px;overflow:auto}.close{border:1px solid var(--line);background:#fff;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto}
+    .detail-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}.detail-summary div{border:1px solid var(--line-2);background:var(--surface-2);padding:12px;border-radius:8px}.detail-summary span{display:block;color:var(--ink-3);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.detail-summary strong{display:block;margin-top:3px;font-size:12px}
+    .detail-section{padding:18px 0;border-top:1px solid var(--line-2)}.detail-section h3{font:600 19px var(--serif);margin:0 0 12px}.definition{display:grid;grid-template-columns:130px 1fr;gap:8px 16px}.definition dt{color:var(--ink-3);font-size:12px}.definition dd{margin:0;font-size:12px}
+    .timeline{display:grid}.timeline-item{display:grid;grid-template-columns:24px 1fr;gap:11px;min-height:61px}.timeline-marker{position:relative;width:12px;height:12px;border:2px solid #c7c1b7;border-radius:50%;margin-top:4px;background:#fff}
+    .timeline-marker:after{content:"";position:absolute;top:12px;left:3px;width:2px;height:49px;background:var(--line)}.timeline-item:last-child .timeline-marker:after{display:none}.timeline-item.done .timeline-marker{background:var(--green);border-color:var(--green)}.timeline-item.current .timeline-marker{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-pale)}
+    .timeline-item strong{font-size:12px}.timeline-item p{margin:2px 0;color:var(--ink-3);font-size:12px}.proof-box{border:1px solid var(--line);border-radius:9px;overflow:hidden}.proof-preview{min-height:190px;background:#efede8;display:grid;place-items:center;color:var(--ink-3);padding:18px;text-align:center}
+    .proof-preview img{max-width:100%;max-height:420px;object-fit:contain}.proof-actions{padding:13px;display:flex;gap:8px;justify-content:flex-end}
+    .comment{padding:11px 13px;border-radius:8px;background:var(--surface-2);margin-bottom:8px}.comment p{margin:0 0 4px;font-size:12px;white-space:pre-wrap}.comment time{font-size:10px;color:var(--ink-3)}
+    .comment-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-top:10px}.comment-form .textarea{min-height:68px}
+    dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none}dialog::backdrop{background:rgba(24,23,21,.55)}
+    .wizard{width:min(980px,calc(100vw - 34px));height:min(760px,calc(100vh - 34px));background:var(--surface);border-radius:13px;overflow:hidden;display:grid;grid-template-columns:230px 1fr;box-shadow:var(--shadow)}
+    .wizard-side{background:#2c2b27;color:#fff;padding:25px 20px;display:flex;flex-direction:column}.wizard-side h2{font:500 24px var(--serif);margin:0 0 5px}.wizard-side>p{color:rgba(255,255,255,.58);font-size:12px;margin:0 0 27px}
+    .steps{display:grid;gap:5px}.step{border:0;background:transparent;color:rgba(255,255,255,.54);display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;padding:8px;border-radius:7px;text-align:left;font-size:12px}.step small{font-size:11px}
+    .step-no{width:27px;height:27px;border:1px solid rgba(255,255,255,.22);border-radius:50%;display:grid;place-items:center;font-size:10px}.step.active{background:rgba(255,255,255,.08);color:#fff}.step.active .step-no{background:var(--gold);border-color:var(--gold)}.step.done{color:rgba(255,255,255,.72)}
+    .wizard-note{margin-top:auto;color:rgba(255,255,255,.58);font-size:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:13px}
+    .wizard-main{display:flex;flex-direction:column;min-width:0;min-height:0}.wizard-top{padding:21px 26px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:start}
+    .wizard-top h3{font:600 26px var(--serif);margin:2px 0 0}.wizard-content{padding:24px 27px;overflow:auto;flex:1}.wizard-footer{padding:14px 26px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .wizard-footer-right{display:flex;gap:8px}.product-search{margin-bottom:14px}.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .product-option{border:1px solid var(--line);background:#fff;border-radius:9px;overflow:hidden;text-align:left;padding:0;min-width:0}.product-option:hover{border-color:#b9ad9d}.product-option.selected{border:2px solid var(--gold)}
+    .product-image{height:116px;background:#eeece7;display:grid;place-items:center;color:var(--ink-3);overflow:hidden}.product-image img{width:100%;height:100%;object-fit:cover}.product-copy{padding:10px}.product-copy strong{font:600 16px var(--serif);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-copy span{font-size:12px;color:var(--ink-3)}
+    .choice-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice{border:1px solid var(--line);border-radius:9px;padding:13px;display:flex;gap:10px;align-items:flex-start}.choice:has(input:checked){border-color:var(--gold);background:#faf7f1}.choice input{margin-top:3px}.choice strong{display:block;font-size:12px}.choice span{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
+    .price-panel{border:1px solid var(--line);border-radius:10px;overflow:hidden}.price-row{display:flex;justify-content:space-between;gap:20px;padding:12px 15px;border-bottom:1px solid var(--line-2);font-size:12px}.price-row:last-child{border:0}.price-row.total{background:var(--surface-2);font-weight:600}.price-row.total strong{font:600 21px var(--serif)}
+    .review{display:grid;grid-template-columns:1fr 1fr;gap:12px}.review-card{border:1px solid var(--line-2);border-radius:9px;padding:15px}.review-card h4{font:600 17px var(--serif);margin:0 0 9px}.review-card p{margin:2px 0;font-size:11px}.review-card .edit{float:right;border:0;background:none;color:var(--gold-2);font-size:10px;font-weight:600}
 
-        /* Toolbar */
-        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0 2rem 1rem; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
-        .toolbar-left { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-        .filter-btn { padding: 0.4rem 0.85rem; border: 1px solid var(--color-border); border-radius: 20px; background: white; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body); color: var(--color-text-muted); }
-        .filter-btn.active { background: var(--color-stone); color: white; border-color: var(--color-stone); }
-        .search-input { padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; font-family: var(--font-body); width: 220px; }
-        .new-order-btn { padding: 0.5rem 1.25rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); font-weight: 500; }
-        .new-order-btn:hover { background: var(--color-accent-light); }
+    /* Settings */
+    .settings-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:18px}.settings-card{padding:20px}.settings-card h2{font:600 21px var(--serif);margin:0 0 15px}
+    .roadmap{display:grid;gap:10px}.roadmap-item{border:1px dashed #c7bba9;border-radius:9px;padding:14px;background:repeating-linear-gradient(135deg,#fff,#fff 10px,#fbf8f2 10px,#fbf8f2 20px)}
+    .roadmap-item strong{font-size:12px}.roadmap-item p{font-size:12px;color:var(--ink-3);margin:4px 0 0}
+    .toast-region{position:fixed;right:20px;bottom:20px;z-index:120;display:grid;gap:8px;width:min(380px,calc(100vw - 40px))}
+    .toast{background:#292824;color:#fff;border-radius:8px;padding:13px 15px;box-shadow:var(--shadow);font-size:12px;animation:toast-in .2s ease}.toast.error{background:#7d302b}.toast.success{background:#2f624a}@keyframes toast-in{from{transform:translateY(10px);opacity:0}}
+    .loading{display:inline-flex;align-items:center;gap:8px;color:var(--ink-3)}.spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
-        /* Orders table */
-        .orders-wrapper { padding: 0 2rem 3rem; max-width: 1200px; margin: 0 auto; }
-        .orders-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .orders-table th { background: var(--color-cream); padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
-        .orders-table td { padding: 0.85rem 1rem; border-top: 1px solid var(--color-border); font-size: 0.9rem; vertical-align: middle; }
-        .orders-table tr { cursor: pointer; transition: background 0.15s; }
-        .orders-table tbody tr:hover { background: rgba(139,115,85,0.04); }
-        .order-name { font-weight: 500; color: var(--color-stone); }
-        .order-email { color: var(--color-text-muted); font-size: 0.8rem; }
-        .order-product { font-size: 0.85rem; }
-        .order-value { font-family: var(--font-display); font-size: 1.1rem; }
-        .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-        .status-badge.pending { background: #FFF3CD; color: #856404; }
-        .status-badge.partial { background: #D1ECF1; color: #0C5460; }
-        .status-badge.completed { background: #D4EDDA; color: #155724; }
-        .orders-empty { text-align: center; padding: 3rem; color: var(--color-text-muted); background: white; border-radius: 10px; }
-
-        /* Order detail panel */
-        .order-panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; }
-        .order-panel-overlay.active { display: block; }
-        .order-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(550px, 90vw); background: white; z-index: 201; overflow-y: auto; box-shadow: -8px 0 30px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.3s ease; }
-        .order-panel.active { transform: translateX(0); }
-        .panel-header { padding: 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: flex-start; }
-        .panel-header h2 { font-size: 1.4rem; }
-        .panel-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted); width: 44px; height: 44px; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
-        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--color-stone); outline-offset: 3px; }
-        .panel-body { padding: 1.5rem; }
-        .detail-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem 1rem; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        .detail-label { color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
-        .detail-value { font-weight: 500; }
-        .panel-section { border-top: 1px solid var(--color-border); padding-top: 1.25rem; margin-top: 1.25rem; }
-        .panel-section h3 { font-size: 1.1rem; margin-bottom: 0.75rem; }
-
-        /* Comments */
-        .comment-item { background: var(--color-cream); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; }
-        .comment-item p { color: var(--color-text); font-size: 0.9rem; margin-bottom: 0.25rem; }
-        .comment-item .comment-date { font-size: 0.75rem; color: var(--color-text-muted); }
-        .comment-form { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-        .comment-form textarea { flex: 1; padding: 0.6rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.85rem; font-family: var(--font-body); resize: none; min-height: 60px; }
-        .comment-form button { align-self: flex-end; padding: 0.5rem 1rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body); white-space: nowrap; }
-        .comment-form button:disabled { opacity: 0.5; }
-
-        /* New order modal */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; padding: 2rem; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: white; border-radius: 12px; max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto; }
-        .modal-header { padding: 1.5rem 1.5rem 0; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h2 { font-size: 1.4rem; }
-        .modal-body { padding: 1.5rem; }
-        .form-field { margin-bottom: 1rem; }
-        .form-field label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin-bottom: 0.3rem; }
-        .form-field input, .form-field textarea, .form-field select { width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.9rem; font-family: var(--font-body); }
-        .form-field textarea { resize: vertical; min-height: 70px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--color-border); }
-        .btn-cancel { padding: 0.6rem 1.25rem; background: var(--color-warm); color: var(--color-stone); border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
-        .btn-submit { padding: 0.6rem 1.25rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
-        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-        .form-error { color: var(--color-error); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
-        .form-success { color: var(--color-success); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .toolbar { flex-direction: column; align-items: stretch; }
-            .toolbar-left { overflow-x: auto; }
-            .search-input { width: 100%; }
-            .orders-table { font-size: 0.85rem; display: block; overflow-x: auto; }
-            .portal-nav { padding: 0.75rem 1rem; }
-            .portal-nav-user { display: none; }
-            .dash-header, .stats-row, .toolbar, .orders-wrapper { padding-left: 1rem; padding-right: 1rem; }
-            .order-panel { width: 100vw; }
-        }
-    
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-                scroll-behavior: auto !important;
-            }
-            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
-                opacity: 1 !important;
-                transform: none !important;
-            }
-        }
-    </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    @media(max-width:1050px){.stats{grid-template-columns:repeat(2,1fr)}.overview-grid,.settings-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:760px){
+      .auth{grid-template-columns:1fr}.auth-art{display:none}.auth-panel{padding:32px 22px}.auth-brand{margin-bottom:38px}
+      .sidebar{display:none}.topbar{margin-left:0;padding:0 16px}.mobile-brand{display:flex;align-items:center;gap:8px;font:600 18px var(--serif)}.crumb{display:none}
+      .main{margin-left:0;padding:22px 15px 90px}.page-head{align-items:flex-start;flex-direction:column}.page-head .btn{width:100%}.stats{grid-template-columns:1fr 1fr;gap:8px}.stat{min-height:101px;padding:14px}.stat-value{font-size:28px}
+      .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(4,1fr);left:0;right:0;bottom:0;z-index:65;background:#292824;border-top:1px solid rgba(255,255,255,.12);padding-bottom:env(safe-area-inset-bottom)}.mobile-nav .nav-btn{min-height:64px;border-radius:0;justify-content:center;flex-direction:column;gap:3px;padding:6px 2px;font-size:10px}.mobile-nav .nav-btn .icon{width:18px;height:18px}
+      .topbar .btn span{display:none}.toolbar{align-items:stretch;flex-direction:column}.toolbar-left{display:grid}.search{max-width:none}.filter-row{overflow:auto;flex-wrap:nowrap;padding-bottom:2px}
+      .wizard{width:100vw;height:100vh;border-radius:0;grid-template-columns:1fr}.wizard-side{display:none}.wizard-content{padding:20px 17px}.wizard-top,.wizard-footer{padding-left:17px;padding-right:17px}.field-grid,.choice-row,.review{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr 1fr}.product-image{height:95px}
+      .detail-summary{grid-template-columns:1fr}.definition{grid-template-columns:105px 1fr}.drawer-scroll,.drawer-head{padding-left:17px;padding-right:17px}.comment-form{grid-template-columns:1fr}.comment-form .btn{width:100%}
+    }
+    @media(max-width:430px){.stats{grid-template-columns:1fr}.product-grid{grid-template-columns:1fr}.top-actions .btn:not(.btn-gold){display:none}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation-duration:.01ms!important}}
+  </style>
 </head>
 <body>
-
-<!-- ==================== LOGIN SCREEN ==================== -->
-<div id="loginScreen" class="login-wrapper">
-    <div class="login-card">
-        <a href="/" class="login-home-link">&larr; Back to searsmelvin.co.uk</a>
-        <div class="login-logo">
-            <svg viewBox="0 0 32 42">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
+  <section class="auth" id="authScreen">
+    <div class="auth-panel">
+      <a class="auth-brand" href="/">
+        <span class="auth-mark" aria-hidden="true">SM</span>
+        <span class="brand-name">Sears Melvin <span>Memorials</span></span>
+      </a>
+      <div id="authCopy">
+        <div class="eyebrow">Memorial order workspace</div>
+        <h1>Welcome back.</h1>
+        <p class="auth-lede">Create and track memorial orders, follow production progress and keep every important decision in one private workspace.</p>
+      </div>
+      <div class="auth-tabs" id="authTabs">
+        <button class="auth-tab active" type="button" data-auth-view="login">Sign in</button>
+        <button class="auth-tab" type="button" data-auth-view="request">Request access</button>
+      </div>
+      <form class="auth-form" id="loginForm">
+        <p class="muted" style="margin:0 0 16px;line-height:1.6">Enter the approved email address for this workspace. We will send a secure, one-time sign-in link—no password needed.</p>
+        <div class="field"><label class="required" for="loginEmail">Email address</label><input class="input" id="loginEmail" name="email" type="email" autocomplete="username" required></div>
+        <div class="auth-actions"><span class="muted">Link expires after 15 minutes</span><button class="btn btn-primary" type="submit">Email sign-in link</button></div>
+        <div class="notice notice-error hidden" id="loginError" role="alert"></div>
+        <div class="notice notice-success hidden" id="loginMessage" role="status"></div>
+      </form>
+      <form class="auth-form hidden" id="requestForm">
+        <div class="field-grid">
+          <div class="field"><label class="required" for="requestName">Your name</label><input class="input" id="requestName" name="name" autocomplete="name" required></div>
+          <div class="field"><label class="required" for="requestCompany">Funeral home</label><input class="input" id="requestCompany" name="company" autocomplete="organization" required></div>
+          <div class="field wide"><label class="required" for="requestEmail">Work email</label><input class="input" id="requestEmail" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="requestPhone">Telephone</label><input class="input" id="requestPhone" name="phone" autocomplete="tel"></div>
+          <div class="field wide"><label for="requestMessage">Anything we should know?</label><textarea class="textarea" id="requestMessage" name="message"></textarea></div>
         </div>
-        <h1>Partner Portal</h1>
-        <p class="subtitle">Sears Melvin Memorials</p>
-
-        <div class="login-tabs">
-            <button class="login-tab active" onclick="showLoginTab('signin')">Sign In</button>
-            <button class="login-tab" onclick="showLoginTab('request')">Request Access</button>
-        </div>
-
-        <!-- Sign In form -->
-        <form id="signinForm" onsubmit="handleMagicLinkRequest(event)">
-            <p style="color:var(--color-text-muted);font-size:0.9rem;margin-bottom:1rem;text-align:left;line-height:1.55;">Enter your approved partner email. We will send a secure, one-time sign-in link—no password needed.</p>
-            <div class="login-field">
-                <label>Email</label>
-                <input type="email" id="loginEmail" required autocomplete="email">
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">Email Me a Sign-In Link</button>
-            <p class="login-error" id="loginError" role="alert"></p>
-            <p class="login-success" id="loginSuccess" role="status"></p>
-        </form>
-
-        <!-- Request Access form -->
-        <form id="requestForm" style="display:none;" onsubmit="handleRequestAccess(event)">
-            <div class="login-field">
-                <label>Your Name *</label>
-                <input type="text" id="reqName" required>
-            </div>
-            <div class="login-field">
-                <label>Company / Business Name *</label>
-                <input type="text" id="reqCompany" required>
-            </div>
-            <div class="login-field">
-                <label>Email *</label>
-                <input type="email" id="reqEmail" required autocomplete="email">
-            </div>
-            <div class="login-field">
-                <label>Phone</label>
-                <input type="tel" id="reqPhone">
-            </div>
-            <p style="font-size:0.82rem;color:var(--color-text-muted);line-height:1.5;margin:0.25rem 0 1rem;">If approved, this email can request short-lived, one-time sign-in links. This confirms you control the business mailbox.</p>
-            <div class="login-field">
-                <label>Message (optional)</label>
-                <textarea id="reqMessage" style="width:100%;padding:0.8rem 1rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.9rem;font-family:var(--font-body);resize:vertical;min-height:60px;" placeholder="Tell us about your business..."></textarea>
-            </div>
-            <button type="submit" class="login-btn" id="reqBtn">Request Access</button>
-            <p class="login-error" id="reqError"></p>
-            <p class="login-success" id="reqSuccess"></p>
-        </form>
+        <button class="btn btn-primary" type="submit">Submit access request</button>
+        <div class="notice hidden" id="requestMessageBox" role="status"></div>
+      </form>
     </div>
-</div>
+    <div class="auth-art" aria-hidden="true">
+      <div class="auth-art-copy"><div class="eyebrow" style="color:#d3b98f">A clearer order journey</div><h2>Every detail, handled with care.</h2><p>One shared view from first specification to cemetery installation—built for Sears Melvin and its funeral-director partners.</p></div>
+    </div>
+  </section>
 
-<!-- ==================== DASHBOARD ==================== -->
-<div id="dashboardScreen" class="dashboard">
-    <!-- Portal navigation -->
-    <nav class="portal-nav">
-        <a href="/" class="portal-nav-logo" style="text-decoration:none;color:inherit;">
-            Sears Melvin <span>Memorials</span>
-            <span class="portal-nav-badge">Partner</span>
-        </a>
-        <div class="portal-nav-right">
-            <span class="portal-nav-user" id="navUserName"></span>
-            <button class="portal-nav-btn" onclick="handleLogout()">Sign Out</button>
-        </div>
+  <div class="app hidden" id="appShell">
+    <aside class="sidebar">
+      <a class="side-brand" href="/"><span class="auth-mark">SM</span><span class="brand-name">Sears Melvin <span>Memorials</span></span><span class="workspace-badge" id="workspaceBadge">Partner</span></a>
+      <div class="side-label">Workspace</div>
+      <nav class="side-nav" aria-label="Order workspace">
+        <button class="nav-btn active" data-view="overview"><svg class="icon"><use href="#i-home"></use></svg>Overview</button>
+        <button class="nav-btn" data-view="orders"><svg class="icon"><use href="#i-orders"></use></svg>Orders<span class="nav-count hidden" id="orderCount"></span></button>
+        <button class="nav-btn" data-view="invoices"><svg class="icon"><use href="#i-invoice"></use></svg>Invoices</button>
+        <button class="nav-btn" data-view="account"><svg class="icon"><use href="#i-users"></use></svg>Organisation</button>
+      </nav>
+      <div class="side-bottom">
+        <div class="partner-chip"><span class="avatar" id="sideAvatar">SM</span><div><strong id="sideCompany">Partner</strong><span id="sideUser">Signed in</span></div></div>
+        <button class="logout-btn" id="logoutBtn"><svg class="icon"><use href="#i-logout"></use></svg>Sign out</button>
+      </div>
+    </aside>
+    <header class="topbar">
+      <div class="mobile-brand">Sears Melvin <span class="muted" id="mobileWorkspaceLabel">Partner</span></div>
+      <div class="crumb"><span id="workspaceCrumb">Partner workspace</span>&nbsp; / &nbsp;<strong id="crumb">Overview</strong></div>
+      <div class="top-actions"><a class="btn btn-small" id="workspaceHelp" href="mailto:info@searsmelvin.co.uk"><svg class="icon"><use href="#i-help"></use></svg><span>Contact SM</span></a><button class="btn btn-gold btn-small" data-open-wizard><svg class="icon"><use href="#i-plus"></use></svg>New memorial</button></div>
+    </header>
+    <main class="main" id="mainContent" tabindex="-1"></main>
+    <nav class="mobile-nav" aria-label="Order workspace mobile navigation">
+      <button class="nav-btn active" data-view="overview"><svg class="icon"><use href="#i-home"></use></svg>Overview</button>
+      <button class="nav-btn" data-view="orders"><svg class="icon"><use href="#i-orders"></use></svg>Orders</button>
+      <button class="nav-btn" data-view="invoices"><svg class="icon"><use href="#i-invoice"></use></svg>Invoices</button>
+      <button class="nav-btn" data-view="account"><svg class="icon"><use href="#i-users"></use></svg>Organisation</button>
     </nav>
+  </div>
 
-    <!-- Header -->
-    <div class="dash-header">
-        <h2 id="dashGreeting">Welcome back</h2>
-        <p id="dashSubtitle">Manage your referred orders and customer enquiries.</p>
-    </div>
+  <div class="scrim" id="drawerScrim"></div>
+  <aside class="drawer" id="orderDrawer" aria-labelledby="drawerTitle" aria-hidden="true">
+    <div class="drawer-head"><div><div class="eyebrow" id="drawerEyebrow">Order</div><h2 id="drawerTitle">Loading…</h2><div id="drawerStatus"></div></div><button class="close" id="closeDrawer" aria-label="Close order details">×</button></div>
+    <div class="drawer-scroll" id="drawerBody"></div>
+  </aside>
 
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-label">Total Orders</div>
-            <div class="stat-value" id="statTotal">—</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Pending</div>
-            <div class="stat-value" id="statPending">—</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Completed</div>
-            <div class="stat-value" id="statCompleted">—</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Total Value</div>
-            <div class="stat-value" id="statValue">—</div>
-        </div>
-    </div>
+  <dialog id="orderWizard" aria-labelledby="wizardTitle">
+    <form class="wizard" id="wizardForm" method="dialog">
+      <aside class="wizard-side"><h2>New memorial</h2><p>Build a complete, production-ready brief.</p><div class="steps" id="wizardSteps"></div><div class="wizard-note">Nothing is submitted until the final review. Customer details are not stored in your browser.</div></aside>
+      <div class="wizard-main">
+        <div class="wizard-top"><div><div class="eyebrow" id="wizardEyebrow">Step 1 of 6</div><h3 id="wizardTitle">Family &amp; deceased</h3></div><button class="close" id="closeWizard" type="button" aria-label="Close new memorial">×</button></div>
+        <div class="wizard-content" id="wizardContent"></div>
+        <div class="wizard-footer"><button class="btn hidden" id="wizardBack" type="button">Back</button><span class="muted" id="wizardHint">Required fields are marked *</span><div class="wizard-footer-right"><button class="btn" id="wizardSave" type="button">Cancel</button><button class="btn btn-primary" id="wizardNext" type="button">Continue</button></div></div>
+      </div>
+    </form>
+  </dialog>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <button class="filter-btn active" onclick="filterOrders('all', this)">All</button>
-            <button class="filter-btn" onclick="filterOrders('pending', this)">Pending</button>
-            <button class="filter-btn" onclick="filterOrders('partial', this)">Deposit Paid</button>
-            <button class="filter-btn" onclick="filterOrders('completed', this)">Completed</button>
-            <input type="text" class="search-input" id="searchInput" placeholder="Search orders..." oninput="debounceSearch()">
-        </div>
-        <button class="new-order-btn" onclick="openNewOrderModal()">+ New Order</button>
-    </div>
+  <div class="toast-region" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Orders table -->
-    <div class="orders-wrapper">
-        <table class="orders-table" id="ordersTable">
-            <thead>
-                <tr>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th>Location</th>
-                    <th>Value</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody id="ordersBody"></tbody>
-        </table>
-        <div id="ordersEmpty" class="orders-empty" style="display:none;">
-            <p>No orders found. Create your first order to get started.</p>
-        </div>
-    </div>
-</div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10M9.5 20v-6h5v6"/></symbol>
+    <symbol id="i-orders" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+    <symbol id="i-invoice" viewBox="0 0 24 24"><path d="M6 3h10l3 3v15H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2M15 5.2a3 3 0 0 1 0 5.6M17 14a5 5 0 0 1 3.5 4.8V20"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 1 1 3.8 2.1c-1 .6-1.5 1-1.5 2.2M12 17h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+  </svg>
 
-<!-- ==================== ORDER DETAIL PANEL ==================== -->
-<div class="order-panel-overlay" id="panelOverlay" onclick="closeOrderPanel()"></div>
-<div class="order-panel" id="orderPanel">
-    <div class="panel-header">
-        <h2 id="panelTitle">Order Detail</h2>
-        <button class="panel-close" onclick="closeOrderPanel()">&times;</button>
-    </div>
-    <div class="panel-body" id="panelBody"></div>
-</div>
+  <script>
+  (function(){
+    "use strict";
+    var state={partner:null,workspace:{mode:"partner",capabilities:{}},orders:[],stats:{},invoices:[],products:[],cemeteries:[],view:"overview",filter:"all",search:"",wizardStep:0,draft:{billingParty:"family"},currentOrder:null};
+    var stages=[
+      {key:"submitted",label:"Submitted",copy:"Order received by Sears Melvin"},
+      {key:"proof_approval",label:"Proof approval",copy:"Inscription design reviewed and approved"},
+      {key:"confirmed",label:"Confirmed",copy:"Permit and specification ready"},
+      {key:"in_production",label:"In production",copy:"Stone and inscription work underway"},
+      {key:"installation",label:"Installation",copy:"Fixing date arranged with the cemetery"},
+      {key:"complete",label:"Complete",copy:"Memorial installed and order closed"}
+    ];
+    var wizardMeta=[
+      ["Family & deceased","Who the order is for"],
+      ["Memorial","Product, size and finish"],
+      ["Inscription","Words and typography"],
+      ["Cemetery","Location, plot and permit"],
+      ["Commercial","Price and invoice addressee"],
+      ["Review","Check and submit"]
+    ];
+    function q(s,root){return (root||document).querySelector(s)}
+    function qa(s,root){return Array.prototype.slice.call((root||document).querySelectorAll(s))}
+    function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+    function safeUrl(v){try{var u=new URL(v,location.origin);return u.protocol==="https:"||u.protocol==="http:"?u.href:""}catch(e){return ""}}
+    function money(v){return v==null?"—":new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Number(v)||0)}
+    function date(v){if(!v)return "—";var d=new Date(v);return isNaN(d)?"—":new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric"}).format(d)}
+    function relative(v){if(!v)return "";var days=Math.round((new Date(v)-new Date())/86400000);if(days===0)return "Today";if(days===1)return "Tomorrow";if(days===-1)return "Yesterday";return date(v)}
+    function initials(name){return String(name||"SM").split(/\s+/).map(function(x){return x[0]}).join("").slice(0,2).toUpperCase()}
+    function isInternal(){return state.workspace&&state.workspace.mode==="internal"}
+    function needsAction(o){return o.actionOwner===(isInternal()?"team":"partner")}
+    function api(path,options){options=options||{};options.credentials="include";options.headers=Object.assign({"Content-Type":"application/json"},options.headers||{});return fetch(path,options).then(async function(r){var d=await r.json().catch(function(){return {ok:false,error:"Unexpected server response"}});if(r.status===401){showAuth();throw new Error("Your session has expired. Please sign in again.")}if(!r.ok||d.ok===false)throw new Error(d.error||"Something went wrong");return d})}
+    function authApi(body){return fetch("/api/partner-auth",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(async function(r){var d=await r.json().catch(function(){return {ok:false,error:"Unexpected server response"}});if(!r.ok||d.ok===false)throw new Error(d.error||"Something went wrong");return d})}
+    function toast(message,type){var el=document.createElement("div");el.className="toast "+(type||"");el.textContent=message;q("#toasts").appendChild(el);setTimeout(function(){el.remove()},4200)}
+    function setBusy(button,busy,label){if(!button)return;button.disabled=busy;if(!button.dataset.label)button.dataset.label=button.textContent;button.textContent=busy?(label||"Working…"):button.dataset.label}
+    function showBox(el,message,type){el.textContent=message;el.className="notice "+(type==="error"?"notice-error":type==="success"?"notice-success":"")}
+    function showAuth(){q("#authScreen").classList.remove("hidden");q("#appShell").classList.add("hidden")}
+    function showApp(){q("#authScreen").classList.add("hidden");q("#appShell").classList.remove("hidden")}
 
-<!-- ==================== NEW ORDER MODAL ==================== -->
-<div class="modal-overlay" id="newOrderModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>New Order</h2>
-            <button class="panel-close" onclick="closeNewOrderModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-row">
-                <div class="form-field">
-                    <label>Customer Name *</label>
-                    <input type="text" id="newName" required>
-                </div>
-                <div class="form-field">
-                    <label>Email *</label>
-                    <input type="email" id="newEmail" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>Phone</label>
-                    <input type="tel" id="newPhone">
-                </div>
-                <div class="form-field">
-                    <label>Cemetery / Location</label>
-                    <input type="text" id="newLocation">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>Product</label>
-                    <input type="text" id="newProduct" placeholder="e.g. Lawn Memorial">
-                </div>
-                <div class="form-field">
-                    <label>Colour</label>
-                    <input type="text" id="newColour" placeholder="e.g. Black Granite">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>Size</label>
-                    <input type="text" id="newSize" placeholder="e.g. 2ft 6in">
-                </div>
-                <div class="form-field">
-                    <label>Estimated Value</label>
-                    <input type="number" id="newValue" placeholder="0" step="1" min="0">
-                </div>
-            </div>
-            <div class="form-field">
-                <label>Notes</label>
-                <textarea id="newNotes" placeholder="Any additional details..."></textarea>
-            </div>
-            <p class="form-error" id="newOrderError"></p>
-            <p class="form-success" id="newOrderSuccess"></p>
-        </div>
-        <div class="form-actions">
-            <button class="btn-cancel" onclick="closeNewOrderModal()">Cancel</button>
-            <button class="btn-submit" id="newOrderBtn" onclick="submitNewOrder()">Create Order</button>
-        </div>
-    </div>
-</div>
+    async function boot(){
+      var fragment=new URLSearchParams(location.hash.replace(/^#/,""));var loginToken=fragment.get("login");
+      if(loginToken){history.replaceState(null,"","/partner");await consumeMagicLink(loginToken);return}
+      try{
+        var result=await authApi({action:"verify"});
+        state.partner=result.partner;await enterApp();
+      }catch(e){showAuth()}
+    }
+    async function consumeMagicLink(token){
+      showAuth();var btn=q('#loginForm button[type="submit"]');var email=q("#loginEmail");email.disabled=true;setBusy(btn,true,"Verifying secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");
+      try{var result=await authApi({action:"consume-magic-link",token:token});state.partner=result.partner;await enterApp()}
+      catch(err){showBox(q("#loginError"),err.message||"This sign-in link is invalid or expired. Request a new one.","error");email.disabled=false;setBusy(btn,false);btn.textContent="Email a new sign-in link"}
+    }
+    async function enterApp(){
+      showApp();q("#sideCompany").textContent=state.partner.company||state.partner.name;q("#sideUser").textContent=state.partner.name||state.partner.email;q("#sideAvatar").textContent=initials(state.partner.company||state.partner.name);
+      renderLoading();
+      try{
+        var results=await Promise.all([api("/api/partner-orders"),api("/api/partner-orders?resource=catalog"),api("/api/partner-orders?resource=invoices")]);
+        state.workspace=results[0].workspace||results[2].workspace||state.workspace;state.orders=results[0].orders||[];state.stats=results[0].stats||{};state.products=results[1].products||[];state.cemeteries=results[1].cemeteries||[];state.invoices=results[2].invoices||[];applyWorkspaceChrome();
+        q("#orderCount").textContent=state.orders.length;q("#orderCount").classList.toggle("hidden",!state.orders.length);renderView();
+      }catch(e){q("#mainContent").innerHTML=errorState(e.message)}
+    }
+    function applyWorkspaceChrome(){var internal=isInternal();q("#workspaceBadge").textContent=internal?"Internal":"Partner";q("#mobileWorkspaceLabel").textContent=internal?"Internal":"Partner";q("#workspaceCrumb").textContent=internal?"Internal workspace":"Partner workspace";var help=q("#workspaceHelp");help.classList.toggle("hidden",internal);document.title=(internal?"Internal":"Partner")+" workspace | Sears Melvin Memorials"}
+    function renderLoading(){q("#mainContent").innerHTML='<div class="loading"><span class="spinner"></span>Loading your workspace…</div>'}
+    function errorState(message){return '<div class="card empty"><div class="empty-icon">!</div><h3>We could not load this view</h3><p>'+esc(message)+'</p><button class="btn" onclick="location.reload()">Try again</button></div>'}
 
-<script>
-    // ==================== STATE ====================
-    var currentPartner = null;
-    var allOrders = [];
-    var currentFilter = 'all';
-    var searchTimeout = null;
-
-    // ==================== INIT ====================
-    document.addEventListener('DOMContentLoaded', function() {
-        // The token is carried in the URL fragment so browsers do not send it
-        // to the server, request logs, analytics or Referer headers.
-        var fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        var loginToken = fragment.get('login');
-        if (loginToken) {
-            // Remove the one-time token from the address bar/history as soon as
-            // the application has captured it in memory.
-            history.replaceState(null, '', '/partner');
-            consumeMagicLink(loginToken);
-            return;
-        }
-        verifySession();
-    });
-
-    // ==================== TAB SWITCHING ====================
-    function showLoginTab(tab) {
-        var tabs = document.querySelectorAll('.login-tab');
-        tabs[0].classList.toggle('active', tab === 'signin');
-        tabs[1].classList.toggle('active', tab === 'request');
-        document.getElementById('signinForm').style.display = tab === 'signin' ? 'block' : 'none';
-        document.getElementById('requestForm').style.display = tab === 'request' ? 'block' : 'none';
-        // Clear messages
-        document.getElementById('loginError').style.display = 'none';
-        document.getElementById('loginSuccess').style.display = 'none';
-        document.getElementById('reqError').style.display = 'none';
-        document.getElementById('reqSuccess').style.display = 'none';
+    function renderView(){
+      qa(".nav-btn").forEach(function(b){b.classList.toggle("active",b.dataset.view===state.view)});
+      var labels={overview:"Overview",orders:"Orders",invoices:"Invoices",account:"Organisation"};q("#crumb").textContent=labels[state.view];
+      if(state.view==="overview")renderOverview();else if(state.view==="orders")renderOrders();else if(state.view==="invoices")renderInvoices();else renderAccount();
+    }
+    function pageHead(eyebrow,title,copy,button){
+      return '<div class="page-head"><div><div class="eyebrow">'+eyebrow+'</div><h1>'+esc(title)+'</h1><p>'+esc(copy)+'</p></div>'+(button?'<button class="btn btn-gold" data-open-wizard><svg class="icon"><use href="#i-plus"></use></svg>New memorial order</button>':'')+'</div>';
+    }
+    function renderOverview(){
+      var first=(state.partner.name||"there").split(" ")[0];var needs=state.orders.filter(needsAction);var internal=isInternal();
+      var recent=state.orders.slice(0,5);
+      var html=pageHead(internal?"Sears Melvin internal workspace":"Funeral director workspace","Good "+dayPart()+", "+first+".",internal?"Track direct Sears Melvin work and orders created through this shared account.":"Here is what needs attention across your Sears Melvin orders.",true);
+      html+='<section class="stats"><article class="stat '+(needs.length?"stat-alert":"")+'"><div class="stat-label">'+(internal?"Team attention":"Needs your action")+'</div><div class="stat-value">'+needs.length+'</div><div class="stat-note">'+(needs.length?(internal?"Orders with an outstanding SM step":"Proofs or permit information"):(internal?"No internal actions flagged":"Nothing waiting on you"))+'</div></article><article class="stat"><div class="stat-label">Open orders</div><div class="stat-value">'+state.orders.filter(function(o){return o.stage!=="complete"}).length+'</div><div class="stat-note">Across all active stages</div></article><article class="stat"><div class="stat-label">In production</div><div class="stat-value">'+(state.stats.inProduction||0)+'</div><div class="stat-note">'+(internal?"Current production workload":"Being made by Sears Melvin")+'</div></article><article class="stat"><div class="stat-label">Order value</div><div class="stat-value">'+money(state.stats.totalValue||0)+'</div><div class="stat-note">'+(internal?"Visible direct and internal orders":"Visible partner order value")+'</div></article></section>';
+      html+='<div class="overview-grid"><section class="card"><div class="card-head"><h2>Priority actions</h2><button class="link-btn" data-go-orders>View all orders →</button></div>';
+      if(needs.length){html+='<div class="action-list">'+needs.slice(0,5).map(actionItem).join("")+'</div>'}else{html+='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-check"></use></svg></div><h3>You are up to date</h3><p>'+(internal?"No direct or internally-created orders currently need an SM action.":"When a proof or permit needs your input it will appear here, with the exact next action.")+'</p></div>'}
+      html+='</section>'+(internal?'<aside class="service-card card"><div class="eyebrow" style="color:#d3b98f">Current access scope</div><h3>Direct Sears Melvin work only.</h3><p>This shared workspace includes direct orders and orders created here. Other funeral-director partner orders remain excluded until individual permissions are introduced.</p><div class="service-meta"><div><svg class="icon"><use href="#i-users"></use></svg>Shared SM access</div><div><svg class="icon"><use href="#i-check"></use></svg>External partner orders excluded</div></div></aside>':'<aside class="service-card card"><div class="eyebrow" style="color:#d3b98f">Your Sears Melvin team</div><h3>Need to discuss a family or specification?</h3><p>Contact us before submitting if a cemetery rule, bespoke design or timing needs checking.</p><div class="service-meta"><div><svg class="icon"><use href="#i-mail"></use></svg>info@searsmelvin.co.uk</div><div><svg class="icon"><use href="#i-clock"></use></svg>Mon–Fri, 9am–5pm</div></div></aside>');
+      html+='<section class="card" style="grid-column:1/-1"><div class="card-head"><h2>Recent orders</h2><button class="link-btn" data-go-orders>View all →</button></div>'+(recent.length?'<div class="table-wrap" style="border:0;border-radius:0">'+ordersTable(recent)+'</div>':emptyOrders())+'</section></div>';
+      q("#mainContent").innerHTML=html;bindCommon();
+    }
+    function dayPart(){var h=new Date().getHours();return h<12?"morning":h<18?"afternoon":"evening"}
+    function actionItem(o){return '<a class="action-item" href="#" data-order-id="'+esc(o.id)+'"><span class="action-icon"><svg class="icon"><use href="#i-clock"></use></svg></span><span><strong>'+esc(o.nextAction)+'</strong><span>'+esc(o.ref)+' · '+esc(o.deceasedName||o.customerName||"Memorial order")+'</span></span><svg class="icon action-arrow"><use href="#i-arrow"></use></svg></a>'}
+    function emptyOrders(){return '<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-orders"></use></svg></div><h3>'+(isInternal()?"No Sears Melvin orders found":"No partner orders yet")+'</h3><p>'+(isInternal()?"No direct or internally-created orders are available in this workspace.":"Your workspace is correctly empty. Existing direct Sears Melvin customers are kept private; orders created here will appear immediately.")+'</p><button class="btn btn-gold" data-open-wizard>Create first memorial order</button></div>'}
+    function statusClass(o){if(o.stage==="complete"||o.status==="completed")return "complete";if(needsAction(o))return "action";if(o.status==="cancelled")return "cancelled";return ""}
+    function stageLabel(o){var found=stages.find(function(s){return s.key===o.stage});return found?found.label:String(o.stage||o.status||"Submitted").replace(/_/g," ")}
+    function ordersTable(orders){
+      var internal=isInternal();return '<table><thead><tr><th>Order</th><th>Family / deceased</th><th>Memorial</th>'+(internal?'<th>Origin</th>':'')+'<th>Stage</th><th>Next action</th><th>Value</th></tr></thead><tbody>'+orders.map(function(o){var owner=internal?(o.actionOwner==="team"?"SM team":o.actionOwner==="external"?"Awaiting approval":"No action"):(o.actionOwner==="partner"?"Your action":o.actionOwner==="sm"?"With Sears Melvin":"No action");return '<tr data-order-id="'+esc(o.id)+'"><td><div class="cell-primary">'+esc(o.ref)+'</div><div class="cell-secondary">'+date(o.createdAt)+'</div></td><td><div class="cell-primary">'+esc(o.deceasedName||"Not supplied")+'</div><div class="cell-secondary">'+esc(o.customerName||o.customerEmail||"")+'</div></td><td><div class="cell-primary">'+esc(o.product||"Memorial")+'</div><div class="cell-secondary">'+esc([o.size,o.material,o.colour].filter(Boolean).join(" · "))+'</div></td>'+(internal?'<td><span class="status">'+esc(o.origin||"Sears Melvin direct")+'</span></td>':'')+'<td><span class="status '+statusClass(o)+'">'+esc(stageLabel(o))+'</span></td><td><div class="action-owner"><strong>'+owner+'</strong>'+esc(o.nextAction||"")+'</div></td><td class="money">'+money(o.value)+'</td></tr>'}).join("")+'</tbody></table>';
+    }
+    function renderOrders(){
+      var list=state.orders.filter(function(o){var filterOk=state.filter==="all"||(state.filter==="needs_action"&&needsAction(o))||(state.filter==="open"&&o.stage!=="complete")||(state.filter==="complete"&&o.stage==="complete");var hay=[o.ref,o.deceasedName,o.customerName,o.customerEmail,o.product,o.cemetery,o.origin].join(" ").toLowerCase();return filterOk&&hay.indexOf(state.search.toLowerCase())>-1});
+      var html=pageHead("Order management","Memorial orders",isInternal()?"Search and track direct Sears Melvin work without exposing other partner orders.":"Search, track and act on every memorial referred by your organisation.",true);
+      html+='<div class="toolbar"><div class="toolbar-left"><div class="search"><svg class="icon"><use href="#i-search"></use></svg><input class="input" id="orderSearch" placeholder="Search order, family or deceased" value="'+esc(state.search)+'"></div><div class="filter-row">'+[["all","All"],["needs_action","Needs action"],["open","Open"],["complete","Complete"]].map(function(f){return '<button class="filter '+(state.filter===f[0]?"active":"")+'" data-filter="'+f[0]+'">'+f[1]+'</button>'}).join("")+'</div></div></div>';
+      html+=list.length?'<div class="table-wrap">'+ordersTable(list)+'</div>':(state.orders.length?'<div class="card empty"><h3>No matching orders</h3><p>Try a different search or filter.</p></div>':emptyOrders());
+      q("#mainContent").innerHTML=html;bindCommon();q("#orderSearch")&&q("#orderSearch").addEventListener("input",function(e){state.search=e.target.value;renderOrders()});qa("[data-filter]").forEach(function(b){b.addEventListener("click",function(){state.filter=b.dataset.filter;renderOrders()})});
+    }
+    function invoiceStatus(i){var s=String(i.stripeStatus||i.status||"issued").toLowerCase();if(s==="paid")return "paid";if(s==="overdue"||s==="past_due")return "overdue";return ""}
+    function renderInvoices(){
+      var outstanding=state.invoices.filter(function(i){return invoiceStatus(i)!=="paid"}).reduce(function(a,i){return a+(i.amountRemainingPence!=null?Number(i.amountRemainingPence)/100:Number(i.amount)||0)},0);
+      var html=pageHead("Commercial","Invoices & payments",isInternal()?"View invoices linked to direct and internally-created Sears Melvin orders.":"View invoices attached to your organisation’s memorial orders.",false);
+      html+='<section class="stats" style="grid-template-columns:repeat(3,1fr)"><article class="stat"><div class="stat-label">Invoices</div><div class="stat-value">'+state.invoices.length+'</div><div class="stat-note">'+(isInternal()?"Within the internal order scope":"Linked to partner orders")+'</div></article><article class="stat"><div class="stat-label">Outstanding</div><div class="stat-value">'+money(outstanding)+'</div><div class="stat-note">According to current invoice records</div></article><article class="stat"><div class="stat-label">Payment route</div><div class="stat-value" style="font-size:24px">Hosted invoice</div><div class="stat-note">Family or funeral director addressee</div></article></section>';
+      if(state.invoices.length){html+='<div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Order</th><th>Addressee</th><th>Issued / due</th><th>Status</th><th>Amount</th><th></th></tr></thead><tbody>'+state.invoices.map(function(i){var invoiceUrl=safeUrl(i.hostedUrl);return '<tr><td><div class="cell-primary">'+esc(i.number||"Invoice")+'</div></td><td><div class="cell-primary">'+esc(i.orderRef||"—")+'</div><div class="cell-secondary">'+esc(i.deceasedName||"")+'</div></td><td>'+esc(i.addressee||"—")+'</td><td><div>'+date(i.issueDate)+'</div><div class="cell-secondary">Due '+date(i.dueDate)+'</div></td><td><span class="status '+invoiceStatus(i)+'">'+esc(i.stripeStatus||i.status||"Issued")+'</span></td><td class="money">'+money(i.amount)+'</td><td>'+(invoiceUrl?'<a class="btn btn-small" href="'+esc(invoiceUrl)+'" target="_blank" rel="noopener">Open invoice</a>':'<span class="muted">Not issued online</span>')+'</td></tr>'}).join("")+'</tbody></table></div>'}else{html+='<div class="card empty"><div class="empty-icon"><svg class="icon"><use href="#i-invoice"></use></svg></div><h3>'+(isInternal()?"No invoices in this workspace":"No partner invoices yet")+'</h3><p>'+(isInternal()?"No invoice is currently linked to a direct or internally-created Sears Melvin order.":"An invoice will appear here only after Sears Melvin issues it against one of your partner orders. We do not expose invoices for direct customers.")+'</p></div>'}
+      q("#mainContent").innerHTML=html;bindCommon();
+    }
+    function renderAccount(){
+      var p=state.partner;var html=pageHead("Organisation",isInternal()?"Internal access":"Partner settings",isInternal()?"Shared Sears Melvin access for the order-tracking MVP.":"Your organisation profile and the capabilities being prepared for multi-branch working.",false);
+      html+='<div class="settings-grid"><section class="card settings-card"><h2>Organisation profile</h2><div class="field-grid"><div class="field"><label>Organisation</label><input class="input" value="'+esc(p.company||"")+'" disabled></div><div class="field"><label>Primary contact</label><input class="input" value="'+esc(p.name||"")+'" disabled></div><div class="field"><label>Email</label><input class="input" value="'+esc(p.email||"")+'" disabled></div><div class="field"><label>Telephone</label><input class="input" value="'+esc(p.phone||"Not supplied")+'" disabled></div></div><div class="notice" style="margin-top:16px">'+(isInternal()?'<strong>Shared MVP account.</strong> Keep credential changes with the current Sears Melvin account owner until named staff accounts and permissions are introduced.':'Profile changes are currently verified by Sears Melvin. Email <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a> to update these details.')+'</div></section>';
+      html+=isInternal()?'<aside class="card settings-card"><h2>MVP access controls</h2><div class="roadmap"><div class="roadmap-item" title="One shared partner credential is being used for the internal MVP."><span class="planned">Shared access</span><strong style="display:block;margin-top:8px">Individual staff permissions</strong><p>Not connected yet. Later, named users should receive role and action-level permissions.</p></div><div class="roadmap-item" title="The API currently excludes orders owned by funeral-director partner accounts."><span class="planned">Restricted now</span><strong style="display:block;margin-top:8px">Other partner orders</strong><p>Not visible in this workspace. A future permission can grant selected SM employees cross-partner oversight.</p></div><div class="roadmap-item" title="Internal notes need named actors and visibility rules before being added."><span class="planned">Not connected</span><strong style="display:block;margin-top:8px">Internal notes & audit</strong><p>Use the existing operational systems until individual staff identity is available here.</p></div></div></aside></div>':'<aside class="card settings-card"><h2>Planned account controls</h2><div class="roadmap"><div class="roadmap-item" title="No branch or membership tables are currently connected to this partner record."><span class="planned">Not connected</span><strong style="display:block;margin-top:8px">Branches & users</strong><p>Invite branch colleagues and limit visibility by branch or responsibility.</p></div><div class="roadmap-item" title="A partner-level communications agreement is not yet represented in the current schema."><span class="planned">Needs agreement field</span><strong style="display:block;margin-top:8px">Family communications</strong><p>Set whether the funeral director or Sears Melvin leads contact with each family.</p></div><div class="roadmap-item" title="Commission rules have not been added to the existing partner record, so the portal will not invent a value."><span class="planned">Needs commercial rule</span><strong style="display:block;margin-top:8px">Commission statement</strong><p>Partner-level rate, earned amount and settlement history.</p></div></div></aside></div>';
+      q("#mainContent").innerHTML=html;bindCommon();
+    }
+    function bindCommon(){
+      qa("[data-open-wizard]").forEach(function(b){b.addEventListener("click",openWizard)});
+      qa("[data-order-id]").forEach(function(el){el.addEventListener("click",function(e){e.preventDefault();openOrder(el.dataset.orderId)})});
+      qa("[data-go-orders]").forEach(function(b){b.addEventListener("click",function(){state.view="orders";renderView()})});
     }
 
-    // ==================== REQUEST ACCESS ====================
-    async function handleRequestAccess(e) {
-        e.preventDefault();
-        var btn = document.getElementById('reqBtn');
-        var errEl = document.getElementById('reqError');
-        var successEl = document.getElementById('reqSuccess');
-        errEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        btn.disabled = true;
-        btn.textContent = 'Submitting...';
-
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'request',
-                    name: document.getElementById('reqName').value.trim(),
-                    company: document.getElementById('reqCompany').value.trim(),
-                    email: document.getElementById('reqEmail').value.trim(),
-                    phone: document.getElementById('reqPhone').value.trim(),
-                    message: document.getElementById('reqMessage').value.trim(),
-                })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Request failed');
-
-            successEl.textContent = data.message || 'Request submitted! We will review it and get back to you.';
-            successEl.style.display = 'block';
-            document.getElementById('requestForm').reset();
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Request Access';
+    async function openOrder(id){
+      q("#drawerScrim").classList.add("open");q("#orderDrawer").classList.add("open");q("#orderDrawer").setAttribute("aria-hidden","false");q("#drawerTitle").textContent="Loading order…";q("#drawerBody").innerHTML='<div class="loading"><span class="spinner"></span>Loading customer and production details…</div>';
+      try{var data=await api("/api/partner-orders?id="+encodeURIComponent(id));state.currentOrder=data;renderOrderDetail(data)}catch(e){q("#drawerBody").innerHTML=errorState(e.message)}
     }
-
-    // ==================== AUTH ====================
-    async function handleMagicLinkRequest(e) {
-        e.preventDefault();
-        var email = document.getElementById('loginEmail').value.trim();
-        var btn = document.getElementById('loginBtn');
-        var errEl = document.getElementById('loginError');
-        var successEl = document.getElementById('loginSuccess');
-
-        btn.disabled = true;
-        btn.textContent = 'Sending secure link...';
-        errEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'request-magic-link', email: email })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Unable to send sign-in link');
-            successEl.textContent = data.message;
-            successEl.style.display = 'block';
-        } catch (err) {
-            errEl.textContent = 'Unable to send a sign-in link right now. Please try again.';
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Email Me a Sign-In Link';
+    function closeOrder(){q("#drawerScrim").classList.remove("open");q("#orderDrawer").classList.remove("open");q("#orderDrawer").setAttribute("aria-hidden","true");state.currentOrder=null}
+    function renderOrderDetail(data){
+      var o=data.order;var internal=isInternal();q("#drawerEyebrow").textContent=o.ref;q("#drawerTitle").textContent=o.deceasedName||"Memorial order";q("#drawerStatus").innerHTML='<span class="status '+statusClass(o)+'">'+esc(stageLabel(o))+'</span>';
+      var html='<div class="detail-summary"><div><span>Family contact</span><strong>'+esc(o.customerName||"—")+'</strong></div><div><span>Memorial</span><strong>'+esc(o.product||"—")+'</strong></div><div><span>Order value</span><strong>'+money(o.value)+'</strong></div></div>';
+      html+='<section class="detail-section"><h3>Progress & next action</h3><div class="notice '+(needsAction(o)?"notice-warning":"")+'" style="margin-bottom:15px"><strong>'+(internal?(o.actionOwner==="team"?"SM team: ":o.actionOwner==="external"?"External approval: ":"Status: "):(o.actionOwner==="partner"?"Your team: ":"Sears Melvin: "))+'</strong>'+esc(o.nextAction)+'</div><div class="timeline">'+renderTimeline(o)+'</div></section>';
+      html+='<section class="detail-section"><h3>Specification</h3><dl class="definition"><dt>Customer</dt><dd>'+esc(o.customerName||"—")+' · '+esc(o.customerEmail||"—")+'</dd><dt>Deceased</dt><dd>'+esc(o.deceasedName||"—")+'</dd><dt>Product</dt><dd>'+esc(o.product||"—")+'</dd><dt>Size & finish</dt><dd>'+esc([o.size,o.material,o.colour].filter(Boolean).join(" · ")||"—")+'</dd><dt>Cemetery</dt><dd>'+esc(o.cemetery||"—")+'</dd><dt>Plot reference</dt><dd>'+esc(o.plotReference||"—")+'</dd>'+(internal?'<dt>Origin</dt><dd>'+esc(o.origin||"Sears Melvin direct")+'</dd>':'')+'<dt>Invoice request</dt><dd>'+esc(o.billingParty==="partner"?(internal?"Sears Melvin":"Funeral director"):o.billingParty==="family"?"Family":"To be agreed")+'</dd></dl></section>';
+      html+='<section class="detail-section"><h3>Inscription proof</h3>'+renderProof(data,o)+'</section>';
+      html+='<section class="detail-section"><h3>Permit & installation</h3><dl class="definition"><dt>Permit status</dt><dd>'+esc(o.permitStatus||"Pending")+'</dd><dt>Installation date</dt><dd>'+date(o.installationDate)+'</dd><dt>Estimated completion</dt><dd>'+date(o.estimatedCompletion)+'</dd></dl>'+(data.permits&&data.permits.length?'<div class="notice" style="margin-top:12px">'+esc(data.permits[0].notes||"Permit record received")+'</div>':'<div class="notice notice-warning" style="margin-top:12px"><span class="planned" title="The permit table exists, but secure document upload and review are not connected to this portal yet.">Upload not connected</span><div style="margin-top:7px">'+(internal?"Record and manage the permit through the current operational process until portal upload is connected.":"Funeral directors typically handle the permit. Send it to Sears Melvin while secure upload is being connected.")+'</div></div>')+'</section>';
+      html+='<section class="detail-section"><h3>Invoices & payments</h3>'+renderDetailInvoices(data.invoices||[])+'</section>';
+      html+=internal?'<section class="detail-section"><h3>Operational activity</h3>'+renderActivity(data.events||[])+'<div class="notice" style="margin-top:12px"><span class="planned" title="A shared login cannot identify which employee wrote a note. Individual identity and visibility rules are required first.">Internal notes not connected</span><div style="margin-top:7px">Continue using the current internal notes process until named staff access is introduced.</div></div></section>':'<section class="detail-section"><h3>Messages</h3><div id="commentList">'+(data.comments||[]).map(function(c){return '<div class="comment"><p>'+esc(c.comment)+'</p><time>'+date(c.created_at)+'</time></div>'}).join("")+'</div><form class="comment-form" id="commentForm"><textarea class="textarea" id="commentText" placeholder="Ask a question or add an order note" required></textarea><button class="btn btn-primary" type="submit">Send</button></form></section>';
+      q("#drawerBody").innerHTML=html;
+      q("#commentForm")&&q("#commentForm").addEventListener("submit",sendComment);qa("[data-proof-action]").forEach(function(b){b.addEventListener("click",function(){handleProofAction(b.dataset.proofAction)})});
     }
+    function renderTimeline(o){var current=stages.findIndex(function(s){return s.key===o.stage});if(current<0)current=0;return stages.map(function(s,i){return '<div class="timeline-item '+(i<current?"done":i===current?"current":"")+'"><span class="timeline-marker"></span><div><strong>'+s.label+'</strong><p>'+s.copy+'</p></div></div>'}).join("")}
+    function renderProof(data,o){var proof=(data.proofs||[])[0];if(!proof&&!o.proofUrl)return '<div class="notice">No proof is ready yet. '+(isInternal()?"The proof will appear here when it is available.":"Sears Melvin will notify you when the inscription layout can be reviewed.")+'</div>';var url=safeUrl(proof&&proof.render_url||o.proofUrl);var approved=proof&&proof.state==="approved";var canDecide=!isInternal()&&Boolean(url)&&proof&&proof.state==="sent";return '<div class="proof-box"><div class="proof-preview">'+(url?'<img src="'+esc(url)+'" alt="Inscription proof for '+esc(o.deceasedName||"this memorial")+'">':'<div><strong>Proof record ready</strong><br><span class="muted">Preview file is not attached.</span></div>')+'</div><div class="proof-actions">'+(approved?'<span class="status complete">Approved</span>':canDecide?'<button class="btn btn-small" data-proof-action="changes">Request changes</button><button class="btn btn-primary btn-small" data-proof-action="approve">Approve proof</button>':'<span class="planned" title="The approving authority is not yet represented for the shared internal account.">'+(isInternal()?"Awaiting authorised decision":"Decision unavailable")+'</span>')+'</div></div>'+(approved?'<div class="notice notice-success" style="margin-top:10px">Inscription approved. This does not yet automate the material-order lock; Sears Melvin will confirm before committing stone or irreversible production work.</div>':'')}
+    function renderActivity(events){if(!events.length)return '<div class="notice">No portal activity has been recorded for this order yet.</div>';return '<div class="timeline">'+events.slice(0,12).map(function(event){return '<div class="timeline-item done"><span class="timeline-marker"></span><div><strong>'+esc(event.summary||String(event.event_type||"Activity").replace(/_/g," "))+'</strong><p>'+date(event.created_at)+'</p></div></div>'}).join("")+'</div>'}
+    function renderDetailInvoices(invoices){if(!invoices.length)return '<div class="notice">No invoice has been issued for this order yet.</div>';return invoices.map(function(i){var invoiceUrl=safeUrl(i.hostedUrl);return '<div class="price-row"><div><strong>'+esc(i.number||"Invoice")+'</strong><div class="cell-secondary">'+esc(i.addressee||"")+' · due '+date(i.dueDate)+'</div></div><div style="text-align:right"><span class="money">'+money(i.amount)+'</span><br>'+(invoiceUrl?'<a class="link-btn" target="_blank" rel="noopener" href="'+esc(invoiceUrl)+'">Open / pay →</a>':'<span class="muted">Offline</span>')+'</div></div>'}).join("")}
+    async function sendComment(e){e.preventDefault();var text=q("#commentText").value.trim();if(!text)return;var btn=q("#commentForm button");setBusy(btn,true,"Sending…");try{var result=await api("/api/partner-orders",{method:"POST",body:JSON.stringify({action:"comment",orderId:state.currentOrder.order.id,comment:text})});state.currentOrder.comments.push(result.comment);renderOrderDetail(state.currentOrder);toast("Message added","success")}catch(err){toast(err.message,"error");setBusy(btn,false)}}
+    async function handleProofAction(action){var note="";if(action==="changes"){note=window.prompt("Describe the exact inscription changes needed:")||"";if(!note.trim())return}if(action==="approve"&&!window.confirm("Approve this inscription proof? Sears Melvin will use the approved wording and layout for the next production step."))return;try{await api("/api/partner-orders",{method:"POST",body:JSON.stringify({action:action==="approve"?"approve-proof":"request-proof-changes",orderId:state.currentOrder.order.id,note:note})});toast(action==="approve"?"Proof approved":"Changes sent to Sears Melvin","success");await openOrder(state.currentOrder.order.id);await refreshOrders()}catch(e){toast(e.message,"error")}}
 
-    async function consumeMagicLink(token) {
-        var btn = document.getElementById('loginBtn');
-        var errEl = document.getElementById('loginError');
-        document.getElementById('loginEmail').disabled = true;
-        btn.disabled = true;
-        btn.textContent = 'Verifying secure link...';
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'consume-magic-link', token: token })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'This sign-in link could not be used.');
-            currentPartner = data.partner;
-            showDashboard();
-        } catch (err) {
-            errEl.textContent = err.message || 'This sign-in link is invalid or expired. Request a new one.';
-            errEl.style.display = 'block';
-            document.getElementById('loginEmail').disabled = false;
-            btn.disabled = false;
-            btn.textContent = 'Email Me a New Sign-In Link';
-        }
+    function openWizard(){
+      if(!state.products.length){toast("The live memorial catalogue is unavailable. Please try again shortly.","error");return}
+      state.wizardStep=0;state.draft={billingParty:"family"};q("#orderWizard").showModal();renderWizard();
     }
-
-    async function verifySession() {
-        try {
-            var res = await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'verify' })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error('Invalid session');
-            currentPartner = data.partner;
-            showDashboard();
-        } catch (err) {
-            // No valid HttpOnly session cookie; keep the login screen visible.
-        }
+    function closeWizard(){if(Object.keys(state.draft).length>1&&!window.confirm("Close this order? The unsent details will be discarded."))return;q("#orderWizard").close();state.draft={billingParty:"family"}}
+    function renderSteps(){q("#wizardSteps").innerHTML=wizardMeta.map(function(s,i){return '<button type="button" class="step '+(i===state.wizardStep?"active":i<state.wizardStep?"done":"")+'" data-step="'+i+'" '+(i>state.wizardStep?"disabled":"")+'><span class="step-no">'+(i<state.wizardStep?"✓":i+1)+'</span><span><strong>'+s[0]+'</strong><br><small>'+s[1]+'</small></span></button>'}).join("");qa(".step",q("#wizardSteps")).forEach(function(b){b.addEventListener("click",function(){captureStep();state.wizardStep=Number(b.dataset.step);renderWizard()})})}
+    function renderWizard(){
+      renderSteps();q("#wizardEyebrow").textContent="Step "+(state.wizardStep+1)+" of 6";q("#wizardTitle").textContent=wizardMeta[state.wizardStep][0];q("#wizardBack").classList.toggle("hidden",state.wizardStep===0);q("#wizardNext").textContent=state.wizardStep===5?"Submit order":"Continue";q("#wizardHint").textContent=state.wizardStep===5?(isInternal()?"Submitting creates a live Sears Melvin order.":"Submitting creates a live partner order."):"Required fields are marked *";
+      var renderers=[stepCustomer,stepMemorial,stepInscription,stepCemetery,stepCommercial,stepReview];q("#wizardContent").innerHTML=renderers[state.wizardStep]();bindWizardStep();
     }
-
-    async function handleLogout() {
-        try {
-            await fetch('/api/partner-auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'logout' })
-            });
-        } catch (e) {}
-        currentPartner = null;
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('dashboardScreen').style.display = 'none';
+    function val(name){return esc(state.draft[name]||"")}
+    function stepCustomer(){return '<div class="field-grid"><div class="field"><label class="required" for="customerName">Family contact name</label><input class="input" id="customerName" name="customerName" value="'+val("customerName")+'" autocomplete="name" required><small>The person receiving updates or invoices.</small></div><div class="field"><label class="required" for="customerEmail">Family email</label><input class="input" id="customerEmail" name="customerEmail" type="email" value="'+val("customerEmail")+'" autocomplete="email" required></div><div class="field"><label for="customerPhone">Family telephone</label><input class="input" id="customerPhone" name="customerPhone" value="'+val("customerPhone")+'" autocomplete="tel"></div><div class="field"><label class="required" for="deceasedName">Name of deceased</label><input class="input" id="deceasedName" name="deceasedName" value="'+val("deceasedName")+'" required></div><div class="field wide"><label for="notes">Order context</label><textarea class="textarea" id="notes" name="notes" placeholder="'+(isInternal()?"Family preferences, timing, access or internal context":"Family preferences, timing, access needs or anything Sears Melvin should know")+'">'+val("notes")+'</textarea></div></div>'}
+    function stepMemorial(){
+      var search=state.draft.productSearch||"";var products=state.products.filter(function(p){return [p.name,p.sku,p.description].join(" ").toLowerCase().indexOf(search.toLowerCase())>-1});
+      var html='<div class="product-search"><div class="search" style="max-width:none"><svg class="icon"><use href="#i-search"></use></svg><input class="input" id="productSearch" placeholder="Search the live Sears Melvin catalogue" value="'+esc(search)+'"></div></div><div class="product-grid" id="productGrid">'+products.map(function(p){var imageUrl=safeUrl(p.imageUrl);return '<button type="button" class="product-option '+(state.draft.productId===p.id?"selected":"")+'" data-product="'+esc(p.id)+'"><div class="product-image">'+(imageUrl?'<img src="'+esc(imageUrl)+'" alt="">':'Memorial image')+'</div><div class="product-copy"><strong>'+esc(p.name)+'</strong><span>'+money(p.basePrice)+''+(p.sku?" · "+esc(p.sku):"")+'</span></div></button>'}).join("")+'</div>';
+      var selected=state.products.find(function(p){return p.id===state.draft.productId});if(selected){html+='<div class="field-grid" style="margin-top:18px"><div class="field"><label for="sizeId">Size</label><select class="select" id="sizeId" name="sizeId"><option value="">Standard / confirm with SM</option>'+(selected.sizes||[]).map(function(s){return '<option value="'+esc(s.id)+'" '+(state.draft.sizeId===s.id?"selected":"")+'>'+esc(s.name||s.dimensions||"Size")+(s.adjustment?" ("+(s.adjustment>0?"+":"")+money(s.adjustment)+")":"")+'</option>'}).join("")+'</select></div><div class="field"><label for="material">Material</label><input class="input" id="material" name="material" value="'+val("material")+'" placeholder="e.g. Black granite"></div><div class="field"><label for="colour">Colour / finish</label><input class="input" id="colour" name="colour" value="'+val("colour")+'" placeholder="e.g. Polished black"></div></div>'}return html;
     }
-
-    // ==================== DASHBOARD ====================
-    function showDashboard() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboardScreen').style.display = 'block';
-        document.getElementById('navUserName').textContent = currentPartner.company || currentPartner.name;
-        document.getElementById('dashGreeting').textContent = 'Welcome back, ' + currentPartner.name.split(' ')[0];
-        loadOrders();
+    function stepInscription(){return '<div class="field-grid"><div class="field wide"><label for="inscriptionText">Proposed inscription</label><textarea class="textarea" id="inscriptionText" name="inscriptionText" style="min-height:190px" placeholder="Enter the wording exactly as the family has supplied it">'+val("inscriptionText")+'</textarea><small>A formal inscription proof will still require approval before production.</small></div><div class="field"><label for="inscriptionFont">Typeface preference</label><input class="input" id="inscriptionFont" name="inscriptionFont" value="'+val("inscriptionFont")+'" placeholder="e.g. Roman serif"></div><div class="field"><label for="inscriptionLayout">Layout preference</label><select class="select" id="inscriptionLayout" name="inscriptionLayout"><option value="">Sears Melvin to recommend</option><option '+(state.draft.inscriptionLayout==="Centred"?"selected":"")+'>Centred</option><option '+(state.draft.inscriptionLayout==="Left aligned"?"selected":"")+'>Left aligned</option><option '+(state.draft.inscriptionLayout==="Match existing memorial"?"selected":"")+'>Match existing memorial</option></select></div></div><div class="notice" style="margin-top:16px">Approval is a separate tracked action. The portal will never treat draft wording as production approval.</div>'}
+    function stepCemetery(){
+      return '<div class="field-grid"><div class="field wide"><label for="cemeteryId">Cemetery</label><select class="select" id="cemeteryId" name="cemeteryId"><option value="">Select from the live cemetery register</option>'+state.cemeteries.map(function(c){return '<option value="'+esc(c.id)+'" '+(state.draft.cemeteryId===c.id?"selected":"")+'>'+esc(c.name)+(c.area?" — "+esc(c.area):"")+'</option>'}).join("")+'</select></div><div class="field"><label for="plotReference">Grave / plot reference</label><input class="input" id="plotReference" name="plotReference" value="'+val("plotReference")+'"></div><div class="field"><label for="location">Other location detail</label><input class="input" id="location" name="location" value="'+val("location")+'" placeholder="Section, churchyard or access note"></div></div><div id="cemeteryInfo">'+cemeteryInfo()+'</div><div class="notice notice-warning" style="margin-top:16px"><strong>Permit responsibility:</strong> '+(isInternal()?"record the current permit position. Secure document upload is not connected in this MVP.":"the funeral director normally obtains the permit. Secure document upload is clearly marked as not connected until ownership, file controls and review states are agreed.")+'</div>'}
+    function cemeteryInfo(){var c=state.cemeteries.find(function(x){return x.id===state.draft.cemeteryId});if(!c)return "";return '<div class="price-panel" style="margin-top:16px"><div class="price-row"><span>Governing body</span><strong>'+esc(c.governingBody||"Not recorded")+'</strong></div><div class="price-row"><span>Recorded permit fee</span><strong>'+money(c.permitFee)+'</strong></div><div class="price-row"><span>Typical processing</span><strong>'+esc(c.processingWeeks||"Not recorded")+'</strong></div>'+(c.regulationNotes?'<div class="price-row"><span>Regulation note</span><strong>'+esc(c.regulationNotes)+'</strong></div>':'')+'</div>'}
+    function selectedPricing(){var p=state.products.find(function(x){return x.id===state.draft.productId});var s=p&&(p.sizes||[]).find(function(x){return x.id===state.draft.sizeId});var c=state.cemeteries.find(function(x){return x.id===state.draft.cemeteryId});return {product:p,size:s,base:Number(p&&p.basePrice)||0,adjust:Number(s&&s.adjustment)||0,permit:Number(c&&c.permitFee)||0}}
+    function stepCommercial(){var x=selectedPricing();var internal=isInternal();return '<div class="choice-row" style="margin-bottom:18px"><label class="choice"><input type="radio" name="billingParty" value="family" '+(state.draft.billingParty!=="partner"?"checked":"")+'><span><strong>Invoice the family</strong><span>Sears Melvin prepares the invoice to the family contact on this order.</span></span></label><label class="choice"><input type="radio" name="billingParty" value="partner" '+(state.draft.billingParty==="partner"?"checked":"")+'><span><strong>'+(internal?"Invoice Sears Melvin":"Invoice the funeral director")+'</strong><span>'+(internal?"Sears Melvin is the intended addressee.":"The partner organisation is the intended addressee.")+'</span></span></label></div><div class="price-panel"><div class="price-row"><span>'+esc(x.product&&x.product.name||"Selected memorial")+'</span><strong>'+money(x.base)+'</strong></div><div class="price-row"><span>Size adjustment'+(x.size?" · "+esc(x.size.name):"")+'</span><strong>'+money(x.adjust)+'</strong></div><div class="price-row"><span>VAT basis <span class="planned" title="The current catalogue does not state whether base_price is VAT-inclusive or VAT-exclusive.">To confirm</span></span><strong>Shown on invoice</strong></div><div class="price-row total"><span>Indicative recorded value</span><strong>'+money(x.base+x.adjust)+'</strong></div></div><div class="notice" style="margin-top:14px"><strong>Not a final invoice.</strong> Cemetery fees, VAT treatment, additional lettering and bespoke work may change the total. Sears Melvin will confirm the specification and issue the live invoice.</div>'+(internal?'<div class="roadmap-item" style="margin-top:12px" title="The Sears Melvin internal account is treated as zero commission for this MVP."><span class="planned">Internal · 0 commission</span><p>No partner commission is calculated for orders created through this shared internal workspace.</p></div>':'<div class="roadmap-item" style="margin-top:12px" title="There is no agreed commission field on the current partner record. The portal intentionally does not calculate one."><span class="planned">Commission rule required</span><p>Your commission will appear here once the partner-level rate, VAT treatment and settlement trigger are agreed.</p></div>')}
+    function stepReview(){var x=selectedPricing();return '<div class="review"><section class="review-card"><button class="edit" type="button" data-edit-step="0">Edit</button><h4>Family & deceased</h4><p><strong>'+esc(state.draft.deceasedName||"—")+'</strong></p><p>'+esc(state.draft.customerName||"—")+'</p><p>'+esc(state.draft.customerEmail||"—")+'</p><p>'+esc(state.draft.customerPhone||"")+'</p></section><section class="review-card"><button class="edit" type="button" data-edit-step="1">Edit</button><h4>Memorial</h4><p><strong>'+esc(x.product&&x.product.name||"—")+'</strong></p><p>'+esc([x.size&&x.size.name,state.draft.material,state.draft.colour].filter(Boolean).join(" · ")||"Standard specification")+'</p><p>'+money(x.base+x.adjust)+'</p></section><section class="review-card"><button class="edit" type="button" data-edit-step="2">Edit</button><h4>Inscription</h4><p style="white-space:pre-wrap">'+esc(state.draft.inscriptionText||"To be supplied")+'</p><p>'+esc([state.draft.inscriptionFont,state.draft.inscriptionLayout].filter(Boolean).join(" · "))+'</p></section><section class="review-card"><button class="edit" type="button" data-edit-step="3">Edit</button><h4>Cemetery & invoice</h4><p><strong>'+esc((state.cemeteries.find(function(c){return c.id===state.draft.cemeteryId})||{}).name||state.draft.location||"To be confirmed")+'</strong></p><p>Plot: '+esc(state.draft.plotReference||"To be confirmed")+'</p><p>Invoice: '+(state.draft.billingParty==="partner"?(isInternal()?"Sears Melvin":"funeral director"):"family")+'</p></section></div><div class="notice notice-warning" style="margin-top:15px"><strong>Before submitting:</strong> this creates a live '+(isInternal()?"Sears Melvin":"partner")+' order. It does not approve a proof, order material or issue an invoice.</div>'}
+    function captureStep(){
+      qa("input[name],select[name],textarea[name]",q("#wizardContent")).forEach(function(el){if(el.type==="radio"){if(el.checked)state.draft[el.name]=el.value}else state.draft[el.name]=el.value});
     }
-
-    async function loadOrders() {
-        try {
-            var search = document.getElementById('searchInput').value.trim();
-            var url = '/api/partner-orders?status=' + currentFilter;
-            if (search) url += '&search=' + encodeURIComponent(search);
-
-            var res = await fetch(url, { credentials: 'same-origin' });
-            var data = await res.json();
-            if (!data.ok) {
-                if (res.status === 401) return handleLogout();
-                throw new Error(data.error);
-            }
-
-            allOrders = data.orders;
-            renderStats(data.stats);
-            renderOrders(data.orders);
-        } catch (err) {
-            console.error('Load orders error:', err);
-        }
+    function bindWizardStep(){
+      qa("[data-product]").forEach(function(b){b.addEventListener("click",function(){captureStep();state.draft.productId=b.dataset.product;var product=state.products.find(function(p){return p.id===b.dataset.product});var defaultSize=product&&(product.sizes||[]).find(function(s){return s.isDefault})||(product&&product.sizes||[])[0];state.draft.sizeId=defaultSize?defaultSize.id:"";renderWizard()})});
+      q("#productSearch")&&q("#productSearch").addEventListener("input",function(e){state.draft.productSearch=e.target.value;var pos=q("#wizardContent").scrollTop;renderWizard();q("#wizardContent").scrollTop=pos;q("#productSearch").focus()});
+      q("#cemeteryId")&&q("#cemeteryId").addEventListener("change",function(e){captureStep();state.draft.cemeteryId=e.target.value;renderWizard()});
+      qa("[data-edit-step]").forEach(function(b){b.addEventListener("click",function(){state.wizardStep=Number(b.dataset.editStep);renderWizard()})});
     }
-
-    function renderStats(stats) {
-        document.getElementById('statTotal').textContent = stats.total;
-        document.getElementById('statPending').textContent = stats.pending;
-        document.getElementById('statCompleted').textContent = stats.completed;
-        document.getElementById('statValue').textContent = formatPrice(stats.totalValue);
+    function validateStep(){
+      captureStep();if(state.wizardStep===0){if(!state.draft.customerName||!state.draft.customerEmail||!state.draft.deceasedName)return "Add the family contact, their email and the name of the deceased.";if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.draft.customerEmail))return "Enter a valid family email address."}if(state.wizardStep===1&&!state.draft.productId)return "Select a memorial from the live catalogue.";return ""}
+    async function wizardNext(){
+      var error=validateStep();if(error){toast(error,"error");return}if(state.wizardStep<5){state.wizardStep++;renderWizard();return}
+      var btn=q("#wizardNext");setBusy(btn,true,"Submitting…");try{var payload=Object.assign({},state.draft,{action:"create"});delete payload.productSearch;var result=await api("/api/partner-orders",{method:"POST",body:JSON.stringify(payload)});q("#orderWizard").close();state.draft={billingParty:"family"};toast("Live "+(isInternal()?"Sears Melvin":"partner")+" order "+result.order.ref+" created","success");await refreshOrders();state.view="orders";renderView();openOrder(result.order.id)}catch(e){toast(e.message,"error");setBusy(btn,false)}
     }
+    async function refreshOrders(){var results=await Promise.all([api("/api/partner-orders"),api("/api/partner-orders?resource=invoices")]);state.workspace=results[0].workspace||state.workspace;state.orders=results[0].orders||[];state.stats=results[0].stats||{};state.invoices=results[1].invoices||[];applyWorkspaceChrome();q("#orderCount").textContent=state.orders.length;q("#orderCount").classList.toggle("hidden",!state.orders.length)}
 
-    function renderOrders(orders) {
-        var tbody = document.getElementById('ordersBody');
-        var empty = document.getElementById('ordersEmpty');
-        var table = document.getElementById('ordersTable');
-
-        if (orders.length === 0) {
-            table.style.display = 'none';
-            empty.style.display = 'block';
-            return;
-        }
-
-        table.style.display = 'table';
-        empty.style.display = 'none';
-
-        tbody.innerHTML = orders.map(function(o) {
-            var statusClass = o.status === 'completed' ? 'completed' : o.status === 'partial' ? 'partial' : 'pending';
-            var statusLabel = o.status === 'completed' ? 'Completed' : o.status === 'partial' ? 'Deposit Paid' : 'Pending';
-            return '<tr data-order-id="' + esc(o.id) + '">'
-                + '<td><div class="order-name">' + esc(o.customer_name) + '</div><div class="order-email">' + esc(o.customer_email || '') + '</div></td>'
-                + '<td class="order-product">' + esc(o.product || '—') + (o.colour ? '<br><span style="color:var(--color-text-muted);font-size:0.8rem;">' + esc(o.colour) + '</span>' : '') + '</td>'
-                + '<td>' + esc(o.location || '—') + '</td>'
-                + '<td class="order-value">' + (o.value ? formatPrice(o.value) : '—') + '</td>'
-                + '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>'
-                + '<td style="font-size:0.8rem;color:var(--color-text-muted);white-space:nowrap;">' + formatDate(o.created_at) + '</td>'
-                + '</tr>';
-        }).join('');
-        tbody.querySelectorAll('tr[data-order-id]').forEach(function(row) {
-            row.addEventListener('click', function() { openOrderDetail(row.dataset.orderId); });
-        });
+    function setAuthView(view){
+      qa(".auth-tab").forEach(function(t){t.classList.toggle("active",t.dataset.authView===view)});
+      ["loginForm","requestForm"].forEach(function(id){q("#"+id).classList.add("hidden")});
+      q("#"+(view==="request"?"requestForm":"loginForm")).classList.remove("hidden");
     }
-
-    function filterOrders(status, btn) {
-        currentFilter = status;
-        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        if (btn) btn.classList.add('active');
-        loadOrders();
-    }
-
-    function debounceSearch() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadOrders, 300);
-    }
-
-    // ==================== ORDER DETAIL ====================
-    async function openOrderDetail(orderId) {
-        var overlay = document.getElementById('panelOverlay');
-        var panel = document.getElementById('orderPanel');
-        var body = document.getElementById('panelBody');
-
-        overlay.classList.add('active');
-        setTimeout(function() { panel.classList.add('active'); }, 10);
-        body.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--color-text-muted);">Loading...</p>';
-
-        try {
-            var res = await fetch('/api/partner-orders?id=' + encodeURIComponent(orderId), { credentials: 'same-origin' });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error);
-
-            renderOrderDetail(data.order, data.comments);
-        } catch (err) {
-            body.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--color-error);">Failed to load order.</p>';
-        }
-    }
-
-    function renderOrderDetail(order, comments) {
-        document.getElementById('panelTitle').textContent = order.customer_name || 'Order';
-        var body = document.getElementById('panelBody');
-
-        var statusClass = order.status === 'completed' ? 'completed' : order.status === 'partial' ? 'partial' : 'pending';
-        var statusLabel = order.status === 'completed' ? 'Completed' : order.status === 'partial' ? 'Deposit Paid' : 'Pending';
-
-        var html = '<span class="status-badge ' + statusClass + '" style="margin-bottom:1rem;display:inline-block;">' + statusLabel + '</span>';
-
-        html += '<div class="detail-grid">'
-            + row('Name', order.customer_name)
-            + row('Email', order.customer_email)
-            + (order.customer_phone ? row('Phone', order.customer_phone) : '')
-            + row('Product', order.product || '—')
-            + (order.colour ? row('Colour', order.colour) : '')
-            + (order.location ? row('Location', order.location) : '')
-            + row('Value', order.value ? formatPrice(order.value) : '—')
-            + (order.permit_fee && parseFloat(order.permit_fee) > 0 ? row('Permit Fee', formatPrice(order.permit_fee)) : '')
-            + row('Submitted', formatDate(order.created_at))
-            + (order.updated_at ? row('Updated', formatDate(order.updated_at)) : '')
-            + '</div>';
-
-        if (order.notes) {
-            html += '<div style="background:var(--color-cream);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">'
-                + '<strong style="font-size:0.75rem;text-transform:uppercase;color: var(--color-accent-dark);">Notes</strong>'
-                + '<p style="margin-top:0.25rem;font-size:0.9rem;color:var(--color-text);">' + esc(order.notes) + '</p></div>';
-        }
-
-        // Comments section
-        html += '<div class="panel-section"><h3>Comments</h3>';
-        if (comments && comments.length > 0) {
-            comments.forEach(function(c) {
-                html += '<div class="comment-item"><p>' + esc(c.comment) + '</p>'
-                    + '<span class="comment-date">' + formatDateTime(c.created_at) + '</span></div>';
-            });
-        } else {
-            html += '<p style="color:var(--color-text-muted);font-size:0.85rem;margin-bottom:0.75rem;">No comments yet.</p>';
-        }
-
-        html += '<div class="comment-form">'
-            + '<textarea id="commentText" placeholder="Add a comment..."></textarea>'
-            + '<button id="commentBtn" data-order-id="' + esc(order.id) + '">Send</button>'
-            + '</div></div>';
-
-        body.innerHTML = html;
-        document.getElementById('commentBtn').addEventListener('click', function(event) {
-            submitComment(event.currentTarget.dataset.orderId);
-        });
-    }
-
-    function row(label, value) {
-        return '<span class="detail-label">' + label + '</span><span class="detail-value">' + esc(value || '—') + '</span>';
-    }
-
-    function closeOrderPanel() {
-        document.getElementById('orderPanel').classList.remove('active');
-        setTimeout(function() { document.getElementById('panelOverlay').classList.remove('active'); }, 300);
-    }
-
-    // ==================== ADD COMMENT ====================
-    async function submitComment(orderId) {
-        var text = document.getElementById('commentText').value.trim();
-        if (!text) return;
-        var btn = document.getElementById('commentBtn');
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-
-        try {
-            var res = await fetch('/api/partner-orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'comment', orderId: orderId, comment: text })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error);
-            // Reload detail to show new comment
-            openOrderDetail(orderId);
-        } catch (err) {
-            alert('Failed to add comment: ' + err.message);
-        }
-        btn.disabled = false;
-        btn.textContent = 'Send';
-    }
-
-    // ==================== NEW ORDER ====================
-    function openNewOrderModal() {
-        document.getElementById('newOrderModal').classList.add('active');
-        document.getElementById('newOrderError').style.display = 'none';
-        document.getElementById('newOrderSuccess').style.display = 'none';
-    }
-
-    function closeNewOrderModal() {
-        document.getElementById('newOrderModal').classList.remove('active');
-        // Reset form
-        ['newName','newEmail','newPhone','newLocation','newProduct','newColour','newSize','newValue','newNotes'].forEach(function(id) {
-            document.getElementById(id).value = '';
-        });
-        document.getElementById('newOrderError').style.display = 'none';
-        document.getElementById('newOrderSuccess').style.display = 'none';
-    }
-
-    async function submitNewOrder() {
-        var name = document.getElementById('newName').value.trim();
-        var email = document.getElementById('newEmail').value.trim();
-        var errEl = document.getElementById('newOrderError');
-        var successEl = document.getElementById('newOrderSuccess');
-        var btn = document.getElementById('newOrderBtn');
-
-        errEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        if (!name || !email) {
-            errEl.textContent = 'Customer name and email are required.';
-            errEl.style.display = 'block';
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Creating...';
-
-        try {
-            var res = await fetch('/api/partner-orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    action: 'create',
-                    customerName: name,
-                    customerEmail: email,
-                    customerPhone: document.getElementById('newPhone').value.trim(),
-                    location: document.getElementById('newLocation').value.trim(),
-                    product: document.getElementById('newProduct').value.trim(),
-                    colour: document.getElementById('newColour').value.trim(),
-                    size: document.getElementById('newSize').value.trim(),
-                    value: document.getElementById('newValue').value.trim(),
-                    notes: document.getElementById('newNotes').value.trim(),
-                })
-            });
-            var data = await res.json();
-            if (!data.ok) throw new Error(data.error);
-
-            successEl.textContent = 'Order created successfully!';
-            successEl.style.display = 'block';
-            loadOrders();
-            setTimeout(closeNewOrderModal, 1500);
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.style.display = 'block';
-        }
-        btn.disabled = false;
-        btn.textContent = 'Create Order';
-    }
-
-    // ==================== HELPERS ====================
-    function formatDate(dateStr) {
-        if (!dateStr) return '—';
-        var d = new Date(dateStr);
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    function formatDateTime(dateStr) {
-        if (!dateStr) return '—';
-        var d = new Date(dateStr);
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-            + ' at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function formatPrice(val) {
-        var n = parseFloat(val);
-        if (isNaN(n)) return '—';
-        return '\u00A3' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-    }
-
-    function esc(str) {
-        if (!str) return '';
-        var d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
-    }
-</script>
-<!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
-        </div>
-    </div>
-</div>
-<script>
-(function(){
-    var consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-        document.getElementById('cookieConsent').style.display = 'block';
-    } else if (consent === 'accepted') {
-        pushConsent(true);
-    }
-})();
-function pushConsent(granted) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'update', {
-        ad_storage:           granted ? 'granted' : 'denied',
-        analytics_storage:    granted ? 'granted' : 'denied',
-        ad_user_data:         granted ? 'granted' : 'denied',
-        ad_personalization:   granted ? 'granted' : 'denied'
-    });
-    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
-}
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(true);
-}
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(false);
-}
-</script>
-
-<script src="/site-globals.js" defer></script>
+    qa("[data-auth-view]").forEach(function(b){b.addEventListener("click",function(){setAuthView(b.dataset.authView)})});
+    q("#loginForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#loginForm button[type="submit"]');setBusy(btn,true,"Sending secure link…");q("#loginError").classList.add("hidden");q("#loginMessage").classList.add("hidden");try{var d=await authApi({action:"request-magic-link",email:q("#loginEmail").value.trim()});showBox(q("#loginMessage"),d.message,"success")}catch(err){showBox(q("#loginError"),"Unable to send a sign-in link right now. Please try again.","error")}finally{setBusy(btn,false)}});
+    q("#requestForm").addEventListener("submit",async function(e){e.preventDefault();var btn=q('#requestForm button[type="submit"]');setBusy(btn,true,"Submitting…");var fd=new FormData(e.target);try{var d=await authApi({action:"request",name:fd.get("name"),company:fd.get("company"),email:fd.get("email"),phone:fd.get("phone"),message:fd.get("message")});showBox(q("#requestMessageBox"),d.message,"success");e.target.reset()}catch(err){showBox(q("#requestMessageBox"),err.message,"error")}finally{setBusy(btn,false)}});
+    qa(".nav-btn").forEach(function(b){b.addEventListener("click",function(){state.view=b.dataset.view;renderView()})});
+    q("#logoutBtn").addEventListener("click",async function(){try{await authApi({action:"logout"})}catch(e){}state.partner=null;state.orders=[];showAuth()});
+    q("#drawerScrim").addEventListener("click",closeOrder);q("#closeDrawer").addEventListener("click",closeOrder);q("#closeWizard").addEventListener("click",closeWizard);q("#wizardSave").addEventListener("click",closeWizard);q("#wizardBack").addEventListener("click",function(){captureStep();state.wizardStep=Math.max(0,state.wizardStep-1);renderWizard()});q("#wizardNext").addEventListener("click",wizardNext);
+    q("#orderWizard").addEventListener("cancel",function(e){e.preventDefault();closeWizard()});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&q("#orderDrawer").classList.contains("open"))closeOrder()});
+    boot();
+  })();
+  </script>
 </body>
 </html>

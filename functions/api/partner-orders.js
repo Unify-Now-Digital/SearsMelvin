@@ -1,12 +1,11 @@
 /**
- * Partner Orders API — /api/partner-orders
+ * Partner portal data API — /api/partner-orders
  *
- * All requests require a valid HttpOnly partner session cookie.
- *
- * GET                        → list partner's orders
- * GET ?id=123                → single order detail with comments
- * POST { action: "create" }  → create order on behalf of customer
- * POST { action: "comment" } → add comment to an order
+ * Uses the existing Mason App orders, jobs, people, invoices, proof, permit,
+ * payment and catalogue tables. External partners are constrained by partner
+ * id. The configured Sears Melvin account is constrained to the SM
+ * organisation and can see direct orders plus its own internally-created
+ * orders, but not orders belonging to other partners.
  */
 
 import { upsertPerson } from "./submit.js";
@@ -46,7 +45,6 @@ export async function onRequest(context) {
   });
   if (!broadLimit.allowed) return rateLimitResponse(json, broadLimit.retryAfter);
 
-  // Authenticate
   const token = getCookie(request, PARTNER_COOKIE)
     || (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return json({ ok: false, error: "Authentication required" }, 401);
@@ -69,16 +67,18 @@ export async function onRequest(context) {
     });
     return rateLimitResponse(json, partnerLimit.retryAfter);
   }
+  const workspace = getWorkspace(env, partner);
 
   const url = new URL(request.url);
-
   if (request.method === "GET") {
+    if (url.searchParams.get("resource") === "catalog") return getCatalog(env);
+    if (url.searchParams.get("resource") === "invoices") return getPartnerInvoices(env, partner, workspace);
     const orderId = url.searchParams.get("id");
     if (orderId) {
       if (!UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Invalid order ID" }, 400);
-      return getOrderDetail(env, partner, orderId);
+      return getOrderDetail(env, partner, workspace, orderId);
     }
-    return listOrders(env, partner, url.searchParams);
+    return listOrders(env, partner, workspace, url.searchParams);
   }
 
   if (request.method === "POST") {
@@ -89,226 +89,538 @@ export async function onRequest(context) {
       return json({ ok: false, error: error instanceof RequestValidationError ? error.message : "Invalid JSON" }, status);
     }
 
-    if (data.action === "create") return createOrder(env, partner, data);
-    if (data.action === "comment") return addComment(env, partner, data);
+    if (data.action === "create") return createOrder(env, partner, workspace, data);
+    if (data.action === "comment") return addComment(env, partner, workspace, data);
+    if (data.action === "approve-proof") return updateProof(env, partner, workspace, data, "approved");
+    if (data.action === "request-proof-changes") return updateProof(env, partner, workspace, data, "changes_requested");
     return json({ ok: false, error: "Unknown action" }, 400);
   }
 
   return json({ ok: false, error: "Method not allowed" }, 405);
 }
 
-// ==================== LIST ORDERS ====================
-async function listOrders(env, partner, params) {
+async function getPartnerInvoices(env, partner, workspace) {
   const headers = sbHeaders(env);
-  const status = params.get("status");
-  const search = params.get("search");
-  if (search && search.length > 100) return json({ ok: false, error: "Search is too long" }, 400);
-  if (status && status.length > 40) return json({ ok: false, error: "Invalid status" }, 400);
+  const select = "id,order_id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at,created_at,orders!inner(order_number,person_name)";
+  const base = `${env.SUPABASE_URL}/rest/v1/invoices?deleted_at=is.null&select=${select}&order=created_at.desc&limit=500`;
+  // Two explicit internal queries keep external partner invoices out without
+  // relying on an embedded-resource OR filter that is difficult to audit.
+  const urls = workspace.mode === "internal"
+    ? [
+        `${base}&orders.organization_id=eq.${encodeURIComponent(workspace.organizationId)}&orders.is_test=eq.false&orders.partner_id=is.null`,
+        `${base}&orders.organization_id=eq.${encodeURIComponent(workspace.organizationId)}&orders.is_test=eq.false&orders.partner_id=eq.${encodeURIComponent(partner.id)}`,
+      ]
+    : [`${base}&orders.organization_id=eq.${encodeURIComponent(workspace.organizationId)}&orders.is_test=eq.false&orders.partner_id=eq.${encodeURIComponent(partner.id)}`];
+  const responses = await Promise.all(urls.map((url) => fetch(url, { headers })));
+  if (responses.some((response) => !response.ok)) return json({ ok: false, error: "Unable to load invoices" }, 500);
+  const rows = (await Promise.all(responses.map((response) => response.json()))).flat();
+  const uniqueRows = Array.from(new Map(rows.map((invoice) => [invoice.id, invoice])).values())
+    .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  const invoices = uniqueRows.map((invoice) => ({
+    ...mapInvoice(invoice),
+    orderId: invoice.order_id,
+    orderRef: invoice.orders?.order_number
+      ? `ORD-${String(invoice.orders.order_number).padStart(6, "0")}`
+      : null,
+    deceasedName: invoice.orders?.person_name || null,
+  }));
+  return json({ ok: true, invoices, workspace: publicWorkspace(workspace) });
+}
 
-  let url = `${env.SUPABASE_URL}/rest/v1/orders?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&order=created_at.desc&limit=50`;
-  if (status && status !== "all") {
+async function getCatalog(env) {
+  const headers = sbHeaders(env);
+  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
+  const [productsRes, cemeteriesRes] = await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/products?is_active=eq.true&is_listed=eq.true${orgFilter}&select=id,name,slug,short_description,base_price,image_url,sku,inscription_chars_included,inscription_price_per_char,product_sizes(id,size_name,size_code,dimensions,price_adjustment,is_default,display_order)&order=display_order.asc,name.asc&limit=200`, { headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/cemeteries?is_active=eq.true${orgFilter}&select=id,name,area,postcode,address,permit_fee,processing_weeks,kerb_allowed,lawn_section,cremation_section,governing_body,regulation_notes,max_height_mm,max_width_mm,allowed_typefaces&order=display_order.asc,name.asc&limit=250`, { headers }),
+  ]);
+
+  if (!productsRes.ok || !cemeteriesRes.ok) {
+    return json({ ok: false, error: "Unable to load the memorial catalogue" }, 500);
+  }
+
+  const products = (await productsRes.json()).map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    sku: p.sku,
+    description: p.short_description,
+    basePrice: numberOrNull(p.base_price),
+    imageUrl: p.image_url,
+    inscriptionCharsIncluded: p.inscription_chars_included,
+    inscriptionPricePerChar: numberOrNull(p.inscription_price_per_char),
+    sizes: (p.product_sizes || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((s) => ({
+      id: s.id,
+      name: s.size_name,
+      code: s.size_code,
+      dimensions: s.dimensions,
+      adjustment: numberOrNull(s.price_adjustment) || 0,
+      isDefault: Boolean(s.is_default),
+    })),
+  }));
+
+  const cemeteries = (await cemeteriesRes.json()).map((c) => ({
+    id: c.id,
+    name: c.name,
+    area: c.area,
+    postcode: c.postcode,
+    address: c.address,
+    permitFee: numberOrNull(c.permit_fee),
+    processingWeeks: c.processing_weeks,
+    governingBody: c.governing_body,
+    kerbAllowed: c.kerb_allowed,
+    lawnSection: c.lawn_section,
+    cremationSection: c.cremation_section,
+    regulationNotes: c.regulation_notes,
+    maxHeightMm: c.max_height_mm,
+    maxWidthMm: c.max_width_mm,
+    allowedTypefaces: c.allowed_typefaces || [],
+  }));
+
+  return json({ ok: true, products, cemeteries });
+}
+
+async function listOrders(env, partner, workspace, params) {
+  const headers = sbHeaders(env);
+  const status = clean(params.get("status"), 40);
+  const search = clean(params.get("search"), 100)?.toLowerCase();
+  const limit = Math.min(Math.max(parseInt(params.get("limit") || "100", 10) || 100, 1), 100);
+
+  let url = `${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,first_name,last_name,email,phone,is_customer),jobs(stage,stage_status),order_proofs(state,render_url,created_at)&order_proofs.state=in.(sent,approved,changes_requested)&order=created_at.desc&limit=${limit}${orderScopeQuery(workspace, partner)}`;
+  if (status && status !== "all" && status !== "needs_action") {
     url += `&status=eq.${encodeURIComponent(status)}`;
   }
 
   const res = await fetch(url, { headers });
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  if (!res.ok) return json({ ok: false, error: "Unable to load orders" }, 500);
   let rows = await res.json();
 
-  // Client-side search filter
   if (search) {
-    const q = search.toLowerCase();
-    rows = rows.filter(r => {
-      const fullName = [r.people?.first_name, r.people?.last_name].filter(Boolean).join(" ");
-      return fullName.toLowerCase().includes(q) ||
-        (r.people?.email || "").toLowerCase().includes(q) ||
-        (r.sku || "").toLowerCase().includes(q) ||
-        (r.location || "").toLowerCase().includes(q);
-    });
+    rows = rows.filter((row) => searchableOrderText(row).includes(search));
   }
 
-  const orders = rows.map(mapOrder);
+  let orders = rows.map((row) => mapOrder(row, workspace));
+  if (status === "needs_action") orders = orders.filter((order) => order.actionOwner === workspace.actionOwner);
 
-  // Compute summary stats
-  const totalValue = rows.reduce((s, r) => s + (parseFloat(r.value) || 0), 0);
-  const pending = rows.filter(r => !r.status || r.status === "pending").length;
-  const completed = rows.filter(r => r.status === "completed").length;
+  const totalValue = rows.reduce((sum, row) => sum + (numberOrNull(row.value) || 0), 0);
+  const needsAction = rows.map((row) => mapOrder(row, workspace)).filter((order) => order.actionOwner === workspace.actionOwner).length;
+  const completed = rows.filter((row) => row.status === "completed" || row.jobs?.stage === "complete").length;
+  const inProduction = rows.filter((row) => row.jobs?.stage === "in_production" || row.status === "in_production").length;
 
   return json({
     ok: true,
+    partner: publicPartner(partner),
+    workspace: publicWorkspace(workspace),
     orders,
-    stats: { total: rows.length, totalValue, pending, completed },
+    stats: { total: rows.length, totalValue, needsAction, completed, inProduction },
   });
 }
 
-// ==================== ORDER DETAIL ====================
-async function getOrderDetail(env, partner, orderId) {
+async function getOrderDetail(env, partner, workspace, orderId) {
   const headers = sbHeaders(env);
+  const row = await ownedOrder(env, partner, workspace, orderId, "*,people(id,first_name,last_name,email,phone,is_customer),jobs(stage,stage_status)");
+  if (!row) return json({ ok: false, error: "Order not found" }, 404);
 
-  // Get order (verify it belongs to this partner)
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=*,people(id,first_name,last_name,email,phone,is_customer)&limit=1`,
-    { headers },
+  const base = `${env.SUPABASE_URL}/rest/v1`;
+  const encodedId = encodeURIComponent(row.id);
+  const internal = workspace.mode === "internal";
+  const emptyRows = () => Promise.resolve(new Response("[]", { headers: { "Content-Type": "application/json" } }));
+  const permitSelect = internal
+    ? "id,permit_phase,sent_at,returned_at,spec_plot_ref,submitted_at,approved_at,notes,created_at,updated_at"
+    : "id,permit_phase,sent_at,returned_at,spec_plot_ref,submitted_at,approved_at,created_at,updated_at";
+  const proofSelect = internal
+    ? "id,inscription_text,font_style,additional_instructions,render_url,state,sent_at,approved_at,approved_by,changes_requested_at,changes_note,created_at,updated_at"
+    : "id,inscription_text,font_style,render_url,state,sent_at,approved_at,changes_requested_at,changes_note,created_at,updated_at";
+  const requests = [
+    internal ? emptyRows() : fetch(`${base}/partner_comments?order_id=eq.${encodedId}&partner_id=eq.${encodeURIComponent(partner.id)}&select=id,comment,created_at&order=created_at.asc`, { headers }),
+    fetch(`${base}/order_proofs?order_id=eq.${encodedId}&state=in.(sent,approved,changes_requested)&select=${proofSelect}&order=created_at.desc&limit=20`, { headers }),
+    fetch(`${base}/order_permits?order_id=eq.${encodedId}&select=${permitSelect}&order=created_at.desc&limit=10`, { headers }),
+    internal ? fetch(`${base}/order_payments?order_id=eq.${encodedId}&select=id,amount,currency,payment_type,reference,status,received_at,created_at&order=received_at.desc&limit=50`, { headers }) : emptyRows(),
+    internal ? fetch(`${base}/order_additional_options?order_id=eq.${encodedId}&select=id,name,description,cost&order=created_at.asc`, { headers }) : emptyRows(),
+    internal ? fetch(`${base}/order_events?order_id=eq.${encodedId}&select=id,event_type,summary,detail,created_at&order=created_at.desc&limit=50`, { headers }) : emptyRows(),
+    fetch(`${base}/invoices?order_id=eq.${encodedId}&deleted_at=is.null&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&order=created_at.desc&limit=10`, { headers }),
+  ];
+
+  const responses = await Promise.all(requests);
+  const [comments, proofs, permits, payments, options, events, invoices] = await Promise.all(
+    responses.map(async (res) => res.ok ? res.json() : []),
   );
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
-  const rows = await res.json();
-  if (rows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
 
-  const order = mapOrder(rows[0]);
-
-  // Get comments
-  const commentsRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partner_comments?order_id=eq.${orderId}&partner_id=eq.${partner.id}&select=id,comment,created_at&order=created_at.asc`,
-    { headers },
-  );
-  let comments = [];
-  if (commentsRes.ok) {
-    comments = (await commentsRes.json()).map(c => ({
-      id: c.id,
-      comment: c.comment,
-      created_at: c.created_at,
-    }));
+  if (invoices.length === 0 && row.invoice_id) {
+    const invoiceRes = await fetch(`${base}/invoices?id=eq.${encodeURIComponent(row.invoice_id)}&deleted_at=is.null&select=id,invoice_number,customer_name,amount,status,due_date,issue_date,payment_date,stripe_status,paid_at,hosted_invoice_url,amount_paid,amount_remaining,intended_deposit_pence,locked_at&limit=1`, { headers });
+    if (invoiceRes.ok) invoices.push(...await invoiceRes.json());
   }
 
-  return json({ ok: true, order, comments });
+  const order = mapOrder(row, workspace);
+  return json({
+    ok: true,
+    workspace: publicWorkspace(workspace),
+    order,
+    comments,
+    proofs,
+    permits,
+    payments: payments.map((payment) => ({ ...payment, amount: numberOrNull(payment.amount) })),
+    options: options.map((option) => ({ ...option, cost: numberOrNull(option.cost) })),
+    events,
+    invoices: invoices.map(mapInvoice),
+  });
 }
 
-// ==================== CREATE ORDER ====================
-async function createOrder(env, partner, data) {
-  const { customerName, customerEmail, customerPhone, product, colour, size, location, value, notes } = data;
+async function createOrder(env, partner, workspace, data) {
+  const customerName = clean(data.customerName, 160);
+  const customerEmail = clean(data.customerEmail, 254)?.toLowerCase();
+  const customerPhone = clean(data.customerPhone, 60);
+  const deceasedName = clean(data.deceasedName, 160);
+  const productId = clean(data.productId, 80);
+  const sizeId = clean(data.sizeId, 80);
+  const cemeteryId = clean(data.cemeteryId, 80);
+  const plotReference = clean(data.plotReference, 160);
+  const material = clean(data.material, 120);
+  const colour = clean(data.colour, 120);
+  const inscriptionText = clean(data.inscriptionText, 4000);
+  const inscriptionFont = clean(data.inscriptionFont, 120);
+  const inscriptionLayout = clean(data.inscriptionLayout, 120);
+  const notes = clean(data.notes, 3000);
+  const billingParty = ["family", "partner"].includes(data.billingParty) ? data.billingParty : "family";
 
-  const cleanName = boundedText(customerName, 120);
-  const cleanEmail = typeof customerEmail === "string" ? customerEmail.trim().toLowerCase() : "";
-  const cleanPhone = boundedText(customerPhone, 40, true);
-  const cleanProduct = boundedText(product, 160, true);
-  const cleanColour = boundedText(colour, 80, true);
-  const cleanSize = boundedText(size, 80, true);
-  const cleanLocation = boundedText(location, 250, true);
-  const cleanNotes = boundedText(notes, 2000, true);
-  const numericValue = value === "" || value == null ? null : Number(value);
-
-  if (!cleanName || !cleanEmail) {
-    return json({ ok: false, error: "Customer name and email are required" }, 400);
+  if ([customerName, customerEmail, customerPhone, deceasedName, productId, sizeId, cemeteryId, plotReference, material, colour, inscriptionText, inscriptionFont, inscriptionLayout, notes].some((value) => value === null)) {
+    return json({ ok: false, error: "One or more fields are invalid or too long" }, 400);
   }
-  if (cleanEmail.length > 254 || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
-    return json({ ok: false, error: "A valid customer email is required" }, 400);
+  if (!customerName || !customerEmail || !deceasedName || !productId) {
+    return json({ ok: false, error: "Customer, deceased and memorial details are required" }, 400);
   }
-  if ([cleanPhone, cleanProduct, cleanColour, cleanSize, cleanLocation, cleanNotes].some(value => value === null)) {
-    return json({ ok: false, error: "One or more fields are too long" }, 400);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    return json({ ok: false, error: "Enter a valid customer email address" }, 400);
   }
-  if (numericValue !== null && (!Number.isFinite(numericValue) || numericValue < 0 || numericValue > 1000000)) {
-    return json({ ok: false, error: "Invalid order value" }, 400);
+  if (!UUID_PATTERN.test(productId) || (sizeId && !UUID_PATTERN.test(sizeId)) || (cemeteryId && !UUID_PATTERN.test(cemeteryId))) {
+    return json({ ok: false, error: "Select a valid memorial, size and cemetery" }, 400);
   }
 
   const headers = sbHeaders(env);
-
-  // Upsert the retail customer into the unified `people` table first.
   let person;
   try {
-    person = await upsertPerson(env, {
-      name: cleanName,
-      email: cleanEmail,
-      phone: cleanPhone,
-    });
-  } catch {
-    return json({ ok: false, error: "Failed to register customer" }, 500);
+    person = await upsertPerson(env, { name: customerName, email: customerEmail, phone: customerPhone });
+  } catch (err) {
+    console.error("Partner customer upsert failed", err);
+    return json({ ok: false, error: "Unable to register the customer" }, 500);
   }
-  if (!person) return json({ ok: false, error: "Failed to register customer" }, 500);
+  if (!person) return json({ ok: false, error: "Unable to register the customer" }, 500);
 
-  // Create order linked to partner AND to the person record.
-  const orderBody = {
-    organization_id: env.SM_ORG_ID,
-    person_id: person.id,
-    order_type: "quote",
-    sku: cleanProduct || null,
-    color: cleanColour || null,
-    value: numericValue,
-    location: cleanLocation || null,
-    partner_id: partner.id,
-    status: "pending",
-    notes: cleanNotes || null,
-    product_config: cleanProduct ? JSON.stringify({
-      name: cleanProduct,
-      colour: cleanColour,
-      size: cleanSize,
-      price: numericValue,
-    }) : null,
+  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
+  const productRes = await fetch(`${env.SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(productId)}&is_active=eq.true&is_listed=eq.true${orgFilter}&select=id,name,slug,sku,base_price,image_url,product_sizes(id,size_name,size_code,dimensions,price_adjustment,is_default)&limit=1`, { headers });
+  if (!productRes.ok) return json({ ok: false, error: "Unable to verify the selected memorial" }, 500);
+  const products = await productRes.json();
+  if (products.length === 0) return json({ ok: false, error: "The selected memorial is no longer available" }, 409);
+  const product = products[0];
+  const sizes = product.product_sizes || [];
+  const size = sizes.find((item) => item.id === sizeId) || sizes.find((item) => item.is_default) || sizes[0] || null;
+
+  let cemetery = null;
+  if (cemeteryId) {
+    const cemeteryRes = await fetch(`${env.SUPABASE_URL}/rest/v1/cemeteries?id=eq.${encodeURIComponent(cemeteryId)}&is_active=eq.true${orgFilter}&select=id,name,address,postcode,permit_fee,processing_weeks&limit=1`, { headers });
+    if (cemeteryRes.ok) cemetery = (await cemeteryRes.json())[0] || null;
+  }
+
+  const estimatedValue = (numberOrNull(product.base_price) || 0) + (numberOrNull(size?.price_adjustment) || 0);
+  const config = {
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku,
+    size: size?.size_name || null,
+    size_code: size?.size_code || null,
+    dimensions: size?.dimensions || null,
+    material: material || null,
+    colour: colour || null,
+    price: estimatedValue,
+    cemetery: cemetery?.name || null,
+    plot_reference: plotReference || null,
+    billing_party: billingParty,
+    submitted_by_partner: partner.company || partner.name,
+    workspace_mode: workspace.mode,
   };
 
-  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,first_name,last_name,email,phone,is_customer)`, {
+  const orderBody = {
+    organization_id: env.SM_ORG_ID,
+    // These three denormalised fields are still required by the current
+    // orders contract; person_id remains the canonical contact link.
+    customer_name: customerName,
+    customer_email: customerEmail,
+    customer_phone: customerPhone || null,
+    person_id: person.id,
+    person_name: deceasedName,
+    order_type: "New Memorial",
+    product_id: product.id,
+    // Mason App currently treats orders.sku as the grave / plot reference.
+    // Product identity is held by product_id and the snapshot config below.
+    sku: plotReference || null,
+    material: material || null,
+    color: colour || null,
+    value: estimatedValue || null,
+    location: cemetery?.name || clean(data.location, 240) || null,
+    cemetery_id: cemetery?.id || null,
+    partner_id: partner.id,
+    status: "pending",
+    priority: "medium",
+    notes: notes || null,
+    product_config: JSON.stringify(config),
+    inscription_text: inscriptionText || null,
+    inscription_status: inscriptionText ? "received" : "pending",
+    inscription_font: inscriptionFont || null,
+    inscription_layout: inscriptionLayout || null,
+    permit_status: "pending",
+    stone_status: "NA",
+    proof_status: "Not_Received",
+    permit_fee: cemetery?.permit_fee || 0,
+    is_test: false,
+  };
+
+  const orderRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?select=*,people(id,first_name,last_name,email,phone,is_customer),jobs(stage,stage_status)`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify(orderBody),
   });
-
   if (!orderRes.ok) {
-    return json({ ok: false, error: "Failed to create order" }, 500);
+    console.error("Partner order insert failed", await orderRes.text());
+    return json({ ok: false, error: "Unable to create the order" }, 500);
   }
 
-  const orderRows = await orderRes.json();
-  return json({ ok: true, order: mapOrder(orderRows[0]) });
-}
+  const created = (await orderRes.json())[0];
 
-// ==================== ADD COMMENT ====================
-async function addComment(env, partner, data) {
-  const { orderId, comment } = data;
-  if (!orderId || !comment) return json({ ok: false, error: "Order ID and comment required" }, 400);
-  if (typeof orderId !== "string" || !UUID_PATTERN.test(orderId)) {
-    return json({ ok: false, error: "Invalid order ID" }, 400);
-  }
-  const cleanComment = boundedText(comment, 2000);
-  if (!cleanComment) return json({ ok: false, error: "Comment must be 1-2000 characters" }, 400);
-
-  const headers = sbHeaders(env);
-
-  // Verify order belongs to partner
-  const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&partner_id=eq.${partner.id}&select=id&limit=1`,
-    { headers },
-  );
-  if (!checkRes.ok) return json({ ok: false, error: "Database error" }, 500);
-  const checkRows = await checkRes.json();
-  if (checkRows.length === 0) return json({ ok: false, error: "Order not found" }, 404);
-
-  const commentRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_comments`, {
+  // Create the workflow job only after the order exists. That ordering avoids
+  // leaving an orphan production job if validation ever rejects the order.
+  const jobRes = await fetch(`${env.SUPABASE_URL}/rest/v1/jobs`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
-      order_id: orderId,
-      partner_id: partner.id,
-      comment: cleanComment,
+      organization_id: env.SM_ORG_ID,
+      person_id: person.id,
+      source: "manual",
+      stage: "enquired",
+      stage_status: "Partner order submitted",
     }),
   });
-
-  if (!commentRes.ok) return json({ ok: false, error: "Failed to add comment" }, 500);
-  const commentRows = await commentRes.json();
-
-  return json({
-    ok: true,
-    comment: {
-      id: commentRows[0].id,
-      comment: commentRows[0].comment,
-      created_at: commentRows[0].created_at,
-    },
+  if (jobRes.ok) {
+    const jobId = (await jobRes.json())[0]?.id || null;
+    if (jobId) {
+      created.job_id = jobId;
+      await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(created.id)}`, {
+        method: "PATCH",
+        headers: { ...headers, "Prefer": "return=minimal" },
+        body: JSON.stringify({ job_id: jobId }),
+      });
+    }
+  } else {
+    console.error("Partner order job insert failed", await jobRes.text());
+  }
+  const eventType = workspace.mode === "internal" ? "internal_order_submitted" : "partner_order_submitted";
+  const eventSummary = workspace.mode === "internal"
+    ? "Order created through the Sears Melvin workspace"
+    : `Order submitted by ${partner.company || partner.name}`;
+  await insertEvent(env, created, eventType, eventSummary, {
+    partner_id: partner.id,
+    actor_type: workspace.mode === "internal" ? "internal_shared" : "partner",
   });
+  return json({ ok: true, order: mapOrder(created, workspace), workspace: publicWorkspace(workspace) }, 201);
 }
 
-// ==================== HELPERS ====================
-function mapOrder(row) {
+async function addComment(env, partner, workspace, data) {
+  if (workspace.mode === "internal") {
+    return json({ ok: false, error: "Internal notes are not connected to the shared account yet" }, 409);
+  }
+  const orderId = clean(data.orderId, 80);
+  const comment = clean(data.comment, 3000);
+  if (!orderId || !comment) return json({ ok: false, error: "Order and comment are required" }, 400);
+  if (!UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Invalid order ID" }, 400);
+  const order = await ownedOrder(env, partner, workspace, orderId, "id");
+  if (!order) return json({ ok: false, error: "Order not found" }, 404);
+
+  const headers = sbHeaders(env);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_comments`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify({ order_id: orderId, partner_id: partner.id, comment }),
+  });
+  if (!res.ok) return json({ ok: false, error: "Unable to add the message" }, 500);
+  return json({ ok: true, comment: (await res.json())[0] });
+}
+
+async function updateProof(env, partner, workspace, data, nextState) {
+  if (workspace.mode === "internal") {
+    return json({ ok: false, error: "Proof decisions must be recorded by the authorised approver" }, 403);
+  }
+  const orderId = clean(data.orderId, 80);
+  const note = clean(data.note, 2000);
+  if (!orderId) return json({ ok: false, error: "Order is required" }, 400);
+  if (!UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Invalid order ID" }, 400);
+  if (nextState === "changes_requested" && !note) {
+    return json({ ok: false, error: "Describe the changes required" }, 400);
+  }
+
+  const order = await ownedOrder(env, partner, workspace, orderId, "id,organization_id");
+  if (!order) return json({ ok: false, error: "Order not found" }, 404);
+  const headers = sbHeaders(env);
+  const proofRes = await fetch(`${env.SUPABASE_URL}/rest/v1/order_proofs?order_id=eq.${encodeURIComponent(orderId)}&state=eq.sent&select=id,state&order=created_at.desc&limit=1`, { headers });
+  if (!proofRes.ok) return json({ ok: false, error: "Unable to load the proof" }, 500);
+  const proof = (await proofRes.json())[0];
+  if (!proof) return json({ ok: false, error: "No proof is ready for review" }, 409);
+  const now = new Date().toISOString();
+  const patch = nextState === "approved"
+    // approved_by's current enum cannot represent a funeral director. Leave
+    // it null and preserve the actual partner actor in order_events instead
+    // of mislabelling them as staff or customer.
+    ? { state: "approved", approved_at: now, approved_by: null, changes_requested_at: null, changes_note: null }
+    : { state: "changes_requested", changes_requested_at: now, changes_note: note, approved_at: null, approved_by: null };
+
+  const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/order_proofs?id=eq.${proof.id}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=representation" },
+    body: JSON.stringify(patch),
+  });
+  if (!updateRes.ok) return json({ ok: false, error: "Unable to update the proof" }, 500);
+
+  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ inscription_status: nextState }),
+  });
+  await insertEvent(
+    env,
+    order,
+    nextState === "approved" ? "proof_approved" : "proof_changes_requested",
+    nextState === "approved" ? "Proof approved by partner" : "Partner requested proof changes",
+    { partner_id: partner.id, partner_name: partner.company || partner.name, ...(note ? { note } : {}) },
+  );
+
+  return json({ ok: true, proof: (await updateRes.json())[0] });
+}
+
+async function ownedOrder(env, partner, workspace, orderId, select) {
+  const headers = sbHeaders(env);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=${select}&limit=1${orderScopeQuery(workspace, partner)}`, { headers });
+  if (!res.ok) return null;
+  return (await res.json())[0] || null;
+}
+
+async function insertEvent(env, order, eventType, summary, detail = {}) {
+  try {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/order_events`, {
+      method: "POST",
+      headers: { ...sbHeaders(env), "Prefer": "return=minimal" },
+      body: JSON.stringify({ order_id: order.id, event_type: eventType, summary, detail }),
+    });
+  } catch (err) {
+    console.error("Partner order event failed", err);
+  }
+}
+
+function mapOrder(row, workspace = { mode: "partner", actionOwner: "partner" }) {
+  const config = row.product_config ? safeParse(row.product_config) : null;
+  const latestProof = (row.order_proofs || []).slice().sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")))[0] || null;
+  const stage = derivePortalStage(row, latestProof);
+  const action = deriveAction(row, stage, latestProof, workspace);
   return {
     id: row.id,
-    customer_name: [row.people?.first_name, row.people?.last_name].filter(Boolean).join(" ") || null,
-    customer_email: row.people?.email || null,
-    customer_phone: row.people?.phone || null,
-    is_customer: row.people?.is_customer || false,
-    product: row.sku,
-    colour: row.color,
-    value: row.value,
-    location: row.location,
+    ref: row.order_number ? `ORD-${String(row.order_number).padStart(6, "0")}` : `SM-${String(row.id).slice(0, 8).toUpperCase()}`,
+    orderNumber: row.order_number || null,
+    partnerId: row.partner_id || null,
+    origin: row.partner_id ? (workspace.mode === "internal" ? "Sears Melvin workspace" : "Partner") : "Sears Melvin direct",
+    customerName: [row.people?.first_name, row.people?.last_name].filter(Boolean).join(" ") || null,
+    customerEmail: row.people?.email || null,
+    customerPhone: row.people?.phone || null,
+    deceasedName: row.person_name || null,
+    product: config?.name || row.custom_product_name || row.sku || null,
+    productId: row.product_id || null,
+    productImageUrl: row.product_photo_url || null,
+    material: row.material || config?.material || null,
+    colour: row.color || config?.colour || null,
+    size: config?.size || null,
+    cemetery: config?.cemetery || row.location || null,
+    cemeteryId: row.cemetery_id || null,
+    plotReference: config?.plot_reference || null,
+    billingParty: config?.billing_party || null,
+    location: row.location || null,
+    value: numberOrNull(row.value),
+    permitFee: numberOrNull(row.permit_fee),
     status: row.status || "pending",
-    notes: row.notes || null,
-    config: row.product_config ? safeParse(row.product_config) : null,
-    created_at: row.created_at,
-    updated_at: row.updated_at || null,
+    stage,
+    stageStatus: row.jobs?.stage_status || null,
+    progress: row.progress || 0,
+    priority: row.priority || "medium",
+    proofStatus: latestProof?.state || row.proof_status || "Not_Received",
+    permitStatus: row.permit_status || "pending",
+    stoneStatus: row.stone_status || "NA",
+    inscriptionText: row.inscription_text || config?.inscription || null,
+    inscriptionStatus: row.inscription_status || "pending",
+    inscriptionFont: row.inscription_font || null,
+    inscriptionLayout: row.inscription_layout || null,
+    proofUrl: latestProof?.render_url || row.proof_url || null,
+    estimatedCompletion: row.estimated_completion || null,
+    dueDate: row.due_date || null,
+    installationDate: row.installation_date || null,
+    notes: workspace.mode === "internal" ? row.notes || null : null,
+    nextAction: action.label,
+    actionOwner: action.owner,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || null,
+  };
+}
+
+function deriveStage(row) {
+  if (row.status === "completed") return "complete";
+  if (row.installation_date) return "installation";
+  if (["Ordered", "In Stock"].includes(row.stone_status) && row.inscription_status === "approved" && row.permit_status === "approved") return "in_production";
+  if (row.inscription_status === "approved" && row.permit_status === "approved") return "confirmed";
+  if (row.proof_url || row.inscription_status === "proof_ready") return "proof_approval";
+  return "submitted";
+}
+
+function derivePortalStage(row, latestProof) {
+  const jobStage = row.jobs?.stage;
+  if (jobStage === "complete") return "complete";
+  if (jobStage === "fixed") return "installation";
+  if (jobStage === "in_production") return "in_production";
+  if (jobStage === "confirmed") return "confirmed";
+  // Proof state is more informative to a partner than the broad early sales
+  // stages (enquired / quoted / invoiced).
+  if (latestProof?.render_url || latestProof?.state === "sent" || row.proof_url || row.inscription_status === "proof_ready") return "proof_approval";
+  return deriveStage(row);
+}
+
+function deriveAction(row, stage, latestProof, workspace) {
+  if (stage === "complete") return { owner: "none", label: "Complete" };
+  const proofState = latestProof?.state || row.inscription_status;
+  if (workspace.mode === "internal") {
+    if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "external", label: "Proof awaiting authorised approval" };
+    if (proofState === "changes_requested") return { owner: "team", label: "Revise the inscription proof" };
+    if (row.permit_status !== "approved") return { owner: "team", label: "Permit information outstanding" };
+    if (stage === "in_production") return { owner: "team", label: "Monitor production progress" };
+    if (stage === "installation") return { owner: "team", label: "Confirm installation arrangements" };
+    return { owner: "team", label: "Review order specification" };
+  }
+  if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "partner", label: "Review inscription proof" };
+  if (proofState === "changes_requested") return { owner: "sm", label: "Sears Melvin is revising the proof" };
+  if (row.permit_status !== "approved") return { owner: "partner", label: "Send the cemetery permit to Sears Melvin" };
+  if (stage === "in_production") return { owner: "sm", label: "Memorial is in production" };
+  if (stage === "installation") return { owner: "sm", label: "Installation is being arranged" };
+  return { owner: "sm", label: "Sears Melvin is reviewing the order" };
+}
+
+function mapInvoice(invoice) {
+  return {
+    id: invoice.id,
+    number: invoice.invoice_number,
+    addressee: invoice.customer_name,
+    amount: numberOrNull(invoice.amount),
+    status: invoice.status,
+    stripeStatus: invoice.stripe_status,
+    dueDate: invoice.due_date,
+    issueDate: invoice.issue_date,
+    paidAt: invoice.paid_at || invoice.payment_date || null,
+    hostedUrl: invoice.hosted_invoice_url || null,
+    amountPaidPence: invoice.amount_paid || 0,
+    amountRemainingPence: invoice.amount_remaining,
+    intendedDepositPence: invoice.intended_deposit_pence,
+    locked: Boolean(invoice.locked_at),
   };
 }
 
@@ -316,36 +628,63 @@ async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
   const tokenHash = await hashOpaqueToken(token);
-  let sessRows = await findPartnerSession(env, tokenHash, now, headers);
-  if (sessRows === null) return null;
-  // Compatibility for pre-hardening sessions; no new plaintext token is stored.
-  if (sessRows.length === 0) sessRows = await findPartnerSession(env, token, now, headers) || [];
-  if (sessRows.length === 0) return null;
-
-  const partRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessRows[0].partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
-    { headers },
-  );
-  if (!partRes.ok) return null;
-  const partRows = await partRes.json();
-  return partRows.length > 0 ? partRows[0] : null;
+  let sessions = await findPartnerSession(env, tokenHash, now, headers);
+  if (sessions === null) return null;
+  // Compatibility for sessions issued before tokens were hashed at rest.
+  if (sessions.length === 0) sessions = await findPartnerSession(env, token, now, headers) || [];
+  if (sessions.length === 0) return null;
+  const partnerRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessions[0].partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company,phone,status&limit=1`, { headers });
+  if (!partnerRes.ok) return null;
+  return (await partnerRes.json())[0] || null;
 }
 
-function safeParse(str) {
-  try { return JSON.parse(str); } catch { return null; }
+function publicPartner(partner) {
+  return { id: partner.id, name: partner.name, company: partner.company, email: partner.email, phone: partner.phone || null };
 }
 
-function boundedText(value, maxLength, optional = false) {
-  if (value == null || value === "") return optional ? "" : null;
-  if (typeof value !== "string") return null;
-  const clean = value.trim();
-  if (clean.length === 0) return optional ? "" : null;
-  return clean.length <= maxLength ? clean : null;
+function getWorkspace(env, partner) {
+  // SM_INTERNAL_PARTNER_ID should be configured in Cloudflare. The existing
+  // approved Sears Melvin account is id 1, retained as an MVP fallback so the
+  // internal workspace is usable before deployment configuration is updated.
+  const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "1").trim();
+  const internal = String(partner.id) === internalPartnerId;
+  return {
+    mode: internal ? "internal" : "partner",
+    organizationId: env.SM_ORG_ID,
+    actionOwner: internal ? "team" : "partner",
+    includesExternalPartnerOrders: false,
+  };
+}
+
+function orderScopeQuery(workspace, partner) {
+  if (workspace.mode !== "internal") {
+    return `&organization_id=eq.${encodeURIComponent(workspace.organizationId)}&is_test=eq.false&partner_id=eq.${encodeURIComponent(partner.id)}`;
+  }
+  const ownOrDirect = encodeURIComponent(`(partner_id.is.null,partner_id.eq.${partner.id})`);
+  return `&organization_id=eq.${encodeURIComponent(workspace.organizationId)}&is_test=eq.false&or=${ownOrDirect}`;
+}
+
+function publicWorkspace(workspace) {
+  return {
+    mode: workspace.mode,
+    label: workspace.mode === "internal" ? "Sears Melvin internal" : "Funeral director partner",
+    capabilities: {
+      viewExternalPartnerOrders: Boolean(workspace.includesExternalPartnerOrders),
+      decideProof: workspace.mode !== "internal",
+      sendPartnerMessage: workspace.mode !== "internal",
+    },
+  };
+}
+
+function searchableOrderText(row) {
+  const config = row.product_config ? safeParse(row.product_config) : null;
+  return [row.order_number, row.person_name, row.people?.first_name, row.people?.last_name, row.people?.email, config?.name, row.sku, row.location]
+    .filter(Boolean).join(" ").toLowerCase();
 }
 
 async function hashOpaqueToken(token) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-  return "sha256:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  return "sha256:" + Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function getCookie(request, name) {
@@ -359,11 +698,27 @@ function getCookie(request, name) {
 }
 
 async function findPartnerSession(env, token, now, headers) {
-  const res = await fetch(
+  const response = await fetch(
     `${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(token)}&expires_at=gt.${encodeURIComponent(now)}&select=partner_id&limit=1`,
     { headers },
   );
-  return res.ok ? res.json() : null;
+  return response.ok ? response.json() : null;
+}
+
+function clean(value, maxLength) {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string") return null;
+  const cleaned = value.trim();
+  return cleaned.length <= maxLength ? cleaned : null;
+}
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function safeParse(value) {
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 function sbHeaders(env) {
