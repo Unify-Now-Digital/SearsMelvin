@@ -1,12 +1,11 @@
 /**
  * Partner Auth API — /api/partner-auth
  *
- * POST { action: "login", email, password }  → authenticate partner, set HttpOnly session cookie
+ * POST { action: "request-magic-link", email } → email a short-lived link to an approved partner
+ * POST { action: "consume-magic-link", token } → consume one-time link, set HttpOnly session cookie
  * POST { action: "verify" }                  → verify session cookie, return partner info
  * POST { action: "logout" }                  → invalidate session
- * POST { action: "request", email, password, name, company, phone, message } → self-service request (pending approval)
- * POST { action: "forgot-password", email }      → send password reset email
- * POST { action: "reset-password", token, password } → set new password using reset token
+ * POST { action: "request", email, name, company, phone, message } → self-service request (pending approval)
  */
 
 import {
@@ -24,8 +23,8 @@ import {
 
 const PARTNER_COOKIE = "__Host-sm_partner_session";
 const PARTNER_SESSION_SECONDS = 12 * 60 * 60;
-const MIN_PASSWORD_LENGTH = 12;
-const MAX_PASSWORD_LENGTH = 128;
+const MAGIC_LINK_SECONDS = 15 * 60;
+const MAGIC_TOKEN_RE = /^[0-9a-f]{64}$/;
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
@@ -68,28 +67,34 @@ export async function onRequest(context) {
 
   const { action } = data;
 
-  if (action === "login") {
+  if (action === "request-magic-link") {
     const normalisedEmail = normaliseEmail(data.email);
     const [ipLimit, emailLimit] = await Promise.all([
-      checkRateLimit(env, request, "partner-login-ip", getClientAddress(request), {
-        maxAttempts: 15, windowSeconds: 900, blockSeconds: 1800, failClosed: true,
+      checkRateLimit(env, request, "partner-magic-request-ip", getClientAddress(request), {
+        maxAttempts: 8, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
       }),
-      checkRateLimit(env, request, "partner-login-email", normalisedEmail || "invalid", {
-        maxAttempts: 8, windowSeconds: 900, blockSeconds: 1800, failClosed: true,
+      checkRateLimit(env, request, "partner-magic-request-email", normalisedEmail || "invalid", {
+        maxAttempts: 3, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
       }),
     ]);
-    const denied = !ipLimit.allowed ? ipLimit : !emailLimit.allowed ? emailLimit : null;
-    if (denied) {
+    if (!ipLimit.allowed || !emailLimit.allowed) {
       queueSecurityEvent(context, env, request, {
-        eventType: "partner_login_rate_limited",
+        eventType: "partner_magic_link_rate_limited",
         actorType: "anonymous",
         success: false,
         identifierHash: await hashIdentifier(normalisedEmail || "invalid"),
-        metadata: { retry_after: denied.retryAfter },
       });
-      return rateLimitResponse(json, denied.retryAfter);
+      return json({ ok: true, message: magicLinkMessage() });
     }
-    return handleLogin(context, env, request, data);
+    return handleMagicLinkRequest(context, env, request, data);
+  }
+  if (action === "consume-magic-link") {
+    const tokenIdentifier = typeof data.token === "string" ? data.token : "invalid";
+    const consumeLimit = await checkRateLimit(env, request, "partner-magic-consume", tokenIdentifier, {
+      maxAttempts: 5, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
+    });
+    if (!consumeLimit.allowed) return rateLimitResponse(json, consumeLimit.retryAfter);
+    return handleMagicLinkConsume(context, env, request, data);
   }
   if (action === "verify") return handleVerify(env, request, data);
   if (action === "logout") return handleLogout(context, env, request, data);
@@ -107,121 +112,134 @@ export async function onRequest(context) {
     if (denied) return rateLimitResponse(json, denied.retryAfter);
     return handleRequest(context, env, request, data);
   }
-  if (action === "forgot-password") {
-    const normalisedEmail = normaliseEmail(data.email);
-    const [ipLimit, emailLimit] = await Promise.all([
-      checkRateLimit(env, request, "partner-forgot-ip", getClientAddress(request), {
-        maxAttempts: 8, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
-      }),
-      checkRateLimit(env, request, "partner-forgot-email", normalisedEmail || "invalid", {
-        maxAttempts: 3, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
-      }),
-    ]);
-    if (!ipLimit.allowed || !emailLimit.allowed) {
-      queueSecurityEvent(context, env, request, {
-        eventType: "partner_password_reset_rate_limited",
-        actorType: "anonymous",
-        success: false,
-        identifierHash: await hashIdentifier(normalisedEmail || "invalid"),
-      });
-      return json({ ok: true, message: forgotPasswordMessage() });
-    }
-    return handleForgotPassword(context, env, request, data);
-  }
-  if (action === "reset-password") {
-    const tokenIdentifier = typeof data.token === "string" ? data.token : "invalid";
-    const resetLimit = await checkRateLimit(env, request, "partner-reset-token", tokenIdentifier, {
-      maxAttempts: 5, windowSeconds: 3600, blockSeconds: 3600, failClosed: true,
-    });
-    if (!resetLimit.allowed) return rateLimitResponse(json, resetLimit.retryAfter);
-    return handleResetPassword(context, env, request, data);
-  }
-
   return json({ ok: false, error: "Unknown action" }, 400);
 }
 
-// ==================== LOGIN ====================
-async function handleLogin(context, env, request, { email, password }) {
-  if (!email || !password) return json({ ok: false, error: "Email and password required" }, 400);
-  if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > MAX_PASSWORD_LENGTH) {
-    return json({ ok: false, error: "Invalid email or password" }, 401);
-  }
-
+// ==================== PASSWORDLESS SIGN-IN ====================
+async function handleMagicLinkRequest(context, env, request, { email }) {
+  const success = json({ ok: true, message: magicLinkMessage() });
+  if (typeof email !== "string" || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return success;
   const headers = sbHeaders(env);
   const normalisedEmail = normaliseEmail(email);
   const identifierHash = await hashIdentifier(normalisedEmail);
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(normalisedEmail)}&active=eq.true&status=eq.approved&select=id,email,name,company,password_hash&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(normalisedEmail)}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
     { headers },
   );
-  if (!res.ok) return json({ ok: false, error: "Database error" }, 500);
+  if (!res.ok) return success;
   const rows = await res.json();
   if (rows.length === 0) {
-    // Do comparable password work even when no approved account exists so
-    // response timing does not reveal whether an address is registered.
-    await hashPassword(password, "00000000000000000000000000000000");
     queueSecurityEvent(context, env, request, {
-      eventType: "partner_login_rejected",
+      eventType: "partner_magic_link_requested",
       actorType: "anonymous",
-      success: false,
+      success: true,
       identifierHash,
-      metadata: { reason: "invalid_credentials" },
+      metadata: { eligible: false },
     });
-    return json({ ok: false, error: "Invalid email or password" }, 401);
+    return success;
   }
 
   const partner = rows[0];
-
-  const verified = await verifyPassword(password, partner.password_hash);
-  if (!verified) {
-    queueSecurityEvent(context, env, request, {
-      eventType: "partner_login_rejected",
-      actorType: "anonymous",
-      success: false,
-      identifierHash,
-      metadata: { reason: "invalid_credentials" },
-    });
-    return json({ ok: false, error: "Invalid email or password" }, 401);
+  const token = generateToken(32);
+  const expiresAt = new Date(Date.now() + MAGIC_LINK_SECONDS * 1000).toISOString();
+  const revokeRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?partner_id=eq.${partner.id}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!revokeRes.ok) {
+    console.error(JSON.stringify({ message: "partner_magic_link_revoke_failed", status: revokeRes.status }));
+    return success;
   }
-
-  // Opportunistically upgrade legacy unsalted SHA-256 hashes to PBKDF2 on next login.
-  if (isLegacyHash(partner.password_hash)) {
-    try {
-      const upgraded = await hashPassword(password);
-      await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${partner.id}`, {
-        method: "PATCH",
-        headers: { ...headers, "Prefer": "return=minimal" },
-        body: JSON.stringify({ password_hash: upgraded }),
-      });
-    } catch {
-      console.error(JSON.stringify({ message: "password_hash_upgrade_failed" }));
-    }
-  }
-
-  // Create session token
-  const token = generateToken(64);
-  const tokenHash = await hashOpaqueToken(token);
-  const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
-
-  const sessRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
+  const tokenRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
+    body: JSON.stringify({
+      partner_id: partner.id,
+      token_hash: await hashOpaqueToken(token),
+      expires_at: expiresAt,
+    }),
   });
-  if (!sessRes.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+  if (!tokenRes.ok) {
+    console.error(JSON.stringify({ message: "partner_magic_link_write_failed", status: tokenRes.status }));
+    return success;
+  }
+
+  queueEmail(context, sendPartnerMagicLinkEmail(env, partner, token));
 
   queueSecurityEvent(context, env, request, {
-    eventType: "partner_login_succeeded",
-    actorType: "partner",
+    eventType: "partner_magic_link_requested",
+    actorType: "anonymous",
     success: true,
     identifierHash,
+    metadata: { partner_id: partner.id, eligible: true },
+  });
+  return success;
+}
+
+async function handleMagicLinkConsume(context, env, request, { token }) {
+  if (typeof token !== "string" || !MAGIC_TOKEN_RE.test(token)) {
+    return invalidMagicLinkResponse();
+  }
+
+  const headers = sbHeaders(env);
+  const now = new Date().toISOString();
+  const tokenHash = await hashOpaqueToken(token);
+  const findRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?token_hash=eq.${encodeURIComponent(tokenHash)}&consumed_at=is.null&expires_at=gt.${encodeURIComponent(now)}&select=id,partner_id&limit=1`,
+    { headers },
+  );
+  if (!findRes.ok) return json({ ok: false, error: "Sign-in is temporarily unavailable" }, 503);
+  const links = await findRes.json();
+  if (links.length === 0) return invalidMagicLinkResponse();
+
+  const link = links[0];
+  const partnerRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${link.partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
+    { headers },
+  );
+  if (!partnerRes.ok) return json({ ok: false, error: "Sign-in is temporarily unavailable" }, 503);
+  const partners = await partnerRes.json();
+  if (partners.length === 0) return invalidMagicLinkResponse();
+
+  const consumeRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?id=eq.${link.id}&consumed_at=is.null&expires_at=gt.${encodeURIComponent(now)}`,
+    {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({ consumed_at: now }),
+    },
+  );
+  if (!consumeRes.ok) return json({ ok: false, error: "Sign-in is temporarily unavailable" }, 503);
+  const consumed = await consumeRes.json();
+  if (consumed.length === 0) return invalidMagicLinkResponse();
+
+  const sessionToken = generateToken(64);
+  const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
+  const sessionRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
+    method: "POST",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      partner_id: link.partner_id,
+      token: await hashOpaqueToken(sessionToken),
+      expires_at: expiresAt,
+    }),
+  });
+  if (!sessionRes.ok) return json({ ok: false, error: "Failed to create session" }, 500);
+
+  const partner = partners[0];
+  queueEmail(context, sendPartnerSignInNotice(env, partner));
+  queueSecurityEvent(context, env, request, {
+    eventType: "partner_magic_link_consumed",
+    actorType: "partner",
+    success: true,
+    identifierHash: await hashIdentifier(partner.email),
     metadata: { partner_id: partner.id },
   });
 
   return json({
     ok: true,
     partner: { id: partner.id, email: partner.email, name: partner.name, company: partner.company },
-  }, 200, { "Set-Cookie": sessionCookie(PARTNER_COOKIE, token, PARTNER_SESSION_SECONDS) });
+  }, 200, { "Set-Cookie": sessionCookie(PARTNER_COOKIE, sessionToken, PARTNER_SESSION_SECONDS) });
 }
 
 // ==================== VERIFY ====================
@@ -294,12 +312,10 @@ async function handleRequest(context, env, request, { email, name, company, phon
         return json({ ok: true, message: partnerRequestMessage() });
       }
       // If declined, allow re-request by updating. Preserve declined_at as audit history.
-      const hash = await hashPassword(generateToken(32));
       await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${existing[0].id}`, {
         method: "PATCH",
         headers: { ...headers, "Prefer": "return=minimal" },
         body: JSON.stringify({
-          password_hash: hash,
           name: cleanName,
           company: cleanCompany,
           phone: cleanPhone || null,
@@ -322,15 +338,13 @@ async function handleRequest(context, env, request, { email, name, company, phon
     }
   }
 
-  // Access requests do not establish credentials. The value is random and
-  // unknowable; approval sends a one-time password-setup link to the mailbox.
-  const hash = await hashPassword(generateToken(32));
+  // Access requests do not establish credentials. Approval enables the exact
+  // mailbox, which can then request a short-lived, one-time sign-in link.
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=representation" },
     body: JSON.stringify({
       email: cleanEmail,
-      password_hash: hash,
       name: cleanName,
       company: cleanCompany,
       phone: cleanPhone || null,
@@ -361,208 +375,7 @@ async function handleRequest(context, env, request, { email, name, company, phon
   return json({ ok: true, message: partnerRequestMessage() });
 }
 
-// ==================== FORGOT PASSWORD ====================
-async function handleForgotPassword(context, env, request, { email }) {
-  // Always return success to prevent email enumeration
-  const successMsg = forgotPasswordMessage();
-  if (!email || typeof email !== "string" || email.length > 254) return json({ ok: true, message: successMsg });
-
-  const headers = sbHeaders(env);
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/partners?email=eq.${encodeURIComponent(email.trim().toLowerCase())}&active=eq.true&status=eq.approved&select=id,name,email&limit=1`,
-    { headers },
-  );
-  if (!res.ok) return json({ ok: true, message: successMsg });
-  const rows = await res.json();
-  if (rows.length === 0) return json({ ok: true, message: successMsg });
-
-  const partner = rows[0];
-  const token = generateToken(32);
-  const tokenHash = await hashOpaqueToken(token);
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-
-  // Keep only one live reset token per partner. A newly requested link
-  // invalidates older links, reducing replay and mailbox-forwarding risk.
-  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?partner_id=eq.${partner.id}`, {
-    method: "DELETE",
-    headers,
-  });
-
-  // Save reset token
-  const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ partner_id: partner.id, token: tokenHash, expires_at: expiresAt }),
-  });
-  if (!insertRes.ok) {
-    console.error(JSON.stringify({ message: "password_reset_token_write_failed", status: insertRes.status }));
-    return json({ ok: true, message: successMsg });
-  }
-
-  // Send reset email via Resend
-  if (!env.RESEND_API_KEY) {
-    console.error("RESEND_API_KEY not set — cannot send password reset email");
-  } else {
-    // Keep the one-time token in the URL fragment so it is not sent in HTTP
-    // requests, server logs, analytics URLs or Referer headers.
-    const resetUrl = `https://searsmelvin.co.uk/partner#reset=${token}`;
-    const firstName = (partner.name || "").split(" ")[0] || "there";
-    try {
-      const emailRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
-          to: partner.email,
-          subject: "Password Reset — Sears Melvin Partner Portal",
-          html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
-            <h2 style="font-family:Georgia,serif;color:#2C2C2C;font-weight:400;">Password Reset</h2>
-            <p>Hi ${esc(firstName)},</p>
-            <p>We received a request to reset your Partner Portal password. Click the button below to set a new password:</p>
-            <p style="text-align:center;margin:2rem 0;">
-              <a href="${resetUrl}" style="background:#2C2C2C;color:white;padding:0.75rem 2rem;border-radius:6px;text-decoration:none;font-size:1rem;display:inline-block;">Reset Password</a>
-            </p>
-            <p style="color:#666;font-size:0.85rem;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-            <hr style="border:none;border-top:1px solid #E0DCD5;margin:2rem 0;">
-            <p style="color:#999;font-size:0.75rem;">Sears Melvin Memorials &mdash; Partner Portal</p>
-          </div>`,
-        }),
-      });
-      if (!emailRes.ok) {
-        console.error(JSON.stringify({ message: "password_reset_email_failed", status: emailRes.status }));
-      }
-    } catch {
-      console.error(JSON.stringify({ message: "password_reset_email_unavailable" }));
-    }
-  }
-
-  queueSecurityEvent(context, env, request, {
-    eventType: "partner_password_reset_requested",
-    actorType: "anonymous",
-    success: true,
-    identifierHash: await hashIdentifier(partner.email.toLowerCase()),
-    metadata: { partner_id: partner.id },
-  });
-
-  return json({ ok: true, message: successMsg });
-}
-
-// ==================== RESET PASSWORD ====================
-async function handleResetPassword(context, env, request, { token, password }) {
-  if (!token || !password) return json({ ok: false, error: "Token and new password are required" }, 400);
-  if (typeof token !== "string" || token.length > 256 || !validPassword(password)) {
-    return json({ ok: false, error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters` }, 400);
-  }
-
-  const headers = sbHeaders(env);
-  const now = new Date().toISOString();
-
-  // Find valid reset token
-  const tokenHash = await hashOpaqueToken(token);
-  let rows = await findResetToken(env, tokenHash, now, headers);
-  if (rows === null) return json({ ok: false, error: "Database error" }, 500);
-  // Compatibility for reset links issued before token hashing. New tokens are
-  // always stored hashed and cannot be recovered from a database read.
-  if (rows.length === 0) rows = await findResetToken(env, token, now, headers) || [];
-  if (rows.length === 0) return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
-
-  const resetRecord = rows[0];
-  const compromised = await isCompromisedPassword(password);
-  if (compromised === null) {
-    return json({
-      ok: false,
-      error: "Password safety checking is temporarily unavailable. Please try again shortly.",
-    }, 503);
-  }
-  if (compromised) {
-    queueSecurityEvent(context, env, request, {
-      eventType: "partner_password_rejected",
-      actorType: "partner",
-      success: false,
-      metadata: { partner_id: resetRecord.partner_id, reason: "known_breach" },
-    });
-    return json({
-      ok: false,
-      error: "Choose a password that has not appeared in known data breaches.",
-    }, 400);
-  }
-  const hash = await hashPassword(password);
-
-  // Atomically consume the one-time token before changing the password. A
-  // concurrent replay receives no row and cannot reset the account twice.
-  const consumeRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}&used=eq.false`,
-    {
-      method: "PATCH",
-      headers: { ...headers, "Prefer": "return=representation" },
-      body: JSON.stringify({ used: true, used_at: new Date().toISOString() }),
-    },
-  );
-  if (!consumeRes.ok) return json({ ok: false, error: "Failed to consume reset token" }, 500);
-  const consumedRows = await consumeRes.json();
-  if (consumedRows.length === 0) {
-    return json({ ok: false, error: "This reset link is invalid or has expired. Please request a new one." }, 400);
-  }
-
-  // Update partner password
-  const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${resetRecord.partner_id}`, {
-    method: "PATCH",
-    headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ password_hash: hash, updated_at: new Date().toISOString() }),
-  });
-  if (!updateRes.ok) return json({ ok: false, error: "Failed to update password" }, 500);
-
-  // Invalidate all existing sessions for this partner (security)
-  await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?partner_id=eq.${resetRecord.partner_id}`, {
-    method: "DELETE",
-    headers,
-  });
-
-  queueSecurityEvent(context, env, request, {
-    eventType: "partner_password_reset_succeeded",
-    actorType: "partner",
-    success: true,
-    metadata: { partner_id: resetRecord.partner_id },
-  });
-
-  return json({ ok: true, message: "Password updated successfully. You can now sign in with your new password." });
-}
-
 // ==================== HELPERS ====================
-async function isCompromisedPassword(password) {
-  try {
-    // HIBP's k-anonymity API only receives the first five characters of a
-    // SHA-1 hash. The password and complete hash never leave this Worker.
-    const digest = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(password));
-    const fullHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0"))
-      .join("")
-      .toUpperCase();
-    const prefix = fullHash.slice(0, 5);
-    const suffix = fullHash.slice(5);
-    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-      headers: {
-        "Add-Padding": "true",
-        "User-Agent": "SearsMelvin-PartnerPortal/1.0",
-      },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok) {
-      console.error(JSON.stringify({ message: "pwned_password_check_failed", status: response.status }));
-      return null;
-    }
-    const range = await response.text();
-    return range.split(/\r?\n/).some((line) => {
-      const [candidate, count] = line.split(":", 2);
-      return candidate === suffix && Number(count) > 0;
-    });
-  } catch {
-    // Fail closed: a password is not accepted unless its breach status was
-    // actually checked. The one-time reset token remains unused for a retry.
-    console.error(JSON.stringify({ message: "pwned_password_check_unavailable" }));
-    return null;
-  }
-}
-
 async function getPartnerFromToken(env, token) {
   const headers = sbHeaders(env);
   const now = new Date().toISOString();
@@ -585,84 +398,16 @@ async function getPartnerFromToken(env, token) {
   return partRows.length > 0 ? partRows[0] : null;
 }
 
-// PBKDF2-SHA256 with a per-user random salt. Format:
-//   pbkdf2$<iterations>$<saltHex>$<hashHex>
-// Legacy unsalted SHA-256 hashes (64 hex chars, no '$') are still verified, then
-// transparently upgraded on the next successful login.
-const PBKDF2_ITERATIONS = 600000;
-const PBKDF2_KEYLEN_BITS = 256;
-const PBKDF2_SALT_BYTES = 16;
-
-async function hashPassword(password, saltHex = null, iterations = PBKDF2_ITERATIONS) {
-  const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_BYTES));
-  const baseKey = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"],
-  );
-  const derived = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
-    baseKey,
-    PBKDF2_KEYLEN_BITS,
-  );
-  return `pbkdf2$${iterations}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(derived))}`;
-}
-
-async function verifyPassword(password, stored) {
-  if (!stored) return false;
-  if (isLegacyHash(stored)) {
-    const legacy = await sha256Hex(password);
-    return timingSafeEqual(legacy, stored);
-  }
-  const parts = stored.split("$");
-  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
-  const iterations = parseInt(parts[1], 10);
-  if (!Number.isFinite(iterations) || iterations < 100000 || iterations > 1000000) return false;
-  if (!/^[0-9a-f]{32}$/i.test(parts[2]) || !/^[0-9a-f]{64}$/i.test(parts[3])) return false;
-  const candidate = await hashPassword(password, parts[2], iterations);
-  return timingSafeEqual(candidate, stored);
-}
-
-function isLegacyHash(stored) {
-  return typeof stored === "string" && !stored.includes("$") && /^[0-9a-f]{64}$/i.test(stored);
-}
-
-async function sha256Hex(input) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return bytesToHex(new Uint8Array(buf));
-}
-
 function bytesToHex(bytes) {
   let s = "";
   for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, "0");
   return s;
 }
 
-function hexToBytes(hex) {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
-  return out;
-}
-
-function timingSafeEqual(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 function generateToken(length = 64) {
   const arr = new Uint8Array(length);
   crypto.getRandomValues(arr);
   return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function validPassword(password) {
-  return typeof password === "string"
-    && password.length >= MIN_PASSWORD_LENGTH
-    && password.length <= MAX_PASSWORD_LENGTH;
 }
 
 async function hashOpaqueToken(token) {
@@ -696,14 +441,6 @@ async function findPartnerSession(env, token, now, headers) {
   return res.ok ? res.json() : null;
 }
 
-async function findResetToken(env, token, now, headers) {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&used=eq.false&expires_at=gt.${encodeURIComponent(now)}&select=id,partner_id&limit=1`,
-    { headers },
-  );
-  return res.ok ? res.json() : null;
-}
-
 async function deleteSessionByEitherToken(env, tokenHash, legacyToken, headers) {
   await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(tokenHash)}`, { method: "DELETE", headers }),
@@ -731,12 +468,83 @@ function boundedText(value, maxLength, optional = false) {
   return clean.length <= maxLength ? clean : null;
 }
 
-function forgotPasswordMessage() {
-  return "If an account with that email exists, we've sent a password reset link.";
+function magicLinkMessage() {
+  return "If that email belongs to an approved partner, we've sent a secure sign-in link.";
+}
+
+function invalidMagicLinkResponse() {
+  return json({
+    ok: false,
+    error: "This sign-in link is invalid, expired, or has already been used. Request a new link.",
+  }, 400);
 }
 
 function partnerRequestMessage() {
   return "If this request can be accepted, our team will review it and contact you shortly.";
+}
+
+function queueEmail(context, task) {
+  if (typeof context.waitUntil === "function") context.waitUntil(task);
+  else void task;
+}
+
+async function sendPartnerMagicLinkEmail(env, partner, token) {
+  if (!env.RESEND_API_KEY) {
+    console.error(JSON.stringify({ message: "partner_magic_link_email_not_configured" }));
+    return;
+  }
+  const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
+  const loginUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+        to: partner.email,
+        subject: "Your secure Partner Portal sign-in link",
+        html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F5F3F0;font-family:-apple-system,sans-serif;color:#2C2C2C;">
+          <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:32px;">
+            <h2 style="font-family:Georgia,serif;font-weight:400;">Sign in to the Partner Portal</h2>
+            <p>Hi ${esc(firstName)},</p>
+            <p>Use the one-time button below to sign in. No password is required.</p>
+            <p style="text-align:center;margin:28px 0;"><a href="${loginUrl}" style="display:inline-block;background:#2C2C2C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;">Sign in securely</a></p>
+            <p style="font-size:13px;color:#666;">This link expires in 15 minutes and works once. If you did not request it, you can safely ignore this email.</p>
+          </div>
+        </body></html>`,
+      }),
+    });
+    if (!response.ok) {
+      console.error(JSON.stringify({ message: "partner_magic_link_email_failed", status: response.status }));
+    }
+  } catch {
+    console.error(JSON.stringify({ message: "partner_magic_link_email_unavailable" }));
+  }
+}
+
+async function sendPartnerSignInNotice(env, partner) {
+  if (!env.RESEND_API_KEY) return;
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
+        to: partner.email,
+        subject: "New Partner Portal sign-in",
+        html: `<div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:32px;color:#2C2C2C;">
+          <h2 style="font-family:Georgia,serif;font-weight:400;">New sign-in confirmed</h2>
+          <p>A secure email link was just used to sign in to your Sears Melvin Partner Portal.</p>
+          <p style="font-size:13px;color:#666;">If this was not you, contact <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a> immediately so we can disable access.</p>
+        </div>`,
+      }),
+    });
+    if (!response.ok) {
+      console.error(JSON.stringify({ message: "partner_sign_in_notice_failed", status: response.status }));
+    }
+  } catch {
+    console.error(JSON.stringify({ message: "partner_sign_in_notice_unavailable" }));
+  }
 }
 
 function esc(str) {
@@ -824,7 +632,7 @@ async function sendPartnerRequestEmails(env, { name, email, company, phone, mess
       Thank you for requesting access to the Sears Melvin Partner Portal. Our team will review your application and get back to you shortly.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 10px;">
-      If approved, we'll email this address a one-time link to create your password. This verifies that you control the partner mailbox before access begins.
+      If approved, this address can request a short-lived, one-time sign-in link. This verifies that you control the partner mailbox before access begins.
     </p>
     <p style="color:#555;font-size:14px;line-height:1.7;margin:20px 0 0;">
       If you have any questions, please contact us at <a href="mailto:info@searsmelvin.co.uk" style="color:#8B7355;">info@searsmelvin.co.uk</a>.

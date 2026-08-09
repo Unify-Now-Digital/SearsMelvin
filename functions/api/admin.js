@@ -33,7 +33,6 @@ const INSCRIPTION_STATUS_VALUES = new Set(["pending", "awaiting_approval", "appr
 const PARTNER_STATUS_VALUES = new Set(["pending", "approved", "declined"]);
 const ENQUIRY_CHANNEL_VALUES = new Set(["quote", "contact", "appointment", "call", "shortlist"]);
 const CUSTOMER_EMAIL_KINDS = new Set(["proof_ready", "tracking", "inscription_confirm"]);
-const PBKDF2_ITERATIONS = 600000;
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: { "Allow": "POST, OPTIONS" } });
@@ -413,19 +412,19 @@ async function approvePartner(env, { partnerId }) {
 
   const setupToken = generateToken(32);
   const setupTokenHash = await hashSessionToken(setupToken);
-  const disabledPasswordHash = await hashGeneratedPassword(generateToken(32));
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-  await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens?partner_id=eq.${partner.id}`, {
+  const revokeLinkRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?partner_id=eq.${partner.id}`, {
     method: "DELETE",
     headers,
   });
-  const tokenRes = await fetch(`${env.SUPABASE_URL}/rest/v1/password_reset_tokens`, {
+  if (!revokeLinkRes.ok) return json({ ok: false, error: "Failed to revoke previous partner sign-in links" }, 500);
+  const tokenRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens`, {
     method: "POST",
     headers: { ...headers, "Prefer": "return=minimal" },
-    body: JSON.stringify({ partner_id: partner.id, token: setupTokenHash, expires_at: expiresAt }),
+    body: JSON.stringify({ partner_id: partner.id, token_hash: setupTokenHash, expires_at: expiresAt }),
   });
-  if (!tokenRes.ok) return json({ ok: false, error: "Failed to create partner setup link" }, 500);
+  if (!tokenRes.ok) return json({ ok: false, error: "Failed to create partner sign-in link" }, 500);
 
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(partnerId)}&select=id,email,name,company,status,active,approved_at,declined_at`, {
     method: "PATCH",
@@ -434,7 +433,6 @@ async function approvePartner(env, { partnerId }) {
       status: "approved",
       active: true,
       approved_at: new Date().toISOString(),
-      password_hash: disabledPasswordHash,
     }),
   });
 
@@ -480,6 +478,15 @@ async function declinePartner(env, { partnerId }) {
   if (!res.ok) return json({ ok: false, error: "Failed to decline partner" }, 500);
   const rows = await res.json();
   if (rows.length === 0) return json({ ok: false, error: "Partner not found" }, 404);
+
+  await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?partner_id=eq.${encodeURIComponent(partnerId)}`, {
+      method: "DELETE", headers,
+    }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?partner_id=eq.${encodeURIComponent(partnerId)}`, {
+      method: "DELETE", headers,
+    }),
+  ]);
 
   return json({ ok: true, partner: rows[0] });
 }
@@ -1050,18 +1057,18 @@ async function sendResend(apiKey, { from, to, subject, html }) {
 
 async function sendPartnerSetupEmail(apiKey, partner, token) {
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
-  const setupUrl = `https://searsmelvin.co.uk/partner#reset=${encodeURIComponent(token)}`;
+  const setupUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
   await sendResend(apiKey, {
     from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
     to: partner.email,
-    subject: "Set up your Sears Melvin Partner Portal password",
+    subject: "Your Sears Melvin Partner Portal access is approved",
     html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F5F3F0;font-family:-apple-system,sans-serif;color:#2C2C2C;">
       <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:32px;">
         <h2 style="font-family:Georgia,serif;font-weight:400;">Partner access approved</h2>
         <p>Hi ${escapeHtml(firstName)},</p>
-        <p>Your Sears Melvin Partner Portal request has been approved. Use the one-time button below to create your password and verify this mailbox.</p>
-        <p style="text-align:center;margin:28px 0;"><a href="${setupUrl}" style="display:inline-block;background:#2C2C2C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;">Create my password</a></p>
-        <p style="font-size:13px;color:#666;">This link expires in 24 hours. If you did not request partner access, please ignore this email and contact info@searsmelvin.co.uk.</p>
+        <p>Your Sears Melvin Partner Portal request has been approved. Use the one-time button below to verify this mailbox and sign in—no password is required.</p>
+        <p style="text-align:center;margin:28px 0;"><a href="${setupUrl}" style="display:inline-block;background:#2C2C2C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;">Sign in securely</a></p>
+        <p style="font-size:13px;color:#666;">This link expires in 15 minutes and works once. If it expires, request a new link on the Partner Portal. If you did not request partner access, contact info@searsmelvin.co.uk.</p>
       </div>
     </body></html>`,
   });
@@ -1151,24 +1158,6 @@ async function issueTrackingToken(env, orderId, headers = sbHeaders(env)) {
     }),
   });
   return response.ok ? { token, expiresAt } : null;
-}
-
-async function hashGeneratedPassword(password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const baseKey = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"],
-  );
-  const derived = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
-    baseKey,
-    256,
-  );
-  const toHex = bytes => Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
-  return `pbkdf2$${PBKDF2_ITERATIONS}$${toHex(salt)}$${toHex(new Uint8Array(derived))}`;
 }
 
 function getCookie(request, name) {
