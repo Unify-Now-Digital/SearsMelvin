@@ -47,6 +47,8 @@ const env = {
 };
 const originalFetch = globalThis.fetch;
 const sessions = [];
+let internalMagicDeletes = 0;
+let magicTokenPosts = 0;
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input);
   if (url.includes("/rest/v1/rpc/check_portal_rate_limit")) {
@@ -58,6 +60,24 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.includes("/rest/v1/partners?id=eq.1")) {
     return Response.json([{ id: 1, email: "info@searsmelvin.co.uk", name: "Sears Melvin Team", company: "Sears Melvin" }]);
   }
+  if (url.includes("/rest/v1/partners?email=eq.info%40searsmelvin.co.uk")) {
+    return Response.json([{ id: 1, email: "info@searsmelvin.co.uk", name: "Sears Melvin Team", company: "Sears Melvin" }]);
+  }
+  if (url.includes("/rest/v1/partner_magic_link_tokens?partner_id=eq.1") && init.method === "DELETE") {
+    internalMagicDeletes++;
+    return new Response(null, { status: 204 });
+  }
+  if (url.includes("/rest/v1/partner_magic_link_tokens?token_hash=eq.")) {
+    return Response.json([{ id: 91, partner_id: 1 }]);
+  }
+  if (url.includes("/rest/v1/partner_magic_link_tokens?id=eq.91") && init.method === "DELETE") {
+    internalMagicDeletes++;
+    return new Response(null, { status: 204 });
+  }
+  if (url.endsWith("/rest/v1/partner_magic_link_tokens") && init.method === "POST") {
+    magicTokenPosts++;
+    return new Response(null, { status: 201 });
+  }
   if (url.endsWith("/rest/v1/partner_sessions") && init.method === "POST") {
     sessions.push(JSON.parse(init.body));
     return new Response(null, { status: 201 });
@@ -67,6 +87,10 @@ globalThis.fetch = async (input, init = {}) => {
 };
 
 async function login(credential) {
+  return post({ action: "google-login", credential });
+}
+
+async function post(payload) {
   const pending = [];
   const response = await partnerAuth({
     env,
@@ -74,7 +98,7 @@ async function login(credential) {
     request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Origin": "https://searsmelvin.co.uk" },
-      body: JSON.stringify({ action: "google-login", credential }),
+      body: JSON.stringify(payload),
     }),
   });
   await Promise.allSettled(pending);
@@ -101,6 +125,17 @@ try {
 
   const unverified = await login(await token({ email_verified: false }));
   assert.equal(unverified.status, 401);
+  assert.equal(sessions.length, 1);
+
+  const internalMagicRequest = await post({ action: "request-magic-link", email: "info@searsmelvin.co.uk" });
+  assert.equal(internalMagicRequest.status, 200);
+  assert.equal((await internalMagicRequest.json()).ok, true);
+  assert.equal(internalMagicDeletes, 1);
+  assert.equal(magicTokenPosts, 0);
+
+  const oldInternalMagicLink = await post({ action: "consume-magic-link", token: "b".repeat(64) });
+  assert.equal(oldInternalMagicLink.status, 400);
+  assert.equal(internalMagicDeletes, 2);
   assert.equal(sessions.length, 1);
 
   console.log("partner Google Workspace auth tests passed");

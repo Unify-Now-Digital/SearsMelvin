@@ -41,7 +41,7 @@ export async function onRequest(context) {
   if (!isSameOriginRequest(request)) {
     return json({ ok: false, error: "Forbidden" }, 403);
   }
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !getInternalPartnerId(env)) {
     return json({ ok: false, error: "Server config error" }, 500);
   }
 
@@ -174,10 +174,7 @@ async function handleGoogleLogin(context, env, request, { credential }) {
     return json({ ok: false, error: "Use an authorised searsmelvin.co.uk Google Workspace account" }, 403);
   }
 
-  const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "1").trim();
-  if (!/^[1-9]\d{0,9}$/.test(internalPartnerId)) {
-    return json({ ok: false, error: "Internal workspace is not configured" }, 500);
-  }
+  const internalPartnerId = getInternalPartnerId(env);
   const headers = sbHeaders(env);
   const partnerRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${encodeURIComponent(internalPartnerId)}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
@@ -228,6 +225,22 @@ async function handleMagicLinkRequest(context, env, request, { email }) {
   }
 
   const partner = rows[0];
+  if (String(partner.id) === getInternalPartnerId(env)) {
+    // Internal staff authenticate through Google Workspace only. A mailbox
+    // link here would bypass Workspace account suspension and access policy.
+    await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?partner_id=eq.${encodeURIComponent(partner.id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    queueSecurityEvent(context, env, request, {
+      eventType: "partner_magic_link_requested",
+      actorType: "anonymous",
+      success: true,
+      identifierHash,
+      metadata: { eligible: false, reason: "internal_google_only" },
+    });
+    return success;
+  }
   const token = generateToken(32);
   const expiresAt = new Date(Date.now() + MAGIC_LINK_SECONDS * 1000).toISOString();
   const revokeRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?partner_id=eq.${partner.id}`, {
@@ -281,6 +294,14 @@ async function handleMagicLinkConsume(context, env, request, { token }) {
   if (links.length === 0) return invalidMagicLinkResponse();
 
   const link = links[0];
+  if (String(link.partner_id) === getInternalPartnerId(env)) {
+    // Reject links created before this rule or by an older admin deployment.
+    await fetch(`${env.SUPABASE_URL}/rest/v1/partner_magic_link_tokens?id=eq.${encodeURIComponent(link.id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    return invalidMagicLinkResponse();
+  }
   const partnerRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/partners?id=eq.${link.partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company&limit=1`,
     { headers },
@@ -322,7 +343,7 @@ async function handleMagicLinkConsume(context, env, request, { token }) {
 
 // ==================== VERIFY ====================
 async function handleVerify(env, request, data) {
-  const token = getCookie(request, PARTNER_COOKIE) || data.token;
+  const token = getCookie(request, PARTNER_COOKIE);
   if (!token) return json({ ok: false, error: "Token required" }, 400);
   const partner = await getPartnerFromToken(env, token);
   if (!partner) return json({ ok: false, error: "Invalid or expired session" }, 401);
@@ -331,7 +352,7 @@ async function handleVerify(env, request, data) {
 
 // ==================== LOGOUT ====================
 async function handleLogout(context, env, request, data) {
-  const token = getCookie(request, PARTNER_COOKIE) || data.token;
+  const token = getCookie(request, PARTNER_COOKIE);
   const logoutHeaders = {
     "Set-Cookie": clearCookie(PARTNER_COOKIE),
     "Clear-Site-Data": '"cache", "storage"',
@@ -339,7 +360,7 @@ async function handleLogout(context, env, request, data) {
   if (!token) return json({ ok: true }, 200, logoutHeaders);
   const headers = sbHeaders(env);
   const tokenHash = await hashOpaqueToken(token);
-  await deleteSessionByEitherToken(env, tokenHash, token, headers);
+  await deleteSession(env, tokenHash, headers);
   queueSecurityEvent(context, env, request, {
     eventType: "partner_logout",
     actorType: "partner",
@@ -459,11 +480,8 @@ async function getPartnerFromToken(env, token) {
   const now = new Date().toISOString();
 
   const tokenHash = await hashOpaqueToken(token);
-  let sessRows = await findPartnerSession(env, tokenHash, now, headers);
+  const sessRows = await findPartnerSession(env, tokenHash, now, headers);
   if (sessRows === null) return null;
-  // Compatibility for sessions issued before cookie/hash hardening. They expire
-  // within seven days and are never issued by the new code.
-  if (sessRows.length === 0) sessRows = await findPartnerSession(env, token, now, headers) || [];
   if (sessRows.length === 0) return null;
 
   const partnerId = sessRows[0].partner_id;
@@ -534,11 +552,16 @@ async function findPartnerSession(env, token, now, headers) {
   return res.ok ? res.json() : null;
 }
 
-async function deleteSessionByEitherToken(env, tokenHash, legacyToken, headers) {
-  await Promise.all([
-    fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(tokenHash)}`, { method: "DELETE", headers }),
-    fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(legacyToken)}`, { method: "DELETE", headers }),
-  ]);
+async function deleteSession(env, tokenHash, headers) {
+  await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions?token=eq.${encodeURIComponent(tokenHash)}`, {
+    method: "DELETE",
+    headers,
+  });
+}
+
+function getInternalPartnerId(env) {
+  const value = String(env.SM_INTERNAL_PARTNER_ID || "").trim();
+  return /^[1-9]\d{0,9}$/.test(value) ? value : "";
 }
 
 function sbHeaders(env) {
