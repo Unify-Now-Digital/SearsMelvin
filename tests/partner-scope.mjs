@@ -10,5 +10,8 @@ assert.match(api, /includesExternalPartnerOrders: false/);
 assert.match(api, /orders\.is_test=eq\.false/);
 assert.match(api, /invoices\?deleted_at=is\.null&is_test=eq\.false/);
 assert.match(api, /cemeteries\?is_active=eq\.true&is_test=eq\.false/);
+assert.match(api, /ordersResponse.*select=id,partner_id/);
+assert.match(api, /order\.partner_id == null \|\| String\(order\.partner_id\) === String\(partner\.id\)/);
+assert.match(api, /Sales workspace is restricted to Sears Melvin staff/);
 
 console.log("partner scope tests passed");

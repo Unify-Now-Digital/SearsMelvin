@@ -14,7 +14,7 @@ const baseOrder = {
 };
 
 const missingEvidence = deriveWorkflow(baseOrder);
-assert.equal(missingEvidence.specification.state, "complete");
+assert.equal(missingEvidence.specification.state, "blocked");
 assert.equal(missingEvidence.permit.state, "attention");
 assert.equal(missingEvidence.proof.state, "not_started");
 assert.equal(missingEvidence.material.state, "blocked");
@@ -22,19 +22,34 @@ assert.equal(missingEvidence.material.actionAvailable, false);
 assert.equal(missingEvidence.materialLockEnforced, false);
 assert.equal(missingEvidence.materialDecisionReady, false);
 
-const approvedEvidence = deriveWorkflow(
+const paidAndPreapproved = deriveWorkflow(
   baseOrder,
-  { state: "approved", approved_at: "2026-08-01T10:00:00Z", render_url: "https://example.test/proof.png" },
-  { permit_phase: "approved", approved_at: "2026-08-02T10:00:00Z" },
+  { state: "changes_requested", render_url: "https://example.test/proof.png" },
+  { permit_phase: "pending" },
+  [{ id: "invoice-1", status: "paid", paid_at: "2026-08-01T09:00:00Z" }],
+  [],
+  { mode: "internal", proofDecisionEnabled: false },
+  [{ event_type: "spec_preapproval_approved", created_at: "2026-08-02T10:00:00Z" }],
+);
+assert.equal(paidAndPreapproved.permit.state, "attention");
+assert.equal(paidAndPreapproved.proof.state, "attention");
+assert.equal(paidAndPreapproved.specification.state, "complete");
+assert.equal(paidAndPreapproved.material.state, "decision_required");
+assert.equal(paidAndPreapproved.materialDecisionReady, true);
+assert.equal(paidAndPreapproved.material.actionAvailable, true);
+
+const preapprovedButUnpaid = deriveWorkflow(
+  baseOrder,
+  null,
+  null,
   [],
   [],
   { mode: "internal", proofDecisionEnabled: false },
+  [{ event_type: "spec_preapproval_approved", created_at: "2026-08-02T10:00:00Z" }],
 );
-assert.equal(approvedEvidence.permit.state, "complete");
-assert.equal(approvedEvidence.proof.state, "complete");
-assert.equal(approvedEvidence.material.state, "decision_required");
-assert.equal(approvedEvidence.materialDecisionReady, true);
-assert.equal(approvedEvidence.material.actionAvailable, false);
+assert.equal(preapprovedButUnpaid.paymentConfirmed, false);
+assert.equal(preapprovedButUnpaid.material.state, "blocked");
+assert.equal(preapprovedButUnpaid.materialDecisionReady, false);
 
 const inProduction = deriveWorkflow({
   ...baseOrder,
@@ -43,7 +58,7 @@ const inProduction = deriveWorkflow({
 });
 assert.equal(inProduction.material.state, "complete");
 assert.equal(inProduction.production.state, "in_progress");
-assert.equal(inProduction.installation.state, "ready");
+assert.equal(inProduction.installation.state, "blocked");
 
 const paid = deriveWorkflow(
   baseOrder,
@@ -52,6 +67,20 @@ const paid = deriveWorkflow(
   [{ id: "invoice-1", status: "issued", stripe_status: "paid" }],
 );
 assert.equal(paid.commercial.state, "complete");
+assert.equal(paid.paymentConfirmed, true);
+assert.equal(paid.material.state, "blocked");
+
+const postCommitException = deriveWorkflow(
+  { ...baseOrder, stone_status: "Ordered", jobs: { stage: "in_production", paid_at: "2026-08-01T09:00:00Z" } },
+  null,
+  null,
+  [],
+  [],
+  { mode: "internal", proofDecisionEnabled: false },
+  [{ event_type: "spec_preapproval_changes_required", created_at: "2026-08-03T10:00:00Z" }],
+);
+assert.equal(postCommitException.material.state, "attention");
+assert.equal(postCommitException.material.exception, true);
 
 const proofDecision = deriveWorkflow(
   baseOrder,
