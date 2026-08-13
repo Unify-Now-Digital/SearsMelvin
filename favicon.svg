@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#2C2C2C"/>
-  <g transform="translate(5 2) scale(0.69)">
-    <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" fill="#8B7355" opacity="0.3"/>
-    <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z" fill="#8B7355"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Sears Melvin SM icon</title>
+  <rect width="512" height="512" rx="104" fill="#242321"/>
+  <rect x="18" y="18" width="476" height="476" rx="88" fill="none" stroke="#B79A6B" stroke-width="12"/>
+  <text x="256" y="328" text-anchor="middle" fill="#F4EEE3" font-family="Georgia, 'Times New Roman', serif" font-size="218" font-weight="700" letter-spacing="-14">SM</text>
 </svg>
