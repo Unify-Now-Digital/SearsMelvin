@@ -16,7 +16,7 @@ Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
 | 1 | **High** | Supabase RLS | `cemeteries_public_read` is granted to `authenticated`, but the public site uses the **anon** key. Every browser-side cemetery query returns `[]`. | Fix written, **not applied** — `migrations/2026-08-26-fix-public-cemetery-read-and-audit-log.sql` |
 | 2 | Medium | Worker code | `lookupCemeteryIdByName` searched all tenants' cemeteries | **Fixed** — org filter added, asserted in `tests/security-smoke.mjs` |
 | 3 | Medium | Supabase | `activity_log_write` is SECURITY DEFINER, callable by any signed-in user, and inserts the caller-supplied `p_user_id` without consulting `auth.uid()` — audit-log entries can be attributed to anyone | Fix written, **not applied** — same migration |
-| 4 | Medium | Cloudflare | Worker `sears-melvin-form` is live, orphaned, and sends off-brand copy (phone `01268 208 559`, "South London & Beyond", ClickUp) | **Awaiting deletion** — no delete capability in the Cloudflare MCP; do it in the dashboard |
+| 4 | Medium | Cloudflare | Worker `sears-melvin-form` was live, orphaned, and sent off-brand copy (phone `01268 208 559`, "South London & Beyond", ClickUp) | **Done** — deleted 2026-08-26, confirmed absent from `workers_list` |
 | 5 | Medium | Supabase | `create_quote` RPC resolves the cemetery without an org filter (same class as #2) | Open — see note 3 in the migration |
 | 6 | Low | Headers | CSP is `Report-Only` with **no** `report-uri`/`report-to`, so it collects nothing and can never graduate to enforced | Open |
 | 7 | Low | Headers | `X-Robots-Tag: noindex` was on `/partner*` only | **Fixed** — added to `/admin*` and `/track*` |
