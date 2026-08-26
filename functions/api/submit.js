@@ -305,7 +305,10 @@ async function enquirySideEffects({
         html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, shortlistItems, submittedAt }),
       });
     }),
-    bg("enquiry customer email", () => {
+    // Phone-only submissions are valid (the API requires name + email OR phone),
+    // so there may be no address to confirm to. Without this guard Resend is
+    // called with an empty `to` and 400s into a swallowed background error.
+    !email ? null : bg("enquiry customer email", () => {
       const customerSubjectExtra = grave_number
         ? ` — Grave ${grave_number}`
         : (location ? ` — ${location}` : "");
@@ -1352,6 +1355,11 @@ async function lookupCemeteryIdByName(env, location) {
   const trimmed = location.trim();
   if (trimmed.length < 3) return null;
   const headers = supabaseHeaders(env);
+  // `cemeteries` is a shared multi-tenant table — Sears Melvin owns 6 rows, the
+  // other tenant owns ~134. Without the org filter a free-typed name could
+  // resolve to another tenant's cemetery (and its permit fee), so scope the
+  // lookup the same way partner-orders.js does. Test rows are excluded too.
+  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
   // Postgres `ilike` with the full string first (exact-ish match), then loosen.
   const tries = [
     `name=ilike.${encodeURIComponent(trimmed)}`,
@@ -1359,7 +1367,7 @@ async function lookupCemeteryIdByName(env, location) {
     `name=ilike.${encodeURIComponent("%" + trimmed + "%")}`,
   ];
   for (const filter of tries) {
-    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&select=id&limit=1`;
+    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&is_test=eq.false${orgFilter}&select=id&limit=1`;
     const res = await fetch(url, { headers: { apikey: headers.apikey, Authorization: headers.Authorization } });
     if (!res.ok) continue;
     const rows = await res.json();

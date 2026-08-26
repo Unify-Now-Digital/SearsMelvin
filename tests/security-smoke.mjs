@@ -288,6 +288,16 @@ try {
   });
   assert.equal(unsignedWebhook.status, 503);
 
+  // `cemeteries` is shared between tenants. Every server-side read of it must be
+  // scoped to SM_ORG_ID, or a free-typed cemetery name can attach another
+  // tenant's cemetery (and permit fee) to a Sears Melvin quote.
+  const submitSource = readFileSync(new URL("../functions/api/submit.js", import.meta.url), "utf8");
+  const cemeteryReads = submitSource.match(/rest\/v1\/cemeteries\?[^`]*/g) || [];
+  assert.ok(cemeteryReads.length > 0, "expected at least one cemeteries read to check");
+  for (const read of cemeteryReads) {
+    assert.ok(read.includes("${orgFilter}"), `unscoped cemeteries read: ${read.slice(0, 90)}`);
+  }
+
   console.log("security smoke tests passed");
 } finally {
   globalThis.fetch = originalFetch;
