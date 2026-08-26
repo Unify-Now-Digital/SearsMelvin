@@ -17,6 +17,7 @@
 const BUSINESS_NAME  = "Sears Melvin Memorials";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL     = "info@searsmelvin.co.uk";
+const SITE_URL       = "https://searsmelvin.co.uk";
 const MAX_WEBHOOK_BYTES = 1024 * 1024;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -198,7 +199,7 @@ async function validatePaymentTarget(env, pi, invoiceId) {
   const orderRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(invoice.order_id)}` +
       `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
-      `&select=id,value,permit_fee,status,sku,location,people(first_name,last_name,email)&limit=1`,
+      `&select=id,value,permit_fee,status,sku,location,product_config,people(first_name,last_name,email)&limit=1`,
     { headers },
   );
   if (!orderRes.ok) return null;
@@ -226,7 +227,23 @@ async function validatePaymentTarget(env, pi, invoiceId) {
     email: person.email || "",
     cemetery: order.location || "",
     product: order.sku || "Memorial",
+    productUrl: productPageUrl(order.product_config),
   };
+}
+
+// `orders.sku` holds the product *name*; the slug lives in the product_config
+// JSON the quote was created with. Rebuild the /memorials/<slug> link from it so
+// the deposit emails can link back to the memorial that was actually ordered.
+// Re-validated against the slug pattern (as in quotes.js) before it is used as
+// an href — the value originally came from a browser payload.
+function productPageUrl(productConfig) {
+  let config = productConfig;
+  if (typeof config === "string") {
+    try { config = JSON.parse(config); } catch { return ""; }
+  }
+  const slug = typeof config?.slug === "string" ? config.slug.toLowerCase().trim() : "";
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) return "";
+  return `${SITE_URL}/memorials/${encodeURIComponent(slug)}`;
 }
 
 // Stripe retries delivery aggressively, so dedupe by PaymentIntent id (stored
@@ -256,7 +273,7 @@ async function handlePaymentSucceeded(env, pi) {
     }));
     return;
   }
-  const { name, email, cemetery, product } = verifiedTarget;
+  const { name, email, cemetery, product, productUrl } = verifiedTarget;
   const amountPaid = (pi.amount_received / 100).toFixed(2);
   const today      = new Date().toISOString().split("T")[0];
   let paymentRecordedNow = false;
@@ -425,7 +442,7 @@ async function handlePaymentSucceeded(env, pi) {
         from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to:      email,
         subject: `Deposit confirmed — ${BUSINESS_NAME}`,
-        html:    depositConfirmationEmail({ name, email, amountPaid, product, cemetery }),
+        html:    depositConfirmationEmail({ name, email, amountPaid, product, productUrl, cemetery }),
       });
     } catch {
       console.error(JSON.stringify({ message: "deposit_confirmation_email_failed" }));
@@ -439,7 +456,7 @@ async function handlePaymentSucceeded(env, pi) {
         from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to:      BUSINESS_EMAIL,
         subject: `Deposit received — £${amountPaid} — ${name || email}`,
-        html:    depositBusinessEmail({ name, email, amountPaid, product, cemetery, piId: pi.id }),
+        html:    depositBusinessEmail({ name, email, amountPaid, product, productUrl, cemetery, piId: pi.id }),
       });
     } catch {
       console.error(JSON.stringify({ message: "deposit_business_email_failed" }));
@@ -456,7 +473,7 @@ function esc(str) {
     .replace(/"/g, "&quot;");
 }
 
-function depositConfirmationEmail({ name, amountPaid, product, cemetery }) {
+function depositConfirmationEmail({ name, amountPaid, product, productUrl, cemetery }) {
   const firstName = (name || "").split(" ")[0] || "there";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -486,7 +503,7 @@ function depositConfirmationEmail({ name, amountPaid, product, cemetery }) {
         <tr><td style="padding:16px 20px;">
           <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin-bottom:10px;">Order summary</div>
           <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
-            ${product  ? `<tr><td style="color:#999;padding:4px 0;width:120px;">Memorial</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product)}</td></tr>` : ""}
+            ${product  ? `<tr><td style="color:#999;padding:4px 0;width:120px;">Memorial</td><td style="color:#1A1A1A;padding:4px 0;">${esc(product)}${productUrl ? `<br><a href="${productUrl}" style="color:#8B7355;font-size:12px;text-decoration:none;">View this memorial &rarr;</a>` : ""}</td></tr>` : ""}
             ${cemetery ? `<tr><td style="color:#999;padding:4px 0;">Cemetery</td><td style="color:#1A1A1A;padding:4px 0;">${esc(cemetery)}</td></tr>` : ""}
             <tr><td style="color:#999;padding:8px 0 4px;border-top:1px solid #ddd;">Deposit paid</td><td style="color:#2C2C2C;font-weight:700;padding:8px 0 4px;border-top:1px solid #ddd;">£${esc(amountPaid)}</td></tr>
           </table>
@@ -504,7 +521,7 @@ function depositConfirmationEmail({ name, amountPaid, product, cemetery }) {
 </body></html>`;
 }
 
-function depositBusinessEmail({ name, email, amountPaid, product, cemetery, piId }) {
+function depositBusinessEmail({ name, email, amountPaid, product, productUrl, cemetery, piId }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"></head>
@@ -523,7 +540,7 @@ function depositBusinessEmail({ name, email, amountPaid, product, cemetery, piId
       <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
         <tr><td style="color:#999;padding:5px 0;width:130px;">Customer</td><td style="color:#1A1A1A;font-weight:600;">${esc(name || "—")}</td></tr>
         <tr><td style="color:#999;padding:5px 0;">Email</td><td><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email || "—")}</a></td></tr>
-        ${product  ? `<tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}</td></tr>` : ""}
+        ${product  ? `<tr><td style="color:#999;padding:5px 0;">Memorial</td><td style="color:#1A1A1A;">${esc(product)}${productUrl ? ` &middot; <a href="${productUrl}" style="color:#8B7355;text-decoration:none;font-weight:600;">View product &rarr;</a>` : ""}</td></tr>` : ""}
         ${cemetery ? `<tr><td style="color:#999;padding:5px 0;">Cemetery</td><td style="color:#1A1A1A;">${esc(cemetery)}</td></tr>` : ""}
         <tr><td style="color:#999;padding:5px 0;">Amount</td><td style="color:#1A1A1A;font-weight:700;">£${esc(amountPaid)}</td></tr>
         <tr><td style="color:#999;padding:5px 0;font-size:11px;">Stripe PI</td><td style="color:#AAA;font-size:11px;">${esc(piId || "—")}</td></tr>
