@@ -1,6 +1,11 @@
 /**
  * Partner Auth API — /api/partner-auth
  *
+ * DEPRECATED. The public-site /partner UI is retired; the only partner
+ * workspace is https://partner.searsmelvin.co.uk/. Do not add features here.
+ * This Function is left in place so deploys keep working until a later PR
+ * removes the leftover public-site partner stack.
+ *
  * POST { action: "google-login", credential } → sign in SM staff with Google Workspace
  * POST { action: "request-magic-link", email } → email a short-lived link to an approved partner
  * POST { action: "consume-magic-link", token } → consume one-time link, set HttpOnly session cookie
@@ -610,6 +615,8 @@ async function sendPartnerMagicLinkEmail(env, partner, token) {
     return;
   }
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
+  // Leftover public-site URL: /partner now redirects to partner.searsmelvin.co.uk.
+  // Do not build new partner email flows here; this sender is deprecated with the UI.
   const loginUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
   try {
     const response = await fetch("https://api.resend.com/emails", {

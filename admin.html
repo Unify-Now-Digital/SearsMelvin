@@ -852,7 +852,7 @@
             var data = await res.json();
             if (!data.ok) throw new Error(data.error);
             if (!data.setupEmailSent) {
-                alert('Partner approved, but the sign-in email could not be sent. Ask them to request a new secure link on the partner sign-in page.');
+                alert('Partner approved, but the sign-in email could not be sent. Ask them to request a new secure link at partner.searsmelvin.co.uk.');
             }
             loadPartners();
             loadDashboard();

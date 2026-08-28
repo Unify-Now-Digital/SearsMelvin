@@ -7,7 +7,7 @@ Disallow: /admin.html
 Disallow: /admin-products
 Disallow: /admin-products.html
 
-# Partner portal (login-only)
+# Deprecated public-site partner UI (redirects to partner.searsmelvin.co.uk)
 Disallow: /partner
 Disallow: /partner.html
 

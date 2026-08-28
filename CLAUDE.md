@@ -15,9 +15,10 @@ it whenever you audit or fix something in that list.
 - **Backend** — Cloudflare Pages Functions in `functions/`. Routes:
   `/api/submit` (all public form submissions), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
-  `/api/stripe-webhook`, `/api/admin`, `/api/partner-auth`,
-  `/api/partner-orders`, `/api/upload-photo`, `/api/config`,
-  plus `/memorials/:slug` and `/sitemap.xml`.
+  `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
+  plus `/memorials/:slug` and `/sitemap.xml`. Leftover and **deprecated**
+  (do not build on them): `/api/partner-auth`, `/api/partner-orders`. The
+  public-site `/partner` UI is retired; see "Deliberate absences".
 - **Database** — Supabase project **Mason App** (`bfwohzcugtwbhhxdqgme`), shared
   with a second tenant. **Everything is multi-tenant: scope every query by
   `SM_ORG_ID`.** See "Multi-tenancy" below — this has caused real bugs.
@@ -46,6 +47,15 @@ it whenever you audit or fix something in that list.
 - **ClickUp is not part of this site.** Removed in #135.
 - The legacy `sears-melvin-form` Cloudflare Worker is dead and unreferenced
   (see the audit doc). Do not wire anything back to it.
+- **The public-site `/partner` UI is deprecated.** Arin Melvin decided
+  `https://partner.searsmelvin.co.uk/` is the only partner workspace.
+  `searsmelvin.co.uk/partner` 301s there (`_redirects`, plus a thin
+  `partner.html` fallback because Cloudflare Pages serves a matching static
+  file before `_redirects`). Do not build new partner UI or workflow on
+  `partner.html` or the leftover `/api/partner-auth` and `/api/partner-orders`
+  Functions; they stay only so this first deprecation PR does not break
+  deploys. PR #152 (align this repo's portal with the live subdomain app)
+  was closed as out of scope.
 
 ## Multi-tenancy
 

@@ -940,6 +940,8 @@ async function sendResend(apiKey, { from, to, subject, html }) {
 
 async function sendPartnerSetupEmail(apiKey, partner, token) {
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
+  // Leftover public-site URL: /partner now redirects to partner.searsmelvin.co.uk.
+  // Do not build new partner email flows against the deprecated public /partner UI.
   const setupUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
   await sendResend(apiKey, {
     from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",

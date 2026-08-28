@@ -68,11 +68,11 @@ try {
   const customerOrderApi = readFileSync(new URL("../functions/api/customer-order.js", import.meta.url), "utf8");
   assert.equal(partnerHtml.includes('id="reqPassword"'), false);
   assert.equal(partnerHtml.includes('type="password"'), false);
-  assert.equal(partnerHtml.includes("request-magic-link"), true);
-  assert.equal(partnerHtml.includes("consume-magic-link"), true);
-  assert.equal(partnerHtml.includes("google-login"), true);
-  assert.equal(partnerHtml.includes("accounts.google.com/gsi/client"), true);
   assert.equal(partnerHtml.includes("#reset="), false);
+  assert.equal(partnerHtml.includes("https://partner.searsmelvin.co.uk/"), true);
+  assert.equal(partnerHtml.includes("/api/partner-auth"), false);
+  assert.equal(partnerHtml.includes("/api/partner-orders"), false);
+  assert.equal(partnerAuthApi.includes("DEPRECATED"), true);
   assert.equal(partnerAuthApi.includes("password_hash"), false);
   assert.equal(partnerAuthApi.includes("forgot-password"), false);
   assert.equal(partnerAuthApi.includes("reset-password"), false);

@@ -90,6 +90,12 @@ context only, over the 120 days to 2026-08-26:
 - **2026-08-26 — `_headers` and `robots.txt` are otherwise sound.** HSTS with
   preload, nosniff, frame-ancestors, tightened enforced CSP on `/admin*` and
   `/partner*`, sensible cache tiers.
+- **2026-08-28 — public-site `/partner` is deprecated.** The only partner
+  workspace is `https://partner.searsmelvin.co.uk/`. This repo 301s `/partner`
+  (and `/partner.html`, `/partner/*`) there. `partner.html` is a thin fallback
+  because Cloudflare Pages serves static files before `_redirects`. Leftover
+  `/api/partner-auth` and `/api/partner-orders` are not a product surface.
+  PR #152 was closed as out of scope for the live subdomain app.
 
 ---
 

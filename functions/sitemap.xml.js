@@ -10,7 +10,8 @@ const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
 const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Static, hand-maintained set. Customer-facing only — never list /admin,
-// /track, /partner, /quote (all noindex or login-gated).
+// /track, /partner (deprecated; redirects to partner.searsmelvin.co.uk),
+// /quote (all noindex or login-gated).
 const STATIC_PAGES = [
   { path: "/",                priority: "1.0",  changefreq: "weekly"  },
   { path: "/memorials",       priority: "0.9",  changefreq: "weekly"  },

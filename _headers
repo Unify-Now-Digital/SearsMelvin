@@ -18,6 +18,8 @@
 # Authenticated surfaces use a narrower, enforced CSP and are never cached.
 # Their only third-party browser dependencies are Google Identity Services,
 # Google Fonts and read-only catalogue requests to Supabase.
+# /partner* is a deprecated public-site path (thin redirect landing); keep
+# noindex and no-store so the leftover file is not cached or indexed.
 /admin*
   Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow, noarchive

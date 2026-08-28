@@ -1,5 +1,13 @@
 # Partner portal V2 workflow model
 
+> **Deprecated public-site UI.** This document describes the workflow that was
+> modelled on this repo's `/partner` page (`partner.html`). That UI is
+> deprecated. **`https://partner.searsmelvin.co.uk/` is the only partner
+> workspace.** Do not implement new partner features in `partner.html` or in
+> the leftover `/api/partner-auth` and `/api/partner-orders` Functions. PR
+> #152 (align this public-site portal with the live subdomain app) was closed
+> as out of scope for that app. The public site now 301s `/partner` there.
+
 V2 is a read-and-create interface over the existing Sears Melvin data model. It adds no tables, columns, triggers or production-data migrations.
 
 ## Existing records used

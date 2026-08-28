@@ -1,6 +1,11 @@
 /**
  * Partner portal data API — /api/partner-orders
  *
+ * DEPRECATED. The public-site /partner UI is retired; the only partner
+ * workspace is https://partner.searsmelvin.co.uk/. Do not add features here.
+ * This Function is left in place so deploys keep working until a later PR
+ * removes the leftover public-site partner stack.
+ *
  * Uses the existing Mason App orders, jobs, people, invoices, proof, permit,
  * payment and catalogue tables. External partners are constrained by partner
  * id. The configured Sears Melvin account is constrained to the SM

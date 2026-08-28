@@ -10,3 +10,15 @@
 # Do NOT add a `/memorial -> /memorials` redirect: memorial.html already
 # handles the "no slug" case gracefully by showing "Product not found".
 /memorials/:slug   /memorial   200
+
+# Public-site /partner UI is deprecated. The only partner workspace is
+# https://partner.searsmelvin.co.uk/ (Arin Melvin, 2026-08-28).
+#
+# Cloudflare Pages serves a matching static file before _redirects, so
+# /partner and /partner.html still hit partner.html. That file is now a
+# thin client-side fallback. These rules cover /partner/* deep links that
+# have no static file. They do not match /api/partner-*.
+/partner           https://partner.searsmelvin.co.uk/  301
+/partner/          https://partner.searsmelvin.co.uk/  301
+/partner.html      https://partner.searsmelvin.co.uk/  301
+/partner/*         https://partner.searsmelvin.co.uk/  301
