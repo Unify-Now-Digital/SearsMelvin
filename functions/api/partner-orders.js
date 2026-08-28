@@ -33,7 +33,75 @@ const WORKFLOW_EVENT_TYPES = [
   "material_ordered",
   "material_received",
   "physical_spec_changed",
+  "permit_phase_updated",
+  "payment_requested",
 ];
+const PAID_INVOICE_STATUSES = new Set(["paid", "partial", "completed", "succeeded", "complete"]);
+const PAID_STRIPE_STATUSES = new Set(["paid", "succeeded", "complete", "paid_out"]);
+const PAID_PAYMENT_STATUSES = new Set(["matched", "confirmed", "paid", "succeeded", "complete"]);
+const PAID_ORDER_STATUSES = new Set(["partial", "completed"]);
+const PAID_ORDER_STAGES = new Set(["deposit_paid"]);
+
+// Canonical 7-step permit spine locked 28 Aug 2026. Stored values reuse the
+// live order_permits.permit_phase / orders.permit_status vocabulary where it
+// already exists, and add match_form + resolve_issues rather than collapsing.
+export const PERMIT_SPINE = [
+  {
+    key: "match_form",
+    label: "Match form",
+    storedValue: "match_form",
+    aliases: ["form_needed", "pending"],
+    timestampField: null,
+  },
+  {
+    key: "send_to_customer",
+    label: "Send to customer",
+    storedValue: "form_sent",
+    aliases: ["with_customer"],
+    timestampField: "sent_at",
+  },
+  {
+    key: "receive_signed",
+    label: "Receive back signed from the correct person",
+    storedValue: "customer_completed",
+    aliases: [],
+    timestampField: "returned_at",
+  },
+  {
+    key: "complete_details",
+    label: "Complete memorial and our details",
+    storedValue: "completing",
+    aliases: [],
+    timestampField: null,
+  },
+  {
+    key: "send_to_cemetery",
+    label: "Send to cemetery",
+    storedValue: "submitted",
+    aliases: [],
+    timestampField: "submitted_at",
+  },
+  {
+    key: "resolve_issues",
+    label: "Resolve any issues",
+    storedValue: "resolve_issues",
+    aliases: ["rejected"],
+    timestampField: null,
+  },
+  {
+    key: "confirm_approval",
+    label: "Confirm approval",
+    storedValue: "approved",
+    aliases: ["not_required"],
+    timestampField: "approved_at",
+  },
+];
+const PERMIT_SPINE_BY_KEY = new Map(PERMIT_SPINE.map((step) => [step.key, step]));
+const PERMIT_SPINE_BY_STORED = new Map();
+for (const step of PERMIT_SPINE) {
+  PERMIT_SPINE_BY_STORED.set(step.storedValue, step);
+  for (const alias of step.aliases) PERMIT_SPINE_BY_STORED.set(alias, step);
+}
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: { "Allow": "GET, POST, OPTIONS" } });
@@ -108,6 +176,8 @@ export async function onRequest(context) {
     if (data.action === "record-spec-preapproval") return recordSpecPreapproval(env, partner, workspace, data);
     if (data.action === "update-material") return updateMaterial(env, partner, workspace, data);
     if (data.action === "set-sales-follow-up") return setSalesFollowUp(env, workspace, data);
+    if (data.action === "update-permit") return updatePermit(env, partner, workspace, data);
+    if (data.action === "request-payment") return requestPayment(env, partner, workspace, data);
     return json({ ok: false, error: "Unknown action" }, 400);
   }
 
@@ -317,8 +387,8 @@ async function getWorkflowEvidence(env, orderIds) {
   const filter = `order_id=in.(${ids})`;
   const eventTypes = WORKFLOW_EVENT_TYPES.join(",");
   const requests = [
-    ["permits", fetch(`${base}/order_permits?${filter}&select=order_id,permit_phase,approved_at,submitted_at,updated_at&order=updated_at.desc`, { headers })],
-    ["invoices", fetch(`${base}/invoices?${filter}&deleted_at=is.null&is_test=eq.false&select=order_id,status,stripe_status,paid_at,payment_date,created_at`, { headers })],
+    ["permits", fetch(`${base}/order_permits?${filter}&select=order_id,permit_phase,sent_at,returned_at,approved_at,submitted_at,updated_at&order=updated_at.desc`, { headers })],
+    ["invoices", fetch(`${base}/invoices?${filter}&deleted_at=is.null&is_test=eq.false&select=id,order_id,status,stripe_status,paid_at,payment_date,amount_paid,created_at`, { headers })],
     ["payments", fetch(`${base}/order_payments?${filter}&select=order_id,status,received_at,created_at`, { headers })],
     ["events", fetch(`${base}/order_events?${filter}&event_type=in.(${eventTypes})&select=order_id,event_type,created_at&order=created_at.desc`, { headers })],
     ["options", fetch(`${base}/order_additional_options?${filter}&select=order_id,cost`, { headers })],
@@ -331,7 +401,55 @@ async function getWorkflowEvidence(env, orderIds) {
       if (result.has(row.order_id)) result.get(row.order_id)[key].push(row);
     }
   }));
+  const invoiceIds = [];
+  const invoiceOrder = new Map();
+  for (const [orderId, evidence] of result) {
+    for (const invoice of evidence.invoices || []) {
+      if (invoice.id) {
+        invoiceIds.push(invoice.id);
+        invoiceOrder.set(invoice.id, orderId);
+      }
+    }
+  }
+  if (invoiceIds.length) {
+    const ledgerRes = await fetch(
+      `${base}/payments?invoice_id=in.(${invoiceIds.join(",")})&select=id,invoice_id,amount,date,reference,created_at`,
+      { headers },
+    );
+    if (ledgerRes.ok) {
+      for (const row of await ledgerRes.json()) {
+        const orderId = invoiceOrder.get(row.invoice_id);
+        if (orderId && result.has(orderId)) {
+          result.get(orderId).payments.push({
+            order_id: orderId,
+            status: "paid",
+            received_at: row.date || row.created_at || null,
+            source: "payments",
+          });
+        }
+      }
+    }
+  }
   return result;
+}
+
+async function fetchLedgerPaymentsForInvoices(env, invoices) {
+  const ids = (invoices || []).map((invoice) => invoice.id).filter((id) => UUID_PATTERN.test(String(id)));
+  if (!ids.length) return [];
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/payments?invoice_id=in.(${ids.join(",")})&select=id,invoice_id,amount,date,reference,created_at`,
+    { headers: sbHeaders(env) },
+  );
+  if (!res.ok) return [];
+  return (await res.json()).map((row) => ({
+    id: row.id || null,
+    status: "paid",
+    received_at: row.date || row.created_at || null,
+    source: "payments",
+    invoice_id: row.invoice_id,
+    amount: numberOrNull(row.amount),
+    reference: row.reference || null,
+  }));
 }
 
 async function getOrderDetail(env, partner, workspace, orderId) {
@@ -353,7 +471,9 @@ async function getOrderDetail(env, partner, workspace, orderId) {
     internal ? emptyRows() : fetch(`${base}/partner_comments?order_id=eq.${encodedId}&partner_id=eq.${encodeURIComponent(partner.id)}&select=id,comment,created_at&order=created_at.asc`, { headers }),
     fetch(`${base}/order_proofs?order_id=eq.${encodedId}&state=in.(sent,approved,changes_requested)&select=${proofSelect}&order=created_at.desc&limit=20`, { headers }),
     fetch(`${base}/order_permits?order_id=eq.${encodedId}&select=${permitSelect}&order=created_at.desc&limit=10`, { headers }),
-    internal ? fetch(`${base}/order_payments?order_id=eq.${encodedId}&select=id,amount,currency,payment_type,reference,status,received_at,created_at&order=received_at.desc&limit=50`, { headers }) : emptyRows(),
+    internal
+      ? fetch(`${base}/order_payments?order_id=eq.${encodedId}&select=id,amount,currency,payment_type,reference,status,received_at,created_at&order=received_at.desc&limit=50`, { headers })
+      : emptyRows(),
     internal ? fetch(`${base}/order_additional_options?order_id=eq.${encodedId}&select=id,name,description,cost&order=created_at.asc`, { headers }) : emptyRows(),
     internal
       ? fetch(`${base}/order_events?order_id=eq.${encodedId}&select=id,event_type,summary,detail,created_at&order=created_at.desc&limit=50`, { headers })
@@ -362,7 +482,7 @@ async function getOrderDetail(env, partner, workspace, orderId) {
   ];
 
   const responses = await Promise.all(requests);
-  const [comments, proofs, permits, payments, options, events, invoices] = await Promise.all(
+  const [comments, proofs, permits, orderPayments, options, events, invoices] = await Promise.all(
     responses.map(async (res) => res.ok ? res.json() : []),
   );
 
@@ -371,6 +491,8 @@ async function getOrderDetail(env, partner, workspace, orderId) {
     if (invoiceRes.ok) invoices.push(...await invoiceRes.json());
   }
 
+  const ledgerPayments = await fetchLedgerPaymentsForInvoices(env, invoices);
+  const payments = [...orderPayments, ...ledgerPayments];
   const latestProof = proofs[0] || null;
   const latestPermit = permits[0] || null;
   const evidence = { permits, invoices, payments, events, options };
@@ -382,7 +504,17 @@ async function getOrderDetail(env, partner, workspace, orderId) {
     comments,
     proofs,
     permits,
-    payments: payments.map((payment) => ({ ...payment, amount: numberOrNull(payment.amount) })),
+    payments: [
+      ...orderPayments.map((payment) => ({ ...payment, amount: numberOrNull(payment.amount) })),
+      ...ledgerPayments.map((payment) => ({
+        id: payment.id,
+        amount: payment.amount,
+        status: payment.status,
+        received_at: payment.received_at,
+        reference: payment.reference,
+        source: payment.source,
+      })),
+    ],
     options: options.map((option) => ({ ...option, cost: numberOrNull(option.cost) })),
     events,
     invoices: invoices.map(mapInvoice),
@@ -611,8 +743,15 @@ async function updateProof(env, partner, workspace, data, nextState) {
     env,
     order,
     nextState === "approved" ? "proof_approved" : "proof_changes_requested",
-    nextState === "approved" ? "Proof approved by partner" : "Partner requested proof changes",
-    { partner_id: partner.id, partner_name: partner.company || partner.name, ...(note ? { note } : {}) },
+    nextState === "approved"
+      ? (workspace.mode === "internal" ? "Proof approved from the Sears Melvin internal workspace" : "Proof approved by partner")
+      : (workspace.mode === "internal" ? "Sears Melvin requested proof changes" : "Partner requested proof changes"),
+    {
+      partner_id: partner.id,
+      partner_name: partner.company || partner.name,
+      actor_type: workspace.mode === "internal" ? "sears_melvin_internal_workspace" : "partner",
+      ...(note ? { note } : {}),
+    },
   );
 
   return json({ ok: true, proof: (await updateRes.json())[0] });
@@ -751,6 +890,146 @@ async function setSalesFollowUp(env, workspace, data) {
   return json({ ok: true, wakeAt: timestamp.toISOString() });
 }
 
+async function updatePermit(env, partner, workspace, data) {
+  if (workspace.mode !== "internal") return json({ ok: false, error: "Only Sears Melvin can record permit progress" }, 403);
+  const orderId = clean(data.orderId, 80);
+  const spineKey = clean(data.spineKey || data.phase, 40);
+  const note = clean(data.note, 2000);
+  const cemeteryRoute = clean(data.cemeteryRoute, 20);
+  const cemeteryAddress = clean(data.cemeteryAddress, 240);
+  if (!orderId || !UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Select a valid order" }, 400);
+  const step = PERMIT_SPINE_BY_KEY.get(spineKey) || PERMIT_SPINE_BY_STORED.get(spineKey);
+  if (!step) return json({ ok: false, error: "Select a valid permit step" }, 400);
+  if (step.key === "send_to_cemetery" && cemeteryRoute && !["email", "post"].includes(cemeteryRoute)) {
+    return json({ ok: false, error: "Say whether the permit went by email or by post" }, 400);
+  }
+  if (step.key === "resolve_issues" && !note) {
+    return json({ ok: false, error: "Describe the cemetery issue and how it is being resolved" }, 400);
+  }
+
+  const order = await ownedOrder(env, partner, workspace, orderId, "id,organization_id,permit_status");
+  if (!order) return json({ ok: false, error: "Order not found" }, 404);
+
+  const headers = sbHeaders(env);
+  const existingRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/order_permits?order_id=eq.${encodeURIComponent(orderId)}&select=id,permit_phase,sent_at,returned_at,submitted_at,approved_at,notes&order=created_at.desc&limit=1`,
+    { headers },
+  );
+  if (!existingRes.ok) return json({ ok: false, error: "Unable to load the permit record" }, 500);
+  const existing = (await existingRes.json())[0] || null;
+  const now = new Date().toISOString();
+  const patch = {
+    permit_phase: step.storedValue,
+    ...(step.timestampField ? { [step.timestampField]: existing?.[step.timestampField] || now } : {}),
+  };
+  if (note || cemeteryRoute || cemeteryAddress) {
+    const previousNotes = existing?.notes ? `${existing.notes}\n` : "";
+    const extras = [
+      note,
+      cemeteryRoute ? `Sent to cemetery by ${cemeteryRoute}${cemeteryAddress ? ` · ${cemeteryAddress}` : ""}` : "",
+    ].filter(Boolean).join(" · ");
+    patch.notes = `${previousNotes}${extras}`.slice(0, 4000);
+  }
+
+  let permit;
+  if (existing?.id) {
+    const updateRes = await fetch(`${env.SUPABASE_URL}/rest/v1/order_permits?id=eq.${encodeURIComponent(existing.id)}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify(patch),
+    });
+    if (!updateRes.ok) return json({ ok: false, error: "Unable to update permit progress. The permit_phase value may need the pending enum migration." }, 500);
+    permit = (await updateRes.json())[0] || null;
+  } else {
+    const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/order_permits`, {
+      method: "POST",
+      headers: { ...headers, "Prefer": "return=representation" },
+      body: JSON.stringify({ order_id: orderId, ...patch }),
+    });
+    if (!insertRes.ok) return json({ ok: false, error: "Unable to create the permit record. The permit_phase value may need the pending enum migration." }, 500);
+    permit = (await insertRes.json())[0] || null;
+  }
+  if (!permit) return json({ ok: false, error: "Unable to record permit progress" }, 500);
+
+  await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}${orderScopeQuery(workspace, partner)}`, {
+    method: "PATCH",
+    headers: { ...headers, "Prefer": "return=minimal" },
+    body: JSON.stringify({ permit_status: step.storedValue }),
+  });
+
+  const event = await insertEventStrict(
+    env,
+    order,
+    "permit_phase_updated",
+    `Permit: ${step.label}`,
+    {
+      actor_type: "sears_melvin_internal_workspace",
+      spine_key: step.key,
+      permit_phase: step.storedValue,
+      previous_phase: existing?.permit_phase || order.permit_status || null,
+      ...(note ? { note } : {}),
+      ...(cemeteryRoute ? { cemetery_route: cemeteryRoute } : {}),
+      ...(cemeteryAddress ? { cemetery_address: cemeteryAddress } : {}),
+    },
+  );
+  if (!event) return json({ ok: false, error: "Permit progress saved, but its activity entry could not be recorded. Retry to repair the history" }, 500);
+  return json({ ok: true, permit, step: { key: step.key, label: step.label, storedValue: step.storedValue } });
+}
+
+async function requestPayment(env, partner, workspace, data) {
+  const orderId = clean(data.orderId, 80);
+  if (!orderId || !UUID_PATTERN.test(orderId)) return json({ ok: false, error: "Select a valid order" }, 400);
+  const order = await ownedOrder(env, partner, workspace, orderId, "id,organization_id,job_id,status,stage,invoice_id,product_config,jobs(stage,stage_status,paid_at)");
+  if (!order) return json({ ok: false, error: "Order not found" }, 404);
+
+  const evidence = await getWorkflowEvidence(env, [orderId]);
+  const orderEvidence = evidence.get(orderId) || {};
+  const workflow = deriveWorkflow(
+    order,
+    null,
+    (orderEvidence.permits || [])[0] || null,
+    orderEvidence.invoices || [],
+    orderEvidence.payments || [],
+    workspace,
+    orderEvidence.events || [],
+  );
+  if (workflow.paymentConfirmed) {
+    return json({ ok: false, error: "Payment is already recorded for this order" }, 409);
+  }
+
+  const headers = sbHeaders(env);
+  const alreadyRequested = (orderEvidence.events || []).some((event) => event.event_type === "payment_requested");
+  if (!alreadyRequested) {
+    const event = await insertEventStrict(
+      env,
+      order,
+      "payment_requested",
+      "Payment requested — raise the invoice in the admin app / Make. This portal does not create or email invoices.",
+      {
+        actor_type: workspace.mode === "internal" ? "sears_melvin_internal_workspace" : "partner",
+        partner_id: partner.id,
+        billing_party: safeParse(order.product_config)?.billing_party || null,
+      },
+    );
+    if (!event) return json({ ok: false, error: "Unable to record the payment request" }, 500);
+  }
+
+  const jobStage = String(order.jobs?.stage || "");
+  if (order.job_id && ["enquired", "quoted"].includes(jobStage)) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/jobs?id=eq.${encodeURIComponent(order.job_id)}&organization_id=eq.${encodeURIComponent(workspace.organizationId)}`, {
+      method: "PATCH",
+      headers: { ...headers, "Prefer": "return=minimal" },
+      body: JSON.stringify({ stage: "invoiced", stage_status: "Payment requested from partner portal" }),
+    });
+  }
+
+  return json({
+    ok: true,
+    invoicing: "external",
+    message: "Payment requested. Sears Melvin raises the invoice in the admin app / Make. This website does not create, send or email invoices, and does not take the card payment from this screen.",
+  });
+}
+
 async function ownedOrder(env, partner, workspace, orderId, select) {
   const headers = sbHeaders(env);
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=${select}&limit=1${orderScopeQuery(workspace, partner)}`, { headers });
@@ -866,12 +1145,16 @@ function deriveAction(row, stage, latestProof, workspace, workflow) {
   if (stage === "complete") return { owner: "none", label: "Complete" };
   const proofState = latestProof?.state || row.inscription_status;
   if (workspace.mode === "internal") {
-    if (!workflow?.paymentConfirmed) return { owner: "external", label: "Await required payment before operational work starts" };
     if (workflow?.specification?.state === "attention") return { owner: "team", label: workflow.specification.summary };
     if (["not_started", "in_progress"].includes(workflow?.specification?.state)) return { owner: "team", label: workflow.specification.summary };
+    if (!workflow?.paymentConfirmed) return { owner: "external", label: workflow?.commercial?.summary || "Request payment to start the customer timeline" };
     if (workflow?.material?.state === "decision_required") return { owner: "team", label: "Order material against the cemetery-approved specification" };
     if (proofState === "changes_requested") return { owner: "team", label: "Revise the inscription proof" };
-    if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) return { owner: "external", label: "Inscription proof awaits the authorised approver" };
+    if ((latestProof?.render_url || row.proof_url) && !["approved", "changes_requested"].includes(proofState)) {
+      return workspace.proofDecisionEnabled
+        ? { owner: "team", label: "Review inscription proof" }
+        : { owner: "external", label: "Inscription proof awaits the authorised approver" };
+    }
     if (workflow?.permit?.state !== "complete") return { owner: "team", label: workflow?.permit?.summary || "Permit information outstanding" };
     if (stage === "in_production") return { owner: "team", label: "Monitor production progress" };
     if (stage === "installation") return { owner: "team", label: "Confirm installation arrangements" };
@@ -890,32 +1173,77 @@ function deriveAction(row, stage, latestProof, workspace, workflow) {
 }
 
 /**
- * Derive a portal-only workflow view from current live fields. This is
- * The portal records controlled specification and material actions, while this
- * function remains a pure evidence-to-view projection.
+ * Map live order_permits.permit_phase / orders.permit_status values onto the
+ * 7-step spine. Old stored values still display; new writes use storedValue.
  */
+export function mapPermitPhase(rawPhase, latestPermit = null) {
+  const stored = String(rawPhase || latestPermit?.permit_phase || "pending").toLowerCase();
+  const step = PERMIT_SPINE_BY_STORED.get(stored) || PERMIT_SPINE[0];
+  const currentIndex = PERMIT_SPINE.findIndex((item) => item.key === step.key);
+  const approved = stored === "approved"
+    || stored === "not_required"
+    || (Boolean(latestPermit?.approved_at) && stored !== "resolve_issues" && stored !== "rejected");
+  const steps = PERMIT_SPINE.map((item, index) => {
+    const timestamp = item.timestampField ? latestPermit?.[item.timestampField] || null : null;
+    let state = "upcoming";
+    if (approved || index < currentIndex) state = "complete";
+    else if (index === currentIndex) state = "current";
+    return {
+      key: item.key,
+      label: item.label,
+      storedValue: item.storedValue,
+      state,
+      timestamp,
+    };
+  });
+  return {
+    stored,
+    step,
+    currentIndex,
+    approved,
+    steps,
+  };
+}
+
+function invoiceLooksPaid(invoice) {
+  const status = String(invoice?.status || "").toLowerCase();
+  const stripe = String(invoice?.stripe_status || "").toLowerCase();
+  if (PAID_INVOICE_STATUSES.has(status) || PAID_STRIPE_STATUSES.has(stripe)) return true;
+  if (invoice?.paid_at || invoice?.payment_date) return true;
+  if (Number(invoice?.amount_paid) > 0) return true;
+  return false;
+}
+
 export function deriveWorkflow(row, latestProof = null, latestPermit = null, invoices = [], payments = [], workspace = { mode: "partner", proofDecisionEnabled: false }, events = []) {
   const config = row.product_config ? safeParse(row.product_config) : null;
   const proofState = String(latestProof?.state || row.inscription_status || row.proof_status || "not_started").toLowerCase();
   const proofApproved = proofState === "approved" || Boolean(latestProof?.approved_at);
   const permitPhase = String(latestPermit?.permit_phase || row.permit_status || "pending").toLowerCase();
-  const permitApproved = permitPhase === "approved" || Boolean(latestPermit?.approved_at);
+  const permitView = mapPermitPhase(permitPhase, latestPermit);
+  const permitApproved = permitView.approved;
   const stoneState = String(row.stone_status || "NA");
   const jobStage = String(row.jobs?.stage || row.stage || "").toLowerCase();
   const complete = row.status === "completed" || ["complete", "completed"].includes(jobStage);
   const installed = complete || jobStage === "fixed";
   const specificationReady = Boolean(row.person_name && (row.product_id || row.custom_product_name || config?.name) && (row.cemetery_id || row.location));
   const liveInvoices = (invoices || []).filter((invoice) => !invoice.deleted_at);
-  const invoicePaid = liveInvoices.some((invoice) => [invoice.status, invoice.stripe_status].some((value) => String(value || "").toLowerCase() === "paid"));
-  const recordedPayment = (payments || []).some((payment) => ["matched", "confirmed", "paid"].includes(String(payment.status || "").toLowerCase()));
-  const paymentConfirmed = invoicePaid || recordedPayment || Boolean(row.jobs?.paid_at || row.deposit_date) || ["confirmed", "in_production", "fixed", "complete"].includes(jobStage);
+  const invoicePaid = liveInvoices.some(invoiceLooksPaid);
+  const recordedPayment = (payments || []).some((payment) => PAID_PAYMENT_STATUSES.has(String(payment.status || "").toLowerCase()));
+  const paymentConfirmed = invoicePaid
+    || recordedPayment
+    || Boolean(row.jobs?.paid_at || row.deposit_date || row.second_payment_date)
+    || PAID_ORDER_STAGES.has(String(row.stage || "").toLowerCase())
+    || PAID_ORDER_STATUSES.has(String(row.status || "").toLowerCase())
+    || ["confirmed", "in_production", "fixed", "complete"].includes(jobStage);
+  const paymentRequested = (events || []).some((event) => event.event_type === "payment_requested");
   const paymentDates = [
     row.jobs?.paid_at,
     row.deposit_date,
+    row.second_payment_date,
     ...liveInvoices.map((invoice) => invoice.paid_at || invoice.payment_date),
     ...(payments || [])
-      .filter((payment) => ["matched", "confirmed", "paid"].includes(String(payment.status || "").toLowerCase()))
-      .map((payment) => payment.received_at),
+      .filter((payment) => PAID_PAYMENT_STATUSES.has(String(payment.status || "").toLowerCase()))
+      .map((payment) => payment.received_at || payment.date),
   ].filter(Boolean).sort();
   const confirmedAt = paymentDates[0] || null;
   const latestSpecEvent = (events || [])
@@ -927,42 +1255,52 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
   const materialDecisionReady = paymentConfirmed && specificationReady && specPreapprovalApproved;
   const materialException = specPreapprovalState === "changes_required" && ["Ordered", "In Stock"].includes(stoneState);
   const permitOwner = workspace.mode === "partner" ? "partner" : "team";
+  const specSummary = !specificationReady
+    ? "Complete the physical memorial and cemetery details before requesting pre-approval."
+    : (specPreapprovalApproved
+      ? "The cemetery has approved the physical memorial specification for material ordering."
+      : (specPreapprovalState === "requested"
+        ? "Cemetery physical-specification pre-approval is awaiting a response."
+        : (specPreapprovalState === "changes_required"
+          ? "The cemetery requires a physical-specification change and resubmission."
+          : "Contact the cemetery for physical-specification pre-approval. This can start before payment.")));
+  const specState = !specificationReady
+    ? "attention"
+    : (specPreapprovalApproved ? "complete" : (specPreapprovalState === "requested" ? "in_progress" : (specPreapprovalState === "changes_required" ? "attention" : "not_started")));
 
   const specification = {
     key: "specification",
     label: "Cemetery specification",
-    state: !specificationReady ? "attention" : (!paymentConfirmed ? "blocked" : (specPreapprovalApproved ? "complete" : (specPreapprovalState === "requested" ? "in_progress" : (specPreapprovalState === "changes_required" ? "attention" : "not_started")))),
+    state: specState,
     owner: "team",
-    summary: !specificationReady
-      ? "Complete the physical memorial and cemetery details before requesting pre-approval."
-      : (!paymentConfirmed
-        ? "Physical-specification pre-approval begins after the required payment is recorded."
-        : (specPreapprovalApproved
-          ? "The cemetery has approved the physical memorial specification for material ordering."
-          : (specPreapprovalState === "requested"
-            ? "Cemetery physical-specification pre-approval is awaiting a response."
-            : (specPreapprovalState === "changes_required"
-              ? "The cemetery requires a physical-specification change and resubmission."
-              : "Contact the cemetery for physical-specification pre-approval.")))),
+    summary: specSummary,
     outcome: specPreapprovalState,
     decidedAt: latestSpecEvent?.created_at || null,
-    actionAvailable: workspace.mode === "internal" && paymentConfirmed,
+    actionAvailable: workspace.mode === "internal" && specificationReady,
   };
+  const permitInProgress = !permitApproved && PERMIT_SPINE.some((item) => item.storedValue === permitView.stored || item.aliases.includes(permitView.stored)) && permitView.stored !== "pending";
   const permit = {
     key: "permit",
     label: "Cemetery permit",
-    state: permitApproved ? "complete" : (["submitted", "completing", "customer_completed", "with_customer", "form_sent"].includes(permitPhase) ? "in_progress" : "attention"),
+    state: permitApproved ? "complete" : (permitInProgress ? "in_progress" : "attention"),
     owner: permitOwner,
-    summary: permitApproved ? "Permit approval is recorded." : (workspace.mode === "partner" ? "Confirm whether the funeral director or Sears Melvin owns the permit step." : "Confirm permit owner and record progress in the current operational process."),
+    summary: permitApproved
+      ? "Permit approval is recorded."
+      : `${permitView.step.label}. ${workspace.mode === "partner" ? "Sears Melvin records progress; funeral directors can see the current step." : "Record the next permit step. Tracking is status and email, not file upload."}`,
     uploadAvailable: false,
+    actionAvailable: workspace.mode === "internal" && !permitApproved,
+    phase: permitView.stored,
+    spineKey: permitView.step.key,
+    spineLabel: permitView.step.label,
+    steps: permitView.steps,
   };
   const proof = {
     key: "proof",
     label: "Design proof",
     state: proofApproved ? "complete" : (proofState === "changes_requested" ? "attention" : (["sent", "draft", "generating", "proof_ready", "awaiting_approval"].includes(proofState) ? "in_progress" : "not_started")),
-    owner: proofApproved ? "none" : (proofState === "changes_requested" ? "team" : "authorised_approver"),
+    owner: proofApproved ? "none" : (proofState === "changes_requested" ? "team" : (workspace.mode === "internal" ? "team" : "authorised_approver")),
     summary: proofApproved ? "The current proof is approved." : (proofState === "changes_requested" ? "Proof changes have been requested." : (proofState === "sent" ? "The proof is awaiting an authorised decision." : "A final proof decision has not been recorded.")),
-    decisionAvailable: Boolean(workspace.proofDecisionEnabled && latestProof?.state === "sent" && latestProof?.render_url),
+    decisionAvailable: Boolean(workspace.proofDecisionEnabled && latestProof?.state === "sent" && (latestProof?.render_url || workspace.mode === "internal")),
   };
   const material = {
     key: "material",
@@ -995,9 +1333,17 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
     label: "Payment & confirmation",
     state: paymentConfirmed ? "complete" : (liveInvoices.length ? "in_progress" : "not_started"),
     owner: "commercial",
-    summary: paymentConfirmed ? "The required payment is recorded and the live order workflow has started." : (liveInvoices.length ? "An invoice is issued; payment will confirm the live order." : "No invoice is linked yet. The record remains in the sales workflow."),
+    summary: paymentConfirmed
+      ? "The required payment is recorded and the live order workflow has started."
+      : (liveInvoices.length
+        ? "An invoice is issued; payment will confirm the live order."
+        : (paymentRequested
+          ? "Payment has been requested. Sears Melvin raises the invoice in the admin app / Make; this portal does not email the family."
+          : "No invoice is linked yet. Create the order first, then request payment as a separate action.")),
     invoiceCount: liveInvoices.length,
     confirmedAt,
+    paymentRequested,
+    requestAvailable: !paymentConfirmed,
   };
 
   return {
@@ -1059,7 +1405,7 @@ function getWorkspace(env, partner) {
   // should silently gain the broader internal order scope.
   const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "").trim();
   const internal = String(partner.id) === internalPartnerId;
-  const proofDecisionEnabled = !internal && String(env.PARTNER_PROOF_DECISIONS_ENABLED || "").toLowerCase() === "true";
+  const proofDecisionEnabled = internal || String(env.PARTNER_PROOF_DECISIONS_ENABLED || "").toLowerCase() === "true";
   return {
     mode: internal ? "internal" : "partner",
     organizationId: env.SM_ORG_ID,
@@ -1087,6 +1433,8 @@ function publicWorkspace(workspace) {
       sendPartnerMessage: workspace.mode !== "internal",
       uploadPermit: false,
       recordSpecPreapproval: workspace.mode === "internal",
+      recordPermitProgress: workspace.mode === "internal",
+      requestPayment: true,
       updateMaterial: workspace.mode === "internal",
       scheduleSalesFollowUp: workspace.mode === "internal",
       lockMaterial: workspace.mode === "internal",

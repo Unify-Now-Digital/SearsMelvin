@@ -72,6 +72,9 @@ try {
   assert.equal(partnerHtml.includes("consume-magic-link"), true);
   assert.equal(partnerHtml.includes("google-login"), true);
   assert.equal(partnerHtml.includes("accounts.google.com/gsi/client"), true);
+  assert.equal(partnerHtml.includes('id="wizardRequestPayment"'), true);
+  assert.equal(partnerHtml.includes('state.wizardStep===5?"Create order"'), true);
+  assert.equal(partnerHtml.includes("action:\"update-permit\""), true);
   assert.equal(partnerHtml.includes("#reset="), false);
   assert.equal(partnerAuthApi.includes("password_hash"), false);
   assert.equal(partnerAuthApi.includes("forgot-password"), false);

@@ -13,5 +13,10 @@ assert.match(api, /cemeteries\?is_active=eq\.true&is_test=eq\.false/);
 assert.match(api, /ordersResponse.*select=id,partner_id/);
 assert.match(api, /order\.partner_id == null \|\| String\(order\.partner_id\) === String\(partner\.id\)/);
 assert.match(api, /Sales workspace is restricted to Sears Melvin staff/);
+assert.match(api, /uploadPermit: false/);
+assert.match(api, /recordPermitProgress: workspace\.mode === "internal"/);
+assert.match(api, /const proofDecisionEnabled = internal \|\| /);
+assert.match(api, /data\.action === "update-permit"/);
+assert.match(api, /data\.action === "request-payment"/);
 
 console.log("partner scope tests passed");

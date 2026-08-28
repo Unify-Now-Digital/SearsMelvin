@@ -1,6 +1,6 @@
 # Partner portal V2 workflow model
 
-V2 is a read-and-create interface over the existing Sears Melvin data model. It adds no tables, columns, triggers or production-data migrations.
+V2 is a read-and-create interface over the existing Sears Melvin data model. It adds no tables, columns, triggers or production-data migrations in the original MVP. The 28 Aug 2026 permit spine adds **enum values only** (see `migrations/2026-08-28-partner-permit-spine.sql`, **not applied**). Existing `permit_phase` rows are mapped in code, not rewritten.
 
 ## Existing records used
 
@@ -8,17 +8,56 @@ V2 is a read-and-create interface over the existing Sears Melvin data model. It 
 - `people` remains the canonical person/contact record.
 - `jobs.stage` supplies the broad production position when a job record exists.
 - `order_permits` and `order_proofs` supply independent approval evidence.
-- `invoices` and `order_payments` supply the commercial evidence.
+- `invoices` and the website `payments` ledger (plus `order_payments` when present) supply the commercial evidence.
 - catalogue products and cemeteries populate the order wizard.
 
 The portal derives seven independent lanes: payment/confirmation, physical-specification pre-approval, formal permit, inscription proof, material, production, and installation. Missing historical records are shown as missing evidence; they are not treated as completed work.
 
+## Locked operating rules (2026-08-28)
+
+Arin Melvin locked this process on 28 Aug 2026. Where it conflicts with the 10 Aug MVP notes below, **this section wins**.
+
+1. **Stripe payment starts the live clock.** As soon as Stripe records payment, the partner UI must treat the order as paid/confirmed. There is no second manual Mason tick.
+   - Website webhook writes `invoices.status` `partial` (deposit) or `completed` (full), a `payments` row, `orders.status` / `orders.stage=deposit_paid`. It does **not** write `order_payments`.
+   - `deriveWorkflow` therefore treats invoice `partial` / `completed` / `paid`, `payments` ledger rows, `orders.stage=deposit_paid`, `orders.status` partial/completed, and `jobs.paid_at` as `paymentConfirmed`.
+   - The webhook now also sets `invoices.paid_at` / `payment_date` and `jobs.paid_at` when the job is known, so both writers agree.
+
+2. **Spec check with the cemetery can and usually should start before payment.** Recording `spec_preapproval_*` is not blocked on `paymentConfirmed`. The spec lane is not `blocked` solely because the order is unpaid.
+
+3. **Material can still be ordered before inscription wording is signed.** Proof does not block material. Wording may change after stone is ordered. Proof is still required before install, together with permit approval.
+
+4. **Permit is a seven-step operational spine** (human labels, not jargon). Staff record progress in the dashboard; funeral directors can see status. There is **no permit file upload** (`uploadPermit` stays false). Tracking is email + dashboard status.
+
+5. **Staff on the shared `@searsmelvin.co.uk` Google login can Approve proof / Request changes.** Events still attribute to the internal workspace until named users exist. Funeral-director proof decisions stay behind `PARTNER_PROOF_DECISIONS_ENABLED`.
+
+6. **Create order and Request payment are two controls.** Creating an order must not send or raise an invoice. Request payment is a separate action. This website still does not create or email invoices (removed May 2026, #122 / #125). Request payment records `order_events.payment_requested` and may move `jobs.stage` from `enquired`/`quoted` to `invoiced`. Accounts still raise the invoice in the admin app / Make. The portal does not silently email the family.
+
+7. **Funeral directors must not see other customers' orders.** Internal staff use the shared Google login mapped to the Sears Melvin partner record.
+
+### Permit spine — stored values and old → new display map
+
+Canonical write target: `order_permits.permit_phase` (legacy display: `orders.permit_status`).
+
+| Step | Human label | Written `permit_phase` | Old values that display here |
+|------|-------------|------------------------|------------------------------|
+| 1 | Match form | `match_form` | `form_needed`, `pending` |
+| 2 | Send to customer | `form_sent` | `with_customer` |
+| 3 | Receive back signed from the correct person | `customer_completed` | — |
+| 4 | Complete memorial and our details | `completing` | — |
+| 5 | Send to cemetery | `submitted` | — |
+| 6 | Resolve any issues | `resolve_issues` | `rejected` |
+| 7 | Confirm approval | `approved` | `not_required` |
+
+Timestamps already on `order_permits`: `sent_at` (step 2), `returned_at` (step 3), `submitted_at` (step 5), `approved_at` (step 7).
+
+June 2026 live enum (public schema read): `form_needed · with_customer · completing · submitted · approved`. Partner code already also treated `form_sent`, `customer_completed`, `pending`. New writes of `match_form` and `resolve_issues` need `migrations/2026-08-28-partner-permit-spine.sql` applied; until then the dashboard still **displays** old rows via the alias map.
+
 ## Confirmed MVP decisions (2026-08-10)
 
-These are operating rules, not assumptions:
+These remain operating rules except where the 28 Aug section above overrides them (spec-before-payment, staff proof decisions, split create vs request-payment, Stripe `partial`/`completed` as paid).
 
 1. A quote or enquiry becomes a live order when the required payment is recorded. The payment date starts the timeline communicated to the customer.
-2. Payment starts three workstreams in parallel: cemetery physical-specification pre-approval, the formal permit, and inscription proofing.
+2. After payment, permit and inscription proofing continue in parallel with spec work (spec may already have started).
 3. Cemetery pre-approval of the physical memorial specification is the gate for ordering material and starting the internal production timeline. Pre-approval may be obtained by phone or email; the portal must record the outcome, contact/method, timestamp and notes.
 4. If the cemetery rejects or requires a change to the physical specification, the order returns to an editable specification state. Every submitted version, decision and resulting change must remain visible in the order activity history.
 5. Inscription wording is deliberately excluded from the material-release lock. Proofs can be revised and approved independently until the operational cut-off before lettering/installation.
@@ -29,33 +68,36 @@ These are operating rules, not assumptions:
 ## MVP state flow
 
 ```text
-Enquiry / quote
+Enquiry / quote / created order (no invoice yet)
       |
-      | required payment recorded (customer timeline starts)
-      v
-Confirmed live order
-      |
-      +--> Physical-spec pre-approval --> changes required --> revise and resubmit
+      +--> Physical-spec pre-approval (may start unpaid) --> changes required --> revise
       |                 |
-      |                 +--> approved --> material ready to order --> ordered --> received
+      |                 +--> approved + payment recorded --> material ready to order
       |
-      +--> Formal permit --> with family/FD --> submitted --> approved
+      +--> Request payment (separate action) --> invoice in admin/Make --> Stripe
+      |                 |
+      |                 +--> payment recorded (customer timeline starts)
+      |
+      +--> Formal permit spine:
+      |      Match form --> Send to customer --> Receive back signed
+      |      --> Complete our details --> Send to cemetery
+      |      --> Resolve any issues --> Confirm approval
       |
       +--> Inscription proof v1..n --> sent --> changes requested / approved
                                       (does not block material release)
 
-Material received + production complete + formal installation conditions satisfied
+Material received + production complete + permit approved + proof approved
       --> installation scheduled --> installed / completed
 ```
 
-Every arrow that changes business state should create an activity entry. The current Google sign-in session is mapped to the shared internal partner and does not persist the employee email, so MVP events are attributed only to the **Sears Melvin internal workspace**. Individual attribution must wait for named staff identities.
+Every arrow that changes business state should create an activity entry. The current Google sign-in session is mapped to the shared internal partner and does not persist the employee email, so events are attributed only to the **Sears Melvin internal workspace**. Individual attribution must wait for named staff identities.
 
 ## Confirmed no-schema MVP implementation
 
 ### Operational tracking
 
-- Derive payment confirmation from the existing paid invoice/payment evidence and `jobs.paid_at`; do not create a second order concept.
-- Keep formal permit progress in `order_permits`.
+- Derive payment confirmation from paid invoice evidence (`paid`, `partial`, `completed`), website `payments` rows, `jobs.paid_at`, and `orders.stage=deposit_paid`. Do not require `order_payments`.
+- Keep formal permit progress in `order_permits`. Staff `update-permit` writes `permit_phase` plus the matching timestamp and mirrors `orders.permit_status`.
 - Keep every inscription iteration in `order_proofs`; proof state is not a prerequisite for ordering material.
 - Record physical-specification pre-approval and revisions as controlled `order_events` types. Each event detail should contain the specification snapshot, outcome, contact/method, notes and signed-in email.
 - Continue to use `orders.stone_status` for `Ordered` and `In Stock`, paired with an `order_events` entry so the change has history.
@@ -82,10 +124,12 @@ Current-data caveat: the inbox cannot yet be treated as a complete contact ledge
 - External partner workspaces remain restricted to their own partner ID.
 - Sears Melvin staff authenticate with a verified `searsmelvin.co.uk` Google Workspace identity and are mapped to the existing internal partner record; funeral-director partners retain one-time email links.
 - Google establishes an individual identity at sign-in, but V2 deliberately does not claim per-user permissions or audit attribution until named staff records exist.
-- Sears Melvin can record cemetery physical-specification pre-approval and material ordered/received. Material ordering is blocked unless payment and the latest pre-approval outcome are both recorded.
+- Sears Melvin can record cemetery physical-specification pre-approval **while unpaid**, and material ordered/received after payment **and** the latest pre-approval outcome are both recorded.
 - Material ordering starts the internal production timeline and acts as the normal physical-specification lock. A later changes-required decision is retained as a visible exception rather than silently rewriting history.
-- Proof decisions are disabled by default and remain unavailable to the shared Sears Melvin login.
-- Permit upload, named-user permissions and commission settlement are visibly marked as not connected.
+- Proof decisions are **enabled for the shared Sears Melvin login**. Funeral-director proof decisions remain disabled by default (`PARTNER_PROOF_DECISIONS_ENABLED`).
+- Permit **upload** is not connected and must stay false. Permit **progress** is writable for staff.
+- Named-user permissions and commission settlement remain visibly marked as not connected.
+- Create order does not POST invoices, call Stripe, send Resend, or touch GoHighLevel.
 
 ## Later architecture changes worth making
 
@@ -94,9 +138,10 @@ Only introduce these once the operational rules are agreed:
 1. Named staff identities, branches and scoped roles.
 2. Per-order authority for family communication and proof approval.
 3. A versioned physical-specification approval record and an auditable material-release event. This must remain independent from versioned inscription proofs.
-4. Secure permit-document upload and review states.
+4. Secure permit-document upload and review states — **not** in this change; tracking stays email + status.
 5. Named actor attribution on the append-only activity/audit trail for irreversible actions.
 6. Explicit commission, VAT, deposit and balance rules.
 7. A general invoice-line classification only if the dedicated permit/cemetery fee fields stop covering all pass-through charges.
+8. Raising invoices from this website, if accounts ever want Request payment to do more than the admin app / Make.
 
 Until then, the existing schema is sufficient for the V2 internal pilot because the new state transitions use controlled existing fields and append-only order events. Manual phone/off-platform sales-contact history remains explicitly incomplete.

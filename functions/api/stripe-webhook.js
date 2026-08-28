@@ -119,6 +119,19 @@ export async function onRequestPost({ request, env }) {
   });
 }
 
+async function fetchOrderJobId(env, sbHeaders, orderId) {
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=job_id&limit=1`,
+      { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
+    );
+    if (!res.ok) return null;
+    return (await res.json())[0]?.job_id || null;
+  } catch {
+    return null;
+  }
+}
+
 // Resolve the order's person_id and flip people.is_customer = TRUE. This is the
 // only code path allowed to set is_customer (the flag means "has paid at least
 // once"). Idempotent and isolated so a flip failure can't block invoice/payment
@@ -199,7 +212,7 @@ async function validatePaymentTarget(env, pi, invoiceId) {
   const orderRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(invoice.order_id)}` +
       `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
-      `&select=id,value,permit_fee,status,sku,location,product_config,people(first_name,last_name,email)&limit=1`,
+      `&select=id,value,permit_fee,status,sku,location,product_config,job_id,deposit_date,people(first_name,last_name,email)&limit=1`,
     { headers },
   );
   if (!orderRes.ok) return null;
@@ -223,6 +236,9 @@ async function validatePaymentTarget(env, pi, invoiceId) {
   const person = order.people || {};
   return {
     paymentType,
+    orderId: order.id,
+    jobId: order.job_id || null,
+    depositDate: order.deposit_date || null,
     name: [person.first_name, person.last_name].filter(Boolean).join(" "),
     email: person.email || "",
     cemetery: order.location || "",
@@ -273,7 +289,7 @@ async function handlePaymentSucceeded(env, pi) {
     }));
     return;
   }
-  const { name, email, cemetery, product, productUrl } = verifiedTarget;
+  const { name, email, cemetery, product, productUrl, orderId: verifiedOrderId, jobId, depositDate, paymentType: verifiedPaymentType } = verifiedTarget;
   const amountPaid = (pi.amount_received / 100).toFixed(2);
   const today      = new Date().toISOString().split("T")[0];
   let paymentRecordedNow = false;
@@ -304,7 +320,7 @@ async function handlePaymentSucceeded(env, pi) {
       "Content-Type":  "application/json",
     };
 
-    const invoiceType = verifiedTarget.paymentType || await fetchInvoiceType(env, pi);
+    const invoiceType = verifiedPaymentType || verifiedTarget.paymentType || await fetchInvoiceType(env, pi);
     const isFull = invoiceType === "full";
     const orderStatus = isFull ? "completed" : "partial";
     const orderStage = "deposit_paid"; // either payment level unblocks production
@@ -322,21 +338,36 @@ async function handlePaymentSucceeded(env, pi) {
           {
             method:  "PATCH",
             headers: { ...sbHeaders, "Prefer": "return=representation" },
-            body: JSON.stringify({ status: orderStatus, payment_method: "Stripe" }),
+            body: JSON.stringify({
+              status: orderStatus,
+              payment_method: "Stripe",
+              paid_at: new Date().toISOString(),
+              payment_date: today,
+            }),
           },
         );
         if (!patchRes.ok) {
           console.error(JSON.stringify({ message: "invoice_update_failed", status: patchRes.status }));
         } else {
           const invRows = await patchRes.json();
-          const ordId = invRows[0]?.order_id;
+          const ordId = invRows[0]?.order_id || verifiedOrderId;
           if (ordId) {
+            const orderPatch = { status: orderStatus, stage: orderStage };
+            if (!isFull && !depositDate) orderPatch.deposit_date = today;
             await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(ordId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
-              body: JSON.stringify({ status: orderStatus, stage: orderStage }),
+              body: JSON.stringify(orderPatch),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, ordId);
+            const paidJobId = jobId || await fetchOrderJobId(env, sbHeaders, ordId);
+            if (paidJobId) {
+              await fetch(`${env.SUPABASE_URL}/rest/v1/jobs?id=eq.${encodeURIComponent(paidJobId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
+                method: "PATCH",
+                headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                body: JSON.stringify({ paid_at: new Date().toISOString() }),
+              });
+            }
           }
         }
 
@@ -386,6 +417,8 @@ async function handlePaymentSucceeded(env, pi) {
             status:         orderStatus,
             issue_date:     today,
             due_date:       today,
+            payment_date:   today,
+            paid_at:        new Date().toISOString(),
             payment_method: "Stripe",
           }),
         });
@@ -417,12 +450,22 @@ async function handlePaymentSucceeded(env, pi) {
 
           // Update orders.status to reflect payment
           if (orderId) {
+            const orderPatch = { status: orderStatus, stage: orderStage };
+            if (!isFull && !depositDate) orderPatch.deposit_date = today;
             await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
               method: "PATCH",
               headers: { ...sbHeaders, "Prefer": "return=minimal" },
-              body: JSON.stringify({ status: orderStatus, stage: orderStage }),
+              body: JSON.stringify(orderPatch),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, orderId);
+            const paidJobId = jobId || await fetchOrderJobId(env, sbHeaders, orderId);
+            if (paidJobId) {
+              await fetch(`${env.SUPABASE_URL}/rest/v1/jobs?id=eq.${encodeURIComponent(paidJobId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}`, {
+                method: "PATCH",
+                headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                body: JSON.stringify({ paid_at: new Date().toISOString() }),
+              });
+            }
           }
         }
       }

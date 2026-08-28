@@ -90,6 +90,12 @@ context only, over the 120 days to 2026-08-26:
 - **2026-08-26 — `_headers` and `robots.txt` are otherwise sound.** HSTS with
   preload, nosniff, frame-ancestors, tightened enforced CSP on `/admin*` and
   `/partner*`, sensible cache tiers.
+- **2026-08-28 — website Stripe success was invisible to the partner dashboard.**
+  `/api/stripe-webhook` writes `invoices.status` `partial`/`completed` and the
+  `payments` ledger; it does not write `order_payments`. Partner
+  `deriveWorkflow` now treats those invoice statuses (and `payments` rows /
+  `jobs.paid_at`) as `paymentConfirmed`. The webhook also stamps
+  `invoices.paid_at` and `jobs.paid_at` when the job is known.
 
 ---
 
