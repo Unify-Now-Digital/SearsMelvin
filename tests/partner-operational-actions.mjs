@@ -149,6 +149,16 @@ try {
   assert.equal(writtenEvents.at(-1).event_type, "spec_preapproval_requested");
   assert.equal(writtenEvents.at(-1).order_id, unpaidOrderId);
 
+  const unpaidMaterial = await post({ action: "update-material", orderId: unpaidOrderId, status: "Ordered" });
+  assert.equal(unpaidMaterial.status, 409);
+
+  const materialWithoutSpec = await post({ action: "update-material", orderId, status: "Ordered" });
+  assert.equal(materialWithoutSpec.status, 409);
+
+  const materialWarned = await post({ action: "update-material", orderId, status: "Ordered", confirmedException: true });
+  assert.equal(materialWarned.status, 200, await materialWarned.clone().text());
+  assert.equal(writtenEvents.at(-1).detail.missing_spec_preapproval, true);
+
   const preapproval = await post({
     action: "record-spec-preapproval",
     orderId,
@@ -165,7 +175,15 @@ try {
   const material = await post({ action: "update-material", orderId, status: "Ordered" });
   assert.equal(material.status, 200);
   assert.equal(orderPatches.at(-1).stone_status, "Ordered");
-  assert.equal(writtenEvents.at(-1).event_type, "material_ordered");
+  assert.ok(writtenEvents.some((event) => event.order_id === orderId && event.event_type === "material_ordered"));
+
+  const matchForm = await post({
+    action: "update-permit",
+    orderId,
+    spineKey: "match_form",
+  });
+  assert.equal(matchForm.status, 200, await matchForm.clone().text());
+  assert.equal(permitWrites.at(-1).permit_phase, "match_form");
 
   const permit = await post({
     action: "update-permit",

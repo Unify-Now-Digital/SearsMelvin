@@ -834,8 +834,11 @@ async function updateMaterial(env, partner, workspace, data) {
     workspace,
     orderEvidence.events || [],
   );
-  if (nextStatus === "Ordered" && !workflow.materialDecisionReady) {
-    return json({ ok: false, error: "Record payment and cemetery physical-specification approval before ordering material" }, 409);
+  if (nextStatus === "Ordered" && !workflow.paymentConfirmed) {
+    return json({ ok: false, error: "Record payment before ordering material" }, 409);
+  }
+  if (nextStatus === "Ordered" && !workflow.materialDecisionReady && data.confirmedException !== true) {
+    return json({ ok: false, error: "Cemetery pre-approval is not recorded. Confirm the warning to order material anyway" }, 409);
   }
   if (nextStatus === "In Stock" && !["Ordered", "In Stock"].includes(String(order.stone_status || ""))) {
     return json({ ok: false, error: "Record the material as ordered before marking it received" }, 409);
@@ -860,7 +863,14 @@ async function updateMaterial(env, partner, workspace, data) {
       order,
       eventType,
       nextStatus === "Ordered" ? "Material ordered; internal production timeline started" : "Material received into stock",
-      { actor_type: "sears_melvin_internal_workspace", previous_status: order.stone_status || "NA", new_status: nextStatus, ...actorFromStaff(workspace.staff) },
+      {
+        actor_type: "sears_melvin_internal_workspace",
+        previous_status: order.stone_status || "NA",
+        new_status: nextStatus,
+        missing_spec_preapproval: nextStatus === "Ordered" && !workflow.materialDecisionReady,
+        confirmed_without_preapproval: nextStatus === "Ordered" && data.confirmedException === true,
+        ...actorFromStaff(workspace.staff),
+      },
     );
     if (!event) return json({ ok: false, error: "Material status changed, but its activity entry could not be recorded. Retry to repair the history" }, 500);
   }
@@ -1234,7 +1244,12 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
   const specificationReady = Boolean(row.person_name && (row.product_id || row.custom_product_name || config?.name) && (row.cemetery_id || row.location));
   const liveInvoices = (invoices || []).filter((invoice) => !invoice.deleted_at);
   const invoicePaid = liveInvoices.some(invoiceLooksPaid);
-  const recordedPayment = (payments || []).some((payment) => PAID_PAYMENT_STATUSES.has(String(payment.status || "").toLowerCase()));
+  const recordedPayment = (payments || []).some((payment) => {
+    const status = String(payment.status || "").toLowerCase();
+    if (PAID_PAYMENT_STATUSES.has(status)) return true;
+    if (payment.source === "payments" && (payment.received_at || payment.date || Number(payment.amount) > 0)) return true;
+    return false;
+  });
   const paymentConfirmed = invoicePaid
     || recordedPayment
     || Boolean(row.jobs?.paid_at || row.deposit_date || row.second_payment_date)
@@ -1259,8 +1274,11 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
   const specPreapprovalState = latestSpecEvent?.event_type?.replace("spec_preapproval_", "") || "not_started";
   const specPreapprovalApproved = specPreapprovalState === "approved";
   const materialDecisionReady = paymentConfirmed && specificationReady && specPreapprovalApproved;
+  const materialOrderable = paymentConfirmed && specificationReady && !["Ordered", "In Stock"].includes(stoneState);
+  const materialWarning = materialOrderable && !specPreapprovalApproved;
   const materialException = specPreapprovalState === "changes_required" && ["Ordered", "In Stock"].includes(stoneState);
   const permitOwner = workspace.mode === "partner" ? "partner" : "team";
+  const specGateOpen = specPreapprovalApproved;
   const specSummary = !specificationReady
     ? "Complete the physical memorial and cemetery details before requesting pre-approval."
     : (specPreapprovalApproved
@@ -1285,40 +1303,62 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
     actionAvailable: workspace.mode === "internal" && specificationReady,
   };
   const permitInProgress = !permitApproved && PERMIT_SPINE.some((item) => item.storedValue === permitView.stored || item.aliases.includes(permitView.stored)) && permitView.stored !== "pending";
+  const permitBlocked = !permitApproved && !specGateOpen;
   const permit = {
     key: "permit",
     label: "Cemetery permit",
-    state: permitApproved ? "complete" : (permitInProgress ? "in_progress" : "attention"),
+    state: permitApproved ? "complete" : (permitBlocked ? "blocked" : (permitInProgress ? "in_progress" : "attention")),
     owner: permitOwner,
     summary: permitApproved
       ? "Permit approval is recorded."
-      : `${permitView.step.label}. ${workspace.mode === "partner" ? "Sears Melvin records progress; funeral directors can see the current step." : "Record the next permit step. Tracking is status and email, not file upload."}`,
+      : (permitBlocked
+        ? `Blocked until cemetery physical-specification pre-approval. Current step: ${permitView.step.label}. Record progress on the Permits desk — no file upload.`
+        : `${permitView.step.label}. ${workspace.mode === "partner" ? "Sears Melvin records progress; funeral directors can see the current step." : "Record the next permit step on the Permits desk. Tracking is status and email, not file upload."}`),
     uploadAvailable: false,
     actionAvailable: workspace.mode === "internal" && !permitApproved,
+    gatedBySpec: permitBlocked,
     phase: permitView.stored,
     spineKey: permitView.step.key,
     spineLabel: permitView.step.label,
     steps: permitView.steps,
   };
+  const proofBlocked = !proofApproved && !specGateOpen;
   const proof = {
     key: "proof",
     label: "Design proof",
-    state: proofApproved ? "complete" : (proofState === "changes_requested" ? "attention" : (["sent", "draft", "generating", "proof_ready", "awaiting_approval"].includes(proofState) ? "in_progress" : "not_started")),
-    owner: proofApproved ? "none" : (proofState === "changes_requested" ? "team" : (workspace.mode === "internal" ? "team" : "authorised_approver")),
-    summary: proofApproved ? "The current proof is approved." : (proofState === "changes_requested" ? "Proof changes have been requested." : (proofState === "sent" ? "The proof is awaiting an authorised decision." : "A final proof decision has not been recorded.")),
+    state: proofApproved ? "complete" : (proofBlocked ? "blocked" : (proofState === "changes_requested" ? "attention" : (["sent", "draft", "generating", "proof_ready", "awaiting_approval"].includes(proofState) ? "in_progress" : "not_started"))),
+    owner: proofApproved ? "none" : (proofState === "changes_requested" ? "team" : "authorised_approver"),
+    summary: proofApproved
+      ? "The current proof is approved."
+      : (proofBlocked
+        ? "Blocked until cemetery physical-specification pre-approval. Staff can verify wording on the Proofs desk; recognition never constitutes customer approval. Internal Admin can still record an approval."
+        : (proofState === "changes_requested" ? "Proof changes have been requested." : (proofState === "sent" ? "The proof is awaiting an authorised decision. Internal Admin can approve; recognition of a mock-up never constitutes customer approval." : "A final proof decision has not been recorded."))),
     decisionAvailable: Boolean(workspace.proofDecisionEnabled && latestProof?.state === "sent" && (latestProof?.render_url || workspace.mode === "internal")),
+    gatedBySpec: proofBlocked,
+    recogniseOnly: workspace.mode === "internal",
   };
   const material = {
     key: "material",
     label: "Material decision",
-    state: materialException ? "attention" : (stoneState === "In Stock" ? "complete" : (stoneState === "Ordered" ? "in_progress" : (materialDecisionReady ? "decision_required" : "blocked"))),
+    state: materialException ? "attention" : (stoneState === "In Stock" ? "complete" : (stoneState === "Ordered" ? "in_progress" : (materialOrderable ? "decision_required" : "blocked"))),
     owner: "team",
-    summary: materialException ? "Cemetery changes were recorded after material commitment. Review cost, feasibility and customer impact immediately." : (stoneState === "In Stock" ? "Material is recorded as received and in stock." : (stoneState === "Ordered" ? "Material is ordered; the internal production timeline has started." : (materialDecisionReady ? "Payment and cemetery physical-specification approval are recorded; material can be ordered." : "Material ordering is blocked until payment and cemetery physical-specification approval are recorded."))),
+    summary: materialException
+      ? "Cemetery changes were recorded after material commitment. Review cost, feasibility and customer impact immediately."
+      : (stoneState === "In Stock"
+        ? "Material is recorded as received and in stock."
+        : (stoneState === "Ordered"
+          ? "Material is ordered; the internal production timeline has started."
+          : (materialWarning
+            ? "Payment is recorded. Cemetery pre-approval is not yet on file — material can still be ordered, with a warning."
+            : (materialDecisionReady
+              ? "Payment and cemetery physical-specification approval are recorded; material can be ordered."
+              : "Material ordering waits for the required payment.")))),
     prerequisitesMet: materialDecisionReady,
     locked: stoneState === "Ordered" || stoneState === "In Stock",
-    actionAvailable: workspace.mode === "internal" && materialDecisionReady && !["Ordered", "In Stock"].includes(stoneState),
+    actionAvailable: workspace.mode === "internal" && materialOrderable,
     receiveAvailable: workspace.mode === "internal" && stoneState === "Ordered",
     exception: materialException,
+    warning: materialWarning,
   };
   const production = {
     key: "production",
@@ -1337,16 +1377,20 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
   const commercial = {
     key: "commercial",
     label: "Payment & confirmation",
-    state: paymentConfirmed ? "complete" : (liveInvoices.length ? "in_progress" : "not_started"),
+    state: paymentConfirmed ? "complete" : (liveInvoices.length || paymentRequested ? "in_progress" : "not_started"),
     owner: "commercial",
     summary: paymentConfirmed
-      ? "The required payment is recorded and the live order workflow has started."
+      ? (liveInvoices.length
+        ? "The required payment is recorded and the live order workflow has started."
+        : "Stripe-recorded payment has started the live clock. A formal invoice row is not required for confirmation — this portal does not create or send invoices.")
       : (liveInvoices.length
         ? "An invoice is issued; payment will confirm the live order."
         : (paymentRequested
           ? "Payment has been requested. Sears Melvin raises the invoice in the admin app / Make; this portal does not email the family."
-          : "No invoice is linked yet. Create the order first, then request payment as a separate action.")),
+          : "Create the quote record first, then request payment as a separate action. Accounts still issue the invoice.")),
     invoiceCount: liveInvoices.length,
+    invoiceIssued: liveInvoices.length > 0,
+    clockStarted: paymentConfirmed,
     confirmedAt,
     paymentRequested,
     requestAvailable: !paymentConfirmed,
@@ -1364,6 +1408,8 @@ export function deriveWorkflow(row, latestProof = null, latestPermit = null, inv
     materialDecisionReady,
     paymentConfirmed,
     confirmedAt,
+    clockStarted: paymentConfirmed,
+    invoiceIssued: liveInvoices.length > 0,
     materialLockEnforced: material.locked,
     blockingKeys: [commercial, specification, permit, proof, material, production, installation]
       .filter((item) => ["attention", "blocked", "not_started"].includes(item.state))
@@ -1449,6 +1495,7 @@ function publicWorkspace(workspace) {
     capabilities: {
       viewExternalPartnerOrders: Boolean(workspace.includesExternalPartnerOrders),
       decideProof: Boolean(workspace.proofDecisionEnabled),
+      recogniseProof: workspace.mode === "internal",
       sendPartnerMessage: workspace.mode !== "internal",
       uploadPermit: false,
       recordSpecPreapproval: workspace.mode === "internal",

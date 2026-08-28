@@ -8,6 +8,26 @@ Named staff (Arin / Matthew = admin, Aylin / Karen = operations, other `@searsme
 
 Magic-link and partner-setup emails land on `https://partner.searsmelvin.co.uk/#login=…` because `__Host-` session cookies are host-locked and will not follow someone from `searsmelvin.co.uk` onto the partner subdomain.
 
+## Live product truth (Arin Admin audit, 28 Aug 2026)
+
+The shipped UI on **https://partner.searsmelvin.co.uk** is ahead of older `partner.html` notes. Treat that audit as current product truth, then apply Arin’s locked exceptions below.
+
+Live desks: Overview, Sales, Permits, Payments, Proofs, Orders, Installation, plus **New memorial**. Named Admin chrome (`Arin`). Orders chips: Confirmed / Needs action / Waiting / Quotes / Complete / All. Confirmed-order drawer lanes: Payment & confirmation, Cemetery specification, Cemetery permit, Design proof, Material decision, Production, Installation handoff.
+
+Live gating (keep the display rules, then unlock what Arin locked):
+
+| Workstream | Live today | This repo after Arin’s lock |
+|------------|------------|-----------------------------|
+| Cemetery permit + Design proof | Both **blocked** until physical-spec pre-approval | Same blocked display. Spine still visible. Permit steps are **recordable** on the Permits desk without upload. |
+| Material | Can already be **Ordered** with a warning if no pre-approval | Same: warn and allow after payment; unpaid still blocked. |
+| Spec recording | Confirmed orders only; quotes locked until payment | **Unlock spec-before-pay.** Staff can Record cemetery contact / Record pre-approval update on quotes. |
+| Proofs desk | Verify wording / mock-up only. “Recognition never constitutes customer approval.” No staff Approve. Owner: **Authorised approver**. | Keep the verify copy and owner chip. **Internal Admin can Approve proof.** |
+| Permits | Drawer: “Permit status: Select form”; “Direct stage editing is disabled…”; link to Permit desk. Desk hung loading. Collapsed family → submitted → approved in places. | Visible **7-step spine** on Permits desk, recordable, no upload, no hang (renders from already-loaded orders). Do not collapse to with-family → submitted → approved. |
+| Wizard | Final button **Create quote record**. Accounts must still issue the invoice. No Request payment on the wizard. | Same. Request payment stays a **separate** action on the quote. No customer email. |
+| Payments desk | Stripe-synced, read-only, does not create or send invoices. Confirmed orders can show “No invoice has been issued” while also payment-confirmed. | Stripe-recorded payment **starts the live clock**. Missing invoice row ≠ unpaid. |
+
+Constraints still in force: no customer email sends, no GHL writes, no live payment charging, no permit file upload.
+
 ## Existing records used
 
 - `orders` is the commercial and customer-facing anchor.
@@ -30,13 +50,13 @@ Arin Melvin locked this process on 28 Aug 2026. Where it conflicts with the 10 A
 
 2. **Spec check with the cemetery can and usually should start before payment.** Recording `spec_preapproval_*` is not blocked on `paymentConfirmed`. The spec lane is not `blocked` solely because the order is unpaid.
 
-3. **Material can still be ordered before inscription wording is signed.** Proof does not block material. Wording may change after stone is ordered. Proof is still required before install, together with permit approval.
+3. **Material can be ordered before inscription wording is signed, and with a warning before cemetery spec pre-approval.** Proof does not block material. Live already allows Ordered with a warning if no pre-approval is on file. Payment is still required. Proof and permit remain installation gates.
 
-4. **Permit is a seven-step operational spine** (human labels, not jargon). Staff record progress in the dashboard; funeral directors can see status. There is **no permit file upload** (`uploadPermit` stays false). Tracking is email + dashboard status.
+4. **Permit is a seven-step operational spine on the Permits desk** (human labels, not jargon). The order drawer shows `Permit status: {current step}` and links “Open this permit in Permit desk”. Staff record progress without upload; funeral directors can see status. Do not collapse to with-family → submitted → approved. As a **workstream**, cemetery permit stays blocked until spec pre-approval, but steps remain visible and recordable.
 
-5. **Named Admin and Operations on the `@searsmelvin.co.uk` Google login can Approve proof / Request changes.** Events attribute to `sears_melvin_staff` with the signed-in name when the session cookie carries staff identity; otherwise they stay on the internal workspace. Funeral-director proof decisions stay behind `PARTNER_PROOF_DECISIONS_ENABLED`.
+5. **Internal Admin can Approve proof.** The Proofs desk still verifies wording / mock-up brief and says recognition never constitutes customer approval. Owner chip remains **Authorised approver**. Arin locked staff approval for named Admin. Funeral-director proof decisions stay behind `PARTNER_PROOF_DECISIONS_ENABLED`.
 
-6. **Create order and Request payment are two controls.** Creating an order must not send or raise an invoice. Request payment is a separate action. This website still does not create or email invoices (removed May 2026, #122 / #125). Request payment records `order_events.payment_requested` and may move `jobs.stage` from `enquired`/`quoted` to `invoiced`. Accounts still raise the invoice in the admin app / Make. The portal does not silently email the family.
+6. **Create quote record and Request payment are two controls.** The wizard final button is **Create quote record** (Accounts must still issue the invoice). There is no Request payment control on the wizard. Request payment is a separate action on the quote. This website still does not create or email invoices. Request payment records `order_events.payment_requested` and may move `jobs.stage` from `enquired`/`quoted` to `invoiced`.
 
 7. **Funeral directors must not see other customers' orders.** Internal staff use Google Workspace mapped to the Sears Melvin partner record. Named chrome does not widen order scope.
 
@@ -130,13 +150,14 @@ Current-data caveat: the inbox cannot yet be treated as a complete contact ledge
 - External partner workspaces remain restricted to their own partner ID.
 - Sears Melvin staff authenticate with a verified `searsmelvin.co.uk` Google Workspace identity and are mapped to the existing internal partner record; funeral-director partners retain one-time email links.
 - Google establishes an individual identity at sign-in. Named Admin / Operations chrome and activity attribution are now connected for the known Sears Melvin directory; per-user order permissions are still not claimed.
-- Sears Melvin can record cemetery physical-specification pre-approval **while unpaid**, and material ordered/received after payment **and** the latest pre-approval outcome are both recorded.
+- Sears Melvin can record cemetery physical-specification pre-approval **while unpaid**. After payment, material can be Ordered with a warning if that pre-approval is not yet on file; unpaid material stays blocked.
 - Material ordering starts the internal production timeline and acts as the normal physical-specification lock. A later changes-required decision is retained as a visible exception rather than silently rewriting history.
-- Proof decisions are **enabled for named Sears Melvin Admin and Operations logins**. Funeral-director proof decisions remain disabled by default (`PARTNER_PROOF_DECISIONS_ENABLED`).
-- Permit **upload** is not connected and must stay false. Permit **progress** is writable for staff.
+- Proof decisions are **enabled for named Sears Melvin Admin**. Funeral-director proof decisions remain disabled by default (`PARTNER_PROOF_DECISIONS_ENABLED`).
+- Permit **upload** is not connected and must stay false. Permit **progress** is writable on the Permits desk without document evidence.
 - Named-user permissions and commission settlement remain visibly marked as not connected.
-- Create order does not POST invoices, call Stripe, send Resend, or touch GoHighLevel.
+- Create quote record does not POST invoices, call Stripe, send Resend, or touch GoHighLevel.
 - The live staff dashboard URL is `https://partner.searsmelvin.co.uk`. Do not treat `searsmelvin.co.uk/partner` as the production dashboard Arin uses.
+- Payments desk is Stripe-synced and read-only. A missing invoice row does not unset `paymentConfirmed`.
 
 ## Later architecture changes worth making
 

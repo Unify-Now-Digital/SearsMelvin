@@ -18,11 +18,13 @@ assert.notEqual(missingEvidence.specification.state, "blocked");
 assert.equal(missingEvidence.specification.state, "not_started");
 assert.equal(missingEvidence.paymentConfirmed, false);
 assert.equal(missingEvidence.specification.actionAvailable, false);
-assert.equal(missingEvidence.permit.state, "attention");
+assert.equal(missingEvidence.permit.state, "blocked");
+assert.equal(missingEvidence.permit.gatedBySpec, true);
 assert.equal(missingEvidence.permit.spineKey, "match_form");
 assert.equal(missingEvidence.permit.spineLabel, "Match form");
 assert.equal(missingEvidence.permit.steps.length, 7);
-assert.equal(missingEvidence.proof.state, "not_started");
+assert.equal(missingEvidence.proof.state, "blocked");
+assert.equal(missingEvidence.proof.gatedBySpec, true);
 assert.equal(missingEvidence.material.state, "blocked");
 assert.equal(missingEvidence.material.actionAvailable, false);
 assert.equal(missingEvidence.materialLockEnforced, false);
@@ -39,6 +41,11 @@ const unpaidInternalSpec = deriveWorkflow(
 assert.equal(unpaidInternalSpec.paymentConfirmed, false);
 assert.notEqual(unpaidInternalSpec.specification.state, "blocked");
 assert.equal(unpaidInternalSpec.specification.actionAvailable, true);
+assert.equal(unpaidInternalSpec.permit.state, "blocked");
+assert.equal(unpaidInternalSpec.permit.actionAvailable, true);
+assert.equal(unpaidInternalSpec.proof.state, "blocked");
+assert.equal(unpaidInternalSpec.proof.decisionAvailable, false);
+assert.equal(unpaidInternalSpec.material.actionAvailable, false);
 
 const paidAndPreapproved = deriveWorkflow(
   baseOrder,
@@ -71,6 +78,34 @@ assert.equal(preapprovedButUnpaid.specification.actionAvailable, true);
 assert.equal(preapprovedButUnpaid.material.state, "blocked");
 assert.equal(preapprovedButUnpaid.materialDecisionReady, false);
 
+const paidWithoutSpec = deriveWorkflow(
+  baseOrder,
+  { state: "sent", render_url: "https://example.test/proof.png" },
+  { permit_phase: "pending" },
+  [{ id: "invoice-1", status: "partial", paid_at: "2026-08-01T09:00:00Z" }],
+  [],
+  { mode: "internal", proofDecisionEnabled: true },
+);
+assert.equal(paidWithoutSpec.paymentConfirmed, true);
+assert.equal(paidWithoutSpec.clockStarted, true);
+assert.equal(paidWithoutSpec.permit.state, "blocked");
+assert.equal(paidWithoutSpec.permit.actionAvailable, true);
+assert.equal(paidWithoutSpec.proof.state, "blocked");
+assert.equal(paidWithoutSpec.proof.owner, "authorised_approver");
+assert.equal(paidWithoutSpec.proof.decisionAvailable, true);
+assert.equal(paidWithoutSpec.material.state, "decision_required");
+assert.equal(paidWithoutSpec.material.warning, true);
+assert.equal(paidWithoutSpec.material.actionAvailable, true);
+assert.equal(paidWithoutSpec.materialDecisionReady, false);
+
+const paidNoInvoiceRow = deriveWorkflow(
+  { ...baseOrder, stage: "deposit_paid", jobs: { paid_at: "2026-08-28T09:00:00Z" } },
+);
+assert.equal(paidNoInvoiceRow.paymentConfirmed, true);
+assert.equal(paidNoInvoiceRow.clockStarted, true);
+assert.equal(paidNoInvoiceRow.invoiceIssued, false);
+assert.match(paidNoInvoiceRow.commercial.summary, /live clock/);
+
 const inProduction = deriveWorkflow({
   ...baseOrder,
   stone_status: "In Stock",
@@ -88,7 +123,8 @@ const paid = deriveWorkflow(
 );
 assert.equal(paid.commercial.state, "complete");
 assert.equal(paid.paymentConfirmed, true);
-assert.equal(paid.material.state, "blocked");
+assert.equal(paid.material.state, "decision_required");
+assert.equal(paid.material.warning, true);
 
 const stripePartial = deriveWorkflow(
   baseOrder,

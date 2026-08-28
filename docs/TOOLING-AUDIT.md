@@ -84,7 +84,12 @@ context only, over the 120 days to 2026-08-26:
   Do not point the subdomain at this Pages project without an explicit decision:
   live currently serves a larger unpublished app. Magic-link and setup emails in
   this repo already target the partner subdomain (`__Host-` cookies are
-  host-locked).
+  host-locked). Live desks (28 Aug 2026): Overview, Sales, Permits, Payments,
+  Proofs, Orders, Installation. Live gating: permit + proof blocked until spec
+  pre-approval; material orderable with a warning; quotes lock spec until
+  payment (this repo unlocks spec-before-pay); Proofs desk stays verify-only
+  for Operations, with Internal Admin Approve proof; Payments desk is Stripe
+  read-only and a missing invoice row does not unset a Stripe payment clock.
 - **2026-08-26 — no secrets committed.** The only key in the HTML is the Supabase
   anon key (public by design). No service-role key, Stripe secret, or Resend key
   in tracked files. `node_modules` is not committed.
