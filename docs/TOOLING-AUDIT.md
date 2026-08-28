@@ -78,6 +78,13 @@ context only, over the 120 days to 2026-08-26:
   `people`, `invoices`, `payments`, `activity_logs` → 0 rows;
   `inbox_messages`, `inbox_conversations`, `partners`, `quote_access_tokens`,
   `customer_portal_tokens` → 401; only `products` / `stone_colours` return data.
+- **2026-08-28 — live partner dashboard is `https://partner.searsmelvin.co.uk`.**
+  Arin signs in there as named Admin (`Arin · admin`), not only the shared
+  internal partner. `searsmelvin.co.uk/partner` is this repo’s `partner.html`.
+  Do not point the subdomain at this Pages project without an explicit decision:
+  live currently serves a larger unpublished app. Magic-link and setup emails in
+  this repo already target the partner subdomain (`__Host-` cookies are
+  host-locked).
 - **2026-08-26 — no secrets committed.** The only key in the HTML is the Supabase
   anon key (public by design). No service-role key, Stripe secret, or Resend key
   in tracked files. `node_modules` is not committed.

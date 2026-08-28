@@ -120,7 +120,7 @@ globalThis.fetch = async (input, init = {}) => {
   throw new Error(`Unexpected test fetch: ${url} ${method}`);
 };
 
-async function post(body) {
+async function post(body, cookie = "__Host-sm_partner_session=test-session") {
   return partnerOrders({
     env,
     waitUntil() {},
@@ -129,7 +129,7 @@ async function post(body) {
       headers: {
         "Content-Type": "application/json",
         "Origin": "https://searsmelvin.co.uk",
-        "Cookie": "__Host-sm_partner_session=test-session",
+        "Cookie": cookie,
       },
       body: JSON.stringify(body),
     }),
@@ -207,6 +207,18 @@ try {
   assert.equal(proofPatches.at(-1).state, "approved");
   assert.equal(writtenEvents.at(-1).event_type, "proof_approved");
   assert.equal(writtenEvents.at(-1).detail.actor_type, "sears_melvin_internal_workspace");
+
+  const arinCookie = `__Host-sm_partner_session=test-session.${Buffer.from(JSON.stringify({
+    email: "arin@searsmelvin.co.uk",
+    name: "Arin",
+    role: "admin",
+  })).toString("base64url")}`;
+  const namedProof = await post({ action: "approve-proof", orderId }, arinCookie);
+  assert.equal(namedProof.status, 200, await namedProof.clone().text());
+  assert.equal(writtenEvents.at(-1).detail.actor_type, "sears_melvin_staff");
+  assert.equal(writtenEvents.at(-1).detail.actor_name, "Arin");
+  assert.equal(writtenEvents.at(-1).detail.actor_email, "arin@searsmelvin.co.uk");
+  assert.equal(writtenEvents.at(-1).detail.actor_role, "admin");
 
   console.log("partner operational action tests passed");
 } finally {

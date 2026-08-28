@@ -22,6 +22,13 @@ import {
   supabaseHeaders,
 } from "./_security.js";
 import { GoogleVerificationUnavailable, verifyGoogleIdToken } from "./_google-identity.js";
+import {
+  PARTNER_PORTAL_ORIGIN,
+  encodePartnerSessionToken,
+  publicStaff,
+  staffFromGooglePayload,
+  staffFromSessionToken,
+} from "./_partner-staff.js";
 
 const PARTNER_COOKIE = "__Host-sm_partner_session";
 const PARTNER_SESSION_SECONDS = 12 * 60 * 60;
@@ -184,7 +191,8 @@ async function handleGoogleLogin(context, env, request, { credential }) {
   const partners = await partnerRes.json();
   if (partners.length === 0) return json({ ok: false, error: "Internal workspace is not configured" }, 500);
 
-  const sessionToken = await createPartnerSession(env, partners[0].id, headers);
+  const staff = staffFromGooglePayload(payload);
+  const sessionToken = await createPartnerSession(env, partners[0].id, headers, staff);
   if (!sessionToken) return json({ ok: false, error: "Failed to create session" }, 500);
 
   queueSecurityEvent(context, env, request, {
@@ -192,10 +200,10 @@ async function handleGoogleLogin(context, env, request, { credential }) {
     actorType: "partner",
     success: true,
     identifierHash: await hashIdentifier(email),
-    metadata: { partner_id: partners[0].id, auth_method: "google_workspace" },
+    metadata: { partner_id: partners[0].id, auth_method: "google_workspace", staff_role: staff?.role || null },
   });
 
-  return json({ ok: true, partner: partners[0] }, 200, {
+  return json({ ok: true, partner: publicPartnerWithStaff(partners[0], staff) }, 200, {
     "Set-Cookie": sessionCookie(PARTNER_COOKIE, sessionToken, PARTNER_SESSION_SECONDS),
   });
 }
@@ -337,7 +345,7 @@ async function handleMagicLinkConsume(context, env, request, { token }) {
 
   return json({
     ok: true,
-    partner: { id: partner.id, email: partner.email, name: partner.name, company: partner.company },
+    partner: publicPartnerWithStaff(partner, null),
   }, 200, { "Set-Cookie": sessionCookie(PARTNER_COOKIE, sessionToken, PARTNER_SESSION_SECONDS) });
 }
 
@@ -347,7 +355,7 @@ async function handleVerify(env, request, data) {
   if (!token) return json({ ok: false, error: "Token required" }, 400);
   const partner = await getPartnerFromToken(env, token);
   if (!partner) return json({ ok: false, error: "Invalid or expired session" }, 401);
-  return json({ ok: true, partner });
+  return json({ ok: true, partner: publicPartnerWithStaff(partner, partner.staff) });
 }
 
 // ==================== LOGOUT ====================
@@ -491,11 +499,23 @@ async function getPartnerFromToken(env, token) {
   );
   if (!partRes.ok) return null;
   const partRows = await partRes.json();
-  return partRows.length > 0 ? partRows[0] : null;
+  if (partRows.length === 0) return null;
+  return { ...partRows[0], staff: publicStaff(staffFromSessionToken(token)) };
 }
 
-async function createPartnerSession(env, partnerId, headers = sbHeaders(env)) {
-  const sessionToken = generateToken(64);
+function publicPartnerWithStaff(partner, staff) {
+  return {
+    id: partner.id,
+    email: partner.email,
+    name: partner.name,
+    company: partner.company,
+    phone: partner.phone || null,
+    staff: publicStaff(staff),
+  };
+}
+
+async function createPartnerSession(env, partnerId, headers = sbHeaders(env), staff = null) {
+  const sessionToken = encodePartnerSessionToken(generateToken(64), staff);
   const expiresAt = new Date(Date.now() + PARTNER_SESSION_SECONDS * 1000).toISOString();
   const sessionRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partner_sessions`, {
     method: "POST",
@@ -610,7 +630,7 @@ async function sendPartnerMagicLinkEmail(env, partner, token) {
     return;
   }
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
-  const loginUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
+  const loginUrl = `${PARTNER_PORTAL_ORIGIN}/#login=${encodeURIComponent(token)}`;
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",

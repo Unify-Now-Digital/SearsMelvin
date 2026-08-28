@@ -23,6 +23,7 @@ import {
   supabaseHeaders,
 } from "./_security.js";
 import { GoogleVerificationUnavailable, verifyGoogleIdToken } from "./_google-identity.js";
+import { PARTNER_PORTAL_ORIGIN } from "./_partner-staff.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STAGE_VALUES = new Set([
@@ -940,7 +941,7 @@ async function sendResend(apiKey, { from, to, subject, html }) {
 
 async function sendPartnerSetupEmail(apiKey, partner, token) {
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
-  const setupUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
+  const setupUrl = `${PARTNER_PORTAL_ORIGIN}/#login=${encodeURIComponent(token)}`;
   await sendResend(apiKey, {
     from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
     to: partner.email,

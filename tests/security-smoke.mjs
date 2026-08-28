@@ -60,6 +60,7 @@ try {
   assert.equal(existsSync(new URL("../functions/api/stripe 2.js", import.meta.url)), false);
   const partnerHtml = readFileSync(new URL("../partner.html", import.meta.url), "utf8");
   const partnerAuthApi = readFileSync(new URL("../functions/api/partner-auth.js", import.meta.url), "utf8");
+  const partnerStaffApi = readFileSync(new URL("../functions/api/_partner-staff.js", import.meta.url), "utf8");
   const adminApi = readFileSync(new URL("../functions/api/admin.js", import.meta.url), "utf8");
   const publicMemorialFunction = readFileSync(new URL("../functions/memorials/[slug].js", import.meta.url), "utf8");
   const publicSitemapFunction = readFileSync(new URL("../functions/sitemap.xml.js", import.meta.url), "utf8");
@@ -71,6 +72,14 @@ try {
   assert.equal(partnerHtml.includes("request-magic-link"), true);
   assert.equal(partnerHtml.includes("consume-magic-link"), true);
   assert.equal(partnerHtml.includes("google-login"), true);
+  assert.equal(partnerHtml.includes("Payment-confirmed orders are kept separate from quotes awaiting payment."), true);
+  assert.equal(partnerHtml.includes("filter:\"confirmed\""), true);
+  assert.equal(partnerHtml.includes("signedInStaff"), true);
+  assert.equal(partnerHtml.includes("Named Sears Melvin access"), true);
+  assert.equal(partnerStaffApi.includes("https://partner.searsmelvin.co.uk"), true);
+  assert.equal(partnerAuthApi.includes("PARTNER_PORTAL_ORIGIN"), true);
+  assert.equal(adminApi.includes("PARTNER_PORTAL_ORIGIN"), true);
+  assert.equal(partnerAuthApi.includes("searsmelvin.co.uk/partner"), false);
   assert.equal(partnerHtml.includes("accounts.google.com/gsi/client"), true);
   assert.equal(partnerHtml.includes('id="wizardRequestPayment"'), true);
   assert.equal(partnerHtml.includes('state.wizardStep===5?"Create order"'), true);

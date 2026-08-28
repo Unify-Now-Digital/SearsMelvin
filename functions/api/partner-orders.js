@@ -20,6 +20,7 @@ import {
   readBoundedJson,
   supabaseHeaders,
 } from "./_security.js";
+import { actorFromStaff, publicStaff, staffFromSessionToken } from "./_partner-staff.js";
 
 const PARTNER_COOKIE = "__Host-sm_partner_session";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -675,13 +676,14 @@ async function createOrder(env, partner, workspace, data) {
   await insertEvent(env, created, eventType, eventSummary, {
     partner_id: partner.id,
     actor_type: workspace.mode === "internal" ? "internal_shared" : "partner",
+    ...actorFromStaff(workspace.staff),
   });
   return json({ ok: true, order: mapOrder(created, workspace), workspace: publicWorkspace(workspace) }, 201);
 }
 
 async function addComment(env, partner, workspace, data) {
   if (workspace.mode === "internal") {
-    return json({ ok: false, error: "Internal notes are not connected to the shared account yet" }, 409);
+    return json({ ok: false, error: "Internal notes are not connected yet" }, 409);
   }
   const orderId = clean(data.orderId, 80);
   const comment = clean(data.comment, 3000);
@@ -751,6 +753,7 @@ async function updateProof(env, partner, workspace, data, nextState) {
       partner_name: partner.company || partner.name,
       actor_type: workspace.mode === "internal" ? "sears_melvin_internal_workspace" : "partner",
       ...(note ? { note } : {}),
+      ...actorFromStaff(workspace.staff),
     },
   );
 
@@ -793,6 +796,7 @@ async function recordSpecPreapproval(env, partner, workspace, data) {
     ...(note ? { note } : {}),
     actor_type: "sears_melvin_internal_workspace",
     exception_after_material_order: Boolean(outcome === "changes_required" && afterMaterialOrder),
+    ...actorFromStaff(workspace.staff),
     specification: {
       product_id: order.product_id || null,
       product_name: config?.name || order.custom_product_name || null,
@@ -856,7 +860,7 @@ async function updateMaterial(env, partner, workspace, data) {
       order,
       eventType,
       nextStatus === "Ordered" ? "Material ordered; internal production timeline started" : "Material received into stock",
-      { actor_type: "sears_melvin_internal_workspace", previous_status: order.stone_status || "NA", new_status: nextStatus },
+      { actor_type: "sears_melvin_internal_workspace", previous_status: order.stone_status || "NA", new_status: nextStatus, ...actorFromStaff(workspace.staff) },
     );
     if (!event) return json({ ok: false, error: "Material status changed, but its activity entry could not be recorded. Retry to repair the history" }, 500);
   }
@@ -970,6 +974,7 @@ async function updatePermit(env, partner, workspace, data) {
       ...(note ? { note } : {}),
       ...(cemeteryRoute ? { cemetery_route: cemeteryRoute } : {}),
       ...(cemeteryAddress ? { cemetery_address: cemeteryAddress } : {}),
+      ...actorFromStaff(workspace.staff),
     },
   );
   if (!event) return json({ ok: false, error: "Permit progress saved, but its activity entry could not be recorded. Retry to repair the history" }, 500);
@@ -1006,9 +1011,10 @@ async function requestPayment(env, partner, workspace, data) {
       "payment_requested",
       "Payment requested — raise the invoice in the admin app / Make. This portal does not create or email invoices.",
       {
-        actor_type: workspace.mode === "internal" ? "sears_melvin_internal_workspace" : "partner",
         partner_id: partner.id,
+        actor_type: workspace.mode === "internal" ? "sears_melvin_internal_workspace" : "partner",
         billing_party: safeParse(order.product_config)?.billing_party || null,
+        ...actorFromStaff(workspace.staff),
       },
     );
     if (!event) return json({ ok: false, error: "Unable to record the payment request" }, 500);
@@ -1393,11 +1399,21 @@ async function getPartnerFromToken(env, token) {
   if (sessions.length === 0) return null;
   const partnerRes = await fetch(`${env.SUPABASE_URL}/rest/v1/partners?id=eq.${sessions[0].partner_id}&active=eq.true&status=eq.approved&select=id,email,name,company,phone,status&limit=1`, { headers });
   if (!partnerRes.ok) return null;
-  return (await partnerRes.json())[0] || null;
+  const partner = (await partnerRes.json())[0] || null;
+  if (!partner) return null;
+  partner.staff = publicStaff(staffFromSessionToken(token));
+  return partner;
 }
 
 function publicPartner(partner) {
-  return { id: partner.id, name: partner.name, company: partner.company, email: partner.email, phone: partner.phone || null };
+  return {
+    id: partner.id,
+    name: partner.name,
+    company: partner.company,
+    email: partner.email,
+    phone: partner.phone || null,
+    staff: publicStaff(partner.staff),
+  };
 }
 
 function getWorkspace(env, partner) {
@@ -1405,6 +1421,7 @@ function getWorkspace(env, partner) {
   // should silently gain the broader internal order scope.
   const internalPartnerId = String(env.SM_INTERNAL_PARTNER_ID || "").trim();
   const internal = String(partner.id) === internalPartnerId;
+  const staff = publicStaff(partner.staff);
   const proofDecisionEnabled = internal || String(env.PARTNER_PROOF_DECISIONS_ENABLED || "").toLowerCase() === "true";
   return {
     mode: internal ? "internal" : "partner",
@@ -1412,6 +1429,7 @@ function getWorkspace(env, partner) {
     actionOwner: internal ? "team" : "partner",
     includesExternalPartnerOrders: false,
     proofDecisionEnabled,
+    staff,
   };
 }
 
@@ -1427,6 +1445,7 @@ function publicWorkspace(workspace) {
   return {
     mode: workspace.mode,
     label: workspace.mode === "internal" ? "Sears Melvin internal" : "Funeral director partner",
+    staff: publicStaff(workspace.staff),
     capabilities: {
       viewExternalPartnerOrders: Boolean(workspace.includesExternalPartnerOrders),
       decideProof: Boolean(workspace.proofDecisionEnabled),

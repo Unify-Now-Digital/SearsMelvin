@@ -109,7 +109,11 @@ try {
   const allowed = await login(await token());
   assert.equal(allowed.status, 200);
   assert.match(allowed.headers.get("Set-Cookie") || "", /^__Host-sm_partner_session=.*HttpOnly; Secure; SameSite=Strict$/);
-  assert.equal((await allowed.json()).partner.id, 1);
+  assert.match(allowed.headers.get("Set-Cookie") || "", /__Host-sm_partner_session=[^;]*%?[A-Za-z0-9._-]*\./);
+  const allowedBody = await allowed.json();
+  assert.equal(allowedBody.partner.id, 1);
+  assert.equal(allowedBody.partner.staff.email, "staff@searsmelvin.co.uk");
+  assert.equal(allowedBody.partner.staff.role, "operations");
   assert.equal(sessions.length, 1);
   assert.equal(sessions[0].partner_id, 1);
   assert.match(sessions[0].token, /^sha256:[a-f0-9]{64}$/);
@@ -137,6 +141,17 @@ try {
   assert.equal(oldInternalMagicLink.status, 400);
   assert.equal(internalMagicDeletes, 2);
   assert.equal(sessions.length, 1);
+
+  const arin = await login(await token({ email: "arin@searsmelvin.co.uk", given_name: "Arin" }));
+  assert.equal(arin.status, 200);
+  const arinBody = await arin.json();
+  assert.deepEqual(arinBody.partner.staff, {
+    email: "arin@searsmelvin.co.uk",
+    name: "Arin",
+    role: "admin",
+  });
+  assert.equal(sessions.length, 2);
+  assert.match(sessions[1].token, /^sha256:[a-f0-9]{64}$/);
 
   console.log("partner Google Workspace auth tests passed");
 } finally {

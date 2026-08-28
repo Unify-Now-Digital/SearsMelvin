@@ -1,6 +1,12 @@
 # Partner portal V2 workflow model
 
+Live dashboard: **https://partner.searsmelvin.co.uk** (custom domain). `searsmelvin.co.uk/partner` is this repo’s `partner.html`, not the larger unpublished app currently served on the subdomain. This SearsMelvin repo hardens the same partner APIs and UI; it does not replace the live subdomain unless a human points that domain here.
+
 V2 is a read-and-create interface over the existing Sears Melvin data model. It adds no tables, columns, triggers or production-data migrations in the original MVP. The 28 Aug 2026 permit spine adds **enum values only** (see `migrations/2026-08-28-partner-permit-spine.sql`, **not applied**). Existing `permit_phase` rows are mapped in code, not rewritten.
+
+Named staff (Arin / Matthew = admin, Aylin / Karen = operations, other `@searsmelvin.co.uk` = operations) are a static directory in `functions/api/_partner-staff.js`. Google Workspace sign-in still maps onto the **shared internal partner row for order scope**. Named Admin / Operations is chrome and `order_events` attribution only — not a second CMS, not per-user order permissions, and not GoHighLevel.
+
+Magic-link and partner-setup emails land on `https://partner.searsmelvin.co.uk/#login=…` because `__Host-` session cookies are host-locked and will not follow someone from `searsmelvin.co.uk` onto the partner subdomain.
 
 ## Existing records used
 
@@ -28,11 +34,11 @@ Arin Melvin locked this process on 28 Aug 2026. Where it conflicts with the 10 A
 
 4. **Permit is a seven-step operational spine** (human labels, not jargon). Staff record progress in the dashboard; funeral directors can see status. There is **no permit file upload** (`uploadPermit` stays false). Tracking is email + dashboard status.
 
-5. **Staff on the shared `@searsmelvin.co.uk` Google login can Approve proof / Request changes.** Events still attribute to the internal workspace until named users exist. Funeral-director proof decisions stay behind `PARTNER_PROOF_DECISIONS_ENABLED`.
+5. **Named Admin and Operations on the `@searsmelvin.co.uk` Google login can Approve proof / Request changes.** Events attribute to `sears_melvin_staff` with the signed-in name when the session cookie carries staff identity; otherwise they stay on the internal workspace. Funeral-director proof decisions stay behind `PARTNER_PROOF_DECISIONS_ENABLED`.
 
 6. **Create order and Request payment are two controls.** Creating an order must not send or raise an invoice. Request payment is a separate action. This website still does not create or email invoices (removed May 2026, #122 / #125). Request payment records `order_events.payment_requested` and may move `jobs.stage` from `enquired`/`quoted` to `invoiced`. Accounts still raise the invoice in the admin app / Make. The portal does not silently email the family.
 
-7. **Funeral directors must not see other customers' orders.** Internal staff use the shared Google login mapped to the Sears Melvin partner record.
+7. **Funeral directors must not see other customers' orders.** Internal staff use Google Workspace mapped to the Sears Melvin partner record. Named chrome does not widen order scope.
 
 ### Permit spine — stored values and old → new display map
 
@@ -90,7 +96,7 @@ Material received + production complete + permit approved + proof approved
       --> installation scheduled --> installed / completed
 ```
 
-Every arrow that changes business state should create an activity entry. The current Google sign-in session is mapped to the shared internal partner and does not persist the employee email, so events are attributed only to the **Sears Melvin internal workspace**. Individual attribution must wait for named staff identities.
+Every arrow that changes business state should create an activity entry. Google Workspace sign-in is mapped to the shared internal partner for **order scope**. When the session carries a named staff payload, operational events also record `actor_name` / `actor_email` / `actor_role`. Per-user permissions and a second CMS are still out of scope.
 
 ## Confirmed no-schema MVP implementation
 
@@ -123,23 +129,24 @@ Current-data caveat: the inbox cannot yet be treated as a complete contact ledge
 - Orders belonging to other funeral-director partners are excluded.
 - External partner workspaces remain restricted to their own partner ID.
 - Sears Melvin staff authenticate with a verified `searsmelvin.co.uk` Google Workspace identity and are mapped to the existing internal partner record; funeral-director partners retain one-time email links.
-- Google establishes an individual identity at sign-in, but V2 deliberately does not claim per-user permissions or audit attribution until named staff records exist.
+- Google establishes an individual identity at sign-in. Named Admin / Operations chrome and activity attribution are now connected for the known Sears Melvin directory; per-user order permissions are still not claimed.
 - Sears Melvin can record cemetery physical-specification pre-approval **while unpaid**, and material ordered/received after payment **and** the latest pre-approval outcome are both recorded.
 - Material ordering starts the internal production timeline and acts as the normal physical-specification lock. A later changes-required decision is retained as a visible exception rather than silently rewriting history.
-- Proof decisions are **enabled for the shared Sears Melvin login**. Funeral-director proof decisions remain disabled by default (`PARTNER_PROOF_DECISIONS_ENABLED`).
+- Proof decisions are **enabled for named Sears Melvin Admin and Operations logins**. Funeral-director proof decisions remain disabled by default (`PARTNER_PROOF_DECISIONS_ENABLED`).
 - Permit **upload** is not connected and must stay false. Permit **progress** is writable for staff.
 - Named-user permissions and commission settlement remain visibly marked as not connected.
 - Create order does not POST invoices, call Stripe, send Resend, or touch GoHighLevel.
+- The live staff dashboard URL is `https://partner.searsmelvin.co.uk`. Do not treat `searsmelvin.co.uk/partner` as the production dashboard Arin uses.
 
 ## Later architecture changes worth making
 
 Only introduce these once the operational rules are agreed:
 
-1. Named staff identities, branches and scoped roles.
+1. Per-user order permissions, branches and scoped roles (named chrome exists; order scope is still the shared partner row).
 2. Per-order authority for family communication and proof approval.
 3. A versioned physical-specification approval record and an auditable material-release event. This must remain independent from versioned inscription proofs.
 4. Secure permit-document upload and review states — **not** in this change; tracking stays email + status.
-5. Named actor attribution on the append-only activity/audit trail for irreversible actions.
+5. A dedicated internal-notes store with visibility rules. Operational `order_events` already record named staff on workflow actions.
 6. Explicit commission, VAT, deposit and balance rules.
 7. A general invoice-line classification only if the dedicated permit/cemetery fee fields stop covering all pass-through charges.
 8. Raising invoices from this website, if accounts ever want Request payment to do more than the admin app / Make.
