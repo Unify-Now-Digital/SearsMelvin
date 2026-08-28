@@ -166,7 +166,7 @@ async function quoteSideEffects({
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      BUSINESS_EMAIL,
-      subject: `New Quote Request — ${product.name || "Memorial"} — ${name}`,
+      subject: `New Quote Request — ${formatNameForSubject(name)} — ${product.name || "Memorial"}`,
       html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt }),
     })),
     bg("ghl quote contact+opportunity", async () => {
@@ -301,7 +301,7 @@ async function enquirySideEffects({
       await sendEmail(env.RESEND_API_KEY, {
         from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to: BUSINESS_EMAIL,
-        subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
+        subject: `New Enquiry — ${formatNameForSubject(name)} — ${enquiryTypeLabel}`,
         html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, shortlistItems, submittedAt }),
       });
     }),
@@ -427,7 +427,7 @@ async function appointmentSideEffects({
     bg("appointment business email", () => sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: BUSINESS_EMAIL,
-      subject: `New Appointment Request — ${typeLabel} — ${dateFormatted} ${appointment_time} — ${name}`,
+      subject: `New Appointment Request — ${formatNameForSubject(name)} — ${typeLabel}, ${dateFormatted} ${appointment_time}`,
       html: appointmentBusinessEmail({ name, email, phone, typeLabel, dateFormatted, appointment_time, notes, submittedAt, calendarLink }),
     })),
     bg("appointment customer email", () => sendEmail(env.RESEND_API_KEY, {
@@ -1705,6 +1705,25 @@ function timingSafeEqual(a, b) {
   let diff = 0;
   for (let index = 0; index < a.length; index++) diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
   return diff === 0;
+}
+
+// Subject-line convention (business notifications):
+//   <Type phrase> — <Customer name> — <Product or detail>
+//
+// The leading type phrase is preserved verbatim from the previous convention —
+// "New Quote Request", "New Enquiry", "New Appointment Request" — because the
+// team's Gmail filters key on it. Only the order of what follows changed, so
+// existing filters and labels keep matching. Customer-facing subjects keep the
+// brand as the last element, since the From name already carries it and
+// truncation should eat the brand rather than the content.
+export function formatNameForSubject(name) {
+  const trimmed = String(name ?? "").trim().replace(/\s+/g, " ");
+  if (!trimmed) return "";
+  // Capitalise only a name typed entirely in lower case — that is a form-filling
+  // artefact ("evans"). Anything carrying capitals is left exactly as entered,
+  // so "McDonald", "O'Brien" and "van der Berg" are never mangled.
+  if (trimmed !== trimmed.toLowerCase()) return trimmed;
+  return trimmed.replace(/(^|[\s'’-])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase());
 }
 
 function formatPrice(str) {
