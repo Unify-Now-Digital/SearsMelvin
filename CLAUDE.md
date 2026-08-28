@@ -91,6 +91,25 @@ Chromium (`/opt/pw-browsers/chromium`). Things that bite:
 - Business copy goes to `BUSINESS_EMAIL`; customer copy needs an address to
   exist (phone-only submissions are legal).
 
+### Subject lines
+
+Business notifications: `<Type phrase> — <Customer name> — <Product or detail>`.
+
+The **leading type phrase is load-bearing** — the team's Gmail filters key on it
+(the `/RAQ` label on quote requests, among others). "New Quote Request",
+"New Enquiry", "New Appointment Request", "Quote updated by customer" and
+"Deposit received" are pinned verbatim by `tests/email-subjects.mjs`; reorder
+what follows them freely, but do not reword the phrase itself without changing
+the filters at the same time.
+
+Customer subjects keep the brand **last** (`… — Sears Melvin Memorials`): the
+From name already carries it, so truncation should eat the brand rather than the
+content. Don't prefix customer subjects with the brand.
+
+Names go through `formatNameForSubject`, which capitalises only an all-lowercase
+name ("evans" → "Evans") and leaves anything with existing capitals untouched,
+so "McDonald" and "van der Berg" are never mangled.
+
 ## Testing
 
 No package.json, no test runner. Tests are standalone Node scripts:

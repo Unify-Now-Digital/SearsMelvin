@@ -14,6 +14,8 @@
  *   STRIPE_WEBHOOK_SECRET  → "Signing secret" shown after creating the webhook endpoint
  */
 
+import { formatNameForSubject } from "./submit.js";
+
 const BUSINESS_NAME  = "Sears Melvin Memorials";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL     = "info@searsmelvin.co.uk";
@@ -455,7 +457,7 @@ async function handlePaymentSucceeded(env, pi) {
       await sendEmail(env.RESEND_API_KEY, {
         from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to:      BUSINESS_EMAIL,
-        subject: `Deposit received — £${amountPaid} — ${name || email}`,
+        subject: `Deposit received — ${formatNameForSubject(name) || email} — £${amountPaid}${product ? ` — ${product}` : ""}`,
         html:    depositBusinessEmail({ name, email, amountPaid, product, productUrl, cemetery, piId: pi.id }),
       });
     } catch {
