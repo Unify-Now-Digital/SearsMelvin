@@ -15,6 +15,7 @@ import {
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
+const SITE_URL = "https://searsmelvin.co.uk";
 
 // GHL pipeline defaults. These were previously env-only, and because neither var
 // was ever set in Cloudflare `createGHLOpportunity` returned early on every
@@ -216,11 +217,19 @@ async function handleEnquiry(ctx, data, submittedAt) {
   const grave_number = data.grave_number ? String(data.grave_number).trim() : null;
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
-  if (!message) return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
 
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
   const isShortlist = enquiry_type === "shortlist-enquiry";
   const channel = isShortlist ? "shortlist" : "contact";
+
+  // The shortlist panel's note field is optional in the UI, so a shortlist with
+  // saved memorials and no note is a legitimate submission — it used to be
+  // rejected here as "Missing required fields". For every other channel the
+  // message is still the whole enquiry, so it stays required.
+  const shortlistItems = isShortlist ? normaliseShortlistItems(data.details?.items) : [];
+  if (!message && shortlistItems.length === 0) {
+    return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
+  }
 
   // 1. Supabase first — save record before sending any emails. If the save
   // fails the customer should see an error (and not get a confirmation email
@@ -239,7 +248,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
       name, email, phone,
       sub_type: enquiry_type || null,
       source_page: data.source_page || null,
-      message,
+      message: message || null,
       contact_pref,
       location,
       cemetery_id: data.cemetery_id || null,
@@ -264,6 +273,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
   ctx.waitUntil(enquirySideEffects({
     env, name, email, phone, message, location,
     enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls,
+    shortlistItems,
     submittedAt, appointment_date: data.appointment_date || null,
     appointment_time: data.appointment_time || null,
     appointment_at_iso: data.appointment_at || null,
@@ -278,7 +288,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
 // the business email so it's chained inside that branch.
 async function enquirySideEffects({
   env, name, email, phone, message, location,
-  enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls,
+  enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
   submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind,
 }) {
   await Promise.allSettled([
@@ -292,10 +302,13 @@ async function enquirySideEffects({
         from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to: BUSINESS_EMAIL,
         subject: `New Enquiry — ${enquiryTypeLabel} — ${name}`,
-        html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, submittedAt }),
+        html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, shortlistItems, submittedAt }),
       });
     }),
-    bg("enquiry customer email", () => {
+    // Phone-only submissions are valid (the API requires name + email OR phone),
+    // so there may be no address to confirm to. Without this guard Resend is
+    // called with an empty `to` and 400s into a swallowed background error.
+    !email ? null : bg("enquiry customer email", () => {
       const customerSubjectExtra = grave_number
         ? ` — Grave ${grave_number}`
         : (location ? ` — ${location}` : "");
@@ -303,7 +316,7 @@ async function enquirySideEffects({
         from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
         to: email,
         subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
-        html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }),
+        html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }),
       });
     }),
     // Calendar event if the contact form picked a slot.
@@ -604,6 +617,62 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
 // EMAIL TEMPLATES
 // ═══════════════════════════════════════════════════════════════════
 
+// Deep-link back to the product page a submission came from, so both inboxes
+// can click straight through to /memorials/<slug>.
+//
+// The slug arrives in the browser payload and `validateSubmission` only checks
+// that `product` is an object — it does not vet the fields inside it. So the
+// slug is re-validated here against the same pattern the quote API uses
+// (`sanitiseProductConfig` in quotes.js) before it goes anywhere near an href:
+// without it a crafted submission could put an arbitrary — or `javascript:` —
+// URL into our own inbox. Anything that doesn't match returns "" and every
+// caller then renders the plain, unlinked version.
+function productPageUrl(product) {
+  const slug = typeof product?.slug === "string" ? product.slug.toLowerCase().trim() : "";
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) return "";
+  return `${SITE_URL}/memorials/${encodeURIComponent(slug)}`;
+}
+
+// Shortlist enquiries carry the saved memorials in `details.items`. They used
+// to be stored and then dropped from both emails, so the team had to open the
+// CRM to see what the customer had actually saved. Normalise them here (the
+// client also sends a `url` per item — ignored, we rebuild it from the slug so
+// the href is always ours) and render them as links in both copies.
+function normaliseShortlistItems(rawItems) {
+  if (!Array.isArray(rawItems)) return [];
+  return rawItems.slice(0, 20).map(item => {
+    if (!item || typeof item !== "object") return null;
+    const name = typeof item.name === "string" ? item.name.trim().slice(0, 160) : "";
+    if (!name) return null;
+    const price = typeof item.price === "string"
+      ? item.price.trim().slice(0, 40)
+      : (typeof item.price === "number" ? `£${formatPrice(item.price)}` : "");
+    return { name, price, url: productPageUrl(item) };
+  }).filter(Boolean);
+}
+
+// Renders the shortlist as a full `<tr>` so it drops straight into either
+// enquiry email's outer table.
+function shortlistItemsBlock(items, { heading }) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  const rows = items.map((item, index) => `
+          <tr>
+            <td width="24" valign="top" style="padding:7px 0;font-family:Arial,sans-serif;font-size:12px;color:#BBBBBB;">${index + 1}.</td>
+            <td style="padding:7px 0;font-family:Arial,sans-serif;font-size:13px;color:#1A1A1A;line-height:1.5;">
+              ${item.url
+                ? `<a href="${item.url}" style="color:#2C2C2C;font-weight:600;text-decoration:none;">${esc(item.name)}</a>`
+                : `<strong style="color:#2C2C2C;">${esc(item.name)}</strong>`}${item.price ? `<span style="color:#999999;"> &middot; ${esc(item.price)}</span>` : ""}
+              ${item.url ? `<br><a href="${item.url}" style="color:#8B7355;font-size:12px;text-decoration:none;">View memorial &rarr;</a>` : ""}
+            </td>
+          </tr>`).join("");
+  return `
+      <tr><td style="padding:14px 28px 0;">
+        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">${esc(heading)} (${items.length})</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}
+        </table>
+      </td></tr>`;
+}
+
 function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -619,7 +688,13 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
   // Product image: must be a full absolute URL for email clients
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
-  const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const productUrl = productPageUrl(product);
+  // `border="0"` + `border:0` stop Outlook drawing a blue frame around a linked
+  // image, and the wrapping anchor sets its own colour so that when the client
+  // blocks images the alt text falls back to brand brown rather than default
+  // link blue.
+  const productImg = `<img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" border="0" style="display:block;width:100%;max-width:360px;height:auto;border:0;outline:none;text-decoration:none;" />`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -669,14 +744,21 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                   <!-- Section label -->
                   <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">Memorial Configuration</p>
 
-                  <!-- Product name -->
-                  <p style="font-family:Georgia,Times New Roman,serif;font-size:20px;color:#2C2C2C;margin:0 0 14px 0;">${esc(product.name || "—")}</p>
+                  <!-- Product name + link back to the live product page -->
+                  <p style="font-family:Georgia,Times New Roman,serif;font-size:20px;color:#2C2C2C;margin:0 0 ${productUrl ? "5px" : "14px"} 0;">${
+                    productUrl
+                      ? `<a href="${productUrl}" style="color:#2C2C2C;text-decoration:none;">${esc(product.name || "—")}</a>`
+                      : esc(product.name || "—")
+                  }</p>
+                  ${productUrl ? `<p style="margin:0 0 14px 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.4;">
+                    <a href="${productUrl}" style="color:#8B7355;font-weight:600;text-decoration:none;">View product page &rarr;</a>
+                  </p>` : ""}
 
-                  ${imageUrl ? `<!-- Product image -->
+                  ${imageUrl ? `<!-- Product image (also links through to the product page) -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
                     <tr>
                       <td align="center" style="background-color:#F5F3F0;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
-                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
+                        ${productUrl ? `<a href="${productUrl}" style="display:block;color:#8B7355;font-family:Arial,sans-serif;font-size:13px;text-decoration:none;">${productImg}</a>` : productImg}
                       </td>
                     </tr>
                   </table>` : ""}
@@ -838,7 +920,13 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
   const grandTotal = totalPrice + permitFee;
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
-  const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `https://searsmelvin.co.uk${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const productUrl = productPageUrl(product);
+  // `border="0"` + `border:0` stop Outlook drawing a blue frame around a linked
+  // image, and the wrapping anchor sets its own colour so that when the client
+  // blocks images the alt text falls back to brand brown rather than default
+  // link blue.
+  const productImg = `<img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" border="0" style="display:block;width:100%;max-width:360px;height:auto;border:0;outline:none;text-decoration:none;" />`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -873,7 +961,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
         <tr>
           <td style="padding:30px 28px 0;">
             <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
-            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for the <strong style="color:#2C2C2C;">${esc(product.name || "memorial")}</strong> and our team will be in touch within 24 hours.</p>
+            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for <strong style="color:#2C2C2C;">${esc(product.name || "your memorial")}</strong> and our team will be in touch within 24 hours.</p>
           </td>
         </tr>
 
@@ -886,12 +974,19 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
                 <td style="padding:16px 18px;">
 
                   <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">Your Order Summary</p>
-                  <p style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#2C2C2C;margin:0 0 14px 0;">${esc(product.name || "—")}</p>
+                  <p style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#2C2C2C;margin:0 0 ${productUrl ? "5px" : "14px"} 0;">${
+                    productUrl
+                      ? `<a href="${productUrl}" style="color:#2C2C2C;text-decoration:none;">${esc(product.name || "—")}</a>`
+                      : esc(product.name || "—")
+                  }</p>
+                  ${productUrl ? `<p style="margin:0 0 14px 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.4;">
+                    <a href="${productUrl}" style="color:#8B7355;font-weight:600;text-decoration:none;">View this memorial on our website &rarr;</a>
+                  </p>` : ""}
 
                   ${imageUrl ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
                     <tr>
                       <td align="center" style="background-color:#ffffff;border:1px solid #E0DCD5;border-radius:6px;padding:12px;">
-                        <img src="${imageUrl}" alt="${esc(product.name || "Memorial")}" width="360" style="display:block;width:100%;max-width:360px;height:auto;" />
+                        ${productUrl ? `<a href="${productUrl}" style="display:block;color:#8B7355;font-family:Arial,sans-serif;font-size:13px;text-decoration:none;">${productImg}</a>` : productImg}
                       </td>
                     </tr>
                   </table>` : ""}
@@ -1072,7 +1167,8 @@ function enquiryPhotoGallery(signedUrls) {
       </td></tr>`;
 }
 
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls, submittedAt }) {
+function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls, shortlistItems, submittedAt }) {
+  const hasPhotos = Array.isArray(photo_signed_urls) && photo_signed_urls.length > 0;
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -1102,12 +1198,13 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
           ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
         </table>
       </td></tr>
-      <tr><td style="padding:12px 28px ${photo_signed_urls && photo_signed_urls.length ? '4px' : '28px'};">
+      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials shortlisted" })}
+      ${message ? `<tr><td style="padding:12px 28px ${hasPhotos ? '4px' : '28px'};">
         <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Message</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
         </table>
-      </td></tr>
+      </td></tr>` : `<tr><td style="padding:0 28px ${hasPhotos ? '4px' : '20px'};font-size:0;line-height:0;">&nbsp;</td></tr>`}
       ${enquiryPhotoGallery(photo_signed_urls)}
       <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
@@ -1122,7 +1219,7 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
 // Customer copy = receipt notice + verbatim copy of what they submitted, so
 // they can see exactly what reached us. Subject line carries the enquiry type
 // and an extra detail (grave / cemetery) so it stands out in their inbox.
-function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, submittedAt }) {
+function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }) {
   const firstName = (name || "").split(" ")[0];
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1152,12 +1249,13 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
           ${submittedAt ? `<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Submitted</td><td style="padding:5px 0;color:#1A1A1A;">${esc(submittedAt)}</td></tr>` : ""}
         </table>
       </td></tr>
-      <tr><td style="padding:14px 28px 8px;">
+      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials you shortlisted" })}
+      ${message ? `<tr><td style="padding:14px 28px 8px;">
         <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your message</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
         </table>
-      </td></tr>
+      </td></tr>` : ""}
       <tr><td style="padding:18px 28px 24px;">
         <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 6px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
         <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
@@ -1200,11 +1298,20 @@ function splitName(full) {
   };
 }
 
+// A few slugs already carry the word "enquiry", which the generic prettifier
+// below then reads back as "Shortlist Enquiry enquiry" in the email heading.
+// Override those to the bare noun so every use site — subject, badge, heading —
+// reads cleanly.
+const ENQUIRY_TYPE_LABELS = {
+  "shortlist-enquiry": "Shortlist",
+};
+
 // Pretty-print enquiry type slugs ("new-memorial" → "New Memorial").
 // Used in subject lines and email bodies so renovation submissions don't all
 // read as "New Memorial" (the first option in the picker).
 function formatEnquiryTypeLabel(slug) {
   if (!slug) return "General";
+  if (ENQUIRY_TYPE_LABELS[slug]) return ENQUIRY_TYPE_LABELS[slug];
   return String(slug).replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
@@ -1248,6 +1355,11 @@ async function lookupCemeteryIdByName(env, location) {
   const trimmed = location.trim();
   if (trimmed.length < 3) return null;
   const headers = supabaseHeaders(env);
+  // `cemeteries` is a shared multi-tenant table — Sears Melvin owns 6 rows, the
+  // other tenant owns ~134. Without the org filter a free-typed name could
+  // resolve to another tenant's cemetery (and its permit fee), so scope the
+  // lookup the same way partner-orders.js does. Test rows are excluded too.
+  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
   // Postgres `ilike` with the full string first (exact-ish match), then loosen.
   const tries = [
     `name=ilike.${encodeURIComponent(trimmed)}`,
@@ -1255,7 +1367,7 @@ async function lookupCemeteryIdByName(env, location) {
     `name=ilike.${encodeURIComponent("%" + trimmed + "%")}`,
   ];
   for (const filter of tries) {
-    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&select=id&limit=1`;
+    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&is_test=eq.false${orgFilter}&select=id&limit=1`;
     const res = await fetch(url, { headers: { apikey: headers.apikey, Authorization: headers.Authorization } });
     if (!res.ok) continue;
     const rows = await res.json();
