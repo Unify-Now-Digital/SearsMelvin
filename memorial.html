@@ -1270,6 +1270,7 @@
     <script>
         // ==================== SUPABASE ====================
         const SUPABASE_URL  = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SM_ORG_ID = '3770972d-1bbd-417b-b413-297e844db285';
         const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
         const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
 
@@ -1293,7 +1294,7 @@
             inscriptionPrice: 0,
             addonsPrice: 0,
             photoActive: false,
-            photoSize: 'small',
+            photoSize: 'oval',
             photoPrice: 0,
             kerbActive: false,
             kerbPrice: 350,
@@ -1303,9 +1304,9 @@
             colour: 'black',
             colourPrice: 0,
             selectedSize: 'standard',
-            infillType: 'chippings',
+            infillType: 'none',
             infillColour: 'white',
-            infillPrice: 250
+            infillPrice: 0
         };
 
         // ==================== ADMIN PREVIEW BANNER ====================
@@ -1386,7 +1387,7 @@
                     showAdminPreviewBanner(product);
                 }
                 if (!product) {
-                    const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, is_active: 'eq.true', limit: '1' });
+                    const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, organization_id: 'eq.' + SM_ORG_ID, is_active: 'eq.true', is_listed: 'eq.true', category_id: 'not.is.null', limit: '1' });
                     product = products[0];
                 }
                 // Genuinely unknown slug (the fetch succeeded but returned no
@@ -1528,6 +1529,9 @@
                 if (catSlug === 'kerb-sets') {
                     var infillGroup = document.getElementById('infillOptionGroup');
                     if (infillGroup) infillGroup.style.display = '';
+                    state.infillType = 'chippings';
+                    state.infillPrice = INFILL_PRICES.chippings;
+                    updateInfillLabel();
                 }
 
                 // Render features
@@ -1537,6 +1541,7 @@
                 document.getElementById('charCounter').textContent = charsIncluded + ' characters included, then £' + pricePerChar.toFixed(2) + ' each';
                 document.querySelector('#charCount').parentElement.innerHTML = '<span id="charCount">0</span> / ' + charsIncluded + ' included';
 
+                updateAddonsTotal();
                 updateTotalPrice();
                 checkIfSaved();
             } catch (err) {
@@ -1624,6 +1629,8 @@
             });
             container.innerHTML = html;
             var defaultSize = sizes.find(function(s) { return s.is_default; }) || sizes[0];
+            state.selectedSize = defaultSize.size_code || '';
+            state.sizePrice = parseFloat(defaultSize.price_adjustment) || 0;
             document.getElementById('selectedSizeName').textContent = defaultSize.size_name + (defaultSize.dimensions ? ' (' + defaultSize.dimensions + ')' : '');
         }
 
@@ -1813,7 +1820,7 @@
             document.getElementById('photoSubPanel').style.display = isSelected ? 'block' : 'none';
 
             if (isSelected) {
-                state.photoPrice = { small:160, medium:200, large:240 }[state.photoSize];
+                state.photoPrice = { oval:160, rectangle:200, heart:240 }[state.photoSize];
             } else {
                 state.photoPrice = 0;
             }
@@ -1930,7 +1937,7 @@
             }
 
             // Kerb infill
-            if (state.infillPrice > 0) {
+            if (productData?.product_categories?.slug === 'kerb-sets' && state.infillPrice > 0) {
                 total += state.infillPrice;
                 labels.push('infill-' + state.infillType);
             }
@@ -2012,7 +2019,7 @@
 
 
         // ==================== SELECTED ADDONS LIST ====================
-        const PHOTO_SIZE_LABEL = { small: 'Small Oval', medium: 'Medium Oval', large: 'Large Rectangle' };
+        const PHOTO_SIZE_LABEL = { oval: 'Oval', rectangle: 'Rectangle', heart: 'Heart' };
 
         function getAddonLineItems() {
             const items = [];
@@ -2029,7 +2036,7 @@
             if (state.kerbActive) {
                 items.push({ name: 'Garden Kerb Surround', price: 350 });
             }
-            if (state.infillPrice > 0) {
+            if (productData?.product_categories?.slug === 'kerb-sets' && state.infillPrice > 0) {
                 var infillName = 'Kerb Infill — ' + state.infillType.charAt(0).toUpperCase() + state.infillType.slice(1);
                 if (state.infillType === 'chippings') infillName += ' (' + state.infillColour.charAt(0).toUpperCase() + state.infillColour.slice(1) + ')';
                 items.push({ name: infillName, price: state.infillPrice });
@@ -2042,6 +2049,12 @@
 
         function getSelectedAddons() {
             return getAddonLineItems().map(function(item) { return item.name; });
+        }
+
+        function getSelectedAddonSlugs() {
+            return Array.from(document.querySelectorAll('.addon-card.selected input[name="addon"]'))
+                .map(function(input) { return input.value; })
+                .filter(function(value) { return value !== 'photo' && value !== 'kerb' && value !== 'extra-lettering'; });
         }
 
         // ==================== QUOTE MODAL ====================
@@ -2277,11 +2290,6 @@
                 const message   = '';
 
                 const colour = document.getElementById('selectedColourName').textContent;
-                const total  = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-
-                const lineItems = getAddonLineItems();
-                if (state.colourPrice > 0) lineItems.push({ name: 'Premium colour — ' + colour, price: state.colourPrice });
-
                 try {
                     const res = await fetch('/api/submit', {
                         method: 'POST',
@@ -2301,16 +2309,18 @@
                                 type:        productData && productData.product_categories ? productData.product_categories.name : 'Memorial',
                                 colour:      colour,
                                 size:        (function() { var s = document.getElementById('selectedSizeName').textContent.trim(); return (!s || s === 'Loading...') ? '' : s; })(),
+                                sizeCode:    state.selectedSize,
                                 addons:      getSelectedAddons(),
-                            addonLineItems: lineItems,
+                                addonSlugs:  getSelectedAddonSlugs(),
+                                photoActive: state.photoActive,
+                                photoSize:   state.photoSize,
+                                gardenKerb: state.kerbActive,
                                 // The textarea limits to 400 chars; cap defensively at 1000 in case of paste oddities.
                                 inscription: state.inscription ? state.inscription.substring(0, 1000) : '',
                                 font:        state.font || '',
                                 letterColour: state.letterColour || '',
                                 infillType:  state.infillType || '',
                                 infillColour: state.infillColour || '',
-                                price:       String(total),
-                                permit_fee:  _selectedCemeteryFee || 0,
                                 image:       PRODUCT_IMAGE_URL,
                             }
                         })
@@ -2318,11 +2328,9 @@
                     const result = await res.json();
                     if (result.ok) {
                         document.getElementById('quoteForm').style.display = 'none';
-                        var editLink = result.editToken ? '<br><a href="/quote#token=' + encodeURIComponent(result.editToken) + '" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.9rem;">View & edit your quote →</a>' : '';
-                        var trackLink = email ? '<br><a href="/quote" style="color: var(--color-accent-dark);text-decoration:underline;font-size:0.85rem;">Access your quotes securely</a>' : '';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
-                            "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation." + editLink + trackLink;
+                            "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.";
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
@@ -2564,7 +2572,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
                         headers: {
                             'apikey': SUPABASE_ANON,

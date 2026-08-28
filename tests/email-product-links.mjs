@@ -25,6 +25,21 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.includes("/rpc/check_portal_rate_limit")) {
     return Response.json([{ allowed: true, retry_after_seconds: 0 }]);
   }
+  if (url.includes("/rest/v1/products?")) return Response.json([{
+    id: "product-1",
+    name: "The Keswick Heart",
+    slug: "the-keswick-heart",
+    base_price: 1750,
+    image_url: "/images/keswick.jpg",
+    inscription_chars_included: 80,
+    inscription_price_per_char: 1.95,
+    product_categories: { name: "Cremation Memorials", slug: "cremation-memorials" },
+  }]);
+  if (url.includes("/rest/v1/stone_colours?")) return Response.json([
+    { name: "Black", slug: "black", is_premium: false, tier: "standard" },
+  ]);
+  if (url.includes("/rest/v1/product_addons?")) return Response.json([]);
+  if (url.includes("/rest/v1/product_sizes?")) return Response.json([]);
   if (url.includes("/rpc/create_quote")) return Response.json({ ok: true });
   if (url.includes("/rest/v1/people?email=eq.")) return Response.json([{ id: 7, is_customer: false }]);
   if (url.includes("/rest/v1/people?id=eq.")) return new Response(null, { status: 204 });
@@ -88,15 +103,12 @@ const quoteBody = slug => ({
   assert.ok(business.html.includes(`border="0"`));
 }
 
-// 2. A slug the browser made up can never reach an href.
+// 2. A slug the browser made up is rejected before persistence or email.
 for (const hostileSlug of ["javascript:alert(1)", '" onmouseover="x', "../../admin", "//evil.example"]) {
-  const { payload } = await submit(quoteBody(hostileSlug));
-  assert.equal(payload.ok, true);
-  for (const email of sentEmails) {
-    assert.ok(!email.html.includes("/memorials/"), `hostile slug ${hostileSlug} produced a link`);
-    assert.ok(!email.html.includes("javascript:"), `hostile slug ${hostileSlug} produced a javascript: href`);
-    assert.ok(!email.html.includes("onmouseover"), `hostile slug ${hostileSlug} escaped into an attribute`);
-  }
+  const { response, payload } = await submit(quoteBody(hostileSlug));
+  assert.equal(response.status, 400);
+  assert.equal(payload.ok, false);
+  assert.equal(sentEmails.length, 0);
 }
 
 // 3. A shortlist enquiry with no note is valid, and both copies list the saved

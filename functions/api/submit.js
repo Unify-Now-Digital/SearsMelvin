@@ -11,6 +11,7 @@ import {
   rateLimitResponse,
   readBoundedJson,
 } from "./_security.js";
+import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -110,18 +111,29 @@ function bg(label, task) {
 
 async function handleQuoteRequest(ctx, data, submittedAt) {
   const env = ctx.env;
-  const { name, email, phone, cemetery, message, product = {}, location } = data;
+  const { name, email, phone, cemetery, message, product: submittedProduct = {}, location } = data;
+  let product;
+  try {
+    product = await canonicaliseQuoteProduct(env, submittedProduct);
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: "quote_price_verification_failed",
+      reason: error instanceof QuotePricingError ? error.message : "catalogue request failed",
+    }));
+    return jsonResponse({
+      ok: false,
+      error: error instanceof QuotePricingError
+        ? error.message
+        : "Unable to verify the current memorial price. Please try again.",
+    }, error instanceof QuotePricingError ? error.status : 503);
+  }
   const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
   const cemeteryOrLocation = cemetery || location || null;
 
-  // 1. Persist the quote in a single atomic Supabase RPC — it upserts the
-  // person, creates the order (carrying this edit_token) and the enquiry in one
-  // transaction / one network round trip instead of ~4 sequential PostgREST
-  // calls. Must complete before responding so the customer only sees
-  // "submitted" once the quote actually persisted. The emails and the GHL
-  // contact run in the background via ctx.waitUntil below.
-  const editToken = generateToken();
+  // 1. Persist the canonically priced quote through the production RPC. The
+  // current quote workflow upserts the person/job and creates an enquiry; it
+  // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_quote`, {
@@ -136,7 +148,6 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
           message: message || null,
           location: cemeteryOrLocation,
           cemetery_id: data.cemetery_id || null,
-          edit_token: editToken,
           product,
         },
       }),
@@ -150,17 +161,17 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // 2. Background side-effects.
   ctx.waitUntil(quoteSideEffects({
     env, name, email, phone, message, product, submittedAt,
-    cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+    cemeteryOrLocation, firstName, stoneHex, cemetery, location,
   }));
 
-  return jsonResponse({ ok: true, editToken });
+  return jsonResponse({ ok: true });
 }
 
 // Runs after the response has been returned. Fires the customer + business
 // emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, editToken, cemetery, location,
+  cemeteryOrLocation, firstName, stoneHex, cemetery, location,
 }) {
   const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
@@ -201,7 +212,7 @@ async function quoteSideEffects({
       from:    `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to:      email,
       subject: `Your quote — ${product.name || "Memorial"} — ${BUSINESS_NAME}`,
-      html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation, editToken, email }),
+      html:    quoteCustomerEmail({ firstName, product, stoneHex, location: cemeteryOrLocation }),
     })));
   }
   await Promise.allSettled(sideEffects);
@@ -907,7 +918,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 </html>`;
 }
 
-function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken, email }) {
+function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
   const totalPrice = parseFloat(product.price) || 0;
   const permitFee = parseFloat(product.permit_fee) || 0;
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
@@ -1070,29 +1081,6 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location, editToken,
                 </td>
               </tr>
             </table>
-          </td>
-        </tr>
-
-        ${editToken ? `<!-- Edit quote link -->
-        <tr>
-          <td style="padding:0 28px 20px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;border-radius:8px;">
-              <tr>
-                <td style="padding:14px 18px;font-family:Arial,sans-serif;">
-                  <p style="font-size:13px;color:#555555;margin:0 0 8px;line-height:1.5;">Changed your mind about colour, size, or extras? You can update your quote at any time:</p>
-                  <a href="https://searsmelvin.co.uk/quote#token=${editToken}" style="color:#8B7355;font-size:13px;font-weight:600;text-decoration:none;">Edit Your Quote &rarr;</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>` : ""}
-
-        <!-- Track quotes link -->
-        <tr>
-          <td style="padding:0 28px 16px;">
-            <p style="font-family:Arial,sans-serif;font-size:12px;color:#999999;margin:0;text-align:center;">
-              ${email ? `<a href="https://searsmelvin.co.uk/quote" style="color:#8B7355;text-decoration:none;">Access your quotes securely</a> &middot; Quote reference available in your account` : ""}
-            </p>
           </td>
         </tr>
 
@@ -1272,15 +1260,6 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-function generateToken() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  for (const b of bytes) token += chars[b % chars.length];
-  return token;
-}
-
 function supabaseHeaders(env) {
   return {
     "apikey": env.SUPABASE_SERVICE_KEY,

@@ -7,6 +7,7 @@
 
 const BASE = "https://searsmelvin.co.uk";
 const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
+const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
 const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Static, hand-maintained set. Customer-facing only — never list /admin,
@@ -44,7 +45,7 @@ async function fetchProducts(env) {
   const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
   try {
     const res = await fetch(
-      `${url}/rest/v1/products?is_active=eq.true&select=slug,updated_at,created_at&order=display_order.asc`,
+      `${url}/rest/v1/products?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID)}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=slug,updated_at,created_at&order=display_order.asc`,
       {
         headers: {
           apikey: key,

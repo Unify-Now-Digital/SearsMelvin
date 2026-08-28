@@ -918,18 +918,27 @@
 
             // Addons
             var selectedAddons = {};
-            addonItems.forEach(function(a) { selectedAddons[a.name] = true; });
+            addonItems.forEach(function(a) {
+                var name = String(a.name || '');
+                var lower = name.toLowerCase();
+                if (lower.indexOf('photo plaque') !== -1) selectedAddons['Ceramic Photo Plaque'] = true;
+                else if (lower.indexOf('flower vase') !== -1) selectedAddons['Flower Vase'] = true;
+                else if (lower.indexOf('custom motif') !== -1) selectedAddons['Custom Motif'] = true;
+                else if (lower.indexOf('garden kerb surround') !== -1) selectedAddons['Garden Kerb Surround'] = true;
+            });
             var availableAddons = [
-                { name: 'Photo Plaque', price: 175, desc: 'Ceramic photo plaque set into the memorial.' },
-                { name: 'Flower Vase', price: 95, desc: 'Built-in granite flower vase with drainage.' },
-                { name: 'Garden Kerb Surround', price: 350, desc: 'Granite kerb border with white chippings.' },
-                { name: 'Extra Lettering', price: 0, desc: 'Additional inscription text (priced per letter).' }
+                { name: 'Ceramic Photo Plaque', slug: 'photo-plaque', price: 160, desc: 'Ceramic photo plaque set into the memorial.' },
+                { name: 'Flower Vase', slug: '', price: 85, desc: 'Built-in granite flower vase with drainage.' },
+                { name: 'Custom Motif', slug: '', price: 120, desc: 'A custom engraved design or motif.' }
             ];
+            if (!product.type || (product.type.toLowerCase().indexOf('kerb') === -1 && product.type.toLowerCase().indexOf('cremation') === -1)) {
+                availableAddons.push({ name: 'Garden Kerb Surround', slug: 'garden-kerb', price: 350, desc: 'Granite kerb border with white chippings.' });
+            }
 
             html += '<div class="edit-field"><label>Additional Options</label>';
             availableAddons.forEach(function(addon) {
                 var isSelected = selectedAddons[addon.name] ? ' selected' : '';
-                html += '<div class="quote-addon-card' + isSelected + '" onclick="toggleQuoteAddon(this)" data-addon="' + esc(addon.name) + '" data-price="' + addon.price + '">'
+                html += '<div class="quote-addon-card' + isSelected + '" onclick="toggleQuoteAddon(this)" data-addon="' + esc(addon.name) + '" data-slug="' + esc(addon.slug) + '" data-price="' + addon.price + '">'
                     + '<span class="quote-addon-check">' + (isSelected ? '&#10003;' : '') + '</span>'
                     + '<div class="quote-addon-info"><div class="quote-addon-name">' + esc(addon.name) + '</div>'
                     + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + esc(addon.desc) + '</div></div>'
@@ -1014,13 +1023,22 @@
             // Collect selected addons
             var addonCards = document.querySelectorAll('.quote-addon-card.selected');
             var selectedAddons = [];
+            product.photoActive = false;
+            product.gardenKerb = false;
             addonCards.forEach(function(card) {
                 var name = card.getAttribute('data-addon');
+                var slug = card.getAttribute('data-slug');
                 var price = parseFloat(card.getAttribute('data-price')) || 0;
                 selectedAddons.push({ name: name, price: price });
+                if (slug === 'photo-plaque') product.photoActive = true;
+                else if (slug === 'garden-kerb') product.gardenKerb = true;
             });
             product.addonLineItems = selectedAddons;
             product.addons = selectedAddons.map(function(a) { return a.name; });
+            // Legacy edit links predate structured addon slugs. The API maps
+            // these current catalogue names and remains the pricing authority.
+            product.addonSlugs = [];
+            if (product.photoActive && !product.photoSize) product.photoSize = 'oval';
 
             try {
                 var res = await fetch('/api/quotes', {
@@ -1035,12 +1053,13 @@
                 var data = await res.json();
                 if (!data.ok) throw new Error(data.error);
                 successEl.style.display = 'block';
-                // Refresh the quote display with updated data
-                currentQuote.product = product;
+                // Refresh with the server-calculated configuration and total.
+                currentQuote.product = data.product || product;
+                currentQuote.value = data.value;
                 currentQuote.notes = document.getElementById('editNotes').value.trim();
                 renderSingleQuote(currentQuote);
             } catch (e) {
-                alert('Failed to save changes. Please try again.');
+                alert(e && e.message ? e.message : 'Failed to save changes. Please try again.');
             }
             btn.disabled = false;
             btn.textContent = 'Save Changes';
@@ -1140,7 +1159,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
                         headers: {
                             'apikey': SUPABASE_ANON_KEY,
