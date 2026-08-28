@@ -28,44 +28,42 @@ Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
 | 13 | Low | Supabase | Auth leaked-password protection (HaveIBeenPwned) disabled | Open |
 | 14 | Low | Supabase perf | 4 duplicate indexes (`order_people` ×3, `inbox_messages` ×1), 37 unindexed FKs, 38 unused indexes, 2 `auth_rls_initplan` warnings on `enquiries` | Open — **low priority**, largest table is 6,633 rows |
 | 15 | Info | Data | Sears Melvin has only 6 cemeteries and `processing_weeks` is null on all of them, so `/permit-checker` will still look thin once #1 is fixed | Open — data entry, not code |
-| 16 | **High** | Quote form | On `/memorials/<slug>` Google's autocomplete replaces the Supabase input, and its `gmp-placeselect` handler set only a name string — never `_selectedCemeteryId` or `_selectedCemeteryFee`. So no quote captured a cemetery FK or a permit fee, regardless of #1. | **Fixed** — `SMCemetery.match` maps the Google pick back to the priced rows; covered by `tests/cemetery-match.mjs`. Dormant until #1 lands (the priced list is empty until then). |
-| 17 | Medium | Contact form | `/contact`'s cemetery field was Supabase-only, so it had no working autocomplete at all | **Fixed** — now uses the same Google Places element as the product page, with the list autocomplete retained as a fallback when Maps cannot load |
+| 16 | — | Quote form | Quotes carry no cemetery FK and no permit fee, because Google's `gmp-placeselect` returns only a display name | **Not a defect — by design.** A matcher was built and then removed on request: the site does not price permit fees. See "Deliberate absences" in `CLAUDE.md`. |
+| 17 | Medium | Contact form | `/contact`'s cemetery field was Supabase-only, so with #1 in place it had no working autocomplete at all | **Fixed** — now uses the same plain Google Places element as the product quote form; the Supabase list, its styles and `cemetery_id` capture were removed |
 
-### Finding #1 in detail — corrected 2026-08-26
+### Finding #1 in detail — rescoped 2026-08-26
 
 The policy name says "public read" but the grant is to `authenticated` only, so
-any page querying `cemeteries` with the anon key gets an empty array. **Two**
-public pages are affected — not three, as first written here:
+any page querying `cemeteries` with the anon key gets an empty array.
+
+After the cemetery fields moved to Google Places, **one** page is affected:
 
 - **`/permit-checker`** — Supabase only, no Google fallback. The page's entire
-  purpose is looking up a cemetery's permit fee and timescale. Non-functional.
-- **`/contact`** — was Supabase only, with an empty dropdown; now on Google Places
-  too (finding #17), so the RLS grant only affects its ability to recover a
-  `cemetery_id` from the chosen name.
+  purpose is looking up a cemetery's permit fee and timescale, so it cannot use
+  Google: it needs our own priced rows. Non-functional until the grant is fixed.
 
-**`/memorials/<slug>` (the quote form) is NOT affected by the RLS bug, and its
-cemetery field works fine.** `_onMapsReady` calls `wrap.replaceChild()` and
-swaps the whole input for a Google `PlaceAutocompleteElement`, so the customer
-gets UK-wide cemetery suggestions from Google. The Supabase-backed
-`searchQuoteCemetery` / `selectQuoteCemetery` pair is unreachable dead code on
-that page — the element it listens to no longer exists.
+Two earlier claims here were wrong and are retracted:
 
-That matters, because `selectQuoteCemetery` is the **only** function that sets
-`_selectedCemeteryId` and `_selectedCemeteryFee`. Google's `gmp-placeselect`
-handler sets a display-name string and nothing else. So on the quote form the
-permit fee can never be applied and the cemetery FK can never be captured —
-a code bug, independent of the RLS grant. **Applying the migration alone will
-not fix quote pricing.** See finding #16.
+- **`/memorials/<slug>` (the quote form) was never affected.** `_onMapsReady`
+  calls `wrap.replaceChild()` and swaps the input for a Google
+  `PlaceAutocompleteElement`, so the customer gets UK-wide suggestions. The
+  Supabase-backed `searchQuoteCemetery` / `selectQuoteCemetery` pair is
+  unreachable dead code there — the element it listened to no longer exists.
+- **`/contact` is no longer affected** either, having moved to the same Google
+  Places element (finding #17).
 
-Measured over the 120 days to 2026-08-26:
+Cemetery capture is therefore free text by design, and the zero-`cemetery_id`
+figures below are expected rather than a defect — the Worker's
+`lookupCemeteryIdByName` still resolves what it can server-side. Recorded for
+context only, over the 120 days to 2026-08-26:
 
 | | Total | With cemetery text typed | With a resolved `cemetery_id` |
 |---|---|---|---|
-| Enquiries | 81 | 53 | **0** |
-| Quote orders | 30 | 21 | **0** |
+| Enquiries | 81 | 53 | 0 |
+| Quote orders | 30 | 21 | 0 |
 
-Every quote in that period understates the installed total by the permit fee
-(£120–£195 across SM's cemeteries).
+**Consequence for the migration:** its cemetery half now only unblocks
+`/permit-checker`. The `activity_log_write` half is independent and unaffected.
 
 ---
 

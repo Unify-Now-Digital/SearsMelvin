@@ -2214,15 +2214,7 @@
                         hiddenInput.name = 'cemetery';
                         wrap.appendChild(hiddenInput);
                     }
-                    const chosen = place.displayName || place.formattedAddress || '';
-                    hiddenInput.value = chosen;
-                    // Google gives a name and nothing else, so recover our own row
-                    // when the chosen place is one we have priced — this is the
-                    // only path that sets the FK and the permit fee, since
-                    // selectQuoteCemetery is unreachable once this element mounts.
-                    // applyCemeteryChoice lives in the later script block, which
-                    // owns those variables.
-                    if (window.applyCemeteryChoice) window.applyCemeteryChoice(chosen);
+                    hiddenInput.value = place.displayName || place.formattedAddress || '';
                 });
             } catch(e) {
                 // Fallback to original Autocomplete if PlaceAutocompleteElement not available
@@ -2462,16 +2454,6 @@
             _selectedCemeteryFee = c.fee || 0;
             updatePermitFeeRow();
         }
-
-        // Called from the Google Places handler in the earlier script block, which
-        // cannot see these variables directly. Matching a Google pick back to our
-        // priced rows is the only way a quote gets a cemetery FK or a permit fee.
-        window.applyCemeteryChoice = function(chosenName) {
-            var matched = window.SMCemetery && window.SMCemetery.match(chosenName, QUOTE_CEMETERIES);
-            _selectedCemeteryId = matched ? (matched.id || null) : null;
-            _selectedCemeteryFee = matched ? (matched.fee || 0) : 0;
-            updatePermitFeeRow();
-        };
 
         function updatePermitFeeRow() {
             var totalEl = document.getElementById('qsTotal');
