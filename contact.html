@@ -840,7 +840,17 @@
 
             const showCemetery = (type === 'new-memorial' || type === 'additional');
             cemeteryField.style.display = showCemetery ? 'block' : 'none';
-            if (!showCemetery) document.getElementById('cemetery').value = '';
+            // Clear whichever control is mounted — the plain input is replaced by
+            // Google's element once Maps loads, so guard both.
+            if (!showCemetery) {
+                const plain = document.getElementById('cemetery');
+                if (plain) plain.value = '';
+                const auto = document.getElementById('cemeteryAuto');
+                if (auto) auto.value = '';
+                const hidden = document.getElementById('cemeteryValue');
+                if (hidden) hidden.value = '';
+                selectedCemeteryId = null;
+            }
             graveField.style.display = showCemetery ? 'block' : 'none';
             photoField.style.display = (type === 'renovation') ? 'block' : 'none';
 
@@ -898,9 +908,98 @@
         // so reports can join to the cemetery row instead of fuzzy-matching by name.
         let selectedCemeteryId = null;
         function selectCemetery(c) {
-            document.getElementById('cemetery').value = c.name;
+            // Optional-chained: Google's element may have replaced this input.
+            const plain = document.getElementById('cemetery');
+            if (plain) plain.value = c.name;
             selectedCemeteryId = c.id || null;
             document.getElementById('cemeterySuggestions').classList.remove('active');
+        }
+
+        // ==================== CEMETERY: GOOGLE PLACES ====================
+        // Same system as the product page: our own table only holds the
+        // cemeteries we have priced, so a customer whose cemetery isn't in it had
+        // nothing to pick. Google Places covers every UK cemetery; the pick is
+        // then matched back to our rows via SMCemetery so `cemetery_id` is still
+        // captured when we do know the cemetery.
+        //
+        // The swap only happens once Maps actually loads, so with no key or no
+        // network the original Supabase-backed autocomplete above stays in place.
+        let _googleMapsKey = '';
+        let _mapsInjected = false;
+
+        (async function loadMapsConfig() {
+            try {
+                const cfg = await fetch('/api/config').then(r => r.json());
+                _googleMapsKey = cfg.googleMapsKey || '';
+                armMapsLazyLoad();
+            } catch (e) { console.warn('Config load failed', e); }
+        })();
+
+        // Deferred until the customer touches the field — the contact page should
+        // not pay for the Maps bundle on every visit.
+        function armMapsLazyLoad() {
+            if (!_googleMapsKey) return;
+            const input = document.getElementById('cemetery');
+            if (!input) return;
+            const trigger = () => initGoogleMaps(_googleMapsKey);
+            input.addEventListener('focus', trigger, { once: true });
+            input.addEventListener('pointerdown', trigger, { once: true });
+        }
+
+        function initGoogleMaps(key) {
+            if (_mapsInjected) return;
+            _mapsInjected = true;
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        window._onMapsReady = async function() {
+            const wrap = document.querySelector('.cemetery-autocomplete');
+            const oldInput = document.getElementById('cemetery');
+            if (!wrap || !oldInput) return;
+            try {
+                const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
+                // `includedRegionCodes`, not the legacy `componentRestrictions` —
+                // passing the latter throws InvalidValueError.
+                const autocomplete = new PlaceAutocompleteElement({ includedRegionCodes: ['gb'] });
+                autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.95rem;';
+                autocomplete.id = 'cemeteryAuto';
+                wrap.replaceChild(autocomplete, oldInput);
+                // The Supabase dropdown is driven by the input we just removed.
+                document.getElementById('cemeterySuggestions').classList.remove('active');
+
+                autocomplete.addEventListener('gmp-placeselect', async (event) => {
+                    const place = event.place;
+                    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+                    const chosen = place.displayName || place.formattedAddress || '';
+                    let hidden = document.getElementById('cemeteryValue');
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.id = 'cemeteryValue';
+                        hidden.name = 'cemetery';
+                        wrap.appendChild(hidden);
+                    }
+                    hidden.value = chosen;
+                    // Recover the FK when the chosen place is one we have priced.
+                    const matched = window.SMCemetery && window.SMCemetery.match(chosen, cemeteries);
+                    selectedCemeteryId = matched ? (matched.id || null) : null;
+                });
+            } catch (e) {
+                console.warn('PlaceAutocompleteElement not available, keeping list autocomplete:', e);
+            }
+        };
+
+        // Reads whichever cemetery control is currently mounted. Mirrors the
+        // product page: the plain input is destroyed when Maps takes over, so
+        // reading `.value` on it unguarded used to throw.
+        function readCemeteryValue() {
+            return document.getElementById('cemeteryValue')?.value?.trim()
+                || document.getElementById('cemetery')?.value?.trim()
+                || document.getElementById('cemeteryAuto')?.value?.trim()
+                || '';
         }
 
         // Close suggestions on click outside
@@ -1053,7 +1152,7 @@
             const phone        = document.getElementById('phone').value.trim();
             const message      = document.getElementById('message').value.trim();
             const enquiryType  = document.getElementById('enquiryType').value;
-            const cemetery     = document.getElementById('cemetery').value.trim();
+            const cemetery     = readCemeteryValue();
             const graveNumber  = document.getElementById('graveNumber').value.trim();
 
             // Inline validation guards. Surfacing in formSubmitError keeps everything in one place.

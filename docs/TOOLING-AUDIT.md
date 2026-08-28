@@ -28,7 +28,8 @@ Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
 | 13 | Low | Supabase | Auth leaked-password protection (HaveIBeenPwned) disabled | Open |
 | 14 | Low | Supabase perf | 4 duplicate indexes (`order_people` ×3, `inbox_messages` ×1), 37 unindexed FKs, 38 unused indexes, 2 `auth_rls_initplan` warnings on `enquiries` | Open — **low priority**, largest table is 6,633 rows |
 | 15 | Info | Data | Sears Melvin has only 6 cemeteries and `processing_weeks` is null on all of them, so `/permit-checker` will still look thin once #1 is fixed | Open — data entry, not code |
-| 16 | **High** | Quote form | On `/memorials/<slug>` Google's autocomplete replaces the Supabase input, and its `gmp-placeselect` handler sets only a name string — never `_selectedCemeteryId` or `_selectedCemeteryFee`. So no quote captures a cemetery FK or a permit fee, regardless of #1. | Open — needs a name-match from the Google pick back to the priced list |
+| 16 | **High** | Quote form | On `/memorials/<slug>` Google's autocomplete replaces the Supabase input, and its `gmp-placeselect` handler set only a name string — never `_selectedCemeteryId` or `_selectedCemeteryFee`. So no quote captured a cemetery FK or a permit fee, regardless of #1. | **Fixed** — `SMCemetery.match` maps the Google pick back to the priced rows; covered by `tests/cemetery-match.mjs`. Dormant until #1 lands (the priced list is empty until then). |
+| 17 | Medium | Contact form | `/contact`'s cemetery field was Supabase-only, so it had no working autocomplete at all | **Fixed** — now uses the same Google Places element as the product page, with the list autocomplete retained as a fallback when Maps cannot load |
 
 ### Finding #1 in detail — corrected 2026-08-26
 
@@ -38,7 +39,9 @@ public pages are affected — not three, as first written here:
 
 - **`/permit-checker`** — Supabase only, no Google fallback. The page's entire
   purpose is looking up a cemetery's permit fee and timescale. Non-functional.
-- **`/contact`** — Supabase only. Cemetery dropdown empty.
+- **`/contact`** — was Supabase only, with an empty dropdown; now on Google Places
+  too (finding #17), so the RLS grant only affects its ability to recover a
+  `cemetery_id` from the chosen name.
 
 **`/memorials/<slug>` (the quote form) is NOT affected by the RLS bug, and its
 cemetery field works fine.** `_onMapsReady` calls `wrap.replaceChild()` and

@@ -344,6 +344,51 @@
         document.body.insertBefore(link, document.body.firstChild);
     }
 
+    // ── Cemetery autocomplete helpers ────────────────────────────────────────
+    // The product page and the contact form both let a customer name any UK
+    // cemetery via Google Places, which gives coverage our own table cannot.
+    // Google returns a display name and nothing else, so these helpers map that
+    // name back onto our priced cemetery rows — that match is the only way an
+    // enquiry gets a cemetery_id, and a quote a permit fee.
+
+    // "Hendon Cemetery & Crematorium, Holders Hill Road" → "hendon cemetery"
+    function normaliseCemeteryName(value) {
+        return String(value == null ? '' : value)
+            .toLowerCase()
+            .split(',')[0]
+            .replace(/&/g, ' and ')
+            .replace(/[^a-z0-9 ]/g, ' ')
+            .replace(/\b(the|and|crematorium|memorial|park|gardens?)\b/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // Best match for `value` in `rows` (objects with a `name`), or null. Exact
+    // normalised equality first, then containment either way so "Hendon" finds
+    // "Hendon Cemetery" and vice versa. Deliberately conservative: a wrong match
+    // attaches a wrong permit fee, so anything less certain returns null and the
+    // submission stays free text for the team to resolve.
+    function matchCemetery(value, rows) {
+        var needle = normaliseCemeteryName(value);
+        if (!needle || !Array.isArray(rows) || rows.length === 0) return null;
+        var scored = [];
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (!row || !row.name) continue;
+            var hay = normaliseCemeteryName(row.name);
+            if (!hay) continue;
+            if (hay === needle) return row;
+            if (hay.indexOf(needle) !== -1 || needle.indexOf(hay) !== -1) scored.push(row);
+        }
+        // Only accept a partial match when it is unambiguous.
+        return scored.length === 1 ? scored[0] : null;
+    }
+
+    window.SMCemetery = {
+        normalise: normaliseCemeteryName,
+        match: matchCemetery,
+    };
+
     function init() {
         watchChatWidget();
         ensureShortlistBadge();
