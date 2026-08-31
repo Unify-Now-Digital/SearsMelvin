@@ -940,7 +940,7 @@ async function sendResend(apiKey, { from, to, subject, html }) {
 
 async function sendPartnerSetupEmail(apiKey, partner, token) {
   const firstName = String(partner.name || "").trim().split(/\s+/)[0] || "there";
-  const setupUrl = `https://searsmelvin.co.uk/partner#login=${encodeURIComponent(token)}`;
+  const setupUrl = `https://partner.searsmelvin.co.uk/#login=${encodeURIComponent(token)}`;
   await sendResend(apiKey, {
     from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
     to: partner.email,

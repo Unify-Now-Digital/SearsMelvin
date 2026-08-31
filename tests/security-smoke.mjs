@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { readBoundedJson, RequestValidationError } from "../functions/api/_security.js";
 import { onRequest as partnerAuth } from "../functions/api/partner-auth.js";
+import { onRequest as partnerOrders } from "../functions/api/partner-orders.js";
 import { onRequest as customerOrder } from "../functions/api/customer-order.js";
 import { onRequest as quotes } from "../functions/api/quotes.js";
 import { onRequestPost as stripe } from "../functions/api/stripe.js";
@@ -21,30 +22,12 @@ const env = {
 };
 
 const originalFetch = globalThis.fetch;
-let magicLinkConsumed = false;
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input);
   if (url.includes("/rest/v1/rpc/check_portal_rate_limit")) {
     return Response.json([{ allowed: true, retry_after_seconds: 0 }]);
   }
   if (url.includes("/rest/v1/portal_security_events")) {
-    return new Response(null, { status: 201 });
-  }
-  if (url.includes("/rest/v1/partners?email=eq.")) {
-    return Response.json([]);
-  }
-  if (url.includes("/rest/v1/partner_magic_link_tokens?token_hash=eq.")) {
-    return Response.json(magicLinkConsumed ? [] : [{ id: 17, partner_id: 7 }]);
-  }
-  if (url.includes("/rest/v1/partner_magic_link_tokens?id=eq.17") && init.method === "PATCH") {
-    if (magicLinkConsumed) return Response.json([]);
-    magicLinkConsumed = true;
-    return Response.json([{ id: 17, partner_id: 7 }]);
-  }
-  if (url.includes("/rest/v1/partners?id=eq.7")) {
-    return Response.json([{ id: 7, email: "partner@example.com", name: "Partner Person", company: "Partner Ltd" }]);
-  }
-  if (url.endsWith("/rest/v1/partner_sessions") && init.method === "POST") {
     return new Response(null, { status: 201 });
   }
   if (url === "https://api.resend.com/emails") {
@@ -58,27 +41,20 @@ globalThis.fetch = async (input, init = {}) => {
 
 try {
   assert.equal(existsSync(new URL("../functions/api/stripe 2.js", import.meta.url)), false);
-  const partnerHtml = readFileSync(new URL("../partner.html", import.meta.url), "utf8");
+  assert.equal(existsSync(new URL("../partner.html", import.meta.url)), false);
   const partnerAuthApi = readFileSync(new URL("../functions/api/partner-auth.js", import.meta.url), "utf8");
+  const partnerOrdersApi = readFileSync(new URL("../functions/api/partner-orders.js", import.meta.url), "utf8");
   const adminApi = readFileSync(new URL("../functions/api/admin.js", import.meta.url), "utf8");
   const publicMemorialFunction = readFileSync(new URL("../functions/memorials/[slug].js", import.meta.url), "utf8");
   const publicSitemapFunction = readFileSync(new URL("../functions/sitemap.xml.js", import.meta.url), "utf8");
   const securityHeaders = readFileSync(new URL("../_headers", import.meta.url), "utf8");
   const quotesApi = readFileSync(new URL("../functions/api/quotes.js", import.meta.url), "utf8");
   const customerOrderApi = readFileSync(new URL("../functions/api/customer-order.js", import.meta.url), "utf8");
-  assert.equal(partnerHtml.includes('id="reqPassword"'), false);
-  assert.equal(partnerHtml.includes('type="password"'), false);
-  assert.equal(partnerHtml.includes("request-magic-link"), true);
-  assert.equal(partnerHtml.includes("consume-magic-link"), true);
-  assert.equal(partnerHtml.includes("google-login"), true);
-  assert.equal(partnerHtml.includes("accounts.google.com/gsi/client"), true);
-  assert.equal(partnerHtml.includes("#reset="), false);
   assert.equal(partnerAuthApi.includes("password_hash"), false);
   assert.equal(partnerAuthApi.includes("forgot-password"), false);
   assert.equal(partnerAuthApi.includes("reset-password"), false);
   assert.equal(partnerAuthApi.includes("pwnedpasswords"), false);
-  assert.equal(partnerAuthApi.includes("token_hash"), true);
-  assert.equal(partnerAuthApi.includes("payload.hd !== SM_WORKSPACE_DOMAIN"), true);
+  assert.equal(partnerOrdersApi.includes("deriveWorkflow"), false);
   assert.equal(adminApi.includes("password_hash"), false);
   assert.equal(adminApi.includes("#reset="), false);
   assert.equal(publicMemorialFunction.includes("env.SUPABASE_SERVICE_KEY"), false);
@@ -87,7 +63,7 @@ try {
   assert.equal(quotesApi.includes("edit_token=eq"), false);
   assert.equal(customerOrderApi.includes("tracking_token=eq"), false);
 
-  const unknownPartnerLink = await partnerAuth({
+  const retiredPartnerAuth = await partnerAuth({
     env,
     waitUntil() {},
     request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
@@ -96,54 +72,18 @@ try {
       body: JSON.stringify({ action: "request-magic-link", email: "unknown@example.com" }),
     }),
   });
-  assert.equal(unknownPartnerLink.status, 200);
-  assert.equal((await unknownPartnerLink.json()).ok, true);
+  assert.equal(retiredPartnerAuth.status, 410);
+  assert.equal((await retiredPartnerAuth.json()).ok, false);
 
-  const malformedMagicLink = await partnerAuth({
+  const retiredPartnerOrders = await partnerOrders({
     env,
     waitUntil() {},
-    request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Origin": "https://searsmelvin.co.uk" },
-      body: JSON.stringify({ action: "consume-magic-link", token: "not-a-token" }),
+    request: new Request("https://searsmelvin.co.uk/api/partner-orders", {
+      method: "GET",
+      headers: { Origin: "https://searsmelvin.co.uk" },
     }),
   });
-  assert.equal(malformedMagicLink.status, 400);
-
-  const magicToken = "a".repeat(64);
-  const validMagicLink = await partnerAuth({
-    env,
-    waitUntil() {},
-    request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Origin": "https://searsmelvin.co.uk" },
-      body: JSON.stringify({ action: "consume-magic-link", token: magicToken }),
-    }),
-  });
-  assert.equal(validMagicLink.status, 200);
-  assert.match(validMagicLink.headers.get("Set-Cookie") || "", /HttpOnly; Secure; SameSite=Strict/);
-
-  const replayedMagicLink = await partnerAuth({
-    env,
-    waitUntil() {},
-    request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Origin": "https://searsmelvin.co.uk" },
-      body: JSON.stringify({ action: "consume-magic-link", token: magicToken }),
-    }),
-  });
-  assert.equal(replayedMagicLink.status, 400);
-
-  const retiredPasswordLogin = await partnerAuth({
-    env,
-    waitUntil() {},
-    request: new Request("https://searsmelvin.co.uk/api/partner-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Origin": "https://searsmelvin.co.uk" },
-      body: JSON.stringify({ action: "login", email: "partner@example.com", password: "retired" }),
-    }),
-  });
-  assert.equal(retiredPasswordLogin.status, 400);
+  assert.equal(retiredPartnerOrders.status, 410);
 
   const valid = await readBoundedJson(new Request("https://searsmelvin.co.uk/api/test", {
     method: "POST",

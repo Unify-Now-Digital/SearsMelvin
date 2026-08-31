@@ -10,3 +10,12 @@
 # Do NOT add a `/memorial -> /memorials` redirect: memorial.html already
 # handles the "no slug" case gracefully by showing "Product not found".
 /memorials/:slug   /memorial   200
+
+# Partner desk lives on the dedicated Worker (partner.searsmelvin.co.uk).
+# Static assets win over these rules if a matching file exists — partner.html
+# must stay deleted. Pages Functions for /partner* also 301 ( _redirects is
+# not applied to Function-served responses).
+/partner.html      https://partner.searsmelvin.co.uk/  301
+/partner           https://partner.searsmelvin.co.uk/  301
+/partner/          https://partner.searsmelvin.co.uk/  301
+/partner/*         https://partner.searsmelvin.co.uk/  301
