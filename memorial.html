@@ -1238,10 +1238,11 @@
                     <div class="quote-form-group">
                         <label>Cemetery <span style="font-weight:400">(optional)</span></label>
                         <div class="cem-autocomplete">
-                            <input type="text" id="qCemeteryInput" placeholder="Search cemetery name, or leave blank if you’re unsure" autocomplete="off" oninput="searchQuoteCemetery(this.value)" onfocus="searchQuoteCemetery(this.value)">
+                            <input type="text" id="qCemeteryInput" placeholder="Search cemetery name, or leave blank if you’re unsure" autocomplete="off" aria-autocomplete="list" aria-controls="qCemSuggestions">
                             <div class="cem-suggestions" id="qCemSuggestions"></div>
                         </div>
                         <input type="hidden" id="qCemeteryName">
+                        <p id="qCemeteryStatus" role="status" aria-live="polite" style="margin:0.35rem 0 0;font-size:0.75rem;color:var(--color-text-muted);"></p>
                     </div>
                     <p class="quote-error" id="quoteError">Sorry, something went wrong. Please call us on +44 20 3835 2548.</p>
                     <button type="submit" class="quote-submit-btn" id="quoteSubmitBtn">
@@ -1367,19 +1368,22 @@
             try {
                 let product;
                 let adminSizes = null;
-                // An HttpOnly admin cookie cannot be read by JavaScript. Try the
-                // protected preview endpoint; ordinary visitors receive 401 and
-                // continue through the public active-product query below.
-                const adminRes = await fetch('/api/admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ action: 'get-product', slug: slug })
-                }).then(r => r.json());
-                if (adminRes && adminRes.ok) {
-                    product = adminRes.product;
-                    adminSizes = adminRes.sizes || [];
-                    showAdminPreviewBanner(product);
+                // The protected endpoint is only for an explicit admin preview.
+                // Public visitors must not generate an expected 401 before the
+                // normal public product request (it also made consent clicks look
+                // broken in mobile console traces).
+                if (params.get('preview') === '1') {
+                    const adminRes = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ action: 'get-product', slug: slug })
+                    }).then(r => r.json());
+                    if (adminRes && adminRes.ok) {
+                        product = adminRes.product;
+                        adminSizes = adminRes.sizes || [];
+                        showAdminPreviewBanner(product);
+                    }
                 }
                 if (!product) {
                     const products = await supabaseFetch('products', { select: '*,product_categories(name,slug)', slug: 'eq.' + slug, organization_id: 'eq.' + SM_ORG_ID, is_active: 'eq.true', is_listed: 'eq.true', category_id: 'not.is.null', limit: '1' });
@@ -2201,8 +2205,9 @@
             if (_mapsInjected) return;
             _mapsInjected = true;
             const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=_onMapsReady`;
             s.async = true;
+            s.defer = true;
             s.onerror = () => {
                 _mapsInjected = false;
                 const input = document.getElementById('qCemeteryInput');
@@ -2211,6 +2216,8 @@
                     input.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
                 }
                 console.warn('Google Maps failed to load; keeping cemetery input');
+                setCemeteryStatus('Live cemetery search is unavailable; you can still type its name.');
+                if (input) searchQuoteCemetery(input.value);
             };
             document.head.appendChild(s);
         }
@@ -2220,20 +2227,32 @@
             const oldInput = document.getElementById('qCemeteryInput');
             if (!wrap || !oldInput) return;
 
-            // Use new PlaceAutocompleteElement (replaces deprecated Autocomplete)
             try {
+                // The element intentionally presents a full-screen prediction
+                // surface on narrow mobile viewports. Use the same current Places
+                // API through our in-modal list there, so the quote form remains
+                // visible and usable above the keyboard.
+                if (window.matchMedia('(max-width: 600px)').matches) {
+                    await setupMobilePlaces(oldInput);
+                    oldInput.readOnly = false;
+                    oldInput.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
+                    requestAnimationFrame(() => oldInput.focus());
+                    return;
+                }
+
+                // Use new PlaceAutocompleteElement (replaces deprecated Autocomplete)
                 const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
                 const autocomplete = new PlaceAutocompleteElement({
                     // New PlaceAutocompleteElement uses `includedRegionCodes`, NOT the
                     // legacy `componentRestrictions` — passing the latter throws an
                     // InvalidValueError that surfaced in the browser console.
                     includedRegionCodes: ['gb'],
+                    includedPrimaryTypes: ['cemetery'],
                 });
                 autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.9rem;';
                 autocomplete.id = 'qCemeteryAuto';
                 autocomplete.name = 'cemetery';
                 autocomplete.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
-                autocomplete.value = oldInput.value || '';
                 document.getElementById('qCemSuggestions').classList.remove('active');
                 wrap.replaceChild(autocomplete, oldInput);
 
@@ -2259,6 +2278,15 @@
                     document.getElementById('qCemeteryName').value = '';
                     _selectedCemeteryId = null;
                 });
+                autocomplete.addEventListener('gmp-error', (event) => {
+                    console.warn('Google cemetery widget failed; restoring owned cemetery search:', event);
+                    if (autocomplete.parentNode) autocomplete.parentNode.replaceChild(oldInput, autocomplete);
+                    oldInput.readOnly = false;
+                    oldInput.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
+                    setCemeteryStatus('Live cemetery search is unavailable; showing our cemetery list instead.');
+                    searchQuoteCemetery(oldInput.value);
+                    oldInput.focus();
+                });
 
                 // Resume the first touch against the stable Places control.
                 requestAnimationFrame(() => autocomplete.focus());
@@ -2269,13 +2297,114 @@
                 oldInput.readOnly = false;
                 oldInput.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
                 console.warn('PlaceAutocompleteElement not available; keeping cemetery input:', e);
+                setCemeteryStatus('Cemetery search is temporarily unavailable; you can still type its name.');
+                searchQuoteCemetery(oldInput.value);
             }
         };
+
+        let _mobilePlacesReady = false;
+        let _mobilePlacesTimer = null;
+        let _mobilePlacesRequest = 0;
+        let _mobilePlacesSession = null;
+
+        function setCemeteryStatus(message) {
+            const status = document.getElementById('qCemeteryStatus');
+            if (status) status.textContent = message || '';
+        }
+
+        async function setupMobilePlaces(input) {
+            const { AutocompleteSuggestion, AutocompleteSessionToken } = await google.maps.importLibrary('places');
+            _mobilePlacesSession = new AutocompleteSessionToken();
+            if (_mobilePlacesReady) return;
+            _mobilePlacesReady = true;
+            input.addEventListener('input', function() {
+                const hiddenInput = document.getElementById('qCemeteryValue');
+                if (hiddenInput) hiddenInput.value = '';
+                document.getElementById('qCemeteryName').value = '';
+                _selectedCemeteryId = null;
+                clearTimeout(_mobilePlacesTimer);
+                const query = input.value.trim();
+                if (query.length < 2) {
+                    document.getElementById('qCemSuggestions').classList.remove('active');
+                    setCemeteryStatus('');
+                    return;
+                }
+                _mobilePlacesTimer = setTimeout(async function() {
+                    const requestId = ++_mobilePlacesRequest;
+                    try {
+                        const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+                            input: query,
+                            includedRegionCodes: ['gb'],
+                            includedPrimaryTypes: ['cemetery'],
+                            sessionToken: _mobilePlacesSession
+                        });
+                        if (requestId !== _mobilePlacesRequest) return;
+                        renderMobilePlaceSuggestions(response.suggestions || [], input);
+                    } catch (error) {
+                        if (requestId !== _mobilePlacesRequest) return;
+                        console.warn('Google cemetery suggestions failed; using owned cemetery list:', error);
+                        setCemeteryStatus('Live cemetery search is unavailable; showing our cemetery list instead.');
+                        searchQuoteCemetery(query);
+                    }
+                }, 180);
+            });
+        }
+
+        function renderMobilePlaceSuggestions(suggestions, input) {
+            const box = document.getElementById('qCemSuggestions');
+            box.innerHTML = '';
+            suggestions.slice(0, 6).forEach(function(suggestion) {
+                const prediction = suggestion.placePrediction;
+                if (!prediction) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'cem-suggestion';
+                button.style.cssText = 'width:100%;border:0;background:white;text-align:left;';
+                button.textContent = prediction.text && prediction.text.toString
+                    ? prediction.text.toString()
+                    : String(prediction.mainText || 'Cemetery');
+                button.addEventListener('click', async function() {
+                    try {
+                        const place = prediction.toPlace();
+                        await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+                        const value = place.displayName || place.formattedAddress || button.textContent;
+                        input.value = value;
+                        let hiddenInput = document.getElementById('qCemeteryValue');
+                        if (!hiddenInput) {
+                            hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.id = 'qCemeteryValue';
+                            hiddenInput.name = 'cemetery';
+                            input.parentNode.appendChild(hiddenInput);
+                        }
+                        hiddenInput.value = value;
+                        box.classList.remove('active');
+                        setCemeteryStatus('Cemetery selected.');
+                    } catch (error) {
+                        console.warn('Google cemetery selection failed; preserving typed value:', error);
+                        setCemeteryStatus('We could not verify that result; your typed cemetery name will still be sent.');
+                    }
+                });
+                box.appendChild(button);
+            });
+            box.classList.toggle('active', box.childElementCount > 0);
+            setCemeteryStatus(box.childElementCount ? 'Choose a cemetery suggestion.' : 'No cemetery-only matches; you can still type its name.');
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadProduct();
             loadConfig();
             setupMobileQuoteBar();
+
+            const cemeteryBootInput = document.getElementById('qCemeteryInput');
+            if (cemeteryBootInput) {
+                cemeteryBootInput.addEventListener('input', function() {
+                    if (!_mobilePlacesReady) searchQuoteCemetery(this.value);
+                });
+                cemeteryBootInput.addEventListener('focus', function() {
+                    if (!_mobilePlacesReady) searchQuoteCemetery(this.value);
+                });
+            }
 
             const initialColour = document.querySelector('input[name="colour"]:checked');
             if (initialColour) updateColour(initialColour);
@@ -2475,14 +2604,15 @@
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button type="button" id="cookieAccept" onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button type="button" id="cookieDecline" onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>
 <script>
 (function(){
-    var consent = localStorage.getItem('cookieConsent');
+    var consent = null;
+    try { consent = localStorage.getItem('cookieConsent'); } catch (e) { console.warn('Could not read cookie consent', e); }
     if (!consent) {
         document.getElementById('cookieConsent').style.display = 'block';
     } else if (consent === 'accepted') {
@@ -2501,14 +2631,16 @@ function pushConsent(granted) {
     window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
 }
 function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
+    var banner = document.getElementById('cookieConsent');
+    if (banner) banner.style.display = 'none';
+    try { localStorage.setItem('cookieConsent', 'accepted'); } catch (e) { console.warn('Could not persist cookie consent', e); }
     pushConsent(true);
     if (typeof syncMobileQuoteBar === 'function') syncMobileQuoteBar();
 }
 function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
+    var banner = document.getElementById('cookieConsent');
+    if (banner) banner.style.display = 'none';
+    try { localStorage.setItem('cookieConsent', 'declined'); } catch (e) { console.warn('Could not persist cookie consent', e); }
     pushConsent(false);
     if (typeof syncMobileQuoteBar === 'function') syncMobileQuoteBar();
 }

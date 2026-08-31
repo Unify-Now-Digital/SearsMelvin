@@ -8,10 +8,17 @@ const [memorial, contact, permit] = await Promise.all([
 ]);
 
 assert.match(memorial, /new PlaceAutocompleteElement\(\{[\s\S]*includedRegionCodes: \['gb'\]/);
+assert.match(memorial, /includedPrimaryTypes: \['cemetery'\]/);
 assert.match(memorial, /addEventListener\('gmp-select'/);
+assert.match(memorial, /addEventListener\('gmp-error'[\s\S]*replaceChild\(oldInput, autocomplete\)/);
 assert.doesNotMatch(memorial, /gmp-placeselect|new google\.maps\.places\.Autocomplete/);
 assert.match(memorial, /event\.preventDefault\(\)[\s\S]*input\.readOnly = true/);
 assert.match(memorial, /\.quote-overlay \{ align-items: flex-start; overflow-y: auto; \}/);
+assert.match(memorial, /matchMedia\('\(max-width: 600px\)'\)[\s\S]*setupMobilePlaces/);
+assert.match(memorial, /AutocompleteSuggestion\.fetchAutocompleteSuggestions\(\{[\s\S]*includedPrimaryTypes: \['cemetery'\]/);
+assert.match(memorial, /loading=async&callback=_onMapsReady/);
+assert.match(memorial, /if \(params\.get\('preview'\) === '1'\) \{[\s\S]*fetch\('\/api\/admin'/);
+assert.match(memorial, /if \(banner\) banner\.style\.display = 'none';[\s\S]*try \{ localStorage\.setItem\('cookieConsent'/);
 assert.match(memorial, /organization_id=eq\./);
 assert.match(memorial, /is_test=eq\.false/);
 
