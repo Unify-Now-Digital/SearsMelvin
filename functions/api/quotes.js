@@ -16,6 +16,7 @@ import {
   supabaseHeaders,
 } from "./_security.js";
 import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
+import { formatNameForSubject } from "./submit.js";
 
 const CAPABILITY_TOKEN_RE = /^[A-Za-z0-9_-]{32,256}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -176,7 +177,7 @@ async function updateQuote(env, data) {
       await sendEmail(env.RESEND_API_KEY, {
         from: "Sears Melvin Memorials <info@searsmelvin.co.uk>",
         to: "info@searsmelvin.co.uk",
-        subject: `Quote updated by customer — ${customerName || customerEmail}`,
+        subject: `Quote updated by customer — ${formatNameForSubject(customerName) || customerEmail} — ${productName}`,
         html: quoteUpdateBusinessEmail({ name: customerName, email: customerEmail, productName, productSlug, changes }),
       });
     } catch {

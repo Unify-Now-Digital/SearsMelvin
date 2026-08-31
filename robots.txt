@@ -7,7 +7,7 @@ Disallow: /admin.html
 Disallow: /admin-products
 Disallow: /admin-products.html
 
-# Partner portal (login-only)
+# Leftover /partner paths 301 to partner.searsmelvin.co.uk — still noindex
 Disallow: /partner
 Disallow: /partner.html
 

@@ -15,9 +15,10 @@ it whenever you audit or fix something in that list.
 - **Backend** — Cloudflare Pages Functions in `functions/`. Routes:
   `/api/submit` (all public form submissions), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
-  `/api/stripe-webhook`, `/api/admin`, `/api/partner-auth`,
-  `/api/partner-orders`, `/api/upload-photo`, `/api/config`,
-  plus `/memorials/:slug` and `/sitemap.xml`.
+  `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
+  plus `/memorials/:slug` and `/sitemap.xml`. `/api/partner-auth` and
+  `/api/partner-orders` are retired stubs that return **410 Gone**. The
+  partner desk is https://partner.searsmelvin.co.uk (other repo/Worker).
 - **Database** — Supabase project **Mason App** (`bfwohzcugtwbhhxdqgme`), shared
   with a second tenant. **Everything is multi-tenant: scope every query by
   `SM_ORG_ID`.** See "Multi-tenancy" below — this has caused real bugs.
@@ -43,6 +44,11 @@ it whenever you audit or fix something in that list.
   the team afterwards. Do not reintroduce client-side cemetery matching or a
   permit-fee line driven by it. The Worker's `lookupCemeteryIdByName` still
   resolves a cemetery server-side where it can — that is separate and stays.
+- **The partner portal is not on this website.** The desk is
+  https://partner.searsmelvin.co.uk (Unify-Now-Digital/SearsMelvin-Partner,
+  Worker `sears-melvin-partner`). Do not restore `partner.html` or a working
+  `/api/partner-*` portal on this marketing Worker. Leftover `/partner*`
+  paths 301 there; website partner APIs return 410.
 - **ClickUp is not part of this site.** Removed in #135.
 - The legacy `sears-melvin-form` Cloudflare Worker is dead and unreferenced
   (see the audit doc). Do not wire anything back to it.
@@ -90,6 +96,25 @@ Chromium (`/opt/pw-browsers/chromium`). Things that bite:
   `^[a-z0-9-]{1,120}$`. No slug → render unlinked, never a broken link.
 - Business copy goes to `BUSINESS_EMAIL`; customer copy needs an address to
   exist (phone-only submissions are legal).
+
+### Subject lines
+
+Business notifications: `<Type phrase> — <Customer name> — <Product or detail>`.
+
+The **leading type phrase is load-bearing** — the team's Gmail filters key on it
+(the `/RAQ` label on quote requests, among others). "New Quote Request",
+"New Enquiry", "New Appointment Request", "Quote updated by customer" and
+"Deposit received" are pinned verbatim by `tests/email-subjects.mjs`; reorder
+what follows them freely, but do not reword the phrase itself without changing
+the filters at the same time.
+
+Customer subjects keep the brand **last** (`… — Sears Melvin Memorials`): the
+From name already carries it, so truncation should eat the brand rather than the
+content. Don't prefix customer subjects with the brand.
+
+Names go through `formatNameForSubject`, which capitalises only an all-lowercase
+name ("evans" → "Evans") and leaves anything with existing capitals untouched,
+so "McDonald" and "van der Berg" are never mangled.
 
 ## Testing
 

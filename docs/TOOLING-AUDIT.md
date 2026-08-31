@@ -73,6 +73,13 @@ context only, over the 120 days to 2026-08-26:
 
 ## Verified good — do not re-litigate without re-running the check
 
+- **2026-08-31 — leftover marketing-site partner desk is gone.** `partner.html`
+  deleted; `/partner`, `/partner/`, `/partner.html`, `/partner/*` 301 to
+  `https://partner.searsmelvin.co.uk/` via `_redirects` plus Pages Functions
+  (`functions/partner.js`, `functions/partner.html.js`,
+  `functions/partner/[[path]].js`). `/api/partner-auth` and
+  `/api/partner-orders` return 410 JSON and do not proxy. Live desk remains
+  the other Worker (`sears-melvin-partner`).
 - **2026-08-28 — website quote prices are rebuilt server-side.** The submitted
   browser total, permit fee, and line-item prices are ignored. Product, size,
   colour, add-ons, lettering, and kerb infill are resolved from the current
@@ -175,7 +182,7 @@ Ordered by value, from the 2026-08-26 email and tooling review:
 4. **No quote reference number** in either copy, so neither side has anything to
    quote back on the phone.
 5. **Serve cemeteries from a Pages Function** rather than the browser hitting
-   PostgREST with the anon key. `partner-orders.js` already does exactly this
+   PostgREST with the anon key. `submit.js` already does this server-side
    with `orgFilter`. It removes finding #1's whole class of problem and shrinks
    the anon key's surface to nothing.
 6. **Subject-line convention.** Keep the event type as the first token — it is
