@@ -6,6 +6,7 @@ something, and add a dated line to "Verified good" when you confirm a fact, so
 the next audit starts from evidence rather than from scratch.
 
 Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
+Targeted pricing and catalogue review: **2026-08-28**.
 
 ---
 
@@ -30,6 +31,9 @@ Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
 | 15 | Info | Data | Sears Melvin has only 6 cemeteries and `processing_weeks` is null on all of them, so `/permit-checker` will still look thin once #1 is fixed | Open — data entry, not code |
 | 16 | — | Quote form | Quotes carry no cemetery FK and no permit fee, because Google's `gmp-placeselect` returns only a display name | **Not a defect — by design.** A matcher was built and then removed on request: the site does not price permit fees. See "Deliberate absences" in `CLAUDE.md`. |
 | 17 | Medium | Contact form | `/contact`'s cemetery field was Supabase-only, so with #1 in place it had no working autocomplete at all | **Fixed** — now uses the same plain Google Places element as the product quote form; the Supabase list, its styles and `cemetery_id` capture were removed |
+| 18 | **High** | Quote pricing | `/api/submit` trusted the browser's product price and add-on lines; the configurator also carried a hidden £250 infill on non-kerb products and omitted the default £250 infill from kerb totals | **Fixed in `codex/pricing-integrity`** — the Worker now rebuilds every quote from the current SM-scoped catalogue; focused tests and rendered Castell/Hartwell checks pass |
+| 19 | **High** | Quote editing | Legacy quote edits discarded price fields and never updated `orders.value`, while the edit page showed stale hardcoded add-on prices | **Fixed in `codex/pricing-integrity`** — edits use the same canonical calculator and persist the recalculated value; the edit integration test passes |
+| 20 | Medium | Public catalogue | Public product reads filtered only on `is_active`, exposing an active £1 uncategorized test product and omitting tenant/listing scope from catalogue, search, sitemap, and product routes | **Website fixed in `codex/pricing-integrity`** — all public reads require the SM org, `is_listed=true`, and a category. Direct anon product RLS remains a separate policy decision |
 
 ### Finding #1 in detail — rescoped 2026-08-26
 
@@ -69,6 +73,18 @@ context only, over the 120 days to 2026-08-26:
 
 ## Verified good — do not re-litigate without re-running the check
 
+- **2026-08-28 — website quote prices are rebuilt server-side.** The submitted
+  browser total, permit fee, and line-item prices are ignored. Product, size,
+  colour, add-ons, lettering, and kerb infill are resolved from the current
+  Sears Melvin catalogue and business rules before Supabase, email, or GHL sees
+  the quote. The same calculator protects legacy quote edits and updates
+  `orders.value`. All standalone tests pass, including dedicated pricing and
+  quote-edit regressions.
+- **2026-08-28 — rendered pricing regression checks pass.** The Castell renders
+  at £1,450 and £1,535 after selecting the £85 vase, with no hidden infill. The
+  Hartwell renders at £4,390 with its £250 chippings and remains £4,390 after
+  changing the chippings colour. The active uncategorized £1 test product is
+  absent from the filtered catalogue.
 - **2026-08-26 — the website does not create or send invoices.** No Stripe
   invoice creation and no `POST /rest/v1/invoices` in `functions/`; no pay or
   invoice CTA in any template; last `INV-WEB-` row 19 May 2026 (commit #125

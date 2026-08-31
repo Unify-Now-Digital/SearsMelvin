@@ -15,6 +15,7 @@ import {
   readBoundedJson,
   supabaseHeaders,
 } from "./_security.js";
+import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
 
 const CAPABILITY_TOKEN_RE = /^[A-Za-z0-9_-]{32,256}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -123,8 +124,28 @@ async function updateQuote(env, data) {
   const updates = {};
   let safeProduct = null;
   if (product) {
-    safeProduct = sanitiseProductConfig(product);
+    const oldConfig = (order.product_config ? safeParse(order.product_config) : null) || {};
+    const submittedProduct = {
+      ...(oldConfig && typeof oldConfig === "object" ? oldConfig : {}),
+      ...product,
+      slug: product.slug || oldConfig?.slug,
+    };
+    try {
+      safeProduct = await canonicaliseQuoteProduct(env, submittedProduct);
+    } catch (error) {
+      console.error(JSON.stringify({
+        message: "quote_update_price_verification_failed",
+        reason: error instanceof QuotePricingError ? error.message : "catalogue request failed",
+      }));
+      return json({
+        ok: false,
+        error: error instanceof QuotePricingError
+          ? error.message
+          : "Unable to verify the current memorial price. Please try again.",
+      }, error instanceof QuotePricingError ? error.status : 503);
+    }
     updates.product_config = JSON.stringify(safeProduct);
+    updates.value = safeProduct.price;
     if (safeProduct.colour) updates.color = safeProduct.colour;
     if (safeProduct.inscription !== undefined) updates.inscription_text = safeProduct.inscription;
   }
@@ -146,7 +167,7 @@ async function updateQuote(env, data) {
     const customerName = [order.people?.first_name, order.people?.last_name].filter(Boolean).join(" ");
     const customerEmail = order.people?.email || "";
     const productName = (safeProduct && safeProduct.name) || order.sku || "Memorial";
-    const oldConfig = order.product_config ? safeParse(order.product_config) : {};
+    const oldConfig = (order.product_config ? safeParse(order.product_config) : null) || {};
     const productSlug = (safeProduct && safeProduct.slug) || oldConfig.slug || "";
     const changes = buildChangesSummary(order, safeProduct, message);
 
@@ -177,12 +198,12 @@ async function updateQuote(env, data) {
     }
   }
 
-  return json({ ok: true });
+  return json({ ok: true, product: safeProduct, value: safeProduct?.price ?? order.value });
 }
 
 function buildChangesSummary(order, product, message) {
   const lines = [];
-  const oldConfig = order.product_config ? safeParse(order.product_config) : {};
+  const oldConfig = (order.product_config ? safeParse(order.product_config) : null) || {};
   if (product) {
     if (product.colour && product.colour !== (oldConfig.colour || order.color)) lines.push(`Stone colour → ${product.colour}`);
     if (product.size && product.size !== oldConfig.size) lines.push(`Size → ${product.size}`);
@@ -194,39 +215,13 @@ function buildChangesSummary(order, product, message) {
   return lines.length > 0 ? lines : ["Quote details updated"];
 }
 
-function sanitiseProductConfig(product) {
-  const output = {};
-  const copyText = (key, max) => {
-    if (product[key] === undefined) return;
-    if (typeof product[key] !== "string") return;
-    output[key] = product[key].trim().slice(0, max);
-  };
-  copyText("name", 160);
-  copyText("material", 80);
-  copyText("colour", 80);
-  copyText("size", 80);
-  copyText("font", 40);
-  copyText("letterColour", 80);
-  copyText("inscription", 1000);
-  copyText("infillType", 80);
-  copyText("infillColour", 80);
-  const slug = typeof product.slug === "string" ? product.slug.toLowerCase().trim() : "";
-  if (/^[a-z0-9-]{1,120}$/.test(slug)) output.slug = slug;
-  if (Array.isArray(product.addons)) {
-    output.addons = product.addons
-      .filter(value => typeof value === "string")
-      .slice(0, 20)
-      .map(value => value.trim().slice(0, 120));
-  }
-  return output;
-}
-
 function sbHeaders(env) {
   return supabaseHeaders(env);
 }
 
-function safeParse(str) {
-  try { return JSON.parse(str); }
+function safeParse(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  try { return JSON.parse(value); }
   catch { return null; }
 }
 

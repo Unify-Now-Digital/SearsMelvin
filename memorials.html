@@ -753,6 +753,7 @@
     <script>
         // ==================== SUPABASE CONFIG ====================
         const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SM_ORG_ID = '3770972d-1bbd-417b-b413-297e844db285';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
         const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
@@ -819,7 +820,7 @@
                 const [categories, colours, productsData] = await Promise.all([
                     supabaseFetch('product_categories', { select: '*', is_active: 'eq.true', order: 'display_order' }),
                     supabaseFetch('stone_colours', { select: '*', is_active: 'eq.true', order: 'display_order' }),
-                    supabaseFetch('products', { select: '*,product_categories(name,slug)', is_active: 'eq.true', order: 'display_order' })
+                    supabaseFetch('products', { select: '*,product_categories(name,slug)', organization_id: 'eq.' + SM_ORG_ID, is_active: 'eq.true', is_listed: 'eq.true', category_id: 'not.is.null', order: 'display_order' })
                 ]);
                 state.categories = categories;
                 state.colours = colours;
@@ -1445,7 +1446,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?is_active=eq.true&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
                         headers: {
                             'apikey': SUPABASE_ANON_KEY,
