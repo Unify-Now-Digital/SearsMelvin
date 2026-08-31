@@ -73,9 +73,11 @@ assert.equal(indexHtml.includes("https://partner.searsmelvin.co.uk"), true);
 
 const authSource = readFileSync(join(repoRoot, "functions/api/partner-auth.js"), "utf8");
 const ordersSource = readFileSync(join(repoRoot, "functions/api/partner-orders.js"), "utf8");
+const goneSource = readFileSync(join(repoRoot, "functions/api/_partner-gone.js"), "utf8");
 assert.equal(authSource.includes("password_hash"), false);
 assert.equal(ordersSource.includes("deriveWorkflow"), false);
-assert.match(authSource, /410/);
-assert.match(ordersSource, /410/);
+assert.match(authSource, /partnerGone/);
+assert.match(ordersSource, /partnerGone/);
+assert.match(goneSource, /410/);
 
 console.log("retired partner surface tests passed");
