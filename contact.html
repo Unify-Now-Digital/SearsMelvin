@@ -232,6 +232,13 @@
 
         /* Cemetery Autocomplete */
         .cemetery-autocomplete { position: relative; }
+        .cemetery-suggestions { position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 20; display: none; max-height: 220px; overflow-y: auto; background: white; border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .cemetery-suggestions.active { display: block; }
+        .cemetery-suggestion { width: 100%; padding: 0.75rem 1rem; border: 0; border-bottom: 1px solid var(--color-border); background: white; color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
+        .cemetery-suggestion:last-child { border-bottom: 0; }
+        .cemetery-suggestion:hover, .cemetery-suggestion:focus { background: var(--color-cream); outline: none; }
+        .cemetery-suggestion small { display: block; margin-top: 0.15rem; color: var(--color-text-muted); }
+        .cemetery-status { display: block; min-height: 1.2em; margin-top: 0.35rem; color: var(--color-text-muted); font-size: 0.8rem; }
 
         /* File Upload */
         .file-upload-zone { border: 2px dashed var(--color-border); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; }
@@ -654,8 +661,10 @@
                         <div class="form-group cemetery-field" id="cemeteryField" style="display: none;">
                             <label for="cemetery">Cemetery Name</label>
                             <div class="cemetery-autocomplete">
-                                <input type="text" id="cemetery" name="cemetery" class="form-input" placeholder="Start typing a cemetery name..." autocomplete="off">
+                                <input type="text" id="cemetery" name="cemetery" class="form-input" placeholder="Loading cemetery list…" autocomplete="off" aria-autocomplete="list" aria-controls="cemeterySuggestions">
+                                <div class="cemetery-suggestions" id="cemeterySuggestions" role="listbox"></div>
                             </div>
+                            <span class="cemetery-status" id="cemeteryStatus" role="status" aria-live="polite"></span>
                         </div>
 
                         <!-- Grave Number (for new memorial / additional work) -->
@@ -807,15 +816,11 @@
 
             const showCemetery = (type === 'new-memorial' || type === 'additional');
             cemeteryField.style.display = showCemetery ? 'block' : 'none';
-            // Clear whichever control is mounted — the plain input is replaced by
-            // Google's element once Maps loads, so guard both.
             if (!showCemetery) {
                 const plain = document.getElementById('cemetery');
                 if (plain) plain.value = '';
-                const auto = document.getElementById('cemeteryAuto');
-                if (auto) auto.value = '';
-                const hidden = document.getElementById('cemeteryValue');
-                if (hidden) hidden.value = '';
+                contactSelectedCemeteryId = null;
+                document.getElementById('cemeterySuggestions').classList.remove('active');
             }
             graveField.style.display = showCemetery ? 'block' : 'none';
             photoField.style.display = (type === 'renovation') ? 'block' : 'none';
@@ -830,88 +835,62 @@
             document.getElementById('message').placeholder = placeholders[type] || '';
         }
 
-        // ==================== CEMETERY: GOOGLE PLACES ====================
-        // Same system as the product quote form. The field used to be backed by
-        // our own `cemeteries` table, which only holds the handful we have
-        // priced, so a customer whose cemetery wasn't in it had nothing to pick.
-        // Google Places covers every UK cemetery.
-        //
-        // The submission carries the chosen name as free text only. We
-        // deliberately do not look the name up against our table or attach a
-        // permit fee here — see "Deliberate absences" in CLAUDE.md.
-        let _googleMapsKey = '';
-        let _mapsInjected = false;
+        // ==================== CEMETERY: SUPABASE LIST ====================
+        // Contact intentionally uses the owned cemetery list. A typed value is
+        // still accepted if the anonymous read is unavailable; no private key
+        // or unrelated tenant data is exposed as a client-side workaround.
+        let contactCemeteries = [];
+        let contactSelectedCemeteryId = null;
 
-        (async function loadMapsConfig() {
+        (async function loadCemeteries() {
+            const input = document.getElementById('cemetery');
+            const status = document.getElementById('cemeteryStatus');
             try {
-                const cfg = await fetch('/api/config').then(r => r.json());
-                _googleMapsKey = cfg.googleMapsKey || '';
-                armMapsLazyLoad();
-            } catch (e) { console.warn('Config load failed', e); }
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,postcode&organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_test=eq.false&order=display_order';
+                const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                contactCemeteries = await res.json();
+                if (!contactCemeteries.length) throw new Error('anonymous cemetery query returned no rows');
+                input.placeholder = 'Start typing a cemetery name…';
+                status.textContent = '';
+            } catch (error) {
+                input.placeholder = 'Type the cemetery name if known…';
+                status.textContent = 'The cemetery list is unavailable; you can still type its name.';
+                console.warn('Cemetery list unavailable:', error);
+            }
         })();
 
-        // Deferred until the customer touches the field — the contact page should
-        // not pay for the Maps bundle on every visit.
-        function armMapsLazyLoad() {
-            if (!_googleMapsKey) return;
-            const input = document.getElementById('cemetery');
-            if (!input) return;
-            const trigger = () => initGoogleMaps(_googleMapsKey);
-            input.addEventListener('focus', trigger, { once: true });
-            input.addEventListener('pointerdown', trigger, { once: true });
-        }
-
-        function initGoogleMaps(key) {
-            if (_mapsInjected) return;
-            _mapsInjected = true;
-            const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
-            s.async = true;
-            document.head.appendChild(s);
-        }
-
-        window._onMapsReady = async function() {
-            const wrap = document.querySelector('.cemetery-autocomplete');
-            const oldInput = document.getElementById('cemetery');
-            if (!wrap || !oldInput) return;
-            try {
-                const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
-                // `includedRegionCodes`, not the legacy `componentRestrictions` —
-                // passing the latter throws InvalidValueError.
-                const autocomplete = new PlaceAutocompleteElement({ includedRegionCodes: ['gb'] });
-                autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.95rem;';
-                autocomplete.id = 'cemeteryAuto';
-                wrap.replaceChild(autocomplete, oldInput);
-
-                autocomplete.addEventListener('gmp-placeselect', async (event) => {
-                    const place = event.place;
-                    await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
-                    // Store in a hidden input for form submission
-                    let hidden = document.getElementById('cemeteryValue');
-                    if (!hidden) {
-                        hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.id = 'cemeteryValue';
-                        hidden.name = 'cemetery';
-                        wrap.appendChild(hidden);
-                    }
-                    hidden.value = place.displayName || place.formattedAddress || '';
-                });
-            } catch (e) {
-                // Without the Places element the plain text input stays mounted,
-                // so the customer can still type a cemetery name freely.
-                console.warn('PlaceAutocompleteElement not available, using plain input:', e);
+        document.getElementById('cemetery').addEventListener('input', function() {
+            contactSelectedCemeteryId = null;
+            const list = document.getElementById('cemeterySuggestions');
+            const query = this.value.trim().toLowerCase();
+            if (query.length < 2 || !contactCemeteries.length) {
+                list.classList.remove('active');
+                return;
             }
-        };
+            const matches = contactCemeteries.filter(c =>
+                [c.name, c.area, c.postcode].some(value => String(value || '').toLowerCase().includes(query))
+            ).slice(0, 8);
+            list.innerHTML = matches.map((c, index) =>
+                '<button type="button" class="cemetery-suggestion" role="option" data-index="' + index + '">' +
+                escAttr(c.name) + '<small>' + escAttr([c.area, c.postcode].filter(Boolean).join(' · ')) + '</small></button>'
+            ).join('');
+            list.querySelectorAll('[data-index]').forEach(button => button.addEventListener('click', function() {
+                const cemetery = matches[Number(this.dataset.index)];
+                document.getElementById('cemetery').value = [cemetery.name, cemetery.area].filter(Boolean).join(', ');
+                contactSelectedCemeteryId = cemetery.id;
+                list.classList.remove('active');
+            }));
+            list.classList.toggle('active', matches.length > 0);
+        });
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.cemetery-autocomplete')) {
+                document.getElementById('cemeterySuggestions').classList.remove('active');
+            }
+        });
 
-        // Reads whichever cemetery control is currently mounted. Mirrors the
-        // product page: the plain input is destroyed when Maps takes over, so
-        // reading `.value` on it unguarded used to throw.
         function readCemeteryValue() {
-            return document.getElementById('cemeteryValue')?.value?.trim()
-                || document.getElementById('cemetery')?.value?.trim()
-                || document.getElementById('cemeteryAuto')?.value?.trim()
-                || '';
+            return document.getElementById('cemetery').value.trim();
         }
 
         // File upload — uploads each file to /api/upload-photo immediately and
@@ -1127,9 +1106,7 @@
                         grave_number: graveNumber || null,
                         source_page: window.location.pathname,
                         location: cemetery || null,
-                        // Cemetery comes from Google Places as free text; the Worker
-                        // resolves it against our own table server-side if it can.
-                        cemetery_id: null,
+                        cemetery_id: contactSelectedCemeteryId,
                         photo_urls: photoPaths.length > 0 ? photoPaths : null,
                         photo_tokens: photoTokens.length > 0 ? photoTokens : null
                     })

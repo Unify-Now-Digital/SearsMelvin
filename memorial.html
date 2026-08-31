@@ -114,7 +114,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
         :root {
             --color-stone: #2C2C2C;
@@ -476,7 +475,6 @@
         .cem-suggestion-name { font-size: 0.875rem; color: var(--color-text); }
         .cem-suggestion-area { font-size: 0.75rem; color: var(--color-text-muted); }
         .cem-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 3px; background: var(--color-warm); color: var(--color-text-muted); }
-        #qCemeteryMap { height: 200px; border-radius: 6px; margin-top: 0.5rem; display: none; }
         .quote-required { color: var(--color-accent-dark); }
         .quote-submit-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.95rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; margin-top: 0.25rem; }
         .quote-submit-btn:hover { background: var(--color-stone-light); }
@@ -491,6 +489,12 @@
         .quote-success-close { padding: 0.7rem 2rem; background: var(--color-accent); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
         .quote-error { color: #b44; font-size: 0.85rem; margin-top: 0.5rem; display: none; text-align: center; }
         @media (max-width: 600px) {
+            /* Let the Places widget's own prediction list escape the modal's
+               scroll box. The overlay becomes the scroll container instead.
+               This is particularly important with iOS's reduced visual
+               viewport while the keyboard is open. */
+            .quote-overlay { align-items: flex-start; overflow-y: auto; }
+            .quote-modal { max-height: none; overflow: visible; margin: auto 0; }
             .quote-form-row { grid-template-columns: 1fr; }
             .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; }
             .breadcrumb { font-size: 0.78rem; gap: 0.35rem; }
@@ -500,15 +504,6 @@
             .gallery-main img { object-position: center; }
             .colour-options { justify-content: center; }
         }
-
-        /* Cemetery autocomplete */
-        .cemetery-search-wrap { position: relative; }
-        .cemetery-search-wrap svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--color-stone); fill: none; stroke-width: 2; pointer-events: none; }
-        .cemetery-search-wrap input { padding-left: 2.1rem !important; }
-        .pac-container { border-radius: 6px; border: 1.5px solid var(--color-border); box-shadow: 0 6px 20px rgba(0,0,0,0.1); font-family: var(--font-body); font-size: 0.85rem; margin-top: 2px; }
-        .pac-item { padding: 0.45rem 0.75rem; cursor: pointer; }
-        .pac-item:hover { background: #f5f3f0; }
-        .pac-item-query { font-size: 0.85rem; color: var(--color-stone); }
 
         /* Save Toast */
         .save-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); z-index: 200; background: var(--color-stone); color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; pointer-events: none; max-width: 420px; width: max-content; }
@@ -2109,7 +2104,6 @@
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             // A cemetery helps the team confirm requirements, but it does not
             // change the guide total shown at quote-request stage.
-            _selectedCemeteryFee = 0;
             document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
 
             document.getElementById('quoteForm').reset();
@@ -2178,13 +2172,28 @@
             if (!_googleMapsKey) return;
             const input = document.getElementById('qCemeteryInput');
             if (!input) return;
-            const trigger = () => {
+            const trigger = (event) => {
+                // On touch devices, do not let Safari focus the soon-to-be
+                // removed plain input. Focusing it first opens Contact Autofill;
+                // replacing that focused node underneath the keyboard leaves
+                // the Places surface and modal in competing viewport states.
+                if (event.type === 'pointerdown' && event.pointerType !== 'mouse') {
+                    event.preventDefault();
+                    input.readOnly = true;
+                    input.placeholder = 'Loading cemetery search…';
+                }
                 input.removeEventListener('focus', trigger);
                 input.removeEventListener('pointerdown', trigger);
                 initGoogleMaps(_googleMapsKey);
             };
             input.addEventListener('focus', trigger, { once: true });
-            input.addEventListener('pointerdown', trigger, { once: true });
+            input.addEventListener('pointerdown', trigger, { once: true, passive: false });
+            if (document.activeElement === input) {
+                input.blur();
+                input.readOnly = true;
+                input.placeholder = 'Loading cemetery search…';
+                trigger({ type: 'already-focused', pointerType: 'touch', preventDefault() {} });
+            }
         }
 
         let _mapsInjected = false;
@@ -2194,6 +2203,15 @@
             const s = document.createElement('script');
             s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onMapsReady`;
             s.async = true;
+            s.onerror = () => {
+                _mapsInjected = false;
+                const input = document.getElementById('qCemeteryInput');
+                if (input) {
+                    input.readOnly = false;
+                    input.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
+                }
+                console.warn('Google Maps failed to load; keeping cemetery input');
+            };
             document.head.appendChild(s);
         }
 
@@ -2213,10 +2231,14 @@
                 });
                 autocomplete.style.cssText = 'width:100%;font-family:inherit;font-size:0.9rem;';
                 autocomplete.id = 'qCemeteryAuto';
+                autocomplete.name = 'cemetery';
+                autocomplete.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
+                autocomplete.value = oldInput.value || '';
+                document.getElementById('qCemSuggestions').classList.remove('active');
                 wrap.replaceChild(autocomplete, oldInput);
 
-                autocomplete.addEventListener('gmp-placeselect', async (event) => {
-                    const place = event.place;
+                autocomplete.addEventListener('gmp-select', async (event) => {
+                    const place = event.placePrediction.toPlace();
                     await place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
                     // Store in a hidden input for form submission
                     let hiddenInput = document.getElementById('qCemeteryValue');
@@ -2228,20 +2250,25 @@
                         wrap.appendChild(hiddenInput);
                     }
                     hiddenInput.value = place.displayName || place.formattedAddress || '';
+                    document.getElementById('qCemeteryName').value = '';
+                    _selectedCemeteryId = null;
                 });
+                autocomplete.addEventListener('input', () => {
+                    const hiddenInput = document.getElementById('qCemeteryValue');
+                    if (hiddenInput) hiddenInput.value = '';
+                    document.getElementById('qCemeteryName').value = '';
+                    _selectedCemeteryId = null;
+                });
+
+                // Resume the first touch against the stable Places control.
+                requestAnimationFrame(() => autocomplete.focus());
             } catch(e) {
-                // Fallback to original Autocomplete if PlaceAutocompleteElement not available
-                if (google.maps.places && google.maps.places.Autocomplete) {
-                    const ac = new google.maps.places.Autocomplete(oldInput, {
-                        componentRestrictions: { country: 'gb' },
-                        fields: ['name', 'formatted_address'],
-                    });
-                    ac.addListener('place_changed', () => {
-                        const place = ac.getPlace();
-                        oldInput.value = place.name || oldInput.value;
-                    });
-                }
-                console.warn('PlaceAutocompleteElement not available, using fallback:', e);
+                // Keep the Supabase/free-text boot control usable. Do not fall
+                // back to the deprecated Places Autocomplete class: two widgets
+                // bound to this field recreate the mobile focus race.
+                oldInput.readOnly = false;
+                oldInput.placeholder = 'Search cemetery name, or leave blank if you’re unsure';
+                console.warn('PlaceAutocompleteElement not available; keeping cemetery input:', e);
             }
         };
 
@@ -2376,12 +2403,11 @@
         </div>
     </nav>
     <!-- Cemetery map feature for RAQ modal -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         let QUOTE_CEMETERIES = [];
         (async function loadQuoteCemeteries() {
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed,permit_fee&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,region,postcode,kerb_allowed&organization_id=eq.' + encodeURIComponent(SM_ORG_ID) + '&is_active=eq.true&is_test=eq.false&order=display_order';
                 const res = await fetch(url, { headers: SUPABASE_HEADERS });
                 if (!res.ok) throw new Error(res.status);
                 const rows = await res.json();
@@ -2389,34 +2415,10 @@
                     id: r.id,
                     name: r.name,
                     area: r.area + ', ' + r.postcode,
-                    type: r.kerb_allowed ? 'kerb' : 'lawn',
-                    fee: r.permit_fee || 0
+                    type: r.kerb_allowed ? 'kerb' : 'lawn'
                 }));
             } catch (e) { console.warn('Cemetery load failed:', e); }
         })();
-
-        let _qMap = null;
-        let _qMarker = null;
-
-        function _initQMap(lat, lng) {
-            const mapEl = document.getElementById('qCemeteryMap');
-            mapEl.style.display = 'block';
-            if (!_qMap) {
-                _qMap = L.map('qCemeteryMap', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                    maxZoom: 19
-                }).addTo(_qMap);
-            } else {
-                _qMap.setView([lat, lng], 15);
-            }
-            if (_qMarker) _qMarker.remove();
-            _qMarker = L.marker([lat, lng]).addTo(_qMap);
-            // Trigger resize so tiles render correctly inside the modal
-            setTimeout(function() { _qMap.invalidateSize(); }, 100);
-        }
-
-        let _selectedCemeteryFee = 0;
 
         function searchQuoteCemetery(query) {
             const suggestions = document.getElementById('qCemSuggestions');
@@ -2459,16 +2461,6 @@
             document.getElementById('qCemeteryName').value = c.name + ', ' + c.area;
             document.getElementById('qCemSuggestions').classList.remove('active');
             _selectedCemeteryId = c.id || null;
-            _selectedCemeteryFee = c.fee || 0;
-            updatePermitFeeRow();
-        }
-
-        function updatePermitFeeRow() {
-            var totalEl = document.getElementById('qsTotal');
-            // Cemetery choice helps the team confirm requirements; it does not
-            // alter the customer-facing guide total at quote-request stage.
-            var memorialTotal = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-            if (totalEl) totalEl.textContent = '£' + memorialTotal.toLocaleString();
         }
 
         // Close suggestions when clicking outside

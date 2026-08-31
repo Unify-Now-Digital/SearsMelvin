@@ -716,16 +716,16 @@
         }
 
         let cemeteries = [];
-        let _cemeteriesLoaded = false;
         (async function loadCemeteries() {
             const searchInput = document.getElementById('cemeterySearch');
             searchInput.placeholder = 'Loading cemeteries…';
             searchInput.disabled = true;
             try {
-                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=slug,name,area,region,postcode,kerb_allowed,lawn_section,cremation_section,permit_fee,processing_weeks,installed_count,note&is_active=eq.true&order=display_order';
+                const url = SUPABASE_URL + '/rest/v1/cemeteries?select=slug,name,area,region,postcode,kerb_allowed,lawn_section,cremation_section,permit_fee,processing_weeks,installed_count,note&organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_test=eq.false&order=display_order';
                 const res = await fetch(url, { headers: SB_HEADERS });
                 if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
                 const rows = await res.json();
+                if (!rows.length) throw new Error('anonymous cemetery query returned no rows');
                 cemeteries = rows.map(r => ({
                     id: r.slug,
                     name: r.name,
@@ -740,7 +740,6 @@
                     installed: r.installed_count,
                     note: r.note
                 }));
-                _cemeteriesLoaded = true;
                 searchInput.placeholder = 'e.g. Islington & St Pancras or N2';
                 searchInput.disabled = false;
             } catch (e) {
