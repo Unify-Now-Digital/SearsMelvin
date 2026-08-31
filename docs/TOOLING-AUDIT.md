@@ -5,8 +5,8 @@ how to re-check it. **Keep this current** — update the status column when you 
 something, and add a dated line to "Verified good" when you confirm a fact, so
 the next audit starts from evidence rather than from scratch.
 
-Last full sweep: **2026-08-26** (Cloudflare, Supabase, repo, GitHub).
-Targeted pricing and catalogue review: **2026-08-28**.
+Last full repo sweep: **2026-08-31** (SM public cemetery/mobile paths).
+Earlier Cloudflare/Supabase/GitHub sweep: **2026-08-26**.
 
 ---
 
@@ -29,8 +29,10 @@ Targeted pricing and catalogue review: **2026-08-28**.
 | 13 | Low | Supabase | Auth leaked-password protection (HaveIBeenPwned) disabled | Open |
 | 14 | Low | Supabase perf | 4 duplicate indexes (`order_people` ×3, `inbox_messages` ×1), 37 unindexed FKs, 38 unused indexes, 2 `auth_rls_initplan` warnings on `enquiries` | Open — **low priority**, largest table is 6,633 rows |
 | 15 | Info | Data | Sears Melvin has only 6 cemeteries and `processing_weeks` is null on all of them, so `/permit-checker` will still look thin once #1 is fixed | Open — data entry, not code |
-| 16 | — | Quote form | Quotes carry no cemetery FK and no permit fee, because Google's `gmp-placeselect` returns only a display name | **Not a defect — by design.** A matcher was built and then removed on request: the site does not price permit fees. See "Deliberate absences" in `CLAUDE.md`. |
-| 17 | Medium | Contact form | `/contact`'s cemetery field was Supabase-only, so with #1 in place it had no working autocomplete at all | **Fixed** — now uses the same plain Google Places element as the product quote form; the Supabase list, its styles and `cemetery_id` capture were removed |
+| 16 | — | Quote form | Quotes do not add cemetery permit fees to the guide total | **Not a defect — by design.** Memorial Places selections are free text; the Supabase boot path can provide an FK. See `CLAUDE.md`. |
+| 17 | Medium | Contact form | `/contact` must use the owned Supabase list, but the anon RLS issue can return no rows | **Client hardened 2026-08-31** — scoped list and FK capture restored, with visible typed-name fallback. RLS migration remains unapplied. |
+| 21 | **Critical** | Memorial mobile | iOS focused the boot input, opened Contact Autofill, then Maps replaced the focused node inside an overflow-clipped modal | **Fixed 2026-08-31** — touch focus is transferred only after the stable Places element mounts; mobile overlay owns scrolling. |
+| 22 | **High** | Maps API | Current Places widget renamed `gmp-placeselect`/`event.place` to `gmp-select`/`placePrediction`, so selected values could stop being captured | **Fixed 2026-08-31**; legacy `google.maps.places.Autocomplete` fallback removed. |
 | 18 | **High** | Quote pricing | `/api/submit` trusted the browser's product price and add-on lines; the configurator also carried a hidden £250 infill on non-kerb products and omitted the default £250 infill from kerb totals | **Fixed in `codex/pricing-integrity`** — the Worker now rebuilds every quote from the current SM-scoped catalogue; focused tests and rendered Castell/Hartwell checks pass |
 | 19 | **High** | Quote editing | Legacy quote edits discarded price fields and never updated `orders.value`, while the edit page showed stale hardcoded add-on prices | **Fixed in `codex/pricing-integrity`** — edits use the same canonical calculator and persist the recalculated value; the edit integration test passes |
 | 20 | Medium | Public catalogue | Public product reads filtered only on `is_active`, exposing an active £1 uncategorized test product and omitting tenant/listing scope from catalogue, search, sitemap, and product routes | **Website fixed in `codex/pricing-integrity`** — all public reads require the SM org, `is_listed=true`, and a category. Direct anon product RLS remains a separate policy decision |
@@ -40,25 +42,20 @@ Targeted pricing and catalogue review: **2026-08-28**.
 The policy name says "public read" but the grant is to `authenticated` only, so
 any page querying `cemeteries` with the anon key gets an empty array.
 
-After the cemetery fields moved to Google Places, **one** page is affected:
+Three public paths are affected differently:
 
 - **`/permit-checker`** — Supabase only, no Google fallback. The page's entire
   purpose is looking up a cemetery's permit fee and timescale, so it cannot use
   Google: it needs our own priced rows. Non-functional until the grant is fixed.
 
-Two earlier claims here were wrong and are retracted:
+- **`/memorials/<slug>`** uses Supabase only as its boot/FK path, then replaces
+  it with Google Places after first focus. Empty anon rows reduce the boot
+  suggestions but do not explain the iOS Places/Autofill bug.
+- **`/contact`** is Supabase-only and now shows a typed-name fallback when the
+  owned list is empty or unavailable.
 
-- **`/memorials/<slug>` (the quote form) was never affected.** `_onMapsReady`
-  calls `wrap.replaceChild()` and swaps the input for a Google
-  `PlaceAutocompleteElement`, so the customer gets UK-wide suggestions. The
-  Supabase-backed `searchQuoteCemetery` / `selectQuoteCemetery` pair is
-  unreachable dead code there — the element it listened to no longer exists.
-- **`/contact` is no longer affected** either, having moved to the same Google
-  Places element (finding #17).
-
-Cemetery capture is therefore free text by design, and the zero-`cemetery_id`
-figures below are expected rather than a defect — the Worker's
-`lookupCemeteryIdByName` still resolves what it can server-side. Recorded for
+Cemetery capture may be free text or a selected owned row. The Worker's
+`lookupCemeteryIdByName` still resolves free text where it can. Recorded for
 context only, over the 120 days to 2026-08-26:
 
 | | Total | With cemetery text typed | With a resolved `cemetery_id` |
@@ -66,8 +63,9 @@ context only, over the 120 days to 2026-08-26:
 | Enquiries | 81 | 53 | 0 |
 | Quote orders | 30 | 21 | 0 |
 
-**Consequence for the migration:** its cemetery half now only unblocks
-`/permit-checker`. The `activity_log_write` half is independent and unaffected.
+**Consequence for the migration:** its cemetery half unblocks the full contact
+and permit-checker lists plus memorial's boot/FK path. The `activity_log_write`
+half is independent and unaffected.
 
 ---
 
