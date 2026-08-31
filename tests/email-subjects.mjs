@@ -49,6 +49,25 @@ let sentEmails = [];
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input);
   if (url.includes("/rpc/check_portal_rate_limit")) return Response.json([{ allowed: true, retry_after_seconds: 0 }]);
+  // Quote submissions now rebuild the product from the live catalogue (#151).
+  if (url.includes("/rest/v1/products?")) {
+    const nameless = url.includes("slug=eq.nameless-memorial");
+    return Response.json([{
+      id: nameless ? "product-unnamed" : "product-1",
+      name: nameless ? "" : "The Keswick Heart",
+      slug: nameless ? "nameless-memorial" : "the-keswick-heart",
+      base_price: nameless ? 1200 : 1750,
+      image_url: "/images/keswick.jpg",
+      inscription_chars_included: 80,
+      inscription_price_per_char: 1.95,
+      product_categories: { name: "Cremation Memorials", slug: "cremation-memorials" },
+    }]);
+  }
+  if (url.includes("/rest/v1/stone_colours?")) return Response.json([
+    { name: "Black", slug: "black", is_premium: false, tier: "standard" },
+  ]);
+  if (url.includes("/rest/v1/product_addons?")) return Response.json([]);
+  if (url.includes("/rest/v1/product_sizes?")) return Response.json([]);
   if (url.includes("/rpc/create_quote")) return Response.json({ ok: true });
   if (url.includes("/rest/v1/people?email=eq.")) return Response.json([{ id: 7, is_customer: false }]);
   if (url.includes("/rest/v1/people?id=eq.")) return new Response(null, { status: 204 });
@@ -82,7 +101,7 @@ async function submit(body) {
     channel: "quote",
     name: "evans todd",
     email: "evanstodd1995@icloud.com",
-    product: { name: "The Keswick Heart", slug: "the-keswick-heart", price: "1750" },
+    product: { name: "The Keswick Heart", slug: "the-keswick-heart", colour: "Black", price: "1750" },
   });
   assert.equal(business.subject, "New Quote Request — Evans Todd — The Keswick Heart");
 }
@@ -104,7 +123,7 @@ async function submit(body) {
     channel: "quote",
     name: "Ian McDonald",
     email: "ian@example.com",
-    product: { price: "1200" },
+    product: { slug: "nameless-memorial", colour: "Black", price: "1200" },
   });
   assert.equal(business.subject, "New Quote Request — Ian McDonald — Memorial");
 }
