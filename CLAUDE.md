@@ -34,16 +34,14 @@ it whenever you audit or fix something in that list.
   website quote orders since with zero invoices attached. Invoices are raised in
   the admin app / Make. Payment-*time* flow (`/api/stripe` +
   `/api/stripe-webhook`) is separate and stays.
-- **The public forms do not price permit fees, and do not resolve the cemetery
-  against our own table in the browser.** The cemetery field on the product
-  quote form and on `/contact` is a plain Google Places autocomplete: it submits
-  the chosen name as free text and nothing else. A matcher that mapped the
-  Google pick back onto our priced `cemeteries` rows (setting `cemetery_id` and
-  a permit fee) was built on 2026-08-26 and removed the same day at the
-  business's request. Quotes are guide totals; the permit fee is confirmed by
-  the team afterwards. Do not reintroduce client-side cemetery matching or a
-  permit-fee line driven by it. The Worker's `lookupCemeteryIdByName` still
-  resolves a cemetery server-side where it can — that is separate and stays.
+- **The public forms do not price permit fees.** The memorial quote form upgrades
+  from the owned Supabase boot list to Google `PlaceAutocompleteElement` after
+  first focus and submits the chosen place as free text. `/contact` and
+  `/permit-checker` use the owned Supabase cemetery list only; contact may submit
+  its selected `cemetery_id`, but must still accept typed text if the anonymous
+  list is unavailable. None of these paths adds a permit fee to a customer guide
+  total. The Worker's best-effort `lookupCemeteryIdByName` remains a separate
+  server-side fallback.
 - **The partner portal is not on this website.** The desk is
   https://partner.searsmelvin.co.uk (Unify-Now-Digital/SearsMelvin-Partner,
   Worker `sears-melvin-partner`). Do not restore `partner.html` or a working
