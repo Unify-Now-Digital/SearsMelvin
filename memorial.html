@@ -863,7 +863,7 @@
                         <div class="option-group">
                             <div class="option-header">
                                 <span class="option-label">Inscription</span>
-                                <span class="option-value"><span id="charCount">0</span> / 100 included</span>
+                                <span class="option-value"><span id="charCount">0</span> / 80 included</span>
                             </div>
                             <div class="inscription-container">
                                 <textarea class="inscription-input" id="inscriptionInput" placeholder="In Loving Memory of&#10;John Smith&#10;1945 - 2024&#10;&#10;Forever in our hearts" oninput="updateInscription(this)" maxlength="400"></textarea>
@@ -871,7 +871,7 @@
                                     <div class="char-bar">
                                         <div class="char-bar-fill" id="charBarFill" style="width: 0%"></div>
                                     </div>
-                                    <span class="char-counter" id="charCounter">100 characters included, then £1.95 each</span>
+                                    <span class="char-counter" id="charCounter">80 characters included, then £2.40 each</span>
                                 </div>
                             </div>
                         </div>
@@ -1281,7 +1281,7 @@
         let PRODUCT_IMAGE_URL = '';
         let productData = null;
         let charsIncluded = 80;
-        let pricePerChar = 1.95;
+        let pricePerChar = 2.40;
 
         // ==================== STATE ====================
         const state = {
@@ -1953,9 +1953,17 @@
         }
 
         // ==================== TOTAL PRICE ====================
+        // Guide totals can include fractional extra-lettering pounds. Always
+        // show two decimal places so £1,452.40 does not render as £1,452.4.
+        function formatGbp(amount) {
+            const n = Number(amount);
+            const safe = Number.isFinite(n) ? n : 0;
+            return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function updateTotalPrice() {
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
-            const fmt   = `£${total.toLocaleString()}`;
+            const fmt   = formatGbp(total);
             document.getElementById('priceTotal').textContent = fmt;
             document.getElementById('mobilePriceTotal').textContent = fmt;
         }
@@ -2101,14 +2109,19 @@
 
             const addonItems = getAddonLineItems();
             document.getElementById('qsExtrasContainer').innerHTML = addonItems.map(function(item) {
+                // Extra lettering is priced per character and can be fractional.
+                // Whole-pound extras stay unpadded so £350 does not become £350.00.
+                const priceText = item.name === 'Extra Lettering'
+                    ? '+' + formatGbp(item.price)
+                    : '+£' + Number(item.price).toLocaleString('en-GB');
                 return '<div class="quote-config-row"><span>' + item.name + '</span>'
-                     + '<span>+£' + item.price.toLocaleString() + '</span></div>';
+                     + '<span>' + priceText + '</span></div>';
             }).join('');
 
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             // A cemetery helps the team confirm requirements, but it does not
             // change the guide total shown at quote-request stage.
-            document.getElementById('qsTotal').textContent = '£' + total.toLocaleString();
+            document.getElementById('qsTotal').textContent = formatGbp(total);
 
             document.getElementById('quoteForm').reset();
             // Re-enable the submit button on (re)open. A prior successful submit hides
