@@ -57,6 +57,12 @@
 /favicon.svg
   Cache-Control: public, max-age=31536000, immutable
 
+# Brochure v4. The public page reveals this only after the email soft-gate.
+/assets/sears-melvin-brochure-v4.pdf
+  X-Robots-Tag: noindex
+  Content-Disposition: attachment; filename="sears-melvin-brochure-v4.pdf"
+  Cache-Control: public, max-age=86400
+
 # Crawler-facing files: revalidate hourly
 /robots.txt
   Cache-Control: public, max-age=3600

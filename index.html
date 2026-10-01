@@ -215,6 +215,8 @@
         .hero-lead em { font-style: italic; font-weight: 400; }
         .hero-description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 2rem; max-width: 520px; }
         .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .hero-brochure { margin-top: 1rem; font-size: 0.95rem; color: var(--color-text-muted); }
+        .hero-brochure a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 3px; }
         .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; font-family: var(--font-body); font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s ease; border-radius: 3px; }
         .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .btn-primary { background-color: var(--color-stone); color: var(--color-cream); }
@@ -269,6 +271,8 @@
         .about-content h2 { margin-bottom: 1.5rem; }
         .about-text { font-size: 1.1rem; line-height: 1.9; margin-bottom: 1.5rem; }
         .values-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem; }
+        .about-more { margin-top: 1.5rem; }
+        .about-more a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 3px; }
         .value-item { padding: 1.25rem; background: white; border-radius: 6px; transition: transform 0.3s, box-shadow 0.3s; }
         .value-item:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
         .value-item h3 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.25rem; }
@@ -655,6 +659,7 @@
             <li><a href="/memorials" class="nav-cta">Memorials</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
+            <li><a href="/brochure">Brochure</a></li>
             <li><a href="/contact" class="nav-cta-dark">Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
@@ -687,6 +692,7 @@
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
 
@@ -711,6 +717,7 @@
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/brochure" class="search-quick-link">Brochure</a>
                         <a href="/contact" class="search-quick-link">Get a Quote</a>
                         <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
@@ -739,6 +746,7 @@
                     </a>
                     <a href="/contact" class="btn btn-secondary">Get in Touch</a>
                 </div>
+                <p class="hero-brochure">Something to read or share? <a href="/brochure">Request the brochure</a>.</p>
             </div>
             <div class="hero-visual">
                 <div class="hero-image" id="heroImage">
@@ -993,6 +1001,7 @@
                     <div class="value-item"><h3>Craftsmen</h3><p>Traditional skills. Premium materials.</p></div>
                     <div class="value-item"><h3>Caring</h3><p>Empathy first. We're here for you.</p></div>
                 </div>
+                <p class="about-more"><a href="/about">How we help</a></p>
             </div>
         </div>
     </section>
@@ -1223,7 +1232,8 @@
                 </div>
             </div>
             <ul class="footer-links">
-                <li><a href="#about">About</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="#process">Process</a></li>
                 <li><a href="/faq">FAQ</a></li>
@@ -1748,7 +1758,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/brochure" class="search-quick-link">Brochure</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
         }
 
         function handleSearch(query) {

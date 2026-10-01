@@ -18,4 +18,7 @@ Disallow: /track.html
 # API endpoints — never indexable
 Disallow: /api/
 
+# Brochure PDF is offered after the email soft-gate on /brochure
+Disallow: /assets/sears-melvin-brochure-v4.pdf
+
 Sitemap: https://searsmelvin.co.uk/sitemap.xml
