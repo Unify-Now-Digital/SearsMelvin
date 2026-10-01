@@ -15,6 +15,7 @@
  */
 
 import { formatNameForSubject } from "./submit.js";
+import { flipQuoteOrderTypeAfterDeposit } from "./order-type-after-deposit.js";
 
 const BUSINESS_NAME  = "Sears Melvin Memorials";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
@@ -339,6 +340,7 @@ async function handlePaymentSucceeded(env, pi) {
               body: JSON.stringify({ status: orderStatus, stage: orderStage }),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, ordId);
+            await flipQuoteOrderTypeAfterDeposit(env, sbHeaders, ordId);
           }
         }
 
@@ -425,6 +427,7 @@ async function handlePaymentSucceeded(env, pi) {
               body: JSON.stringify({ status: orderStatus, stage: orderStage }),
             });
             await markPersonAsPayingCustomer(env, sbHeaders, orderId);
+            await flipQuoteOrderTypeAfterDeposit(env, sbHeaders, orderId);
           }
         }
       }
