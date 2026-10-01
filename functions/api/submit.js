@@ -18,6 +18,11 @@ const FROM_EMAIL = "info@searsmelvin.co.uk";
 const BUSINESS_NAME = "Sears Melvin Memorials";
 const SITE_URL = "https://searsmelvin.co.uk";
 
+// Brochure v4 (mid-lane). Returned only after the email soft-gate succeeds.
+// Swap this path if an OCR-gated FINAL file is restored later — do not point
+// it at a version that is not in the repo.
+const BROCHURE_DOWNLOAD_PATH = "/assets/sears-melvin-brochure-v4.pdf";
+
 // GHL pipeline defaults. These were previously env-only, and because neither var
 // was ever set in Cloudflare `createGHLOpportunity` returned early on every
 // submission — no opportunity has been created since Sept 2025. Defaulting them
@@ -220,11 +225,16 @@ async function quoteSideEffects({
 
 async function handleEnquiry(ctx, data, submittedAt) {
   const env = ctx.env;
-  const { name, email, phone, message, location } = data;
+  const { name, email, phone, location } = data;
+  let message = data.message;
   // Accept either `enquiry_type` (legacy / shortlist) or `sub_type` (contact form
   // post-refactor) — the frontend wasn't always consistent and the business
   // notification email used to silently say "Not specified" for half of them.
   const enquiry_type = data.enquiry_type || data.sub_type || null;
+  const isBrochure = enquiry_type === "brochure";
+  // The brochure gate only collects an email. A fixed note keeps the enquiry
+  // row and the business email useful without asking the visitor to write one.
+  if (isBrochure && !message) message = "Requested the memorial brochure.";
   const grave_number = data.grave_number ? String(data.grave_number).trim() : null;
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
@@ -291,7 +301,9 @@ async function handleEnquiry(ctx, data, submittedAt) {
     appointment_kind: data.appointment_kind || null,
   }));
 
-  return jsonResponse({ ok: true });
+  // The PDF path is handed back only after the enquiry row is saved, so the
+  // page can reveal the download. Other channels stay a plain acknowledgement.
+  return jsonResponse(isBrochure ? { ok: true, download: BROCHURE_DOWNLOAD_PATH } : { ok: true });
 }
 
 // Runs after the response has been returned. Emails + calendar + GHL are all
@@ -361,6 +373,7 @@ async function enquirySideEffects({
         name, email, phone, type: "enquiry",
         cemetery: location,
         extraFields: ghlExtraFields,
+        extraTags: enquiry_type === "brochure" ? ["brochure"] : undefined,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -1208,7 +1221,11 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
 // they can see exactly what reached us. Subject line carries the enquiry type
 // and an extra detail (grave / cemetery) so it stands out in their inbox.
 function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }) {
-  const firstName = (name || "").split(" ")[0];
+  const firstToken = String(name || "").trim().split(/\s+/)[0] || "";
+  // Brochure requests may have no name — the stored label is the email address.
+  // Don't greet someone as "jane@example.com".
+  const firstName = firstToken.includes("@") ? "" : firstToken;
+  const isBrochure = enquiry_type === "brochure";
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -1223,8 +1240,10 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
         </tr></table>
       </td></tr>
       <tr><td style="padding:30px 28px 6px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">Thank you, ${esc(firstName)}.</h2>
-        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within 24 hours.</p>
+        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">${firstName ? `Thank you, ${esc(firstName)}.` : "Thank you."}</h2>
+        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">${isBrochure
+          ? "Your brochure is ready on the page where you left your email. We've kept a note of this request. When you want to talk about a particular memorial, ask us for a quote."
+          : "We've received your submission and one of our team will be in contact within 24 hours."}</p>
         <p style="color:#888888;font-size:13px;line-height:1.6;margin:0 0 18px 0;font-family:Arial,sans-serif;">A copy of your enquiry is below for your records.</p>
       </td></tr>
       <tr><td style="padding:0 28px 8px;">
@@ -1270,7 +1289,13 @@ function supabaseHeaders(env) {
 }
 
 function splitName(full) {
-  const parts = (full || "").trim().split(/\s+/);
+  const trimmed = (full || "").trim();
+  // An email used as a stand-in name (brochure gate) must not become a fake
+  // first name on the shared people row.
+  if (!trimmed || trimmed.includes("@")) {
+    return { first_name: null, last_name: "-" };
+  }
+  const parts = trimmed.split(/\s+/);
   return {
     first_name: parts[0] || null,
     last_name: parts.length > 1 ? parts.slice(1).join(" ") : "-",
@@ -1473,10 +1498,17 @@ async function createEnquiry(env, payload) {
 // ═══════════════════════════════════════════════════════════════════
 // GOHIGHLEVEL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
-async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields }) {
+async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields, extraTags }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
-  const parts = name.trim().split(" ");
+  const rawName = String(name || "").trim();
+  const emailAsName = rawName.includes("@");
+  const parts = emailAsName ? [] : rawName.split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type];
+  if (Array.isArray(extraTags)) {
+    for (const tag of extraTags) {
+      if (tag && !tags.includes(tag)) tags.push(tag);
+    }
+  }
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
   const customFields = [
@@ -1494,7 +1526,9 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
     method: "POST",
     headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" },
     body: JSON.stringify({
-      locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
+      locationId: env.GHL_LOCATION_ID,
+      firstName: emailAsName ? undefined : parts[0],
+      lastName: emailAsName ? "" : (parts.slice(1).join(" ") || ""),
       email, phone: phone || undefined, source: "Website", tags, customFields,
     }),
   });
@@ -1589,10 +1623,18 @@ function validateSubmission(input, organizationId) {
     return { ok: false, error: "Invalid enquiry type" };
   }
   data.channel = channel;
-  if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 120) {
+  const brochure = channel === "contact"
+    && String(data.enquiry_type || data.sub_type || "").trim().toLowerCase() === "brochure";
+  const nameMissing = typeof data.name !== "string" || !data.name.trim();
+  if (nameMissing) {
+    // The brochure soft-gate asks for an email. A name is welcome, not required.
+    if (!brochure) return { ok: false, error: "A valid name is required" };
+    data.name = "";
+  } else if (data.name.length > 120) {
     return { ok: false, error: "A valid name is required" };
+  } else {
+    data.name = data.name.trim();
   }
-  data.name = data.name.trim();
   if (data.email !== undefined && data.email !== null && data.email !== "") {
     if (typeof data.email !== "string") return { ok: false, error: "Invalid email address" };
     data.email = data.email.trim().toLowerCase();
@@ -1601,6 +1643,13 @@ function validateSubmission(input, organizationId) {
     }
   } else {
     data.email = "";
+  }
+  if (brochure) {
+    if (!data.email) return { ok: false, error: "A valid email is required" };
+    // Keep a label for subjects and the people row when no name was given.
+    if (!data.name) data.name = data.email;
+    data.enquiry_type = "brochure";
+    data.sub_type = "brochure";
   }
   if (data.phone !== undefined && data.phone !== null && data.phone !== "") {
     if (typeof data.phone !== "string" || data.phone.length > 40) {
@@ -1698,6 +1747,9 @@ function timingSafeEqual(a, b) {
 export function formatNameForSubject(name) {
   const trimmed = String(name ?? "").trim().replace(/\s+/g, " ");
   if (!trimmed) return "";
+  // Brochure requests can fall back to the email address as the label. Leave
+  // it exactly as stored so "jane@example.com" is not rewritten as "Jane@…".
+  if (trimmed.includes("@")) return trimmed;
   // Capitalise only a name typed entirely in lower case — that is a form-filling
   // artefact ("evans"). Anything carrying capitals is left exactly as entered,
   // so "McDonald", "O'Brien" and "van der Berg" are never mangled.
