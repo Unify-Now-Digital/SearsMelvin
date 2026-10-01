@@ -1,3 +1,4 @@
+import { countBillableInscriptionChars } from "./_inscription-count.js";
 import { supabaseHeaders } from "./_security.js";
 
 const SLUG_RE = /^[a-z0-9-]{1,120}$/;
@@ -165,7 +166,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
   const inscription = boundedText(rawProduct.inscription, 1000);
   const includedCharacters = Math.max(0, Number(product.inscription_chars_included) || 80);
   const pricePerCharacter = money(product.inscription_price_per_char || 2.40);
-  const extraCharacters = Math.max(0, inscription.length - includedCharacters);
+  const extraCharacters = Math.max(0, countBillableInscriptionChars(inscription) - includedCharacters);
   const letteringPrice = money(extraCharacters * pricePerCharacter);
   if (letteringPrice) lineItems.push({ name: "Extra Lettering", price: letteringPrice });
 
