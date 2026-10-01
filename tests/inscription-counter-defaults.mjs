@@ -5,8 +5,9 @@ const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8"
 
 // Empty / pre-product inscription labels match the catalogue defaults.
 assert.match(html, /<span id="charCount">0<\/span> \/ 80 included/);
-assert.match(html, /id="charCounter">80 characters included, then £2\.40 each</);
+assert.match(html, /id="charCounter">80 letters and numbers included, then £2\.40 each</);
 assert.doesNotMatch(html, /100 characters included, then £1\.95/);
+assert.doesNotMatch(html, /100 letters and numbers included, then £1\.95/);
 assert.doesNotMatch(html, /\/ 100 included/);
 
 assert.match(html, /let charsIncluded = 80;/);
@@ -16,8 +17,9 @@ assert.match(html, /let pricePerChar = 2\.40;/);
 assert.match(html, /charsIncluded = product\.inscription_chars_included \|\| 80;/);
 assert.match(html, /pricePerChar = parseFloat\(product\.inscription_price_per_char\) \|\| 2\.40;/);
 
-// Over-80 summing is unchanged: extra letters × rate, rounded to pence.
-assert.match(html, /const extra = charCount - charsIncluded;/);
+// Over the allowance: billable extras × rate, rounded to pence.
+assert.match(html, /const charCount = countBillableInscriptionChars\(text\);/);
+assert.match(html, /const extra = Math\.max\(0, charCount - charsIncluded\);/);
 assert.match(html, /const cost\s+= parseFloat\(\(extra \* pricePerChar\)\.toFixed\(2\)\);/);
 
 // Running total, quote-summary total, and the extra-lettering line keep two decimals.
