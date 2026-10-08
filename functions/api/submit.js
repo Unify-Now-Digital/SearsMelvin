@@ -12,6 +12,7 @@ import {
   readBoundedJson,
 } from "./_security.js";
 import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
+import { upsertWebsiteOpportunity } from "./_ghl-opportunity.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -201,6 +202,7 @@ async function quoteSideEffects({
           contactId,
           name: `${product.name || "Memorial"} — ${name}`,
           monetaryValue: parseFloat(product.price) || 0,
+          enquiry: { type: "quote request", message },
         });
       }
     }),
@@ -367,6 +369,7 @@ async function enquirySideEffects({
           contactId,
           name: `${enquiryTypeLabel} — ${name}`,
           monetaryValue: 0,
+          enquiry: { type: "enquiry", message },
         });
       }
     }),
@@ -462,6 +465,7 @@ async function appointmentSideEffects({
           contactId,
           name: `${typeLabel} — ${name}`,
           monetaryValue: 0,
+          enquiry: { type: "appointment request", message: notes },
         });
       }
     }),
@@ -1504,78 +1508,22 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
 }
 
 /**
- * Find this contact's existing open opportunity, if any.
- * Returns { id, pipelineStageId } or null. Fails open (returns null) on any
- * error: a duplicate opportunity is recoverable, a silently dropped lead is not.
+ * Thin wrapper: resolves pipeline defaults and hands off to
+ * upsertWebsiteOpportunity (see _ghl-opportunity.js). A contact who already has
+ * a WON opportunity gets a `returning-customer-enquiry` tag + note instead of a
+ * new card; won opportunities are never written from here.
  */
-async function findOpenGHLOpportunity(env, contactId) {
-  const params = new URLSearchParams({
-    location_id: env.GHL_LOCATION_ID,
-    contact_id: contactId,
-    status: "open",
-    limit: "1",
-  });
-  try {
-    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/search?${params}`, {
-      headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28" },
-    });
-    if (!res.ok) return null;
-    const found = (await res.json())?.opportunities?.[0];
-    return found ? { id: found.id, pipelineStageId: found.pipelineStageId } : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Upsert, not create. One contact submitting four quote configurations in a day
- * (which happens — see Annette McDonald, 28–29 Jul 2026) must produce ONE
- * opportunity, not four. On update the existing stage is preserved: a deal
- * already moved to Quoted or Invoiced must not be dragged back by a new
- * submission.
- */
-async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
+async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
-  const pipelineId = env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT;
-  const defaultStageId = env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT;
-  const headers = {
-    "Authorization": `Bearer ${env.GHL_API_KEY}`,
-    "Version": "2021-07-28",
-    "Content-Type": "application/json",
-  };
-
-  const existing = await findOpenGHLOpportunity(env, contactId);
-
-  if (existing) {
-    const res = await fetch(`https://services.leadconnectorhq.com/opportunities/${existing.id}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        pipelineId,
-        pipelineStageId: existing.pipelineStageId || defaultStageId,
-        name,
-        monetaryValue: monetaryValue || 0,
-        status: "open",
-      }),
-    });
-    if (!res.ok) throw new Error(`GHL Opportunity update returned ${res.status}`);
-    return;
-  }
-
-  const res = await fetch("https://services.leadconnectorhq.com/opportunities/", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      pipelineId,
-      pipelineStageId: defaultStageId,
-      locationId: env.GHL_LOCATION_ID,
-      contactId, name,
-      monetaryValue: monetaryValue || 0,
-      source: "Website",
-      status: "open",
-    }),
+  return upsertWebsiteOpportunity(env, {
+    contactId,
+    name,
+    monetaryValue,
+    pipelineId: env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT,
+    defaultStageId: env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT,
+    enquiry,
+    submittedAt: new Date(),
   });
-  if (!res.ok) throw new Error(`GHL Opportunity returned ${res.status}`);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
