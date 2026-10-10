@@ -626,6 +626,7 @@
       }]
     }
     </script>
+    <link rel="stylesheet" href="/site-upgrades.css">
 </head>
 <body class="page-transition">
     <!-- Google Tag Manager (noscript) -->
@@ -655,6 +656,8 @@
             <li><a href="/memorials" class="nav-cta">Memorials</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/brochure" class="nav-brochure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Brochure</a></li>
             <li><a href="/contact" class="nav-cta-dark">Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
@@ -687,6 +690,8 @@
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/about" onclick="toggleMobileMenu()">About</a>
+        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
 
@@ -739,6 +744,9 @@
                     </a>
                     <a href="/contact" class="btn btn-secondary">Get in Touch</a>
                 </div>
+                <p class="hero-brochure"><a href="/brochure" class="sm-brochure-link">Download our brochure</a></p>
+                <!-- Google review stars: hidden until SM_SITE_CONFIG.googleReviews is set (TODO in /site-config.js) -->
+                <div class="sm-reviews-wrap" data-sm-reviews hidden></div>
             </div>
             <div class="hero-visual">
                 <div class="hero-image" id="heroImage">
@@ -1223,7 +1231,7 @@
                 </div>
             </div>
             <ul class="footer-links">
-                <li><a href="#about">About</a></li>
+                <li><a href="/about">About</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="#process">Process</a></li>
                 <li><a href="/faq">FAQ</a></li>
@@ -1826,5 +1834,7 @@ function declineCookies() {
     </script>
 
     <script src="/site-globals.js" defer></script>
+    <script src="/site-config.js" defer></script>
+    <script src="/site-upgrades.js" defer></script>
 </body>
 </html>
