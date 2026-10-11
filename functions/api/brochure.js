@@ -144,10 +144,17 @@ export async function onRequestPost(context) {
       console.error("RESEND_API_KEY is not set");
       return hardenedJson({ ok: false, error: "Email is unavailable right now — please use Just download." }, 503);
     }
-    if (env.SUPABASE_URL) {
-      const limit = await checkRateLimit(env, request, "brochure-email-ip", ip, { maxAttempts: 5, windowSeconds: 3600, blockSeconds: 3600, failClosed: true });
-      if (!limit.allowed) return rateLimitResponse(hardenedJson, limit.retryAfter);
+    // Rate limiting is mandatory for the email path: without Supabase there is
+    // no limiter, so refuse rather than become an open mail relay.
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+      console.error("brochure email disabled: rate limiter unavailable");
+      return hardenedJson({ ok: false, error: "Email is unavailable right now — please use Just download." }, 503);
     }
+    const ipLimit = await checkRateLimit(env, request, "brochure-email-ip", ip, { maxAttempts: 5, windowSeconds: 3600, blockSeconds: 3600, failClosed: true });
+    if (!ipLimit.allowed) return rateLimitResponse(hardenedJson, ipLimit.retryAfter);
+    // Per-recipient cap so rotating IPs cannot mail-bomb one address (or spam GHL).
+    const rcptLimit = await checkRateLimit(env, request, "brochure-email-rcpt", email, { maxAttempts: 2, windowSeconds: 86400, blockSeconds: 86400, failClosed: true });
+    if (!rcptLimit.allowed) return hardenedJson({ ok: true });
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
