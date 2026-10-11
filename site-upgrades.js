@@ -193,7 +193,8 @@
             var from = (location.search.match(/[?&]from=([a-z_]+)/) || [])[1];
             var src = from ? normaliseSource(from) : 'brochure_page';
             var meta = ready.querySelector('[data-brochure-meta]');
-            if (meta) meta.innerHTML = brochureMetaHtml(cfg);
+            // Static cover/meta in the HTML reserves layout; only fill if absent.
+            if (meta && !meta.querySelector('img')) meta.innerHTML = brochureMetaHtml(cfg);
             ready.querySelectorAll('a[data-brochure-link]').forEach(function (a) {
                 a.setAttribute('href', url);
                 a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });

@@ -474,13 +474,13 @@
         <section class="about-section" data-sm-brochure>
             <h2>Our brochure</h2>
             <!-- PDF path, cover, page count and size come from /site-config.js (brochure*). -->
-            <div data-brochure-ready hidden>
+            <div data-brochure-ready>
                 <div class="sm-brochure-hero">
-                    <div class="sm-brochure-cover" data-brochure-meta></div>
+                    <div class="sm-brochure-cover" data-brochure-meta><img class="sm-brochure-thumb" src="/assets/sears-melvin-brochure-cover.jpg" alt="Sears Melvin brochure cover" width="72" height="102"><span class="sm-brochure-meta">PDF · 21 pages · 2.2 MB</span></div>
                     <div>
                         <p>Our memorial designs with guide prices, what’s included and how ordering works — to read at your own pace. Every design links back to its page on our website.</p>
                         <div class="sm-cta-row">
-                            <a href="#" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
+                            <a href="/assets/sears-melvin-brochure.pdf" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
                             <a href="/contact" class="sm-btn sm-btn-secondary">Request a quote</a>
                         </div>
                     </div>
@@ -495,7 +495,7 @@
                     <p class="sm-brochure-email-status" data-brochure-email-status role="status" aria-live="polite"></p>
                 </form>
             </div>
-            <div data-brochure-pending>
+            <div data-brochure-pending hidden>
                 <p>Our printed brochure is being prepared and will be available to download here soon.</p>
                 <p>In the meantime you can browse every design online with installed guide prices, or ask us for a quote and we will talk you through the options.</p>
                 <div class="sm-cta-row">
