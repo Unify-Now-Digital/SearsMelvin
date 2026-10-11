@@ -13,7 +13,7 @@ it whenever you audit or fix something in that list.
 - **Frontend** — hand-written HTML at the repo root, one file per page. No build
   step, no framework, no bundler. `site-globals.js` is shared across pages.
 - **Backend** — Cloudflare Pages Functions in `functions/`. Routes:
-  `/api/submit` (all public form submissions), `/api/quotes` (customer quote
+  `/api/submit` (all public form submissions), `/api/brochure` (brochure download log + "email me a copy"; GHL tag `Brochure`), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
   `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
   plus `/memorials/:slug` and `/sitemap.xml`. `/api/partner-auth` and

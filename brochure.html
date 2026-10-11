@@ -473,13 +473,27 @@
     <main class="content">
         <section class="about-section" data-sm-brochure>
             <h2>Our brochure</h2>
-            <!-- TODO(Arin): add the brochure PDF and set SM_SITE_CONFIG.brochurePdfUrl in /site-config.js -->
+            <!-- PDF path, cover, page count and size come from /site-config.js (brochure*). -->
             <div data-brochure-ready hidden>
-                <p>Read about our memorials at your own pace.</p>
-                <div class="sm-cta-row">
-                    <a href="#" data-brochure-link class="sm-btn sm-btn-secondary" download>Download the brochure (PDF)</a>
-                    <a href="/contact" class="sm-btn sm-btn-primary">Request a quote</a>
+                <div class="sm-brochure-hero">
+                    <div class="sm-brochure-cover" data-brochure-meta></div>
+                    <div>
+                        <p>Our memorial designs with guide prices, what’s included and how ordering works — to read at your own pace. Every design links back to its page on our website.</p>
+                        <div class="sm-cta-row">
+                            <a href="#" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
+                            <a href="/contact" class="sm-btn sm-btn-secondary">Request a quote</a>
+                        </div>
+                    </div>
                 </div>
+                <form class="sm-brochure-email" data-brochure-email-form novalidate>
+                    <label for="brochureEmail"><strong>Email me a copy</strong> <span>(optional — we’ll send you the link so it’s easy to find later)</span></label>
+                    <div class="sm-brochure-email-row">
+                        <input type="email" id="brochureEmail" name="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required>
+                        <button type="submit" class="sm-btn sm-btn-secondary">Email me a copy</button>
+                    </div>
+                    <p class="sm-brochure-email-note">We’ll only use your email to send the brochure and follow up about your memorial. See our <a href="/privacy">privacy policy</a>.</p>
+                    <p class="sm-brochure-email-status" data-brochure-email-status role="status" aria-live="polite"></p>
+                </form>
             </div>
             <div data-brochure-pending>
                 <p>Our printed brochure is being prepared and will be available to download here soon.</p>
