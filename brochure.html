@@ -72,6 +72,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brochure | Sears Melvin Memorials</title>
     <meta name="description" content="Download the Sears Melvin Memorials brochure: memorial designs and how our process works.">
+    <style>
+        /* Metric-matched fallbacks so the Google Fonts swap does not shift layout (CLS). */
+        @font-face { font-family: 'DM Sans Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica'); size-adjust: 104.88%; ascent-override: 94.9%; descent-override: 29.66%; line-gap-override: 0%; }
+        @font-face { font-family: 'Cormorant Fallback'; src: local('Times New Roman'), local('Liberation Serif'), local('Times'); size-adjust: 88.9%; ascent-override: 103.57%; descent-override: 32.06%; line-gap-override: 0%; }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -105,8 +110,8 @@
             --color-text: #1A1A1A;
             --color-text-muted: #595959;
             --color-border: #E0DCD5;
-            --font-display: 'Cormorant Garamond', Georgia, serif;
-            --font-body: 'DM Sans', system-ui, sans-serif;
+            --font-display: 'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif;
+            --font-body: 'DM Sans', 'DM Sans Fallback', system-ui, sans-serif;
         }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -220,6 +225,8 @@
             .mobile-menu-btn { display: flex; }
             body { padding-bottom: 70px; }
             .page-header { padding: 2rem 1.5rem 1.5rem; }
+            /* Subtitle wraps to 2 lines in DM Sans at phone widths; reserve it so the font swap cannot shift the page. */
+            .page-header p { min-height: 2lh; }
             .content { padding: 2rem 1.5rem 4rem; }
             .footer-container { flex-direction: column; text-align: center; }
             .footer-links { justify-content: center; }
