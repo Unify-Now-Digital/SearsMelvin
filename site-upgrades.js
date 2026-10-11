@@ -18,7 +18,12 @@
     }
 
     function isProductionHost(host) {
-        return PRODUCTION_HOSTS.indexOf(String(host || '').toLowerCase()) !== -1;
+        // Fail safe: only explicit preview/local hosts count as non-production,
+        // so trailing-dot FQDNs, searsmelvin.pages.dev or any new domain hide placeholders.
+        var h = String(host || '').toLowerCase().replace(/\.$/, '');
+        if (PRODUCTION_HOSTS.indexOf(h) !== -1) return true;
+        var preview = h === 'localhost' || h === '127.0.0.1' || /^[a-z0-9-]+\.searsmelvin\.pages\.dev$/.test(h) || /\.workers\.dev$/.test(h);
+        return !preview;
     }
 
     // Only a finite rating in 0..5 AND a positive integer count count as "set".
