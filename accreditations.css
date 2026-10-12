@@ -73,3 +73,5 @@
 /* Phones: header badge hidden everywhere (matches other pages); product pages were pushing the menu button off-screen */
 @media (max-width: 768px) { .nav-accred { display: none !important; } }
 @media (max-width: 768px) { nav .mobile-menu-btn { margin-left: auto; } }
+/* r2: footer accreditation label/note readable on dark */
+.footer-accreditations .accred-label, .footer-accreditations .accred-note { opacity: 1; color: rgba(255,255,255,0.68); }
