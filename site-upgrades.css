@@ -131,3 +131,27 @@ footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !impor
   .about-accred { grid-template-columns: 1fr; text-align: left; padding: 1.5rem !important; gap: 1rem; }
   .about-accred-logo img { height: 56px; }
 }
+
+/* Floating "Brochure" button (bottom-left; GHL chat sits bottom-right).
+   Mobile: above the 70px bottom nav. Hidden while the cookie banner shows. */
+.sm-brochure-fab {
+  position: fixed; left: 24px; bottom: 24px; z-index: 900;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  min-height: 44px; padding: 0 1.1rem 0 0.95rem;
+  background: #2C2C2C; color: #FAF8F5; text-decoration: none;
+  font-family: var(--font-body, 'DM Sans', system-ui, sans-serif); font-size: 0.9375rem; font-weight: 500; letter-spacing: 0.02em;
+  border: 1px solid rgba(250,248,245,0.18); border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(26,26,26,0.18);
+  transition: background-color .2s, transform .2s;
+}
+.sm-brochure-fab svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sm-brochure-fab:hover { background: #6B5840; color: #fff; text-decoration: none; }
+.sm-brochure-fab:focus-visible { outline: 3px solid #C9A96E; outline-offset: 3px; }
+body:has(#cookieConsent[style*="display: block"]) .sm-brochure-fab,
+body:has(.search-overlay.active) .sm-brochure-fab { display: none; }
+@media (max-width: 768px) {
+  .sm-brochure-fab { left: 16px; bottom: calc(86px + env(safe-area-inset-bottom)); font-size: 0.875rem; }
+  body.has-mobile-bottom-bar .sm-brochure-fab { bottom: 160px; }
+}
+@media print { .sm-brochure-fab { display: none; } }
+@media (prefers-reduced-motion: reduce) { .sm-brochure-fab { transition: none; } }

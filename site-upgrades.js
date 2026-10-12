@@ -173,7 +173,19 @@
             (label ? '<span class="sm-brochure-meta">PDF · ' + esc(label) + '</span>' : '');
     }
 
-    var api = { normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+
+    // Floating "Brochure" button: shown on every public page except /brochure itself.
+    function fabAllowed(path) {
+        var p = String(path || '/').toLowerCase().replace(/\/+$/, '').replace(/\.html$/, '');
+        return p !== '/brochure' && p.indexOf('/admin') !== 0;
+    }
+    function fabHtml() {
+        return '<a class="sm-brochure-fab" href="/brochure?utm_source=website&amp;utm_medium=fab&amp;utm_campaign=brochure_fab" aria-label="View our brochure">' +
+            '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>' +
+            '<span>Brochure</span></a>';
+    }
+
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -283,6 +295,17 @@
         });
     }
 
+    function initFab() {
+        if (!fabAllowed(location.pathname) || document.querySelector('.sm-brochure-fab')) return;
+        var wrap = document.createElement('div');
+        wrap.innerHTML = fabHtml();
+        var a = wrap.firstChild;
+        a.addEventListener('click', function () {
+            (root.dataLayer = root.dataLayer || []).push({ event: 'brochure_fab_click', page_path: location.pathname });
+        });
+        document.body.appendChild(a);
+    }
+
     function init() {
         var cfg = root.SM_SITE_CONFIG || {};
         document.querySelectorAll('[data-sm-reviews]').forEach(function (el) {
@@ -290,6 +313,7 @@
             if (html) { el.innerHTML = html; el.hidden = false; } else { el.hidden = true; }
         });
         initBrochure(cfg);
+        initFab();
         document.querySelectorAll('[data-sm-team]').forEach(function (section) {
             var members = visibleTeam(root.SM_TEAM, location.hostname);
             var grid = section.querySelector('[data-sm-team-grid]');
