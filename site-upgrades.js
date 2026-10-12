@@ -183,7 +183,7 @@
             a.classList.add('sm-brochure-dl');
             a.insertAdjacentHTML('afterbegin', brochureMetaHtml(cfg).replace(/<span class="sm-brochure-meta">[^<]*<\/span>/, ''));
             var label = brochureMetaLabel(cfg.brochurePages, cfg.brochureBytes);
-            if (label) a.insertAdjacentHTML('beforeend', ' <span class="sm-brochure-meta">(' + esc(label) + ')</span>');
+            if (label) a.insertAdjacentHTML('beforeend', ' <span class="sm-brochure-meta">PDF · ' + esc(label) + '</span>');
             a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });
         });
         document.querySelectorAll('[data-sm-brochure]').forEach(function (el) {
