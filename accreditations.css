@@ -23,3 +23,24 @@
 .nav-accred .accred-text { font-size: 0.7rem; }
 @media (max-width: 1024px) { .nav-accred .accred-text { display: none; } }
 .accred-note { font-size: 0.72rem; line-height: 1.3; opacity: 0.85; }
+
+/* ---- Integrated treatment (v3) ----
+   Cream surfaces: text link only (RQMF supplies a white logo, so it is shown only on dark footers).
+   The logo is never recoloured or redrawn. */
+.accred-link { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent-dark, #6B5840); text-decoration: none; border-bottom: 1px solid var(--color-border, #E0DCD5); padding-bottom: 1px; white-space: nowrap; transition: color .2s, border-color .2s; }
+.accred-link:hover, .accred-link:focus-visible { color: var(--color-stone, #2C2C2C); border-color: currentColor; }
+.nav-accred { padding-left: 1rem; border-left: 1px solid var(--color-border, #E0DCD5); }
+.nav-accred .accred-link { border-bottom: 0; font-size: 0.64rem; }
+.page-header-accred .accred-note { color: var(--color-text-muted, #595959); }
+/* Footer: one centred row, label · logo + number · note */
+.footer-accreditations { column-gap: 0.9rem !important; row-gap: 0.35rem !important; }
+.footer-accreditations .accred-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: inherit; opacity: 0.7; }
+.footer-accreditations .accred-logo--footer { gap: 0.55rem; color: inherit; }
+.footer-accreditations .accred-logo--footer img { height: 26px; }
+.footer-accreditations .accred-logo--footer .accred-text { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.9; }
+.footer-accreditations .accred-note { font-size: 0.72rem; opacity: 0.7; }
+.footer-accreditations .accred-note::before { content: "·"; margin-right: 0.9rem; opacity: 0.6; }
+@media (max-width: 600px) {
+  .footer-accreditations { flex-direction: column; }
+  .footer-accreditations .accred-note::before { content: none; }
+}
