@@ -320,6 +320,20 @@
             .site-trust-item svg { width: 16px; height: 16px; }
             .site-trust-item + .site-trust-item::before { display: none; }
         }
+
+        /* About layout fallback: keeps steps, labels and the RQMF plaque styled even if a stale site-upgrades.css is cached */
+        .about-page .about-kicker { display:block; font-size:0.8125rem; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#6B5840; margin:0 0 0.5rem; }
+        .about-steps { list-style:none; padding:0; margin:1.5rem 0 0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+        .about-steps li { list-style:none; margin:0; background:#fff; border:1px solid var(--color-border); border-radius:6px; padding:1.1rem 1rem; line-height:1.55; color:#555049; }
+        .about-steps li::marker { content:none; }
+        .about-step-num { display:inline-flex; width:30px; height:30px; border-radius:50%; border:1px solid var(--color-accent); color:var(--color-accent-dark); align-items:center; justify-content:center; font-family:var(--font-display); }
+        .about-steps strong { display:block; font-family:var(--font-display); font-weight:600; font-size:1.2rem; color:var(--color-stone); margin:0.6rem 0 0.25rem; }
+        .about-step-desc { display:block; }
+        .about-accred { display:grid; grid-template-columns:auto 1fr; gap:1.75rem; align-items:center; background:#1A1A1A; border-radius:6px; padding:2rem; }
+        .about-accred h2, .about-accred p { color:#FAF8F5; }
+        .about-accred .about-kicker { color:#C9A96E; }
+        .about-accred-logo img { display:block; height:72px; width:auto; }
+        @media (max-width: 768px) { .about-steps { grid-template-columns:repeat(2,minmax(0,1fr)); } .about-accred { grid-template-columns:1fr; } }
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=2">
 
@@ -367,7 +381,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=fab1">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261012">
     <link rel="stylesheet" href="/accreditations.css">
 </head>
 <body>
@@ -485,10 +499,10 @@
             <p class="about-kicker">How we work</p>
             <h2>From first conversation to installation</h2>
             <ol class="about-steps">
-                <li><span class="about-step-num">1</span><strong>Consultation</strong>Discuss your vision with our team</li>
-                <li><span class="about-step-num">2</span><strong>Design &amp; Quote</strong>Detailed proposal with clear pricing</li>
-                <li><span class="about-step-num">3</span><strong>Permit &amp; Creation</strong>We handle applications while crafting</li>
-                <li><span class="about-step-num">4</span><strong>Installation</strong>Professional fitting with photos</li>
+                <li><span class="about-step-num">1</span><strong>Consultation</strong><span class="about-step-desc">Discuss your vision with our team</span></li>
+                <li><span class="about-step-num">2</span><strong>Design &amp; Quote</strong><span class="about-step-desc">Detailed proposal with clear pricing</span></li>
+                <li><span class="about-step-num">3</span><strong>Permit &amp; Creation</strong><span class="about-step-desc">We handle applications while crafting</span></li>
+                <li><span class="about-step-num">4</span><strong>Installation</strong><span class="about-step-desc">Professional fitting with photos</span></li>
             </ol>
         </section>
 
