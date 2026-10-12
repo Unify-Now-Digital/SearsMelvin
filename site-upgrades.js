@@ -82,6 +82,11 @@
     // ---- Brochure ---------------------------------------------------------
     var BROCHURE_SOURCES = ['header', 'home', 'product', 'listing', 'brochure_page'];
     var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    // Google Ads click IDs, captured alongside UTMs for offline conversion import.
+    var CLICK_KEYS = ['gclid', 'gbraid', 'wbraid'];
+    var ATTR_KEYS = CLICK_KEYS.concat(UTM_KEYS);
+    var ATTR_STORE = 'sm_attr';
+    var ATTR_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days, matches Google Ads click window
 
     function normaliseSource(s) {
         s = String(s || '').toLowerCase();
@@ -109,6 +114,42 @@
         return out;
     }
 
+    // Click IDs + UTMs from a query string. Click IDs are opaque tokens, so
+    // only a safe charset is kept (max 200 chars).
+    function readAttribution(search) {
+        var out = {};
+        var q = String(search || '').replace(/^\?/, '');
+        if (!q) return out;
+        q.split('&').forEach(function (pair) {
+            var i = pair.indexOf('='); if (i < 1) return;
+            var k; try { k = decodeURIComponent(pair.slice(0, i)).toLowerCase(); } catch (_e) { return; }
+            if (ATTR_KEYS.indexOf(k) === -1) return;
+            var v; try { v = decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' ')); } catch (_e) { return; }
+            v = v.trim();
+            if (CLICK_KEYS.indexOf(k) !== -1) { v = v.slice(0, 200); if (!/^[\w\-.~]+$/.test(v)) return; }
+            else v = v.slice(0, 100);
+            if (v) out[k] = v;
+        });
+        return out;
+    }
+
+    // Merge fresh params into the stored record. A new ad click (any click ID)
+    // or new UTM set replaces the old attribution wholesale; expired records drop.
+    function mergeAttribution(stored, fresh, now) {
+        var valid = stored && typeof stored === 'object' && typeof stored.ts === 'number' && (now - stored.ts) < ATTR_TTL_MS;
+        if (!Object.keys(fresh).length) return valid ? stored : null;
+        var rec = { ts: now };
+        ATTR_KEYS.forEach(function (k) { if (fresh[k]) rec[k] = fresh[k]; });
+        return rec;
+    }
+
+    function attributionFields(rec) {
+        var out = {};
+        if (!rec) return out;
+        ATTR_KEYS.forEach(function (k) { if (typeof rec[k] === 'string' && rec[k]) out[k] = rec[k]; });
+        return out;
+    }
+
     function adsConversionTarget(ads) {
         if (!ads) return null;
         var id = ads.conversionId, label = ads.brochureConversionLabel;
@@ -132,10 +173,25 @@
             (label ? '<span class="sm-brochure-meta">PDF · ' + esc(label) + '</span>' : '');
     }
 
-    var api = { normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
+
+    // Capture on every page load so the landing page records the click,
+    // then persist for 90 days (localStorage) for later form submits.
+    function storedAttribution() {
+        var stored = null;
+        try { stored = JSON.parse(localStorage.getItem(ATTR_STORE) || 'null'); } catch (_e) {}
+        var rec = mergeAttribution(stored, readAttribution(location.search), Date.now());
+        try {
+            if (rec) localStorage.setItem(ATTR_STORE, JSON.stringify(rec));
+            else localStorage.removeItem(ATTR_STORE);
+        } catch (_e) {}
+        return attributionFields(rec);
+    }
+    storedAttribution();
+    api.getAttribution = storedAttribution;
 
 
     function sessionUtm() {
