@@ -70,3 +70,5 @@
 @media (min-width: 769px) and (max-width: 1100px) {
   .nav-links a { font-size: 0.9rem; white-space: nowrap; }
 }
+/* Phones: header badge hidden everywhere (matches other pages); product pages were pushing the menu button off-screen */
+@media (max-width: 768px) { .nav-accred { display: none !important; } }
