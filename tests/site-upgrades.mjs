@@ -60,3 +60,13 @@ const rec = up.mergeAttribution(null, fa, t0);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS - 1), rec);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS), null);
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { gbraid: "x1" }, t0 + 5)), { gbraid: "x1" });
+
+// Floating brochure button
+assert.equal(up.fabAllowed("/"), true);
+assert.equal(up.fabAllowed("/about"), true);
+assert.equal(up.fabAllowed("/brochure"), false);
+assert.equal(up.fabAllowed("/brochure/"), false);
+assert.equal(up.fabAllowed("/brochure.html"), false);
+assert.match(up.fabHtml(), /aria-label="View our brochure"/);
+assert.match(up.fabHtml(), /href="\/brochure\?utm_source=website/);
+console.log("fab: ok");
