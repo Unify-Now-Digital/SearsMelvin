@@ -86,4 +86,5 @@ footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !impor
 @media (max-width: 480px) { .sm-brochure-dl { flex-wrap: wrap; row-gap: 0.15rem; } }
 /* Contact cards: long email must not overflow the card */
 .contact-method, .contact-method > div { min-width: 0; }
-.contact-method p { overflow-wrap: anywhere; }
+.contact-method p { overflow-wrap: normal; }
+@media (max-width: 480px) { .contact-method { flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 1rem; } .contact-method p { font-size: 0.8rem; } }

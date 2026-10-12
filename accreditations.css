@@ -48,4 +48,11 @@
 .nav-accred { border-left: 0; padding-left: 0.85rem; }
 .nav-accred .accred-link { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; color: #5A4A35; border: 1px solid rgba(90,74,53,0.35); border-radius: 999px; padding: 0.3rem 0.75rem; line-height: 1.2; }
 .nav-accred .accred-link:hover, .nav-accred .accred-link:focus-visible { color: var(--color-stone, #2C2C2C); border-color: currentColor; background: rgba(255,255,255,0.6); }
-@media (max-width: 1180px) { .nav-accred .accred-link { font-size: 0.72rem; padding: 0.25rem 0.6rem; letter-spacing: 0.05em; } }
+@media (max-width: 1180px) { .nav-accred { padding-left: 0.5rem; margin-left: 0.5rem !important; } .nav-accred .accred-link { font-size: 0.7rem; padding: 0.2rem 0.55rem; letter-spacing: 0.03em; } }
+/* Narrow desktops: keep the full nav on screen with the badge */
+@media (min-width: 769px) and (max-width: 1180px) {
+  nav { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+  .nav-links { gap: 0.75rem !important; }
+  .nav-links .nav-cta, .nav-links .nav-cta-dark { padding: 0.6rem 0.95rem !important; }
+  .nav-accred { margin-right: 0.5rem !important; }
+}
