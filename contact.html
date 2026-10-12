@@ -1112,7 +1112,9 @@
                         location: cemetery || null,
                         cemetery_id: contactSelectedCemeteryId,
                         photo_urls: photoPaths.length > 0 ? photoPaths : null,
-                        photo_tokens: photoTokens.length > 0 ? photoTokens : null
+                        photo_tokens: photoTokens.length > 0 ? photoTokens : null,
+                        // gclid/gbraid/wbraid + utm_* (90-day first-party store, site-upgrades.js)
+                        attribution: (window.SMUpgrades && window.SMUpgrades.getAttribution) ? window.SMUpgrades.getAttribution() : null
                     })
                 });
 

@@ -51,3 +51,12 @@ for (const f of ["about.html", "brochure.html", "site-upgrades.js", "site-config
   assert.doesNotMatch(readFileSync(f, "utf8"), /whatsapp/i);
 }
 console.log("site-upgrades: ok");
+
+// Ads attribution: click IDs + UTMs captured, kept 90 days.
+const fa = up.readAttribution("?gclid=Cj0_abc-1&utm_source=google&wbraid=bad%20id&foo=1");
+assert.deepEqual(fa, { gclid: "Cj0_abc-1", utm_source: "google" });
+const t0 = 1_000_000;
+const rec = up.mergeAttribution(null, fa, t0);
+assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS - 1), rec);
+assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS), null);
+assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { gbraid: "x1" }, t0 + 5)), { gbraid: "x1" });
