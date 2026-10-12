@@ -496,11 +496,13 @@
         <section class="about-section" id="why-us">
             <p class="about-kicker">Why families choose us</p>
             <h2>What you can count on</h2>
-            <ul class="about-facts">
-                <li><strong>30-year guarantee</strong>Material and workmanship, on every memorial we install.</li>
-                <li><strong>From £3,250</strong>Fully installed. Cemetery fees are extra.</li>
-                <li><strong>North London showroom</strong>Visit by appointment, or speak to us by phone.</li>
-            </ul>
+            <div class="about-facts-wrap">
+                <ul class="about-facts about-facts--rich">
+                    <li><span class="about-fact-num" aria-hidden="true">30</span><strong>30-year guarantee</strong>Material and workmanship, on every memorial we install.</li>
+                    <li><span class="about-fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M10 21v-6h4v6"/></svg></span><strong>North London showroom</strong>Visit by appointment, or speak to us by phone.</li>
+                </ul>
+                <figure class="about-facts-image"><img src="/images/installed/gioiosa-family-kerb-set-600w.webp" alt="A Sears Melvin family kerb-set memorial, installed" width="600" height="800" loading="lazy" decoding="async"></figure>
+            </div>
         </section>
 
         <section class="about-section about-accred" id="accreditation">
@@ -513,9 +515,7 @@
             </div>
         </section>
 
-        <!-- Meet the team: hidden until real (non-placeholder) team entries exist.
-             To re-enable, add the data-sm-team attribute back to this section. -->
-        <section class="about-section" id="team" hidden>
+        <section class="about-section about-team" id="team" data-sm-team hidden>
             <h2>Meet the team</h2>
             <p>The people you will speak to, from your first call to the day your memorial is installed.</p>
             <div class="sm-team-grid" data-sm-team-grid></div>
