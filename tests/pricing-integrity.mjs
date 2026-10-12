@@ -50,7 +50,7 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
 // Public catalogue reads are tenant-scoped and exclude unlisted/uncategorized rows.
 {
   const publicSearchFiles = [
-    "index.html", "contact.html", "terms.html", "permit-checker.html", "privacy.html",
+    "index.html", "contact.html", "terms.html", "privacy.html",
     "memorials.html", "quote.html", "resources.html", "care-guide.html", "faq.html",
     "areas/barnet.html", "areas/brent.html", "areas/camden.html", "areas/enfield.html", "areas/haringey.html",
     "memorial.html",

@@ -36,8 +36,9 @@ it whenever you audit or fix something in that list.
   `/api/stripe-webhook`) is separate and stays.
 - **The public forms do not price permit fees.** The memorial quote form upgrades
   from the owned Supabase boot list to Google `PlaceAutocompleteElement` after
-  first focus and submits the chosen place as free text. `/contact` and
-  `/permit-checker` use the owned Supabase cemetery list only; contact may submit
+  first focus and submits the chosen place as free text. `/contact` uses
+  the owned Supabase cemetery list only (`/permit-checker` was retired in Oct 2026
+  and 301s to `/memorials`); contact may submit
   its selected `cemetery_id`, but must still accept typed text if the anonymous
   list is unavailable. None of these paths adds a permit fee to a customer guide
   total. The Worker's best-effort `lookupCemeteryIdByName` remains a separate
