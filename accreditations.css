@@ -1,0 +1,18 @@
+/* Official NAMM + RQMF logos (sourced from namm.org.uk / rqmf.org.uk; see images/accreditations/SOURCES.md). */
+.accred-logo { display: inline-flex; align-items: center; line-height: 0; text-decoration: none; border-radius: 3px; }
+.accred-logo img { display: block; width: auto; }
+.accred-logo:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* RQMF artwork is white-on-transparent; on light backgrounds show it on RQMF's own navy, as rqmf.org.uk does. */
+.accred-logo--rqmf-chip { background: #292345; padding: 3px 5px; }
+/* Header chips */
+.nav-accred .accred-logo img { height: 28px; }
+.nav-accred .accred-logo--rqmf-chip img { height: 22px; }
+@media (max-width: 1024px) {
+  .nav-accred .accred-logo img { height: 22px; }
+  .nav-accred .accred-logo--rqmf-chip { padding: 2px 4px; }
+  .nav-accred .accred-logo--rqmf-chip img { height: 18px; }
+}
+/* Footer (ink) and on-page trust strips */
+.footer-accreditations .accred-logo img { height: 34px; }
+.accred-logo--inline img { height: 36px; }
+.accred-logo--inline.accred-logo--rqmf-chip img { height: 28px; }
