@@ -1502,7 +1502,12 @@ async function ghlContactFieldIds(env) {
   const body = await res.json();
   const map = {};
   for (const f of body.customFields || []) {
-    if (f?.fieldKey && f?.id) map[String(f.fieldKey).replace(/^contact\./, "")] = f.id;
+    if (!f?.fieldKey || !f?.id) continue;
+    // GHL re-prefixes keys on create, so the SM fields are contact.contactgclid etc.
+    const k = String(f.fieldKey).replace(/^contact\./, "");
+    map[k] = f.id;
+    const bare = k.replace(/^contact_?/, "");
+    if (ATTRIBUTION_KEYS.includes(bare) && !map[bare]) map[bare] = f.id;
   }
   _ghlFieldCache = { at: Date.now(), map };
   return map;
