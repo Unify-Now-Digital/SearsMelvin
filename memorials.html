@@ -526,6 +526,7 @@
       ]
     }
     </script>
+    <link rel="stylesheet" href="/site-upgrades.css">
     <link rel="stylesheet" href="/accreditations.css">
 </head>
 <body>
@@ -555,6 +556,8 @@
             <li><a href="/memorials" class="nav-cta active">Memorials</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/brochure" class="nav-brochure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Brochure</a></li>
             <li><a href="/contact" class="nav-cta-dark">Quote</a></li>
         </ul>
         <button class="shortlist-nav-btn" onclick="openShortlist()" id="shortlistNavBtn" style="display:none;">
@@ -591,6 +594,8 @@
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/about" onclick="toggleMobileMenu()">About</a>
+        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
     <header class="page-header">
@@ -663,6 +668,10 @@
                         <p>Try adjusting your filters to find the right memorial.</p>
                         <button onclick="clearAllFilters()">Clear All Filters</button>
                     </div>
+                </div>
+                <div class="sm-brochure-cta">
+                    <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
+                    <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
                 </div>
             </main>
         </div>
@@ -917,7 +926,7 @@
                     '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
                 ).join('');
 
-                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Installed guide price · cemetery fees extra</p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -1304,7 +1313,7 @@
                 </div>
             </div>
             <ul class="footer-links">
-                <li><a href="/#about">About</a></li>
+                <li><a href="/about">About</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/care-guide">Care Guide</a></li>
@@ -1503,5 +1512,7 @@ function declineCookies() {
     </script>
 
     <script src="/site-globals.js" defer></script>
+    <script src="/site-config.js" defer></script>
+    <script src="/site-upgrades.js" defer></script>
 </body>
 </html>
