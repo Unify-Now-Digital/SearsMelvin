@@ -65,16 +65,16 @@
 
     function teamHtml(members) {
         return members.map(function (m) {
-            var photo = safeHttpUrl(m.photo);
+            var photo = (typeof m.photo === 'string' && /^\/[^\/]/.test(m.photo)) ? m.photo : safeHttpUrl(m.photo);
             var img = photo
-                ? '<img src="' + esc(photo) + '" alt="' + esc(m.name) + '" loading="lazy">'
-                : '<div class="sm-team-photo-empty" aria-hidden="true"></div>';
+                ? '<img src="' + esc(photo) + '" alt="' + esc(m.name) + '" width="400" height="500" loading="lazy" decoding="async">'
+                : '<div class="sm-team-photo-empty" aria-hidden="true">' + esc(m.initials || '') + '</div>';
             return '<div class="sm-team-card' + (m.placeholder ? ' is-placeholder' : '') + '">' +
                 (m.placeholder ? '<span class="sm-placeholder-badge">PLACEHOLDER</span>' : '') +
                 '<div class="sm-team-photo">' + img + '</div>' +
                 '<h3>' + esc(m.name) + '</h3>' +
                 '<p class="sm-team-role">' + esc(m.role) + '</p>' +
-                '<p class="sm-team-line">' + esc(m.line) + '</p></div>';
+                (m.line ? '<p class="sm-team-line">' + esc(m.line) + '</p>' : '') + '</div>';
         }).join('');
     }
 
