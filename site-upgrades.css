@@ -69,3 +69,21 @@ nav .logo { white-space: nowrap; }
 .sm-brochure-cover { min-width: 150px; min-height: 236px; }
 /* 769–1280px: tighten header spacing so logo, badges, links, Brochure and Quote fit. */
 @media (max-width: 1280px) { .nav-links { gap: 0.6rem !important; } }
+
+/* ---- Visual polish (2026-10-12) ---- */
+/* Showroom banner on /quote: was unstyled and flush to the left edge */
+.showroom-banner { background: var(--color-warm, #E8E4DD); border-bottom: 1px solid var(--color-border, #E0DCD5); padding: 0.55rem 1.5rem; font-size: 0.85rem; color: var(--color-stone, #2C2C2C); }
+.showroom-banner-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.25rem 0.75rem; text-align: center; }
+.showroom-banner .banner-divider { color: var(--color-border, #C9C2B6); }
+.showroom-banner-link { color: var(--color-accent-dark, #6B5840); text-decoration: none; font-weight: 600; }
+@media (max-width: 600px) { .showroom-banner { padding: 0.5rem 1rem; font-size: 0.8rem; } .showroom-banner .banner-divider { display: none; } }
+/* Footer small print: readable on the dark footer (AA) */
+footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !important; }
+/* About facts: balanced 2x2 grid instead of 3 + orphan */
+@media (min-width: 640px) { .about-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Brochure download link: keep meta on one line, tidy wrap on mobile */
+.sm-brochure-meta { white-space: nowrap; }
+@media (max-width: 480px) { .sm-brochure-dl { flex-wrap: wrap; row-gap: 0.15rem; } }
+/* Contact cards: long email must not overflow the card */
+.contact-method, .contact-method > div { min-width: 0; }
+.contact-method p { overflow-wrap: anywhere; }
