@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
 import { pdfMeta } from "../scripts/brochure-meta.mjs";
-import { onRequestPost, downloadRow, cleanSource, brochureLink } from "../functions/api/brochure.js";
+import { onRequestPost, downloadRow, cleanSource, brochureLink, SM_GHL_LOCATION_ID } from "../functions/api/brochure.js";
 
 const require = createRequire(import.meta.url);
 const up = require("../site-upgrades.js");
@@ -60,9 +60,11 @@ const env = {
   SUPABASE_URL: "https://example.supabase.co",
   SUPABASE_SERVICE_KEY: "test-service-role-key",
   SM_ORG_ID: "00000000-0000-4000-8000-000000000001",
-  GHL_API_KEY: "test-ghl",
-  GHL_LOCATION_ID: "loc-1",
+  GHL_API_KEY: "test-ghl-wrong-account",
+  GHL_LOCATION_ID: "loc-other",
+  SM_GHL_PIT_CALL_TRANSCRIPTS: "test-sm-pit",
 };
+let ghlFail = false;
 let calls = [];
 let allow = true;
 globalThis.fetch = async (input, init = {}) => {
@@ -71,7 +73,12 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.includes("/rpc/check_portal_rate_limit")) return Response.json([{ allowed: allow, retry_after_seconds: allow ? 0 : 60 }]);
   if (url.endsWith("/rest/v1/brochure_downloads")) return new Response(null, { status: 201 });
   if (url === "https://api.resend.com/emails") return Response.json({ id: "e1" });
-  if (url === "https://services.leadconnectorhq.com/contacts/upsert") return Response.json({ contact: { id: "c1" } });
+  if (url.startsWith("https://services.leadconnectorhq.com/")) {
+    calls[calls.length - 1].auth = init.headers?.Authorization;
+    if (ghlFail) return new Response("boom", { status: 500 });
+    if (url.endsWith("/contacts/upsert")) return Response.json({ contact: { id: "c1" } });
+    return Response.json({ ok: true });
+  }
   throw new Error(`Unexpected fetch: ${url}`);
 };
 async function post(body, headers = {}) {
@@ -114,11 +121,32 @@ assert.equal(mail.body.to, "jane@example.com");
 assert.match(mail.body.from, /info@searsmelvin\.co\.uk/);
 assert.ok(mail.body.html.includes(brochureLink("brochure_page").replace(/&/g, "&")));
 assert.match(mail.body.html, /\/assets\/sears-melvin-brochure\.pdf/);
-const ghl = calls.find((c) => c.url.includes("leadconnectorhq"));
-assert.equal(ghl.body.locationId, "loc-1");
-assert.ok(ghl.body.tags.includes("Brochure"));
+const ghl = calls.find((c) => c.url.endsWith("/contacts/upsert"));
+assert.equal(ghl.body.locationId, SM_GHL_LOCATION_ID, "SM location only");
+assert.equal(ghl.auth, "Bearer test-sm-pit", "SM PIT only");
+assert.equal(ghl.body.email, "jane@example.com");
+assert.ok(ghl.body.tags.includes("brochure-download"));
+const note = calls.find((c) => c.url.endsWith("/contacts/c1/notes"));
+assert.match(note.body.body, /^Downloaded brochure on \d{4}-\d{2}-\d{2} via website/);
+assert.ok(!calls.some((c) => c.url.includes("/opportunities")), "no opportunities");
+assert.match(mail.body.html, /sm-logo\.png/);
+assert.match(mail.body.html, /RQMF Registered · No\. 2263/);
+assert.ok(!/namm/i.test(mail.body.html));
 log = calls.find((c) => c.url.endsWith("/brochure_downloads"));
 assert.equal(log.body.email_given, true);
+
+// GHL failure never blocks the email.
+ghlFail = true;
+r = await post({ action: "email", email: "soft@fail.co", source: "home" });
+assert.equal(r.res.status, 200);
+assert.ok(calls.some((c) => c.url === "https://api.resend.com/emails"));
+ghlFail = false;
+// Missing SM token: email still sent, GHL skipped.
+{ const t = env.SM_GHL_PIT_CALL_TRANSCRIPTS; delete env.SM_GHL_PIT_CALL_TRANSCRIPTS;
+  r = await post({ action: "email", email: "no@token.co" });
+  assert.equal(r.res.status, 200);
+  assert.ok(!calls.some((c) => c.url.includes("leadconnectorhq")));
+  env.SM_GHL_PIT_CALL_TRANSCRIPTS = t; }
 
 // Invalid email → 400, nothing sent.
 r = await post({ action: "email", email: "not-an-email" });

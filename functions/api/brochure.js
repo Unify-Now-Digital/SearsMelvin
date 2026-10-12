@@ -6,9 +6,10 @@
 //     (migration not applied yet) or Supabase hiccup never breaks the download.
 //
 //   POST { action: "email", email, source, utm, page }
-//     Emails the brochure link via Resend (same sender as quote emails), upserts
-//     a Sears Melvin GHL contact tagged "Brochure" (same GHL_API_KEY /
-//     GHL_LOCATION_ID integration the quote form uses) and logs the download
+//     Emails the brochure link via Resend (same sender as quote emails), then
+//     (fail-soft, in the background) upserts the contact by email into SM GHL
+//     (location 7JJQ1fkS2z8zv5XIDV0P, secret SM_GHL_PIT_CALL_TRANSCRIPTS), tags it
+//     "brochure-download" and adds a dated note; no opportunity. Logs the download
 //     with email_given = true. The email address itself is NOT stored in
 //     brochure_downloads — only that one was given.
 import {
@@ -82,30 +83,82 @@ export function brochureLink(source) {
   return `${SITE}${PDF_PATH}?utm_source=brochure_email&utm_medium=email&utm_campaign=brochure_v5&utm_content=${cleanSource(source)}`;
 }
 
+const LOGO_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/brand/sm-logo.png";
+const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg`;
+
+// Gmail-safe: tables, inline styles, no background images, explicit colours on
+// every text node so dark-mode inversion keeps contrast.
 export function brochureEmailHtml(link) {
-  return `<!doctype html><html><body style="margin:0;background:#FAF8F5;font-family:Arial,Helvetica,sans-serif;color:#2C2C2C">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
-<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #E0DCD5">
-<tr><td style="background:#2C2C2C;padding:20px 28px;color:#C9A96E;font-size:14px;letter-spacing:2px;font-weight:bold">SEARS MELVIN MEMORIALS</td></tr>
-<tr><td style="padding:28px">
-<p style="font-size:18px;margin:0 0 16px">Your Sears Melvin brochure</p>
-<p style="font-size:15px;line-height:1.6;margin:0 0 20px">Thank you for your interest. Here is your copy of our memorial brochure — designs with guide prices, what’s included and how ordering works. Take all the time you need.</p>
-<p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#8B7355;color:#ffffff;text-decoration:none;padding:12px 22px;font-size:15px;border-radius:3px">Download the brochure (PDF)</a></p>
-<p style="font-size:14px;line-height:1.6;margin:0 0 8px">When you’re ready, we’re happy to help — call <a href="tel:+442038352548" style="color:#6B5840">${PHONE}</a> or <a href="${SITE}/quote?utm_source=brochure_email&amp;utm_medium=email&amp;utm_campaign=brochure_v5" style="color:#6B5840">request a quote</a>.</p>
-<p style="font-size:12px;color:#595959;line-height:1.5;margin:20px 0 0">Prices in the brochure are guide “from” prices and may change. Every memorial is bespoke — please ask for a personalised quote.</p>
-</td></tr></table></td></tr></table></body></html>`;
+  const quote = `${SITE}/quote?utm_source=brochure_email&amp;utm_medium=email&amp;utm_campaign=brochure_v5`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>Your Sears Melvin brochure</title></head>
+<body style="margin:0;padding:0;background:#F3EFE9;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F3EFE9">Your copy of the Sears Melvin memorial brochure: designs, guide prices and how ordering works.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F3EFE9;"><tr><td align="center" style="padding:28px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#FFFFFF;border:1px solid #E0DCD5;">
+<tr><td align="center" bgcolor="#1A1A1A" style="background:#1A1A1A;padding:26px 24px 22px;">
+<img src="${LOGO_URL}" width="64" height="64" alt="Sears Melvin Memorials" style="display:block;border:0;width:64px;height:64px;margin:0 auto 10px;">
+<div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.3;color:#FAF8F5;letter-spacing:0.5px;">Sears Melvin <span style="color:#C9A96E;">Memorials</span></div>
+</td></tr>
+<tr><td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif;">
+<h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:26px;line-height:1.3;color:#2C2C2C;">Your brochure is ready</h1>
+<p style="margin:0 0 22px;font-size:15px;line-height:1.65;color:#3D3D3D;">Thank you for your interest. Here is your copy of our memorial brochure — designs with guide prices, what’s included and how ordering works. Take all the time you need.</p>
+</td></tr>
+<tr><td align="center" style="padding:0 32px 8px;">
+<a href="${link}" style="text-decoration:none;"><img src="${COVER_URL}" width="200" alt="Sears Melvin memorial brochure cover" style="display:block;border:1px solid #E0DCD5;width:200px;max-width:60%;height:auto;margin:0 auto;"></a>
+</td></tr>
+<tr><td align="center" style="padding:24px 32px 6px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#2C2C2C" style="background:#2C2C2C;border-radius:3px;">
+<a href="${link}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:3px;">Download the brochure</a>
+</td></tr></table>
+<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 21 pages · 2.2 MB</p>
+</td></tr>
+<tr><td style="padding:26px 32px 4px;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #E0DCD5;"><tr><td style="padding-top:20px;font-size:14px;line-height:1.65;color:#3D3D3D;">
+When you’re ready, we’re happy to help — call <a href="tel:+442038352548" style="color:#6B5840;font-weight:bold;text-decoration:none;">${PHONE}</a>, email <a href="mailto:info@searsmelvin.co.uk" style="color:#6B5840;text-decoration:none;">info@searsmelvin.co.uk</a> or <a href="${quote}" style="color:#6B5840;">request a quote</a>.
+</td></tr></table>
+</td></tr>
+<tr><td style="padding:18px 32px 28px;font-family:Arial,Helvetica,sans-serif;">
+<p style="margin:0;font-size:12px;line-height:1.5;color:#6B6B6B;">Prices in the brochure are guide “from” prices and may change. Every memorial is bespoke — please ask for a personalised quote.</p>
+</td></tr>
+<tr><td align="center" bgcolor="#F3EFE9" style="background:#F3EFE9;padding:18px 24px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#6B6B6B;">
+Sears Melvin Memorials · North London · <a href="${SITE}" style="color:#6B5840;text-decoration:none;">searsmelvin.co.uk</a><br>RQMF Registered · No. 2263
+</td></tr>
+</table></td></tr></table></body></html>`;
 }
 
-async function upsertBrochureContact(env, email) {
-  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
-  const res = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${env.GHL_API_KEY}`, Version: "2021-07-28", "Content-Type": "application/json" },
-    body: JSON.stringify({ locationId: env.GHL_LOCATION_ID, email, source: "Website", tags: ["website-lead", "Brochure"] }),
+// SM GHL (Sears Melvin location only). Uses the SM private integration token
+// from the Pages secret SM_GHL_PIT_CALL_TRANSCRIPTS; location is fixed so a
+// wrong token can never write into another sub-account.
+export const SM_GHL_LOCATION_ID = "7JJQ1fkS2z8zv5XIDV0P";
+const GHL_BASE = "https://services.leadconnectorhq.com";
+
+export function brochureNote(date, { source, page, utm } = {}) {
+  const d = (date instanceof Date ? date : new Date()).toISOString().slice(0, 10);
+  const lines = [`Downloaded brochure on ${d} via website`];
+  lines.push(`Source: ${cleanSource(source)}`);
+  if (typeof page === "string" && /^\/[\w\-/.]{0,200}$/.test(page)) lines.push(`Page: ${page}`);
+  const u = cleanUtm(utm);
+  for (const k of Object.keys(u)) lines.push(`${k}: ${u[k]}`);
+  return lines.join("\n");
+}
+
+export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = fetch) {
+  const token = env.SM_GHL_PIT_CALL_TRANSCRIPTS;
+  if (!token) { console.error(JSON.stringify({ message: "sm_ghl_token_missing" })); return null; }
+  const headers = { Authorization: `Bearer ${token}`, Version: "2021-07-28", "Content-Type": "application/json", Accept: "application/json" };
+  const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
+    method: "POST", headers,
+    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download"] }),
   });
-  if (!res.ok) throw new Error(`GHL returned ${res.status}`);
+  if (!res.ok) throw new Error(`GHL upsert returned ${res.status}`);
   const body = await res.json().catch(() => ({}));
-  return body.contact?.id || null;
+  const id = body.contact?.id;
+  if (!id) return null;
+  // Upsert replaces tags on some API versions; add the tag explicitly too.
+  await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download"] }) }).catch(() => null);
+  const note = await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/notes`, { method: "POST", headers, body: JSON.stringify({ body: brochureNote(new Date(), meta) }) });
+  if (!note.ok) console.error(JSON.stringify({ message: "sm_ghl_note_failed", status: note.status }));
+  return id;
 }
 
 function bg(context, label, fn) {
@@ -164,7 +217,8 @@ export async function onRequestPost(context) {
       console.error(JSON.stringify({ message: "resend_request_failed", status: res.status }));
       return hardenedJson({ ok: false, error: "Sorry, we couldn’t send that just now. Please use Just download." }, 502);
     }
-    bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email));
+    // Fail soft: runs after the email is accepted, errors are only logged.
+    bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email, { source: data.source, page: data.page, utm: data.utm }));
     bg(context, "brochure_download_log", () => logDownload(env, downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page })));
     return hardenedJson({ ok: true });
   }
