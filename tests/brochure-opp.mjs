@@ -1,6 +1,6 @@
 // Brochure email → SM GHL opportunity (New Lead), skip when an open card exists, fail soft.
 import assert from "node:assert/strict";
-import { upsertBrochureContact, createBrochureOpportunity, brochureOppName, SM_PIPELINE_ID, SM_NEW_LEAD_STAGE_ID } from "../functions/api/brochure.js";
+import { contactDisplayName, upsertBrochureContact, createBrochureOpportunity, brochureOppName, SM_PIPELINE_ID, SM_NEW_LEAD_STAGE_ID } from "../functions/api/brochure.js";
 
 const env = { SM_GHL_PIT_CALL_TRANSCRIPTS: "x" };
 const ok = (b) => ({ ok: true, status: 200, json: async () => b });
@@ -51,4 +51,8 @@ assert.equal(brochureOppName(" Jo Bloggs ", "a@b.co"), "Brochure – Jo Bloggs")
   assert.equal(await upsertBrochureContact(env, "a@b.co", {}, thrower), "c1");
 }
 assert.deepEqual(await createBrochureOpportunity({}, { contactId: "c1" }, mock([]).f), { skipped: "no_token_or_contact" });
+assert.equal(contactDisplayName({ lastName: "Smith" }), "Smith");
+assert.equal(contactDisplayName({ name: "Ann Lee" }), "Ann Lee");
+assert.equal(contactDisplayName({ firstName: "Jo", lastName: "B" }), "Jo B");
+assert.equal(contactDisplayName({}), "");
 console.log("brochure-opp tests passed");

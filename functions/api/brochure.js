@@ -153,6 +153,12 @@ export function brochureOppName(name, email) {
   return `Brochure – ${n || email}`;
 }
 
+export function contactDisplayName(c) {
+  if (!c || typeof c !== "object") return "";
+  const parts = [c.firstName, c.lastName].filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim());
+  return parts.join(" ") || (typeof c.name === "string" ? c.name.trim() : "") || (typeof c.contactName === "string" ? c.contactName.trim() : "");
+}
+
 export async function createBrochureOpportunity(env, { contactId, name, email }, fetchImpl = fetch) {
   const token = env.SM_GHL_PIT_CALL_TRANSCRIPTS;
   if (!token || !contactId) return { skipped: "no_token_or_contact" };
@@ -190,7 +196,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   if (!note.ok) console.error(JSON.stringify({ message: "sm_ghl_note_failed", status: note.status }));
   // Fail soft: an opportunity error is logged and never affects the email or contact.
   try {
-    const opp = await createBrochureOpportunity(env, { contactId: id, name: body.contact?.firstName ? `${body.contact.firstName} ${body.contact.lastName || ""}` : "", email }, fetchImpl);
+    const opp = await createBrochureOpportunity(env, { contactId: id, name: contactDisplayName(body.contact), email }, fetchImpl);
     console.log(JSON.stringify({ message: "sm_ghl_brochure_opp", ...opp }));
   } catch (e) {
     console.error(JSON.stringify({ message: "sm_ghl_brochure_opp_failed", error: String(e?.message || e) }));
