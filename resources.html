@@ -96,14 +96,14 @@
     
     <style>
         :root {
-            --color-stone: #2C2C2C;
+            --color-stone: #2B2A27;
             --color-stone-light: #3D3D3D;
-            --color-cream: #FAF8F5;
+            --color-cream: #F7F4EE;
             --color-warm: #E8E4DD;
-            --color-accent: #8B7355;
+            --color-accent: #7A6449;
             --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
-            --color-text: #1A1A1A;
+            --color-text: #2B2A27;
             --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
@@ -209,7 +209,7 @@
         .checklist-container { background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
         .checklist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
         .checklist-header h3 { font-size: 1.5rem; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: var(--color-accent); color: white; border-radius: 6px; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; }
+        .download-btn { border: none; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: var(--color-accent); color: white; border-radius: 6px; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; }
         .download-btn:hover { transform: translateY(-2px); }
         .download-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
 
@@ -457,7 +457,7 @@
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                <span>Free Installation</span>
+                <span>Fixing included</span>
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/><path d="M9.5 12.5l2 2 4-4"/></svg>
@@ -480,7 +480,7 @@
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
     <header class="page-header">
-        <h1>Memorial Planning Resources</h1>
+        <h1>Memorial planning resources</h1>
         <p>Losing someone you love is one of life's hardest experiences. You don't have to face it alone. Here are some resources that might help.</p>
     </header>
 
@@ -643,11 +643,11 @@
             <div class="checklist-section reveal">
                 <div class="checklist-container">
                     <div class="checklist-header">
-                        <h3>Memorial Planning Checklist</h3>
-                        <a href="#" class="download-btn" onclick="window.print(); return false;">
+                        <h3>Memorial planning checklist</h3>
+                        <button type="button" class="download-btn" onclick="window.print()">
                             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download PDF
-                        </a>
+                            Print the checklist
+                        </button>
                     </div>
 
                     <div class="checklist-group">
@@ -872,8 +872,8 @@
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>

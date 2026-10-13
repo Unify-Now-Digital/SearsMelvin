@@ -71,7 +71,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial | Sears Melvin Memorials</title>
-    <meta name="description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <meta name="description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
     <!-- Supabase data loaded via REST API directly -->
     <!-- Must be root-absolute. A relative `favicon.svg` resolves against the
          page path, so on /memorials/<slug> the browser requests
@@ -85,7 +85,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Memorial | Sears Melvin Memorials">
-    <meta property="og:description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <meta property="og:description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
     <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     <!-- Set canonical + og:url to the actual request URL before any other JS
@@ -107,7 +107,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Memorial | Sears Melvin Memorials">
-    <meta name="twitter:description" content="Premium hand-finished memorial in granite with 30-year guarantee. Configure your memorial online.">
+    <meta name="twitter:description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,14 +116,14 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
     <style>
         :root {
-            --color-stone: #2C2C2C;
+            --color-stone: #2B2A27;
             --color-stone-light: #3D3D3D;
-            --color-cream: #FAF8F5;
+            --color-cream: #F7F4EE;
             --color-warm: #E8E4DD;
-            --color-accent: #8B7355;
+            --color-accent: #7A6449;
             --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
-            --color-text: #1A1A1A;
+            --color-text: #2B2A27;
             --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
@@ -753,7 +753,7 @@
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                <span>Free Installation</span>
+                <span>Fixing included</span>
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/><path d="M9.5 12.5l2 2 4-4"/></svg>
@@ -1087,7 +1087,7 @@
                     <div class="trust-badge">
                         <svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                         <div class="trust-badge-text">
-                            <strong>Free Installation</strong>
+                            <strong>Fixing included</strong>
                             <span>Anywhere in England & Wales</span>
                         </div>
                     </div>
@@ -1121,7 +1121,7 @@
                         <span id="priceSizeAmount">+£0</span>
                     </div>
                     <div class="price-row" id="priceColourRow" style="display: none;">
-                        <span id="priceColourLabel">Premium colour</span>
+                        <span id="priceColourLabel">Additional stone colour</span>
                         <span id="priceColourAmount">+£0</span>
                     </div>
                     <div class="price-row" id="priceInscriptionRow" style="display: none;">
@@ -1204,7 +1204,7 @@
         <div class="quote-modal">
             <div class="quote-modal-header">
                 <div>
-                    <h2>Request a Free Quote</h2>
+                    <h2>Request a quote</h2>
                     <p class="quote-modal-subtitle">We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.</p>
                 </div>
                 <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
@@ -1608,8 +1608,8 @@
             if (standard.length && (premium.length || naturalStone.length)) {
                 html = '';
                 if (standard.length)     html += plainGroup('Standard', standard);
-                if (premium.length)      html += premiumGroup('Premium', premium);
-                if (naturalStone.length) html += premiumGroup('Premium Natural Stone', naturalStone);
+                if (premium.length)      html += premiumGroup('Additional stone colours', premium);
+                if (naturalStone.length) html += premiumGroup('Natural stone', naturalStone);
             } else {
                 // No premium colours yet (e.g. before the migration runs) — flat list.
                 html = colours.map(swatch).join('');
@@ -1712,7 +1712,7 @@
             }
 
             if (images.length > 0) {
-                mainImg.src = images[0];
+                smSetImg(mainImg, images[0], '(max-width: 768px) 100vw, 50vw');
                 mainImg.alt = product.name;
             }
 
@@ -1729,7 +1729,7 @@
                 var thumbsHTML = '';
                 images.forEach(function(url, i) {
                     thumbsHTML += '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '" data-url="' + esc(url) + '">'
-                        + '<img src="' + esc(url) + '" alt="View ' + (i + 1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
+                        + '<img ' + smImgAttrs(url, '120px', esc) + ' alt="View ' + (i + 1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
                         + '</div>';
                 });
                 thumbsContainer.innerHTML = thumbsHTML;
@@ -1739,8 +1739,28 @@
             }
         }
 
+        // Resized product images via Supabase image transforms (originals untouched).
+        // Falls back to the original file if the render URL fails.
+        function smRender(url, w) {
+            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70&resize=contain';
+        }
+        function smIsBucketImg(url) { return /\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(String(url || '')); }
+        function smImgAttrs(url, sizes, escFn) {
+            var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
+            if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
+            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+                + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
+        }
+        function smSetImg(img, url, sizes) {
+            if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
+            img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
+            img.sizes = sizes;
+            img.srcset = [400, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+            img.src = smRender(url, 800);
+        }
+
         function switchGalleryImage(url, thumb) {
-            document.getElementById('galleryMainImg').src = url;
+            smSetImg(document.getElementById('galleryMainImg'), url, '(max-width: 768px) 100vw, 50vw');
             document.querySelectorAll('.gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
             thumb.classList.add('active');
         }
@@ -1754,7 +1774,7 @@
             const colourRow = document.getElementById('priceColourRow');
             if (state.colourPrice > 0) {
                 colourRow.style.display = 'flex';
-                document.getElementById('priceColourLabel').textContent = `Premium colour (${name})`;
+                document.getElementById('priceColourLabel').textContent = `Additional stone colour (${name})`;
                 document.getElementById('priceColourAmount').textContent = `+£${state.colourPrice}`;
             } else {
                 colourRow.style.display = 'none';
@@ -2649,8 +2669,8 @@
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button type="button" id="cookieAccept" onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button type="button" id="cookieDecline" onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button type="button" id="cookieAccept" onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button type="button" id="cookieDecline" onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>

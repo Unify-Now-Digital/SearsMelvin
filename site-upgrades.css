@@ -112,7 +112,7 @@ footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !impor
 .about-steps { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; }
 .about-steps li { background: #fff; border: 1px solid var(--color-border, #E0DCD5); border-radius: 6px; padding: 1.1rem 1rem; font-size: 0.9rem; line-height: 1.5; color: var(--color-text-muted, #595959); }
 .about-steps strong { display: block; font-family: var(--font-display, serif); font-weight: 500; font-size: 1.1rem; color: var(--color-stone, #2C2C2C); margin: 0.6rem 0 0.25rem; }
-.about-step-num { display: inline-flex; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--color-accent, #8B7355); color: var(--color-accent-dark, #6B5840); align-items: center; justify-content: center; font-family: var(--font-display, serif); font-size: 0.95rem; }
+.about-step-num { display: inline-flex; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--color-accent, #7A6449); color: var(--color-accent-dark, #6B5840); align-items: center; justify-content: center; font-family: var(--font-display, serif); font-size: 0.95rem; }
 .about-page .about-facts { grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 1.5rem; }
 .about-accred { display: grid; grid-template-columns: auto 1fr; gap: 1.75rem; align-items: center; background: #1A1A1A; border-radius: 6px; padding: 2rem !important; border-top: 0 !important; }
 .about-page .about-accred { margin-top: 0; }

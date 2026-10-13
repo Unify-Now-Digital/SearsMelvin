@@ -70,7 +70,7 @@
     <!-- End Google Tag Manager + LeadConnector -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Quotes & Orders | Sears Melvin Memorials</title>
+    <title>My quotes and orders | Sears Melvin Memorials</title>
     <meta name="description" content="View your quotes and track the progress of your memorial orders with Sears Melvin Memorials.">
     <meta name="robots" content="noindex,follow">
     <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
@@ -80,14 +80,14 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
-    <meta property="og:title" content="My Quotes & Orders | Sears Melvin Memorials">
+    <meta property="og:title" content="My quotes and orders | Sears Melvin Memorials">
     <meta property="og:description" content="View your quotes and track the progress of your memorial orders with Sears Melvin Memorials.">
     <meta property="og:url" content="https://searsmelvin.co.uk/track">
     <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="My Quotes & Orders | Sears Melvin Memorials">
+    <meta name="twitter:title" content="My quotes and orders | Sears Melvin Memorials">
     <meta name="twitter:description" content="View your quotes and track the progress of your memorial orders with Sears Melvin Memorials.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,14 +96,14 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
     <style>
         :root {
-            --color-stone: #2C2C2C;
+            --color-stone: #2B2A27;
             --color-stone-light: #3D3D3D;
-            --color-cream: #FAF8F5;
+            --color-cream: #F7F4EE;
             --color-warm: #E8E4DD;
-            --color-accent: #8B7355;
+            --color-accent: #7A6449;
             --color-accent-dark: #6B5840;
             --color-accent-light: #A69070;
-            --color-text: #1A1A1A;
+            --color-text: #2B2A27;
             --color-text-muted: #595959;
             --color-border: #E0DCD5;
             --color-success: #4A7C59;
@@ -269,14 +269,14 @@
 
 <header class="track-header">
     <a href="/" class="track-header-logo">Sears Melvin <span>Memorials</span></a>
-    <h1 id="headerTitle">My Quotes & Orders</h1>
+    <h1 id="headerTitle">My quotes and orders</h1>
 </header>
 
 <!-- Lookup form (no token) -->
 <div id="lookupState" style="display:none;">
     <div class="login-wrapper">
         <div class="login-card">
-            <h2>Find Your Quotes & Orders</h2>
+            <h2>Find your quotes and orders</h2>
             <p class="subtitle">Enter your email address and we'll send a secure link to view your quotes and track your orders.</p>
             <form onsubmit="handleSendPortalLink(event)">
                 <div class="login-field">
@@ -534,7 +534,7 @@
         document.title = order.ref + ' | Order Tracking';
 
         var html = '<div class="portal-welcome"><div class="card-ref">' + esc(order.ref) + '</div>';
-        html += '<h2>Your Memorial Order</h2>';
+        html += '<h2>Your memorial order</h2>';
         html += '<p>For ' + esc(order.customerName) + ' &middot; Placed ' + formatDate(order.createdAt) + '</p></div>';
         html += renderProgress(order.stage);
         html += '<div class="card"><h4>Memorial Details</h4><div class="card-grid">';
@@ -670,8 +670,8 @@
     <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:#8B7355;color:white;border:none;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#ccc;border:1px solid #555;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
         </div>
     </div>
 </div>
