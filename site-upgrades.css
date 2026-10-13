@@ -155,3 +155,106 @@ body:has(.search-overlay.active) .sm-brochure-fab { display: none; }
 }
 @media print { .sm-brochure-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .sm-brochure-fab { transition: none; } }
+/* Readability tokens (round 1). New variables only: defining them changes no
+   existing page; only rules that opt in below use them. */
+:root {
+  --sm-text-body: 1.0625rem;          /* 17px mobile */
+  --sm-text-small: 1rem;              /* 16px: captions, cards, step text */
+  --sm-text-kicker: 0.8125rem;        /* 13px uppercase labels */
+  --sm-leading-body: 1.65;
+  --sm-measure: 68ch;
+  --sm-text-muted-aa: #555049;        /* ~7:1 on cream */
+}
+@media (min-width: 769px) {
+  :root { --sm-text-body: 1.125rem; --sm-text-small: 1.0625rem; --sm-text-kicker: 0.875rem; } /* 18px / 17px / 14px */
+}
+
+/* /about: apply readability tokens */
+.about-page { max-width: 800px; }
+.about-page p,
+.about-page ul li { font-size: var(--sm-text-body); line-height: var(--sm-leading-body); max-width: var(--sm-measure); }
+.about-page .about-lead { font-size: clamp(1.35rem, 2.6vw, 1.7rem); line-height: 1.45; max-width: none; }
+.about-page .about-kicker,
+.about-hero .about-eyebrow { font-size: var(--sm-text-kicker); letter-spacing: 0.14em; }
+.about-hero p:not(.about-eyebrow) { font-size: var(--sm-text-body); line-height: var(--sm-leading-body); }
+.about-steps li { font-size: var(--sm-text-small); line-height: 1.55; color: var(--sm-text-muted-aa); }
+.about-steps strong { font-size: 1.2rem; }
+.about-page .about-facts li { font-size: var(--sm-text-small); line-height: 1.55; }
+.about-page .sm-btn { font-size: 0.9375rem; }
+.about-page .sm-brochure-cta, .about-page .sm-brochure-cta * { font-size: var(--sm-text-small); }
+@media (max-width: 900px) and (min-width: 769px) { .about-steps { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+/* ---- Readability round 2: shared tokens applied site-wide ----
+   "html body" prefix out-ranks each page's inline <style> and its mobile media
+   queries without !important. */
+:root { --sm-accent-aa: #6B5840; } /* white on this = 6.9:1 (old #8B7355 = 4.49:1) */
+
+/* Mobile bottom nav labels (all pages) */
+html body .mobile-nav-item span { font-size: 0.75rem; letter-spacing: 0.01em; }
+/* Topbar trust badges */
+html body .site-trust-item span { font-size: 0.875rem; }
+/* Footer */
+html body .footer-links a, html body .sm-footer-contact a, html body .sm-footer-track a,
+html body .sm-footer-terms a, html body .sm-footer-privacy a { font-size: 1rem; }
+html body .footer-contact, html body .footer-contact a { font-size: 0.9375rem; }
+html body .footer-copy, html body .footer-container .footer-legal { font-size: 0.875rem !important; line-height: 1.6; }
+html body .footer-accreditations .accred-label,
+html body .footer-accreditations .accred-note,
+html body .footer-accreditations .accred-logo--footer .accred-text { font-size: 0.8125rem; }
+html body .footer-accreditations .accred-text { white-space: normal; }
+/* Brochure link meta (all pages) */
+html body .sm-brochure-meta { font-size: 0.875rem !important; }
+
+/* Home */
+html body .hero-image-label { font-size: 0.875rem; color: #fff; background: rgba(26,26,26,0.72); padding: 0.4rem 0.75rem; border-radius: 3px; }
+html body .floating-badge small { font-size: 0.75rem; opacity: 1; }
+html body .section-label { font-size: 0.8125rem; color: var(--sm-accent-aa); }
+html body .timeline-date .label, html body .timeline-step .duration { font-size: 0.8125rem; color: #E3D3B4; }
+html body .grief-card a, html body .timeline-weeks { font-size: 0.9375rem; }
+html body .product-category { font-size: 0.8125rem !important; }
+html body .mobile-filter-btn, html body .filters-clear { font-size: 0.9375rem; }
+html body .timeline-step p, html body .category-info p, html body .value-item p, html body .grief-card p,
+html body .install-cemetery, html body .timeline-calculator p, html body .care-guide-content p { font-size: var(--sm-text-small); line-height: 1.6; max-width: var(--sm-measure); }
+html body .testimonial-location, html body .appt-group label { font-size: 0.9375rem; }
+html body .timeline-weeks, html body .faq-tab.active, html body .appt-submit, html body .care-guide-btn,
+html body .btn-accent { background: var(--sm-accent-aa); border-color: var(--sm-accent-aa); }
+html body .faq-tab { font-size: 0.9375rem; }
+html body .hero-buttons .btn { font-size: 0.875rem; }
+html body .section-header p, html body .about-content p, html body .contact-cta-content p { max-width: var(--sm-measure); }
+
+/* Memorials product cards */
+html body .product-category { font-size: 0.8125rem; letter-spacing: 0.06em; }
+html body .product-name { font-size: 1.1875rem; line-height: 1.3; }
+html body .product-price, html body .product-price-note { font-size: 1rem; line-height: 1.5; }
+html body .product-price strong { font-size: 1.125rem; }
+html body .swatch-name { font-size: 0.8125rem; max-width: 72px; }
+html body .breadcrumb, html body .breadcrumb a, html body .breadcrumb span,
+html body .results-count, html body .filter-count, html body .shortlist-actions button { font-size: 0.9375rem; }
+html body .filter-title { font-size: 0.875rem; }
+html body .filter-option { font-size: 1rem; }
+html body .shortlist-btn-email { background: var(--sm-accent-aa); }
+html body .page-header p { font-size: var(--sm-text-body); max-width: var(--sm-measure); margin-left: auto; margin-right: auto; }
+@media (max-width: 768px) {
+  html body .product-name { font-size: 1.0625rem; }   /* 17px */
+  html body .product-price, html body .product-price-note { font-size: 1rem; }
+  html body .product-category { font-size: 0.75rem; }
+}
+
+/* Contact */
+html body .form-group label { font-size: 0.875rem; letter-spacing: 0.04em; }
+html body .contact-method-content h4 { font-size: 1rem; }
+html body .contact-method-content p { font-size: 1rem; overflow-wrap: anywhere; }
+html body .contact-method-content small { font-size: 0.9375rem; }
+html body .reassurance h4 { font-size: 1rem; color: #3B6347; }
+html body .reassurance p, html body .form-footer, html body .form-footer a { font-size: var(--sm-text-small); line-height: 1.6; }
+html body .form-submit { background: var(--sm-accent-aa); }
+
+/* Brochure */
+html body .sm-brochure-email-note, html body .sm-brochure-email-note a { font-size: 0.9375rem; color: #555049; }
+html body .sm-brochure-email label span { font-size: 1rem; color: #555049; }
+html body .sm-cta-row .sm-btn { font-size: 0.9375rem; }
+html body main p { max-width: var(--sm-measure); }
+
+/* Cookie banner text (shown on first visit) */
+html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
+html body .floating-badge { background-color: var(--sm-accent-aa); }
