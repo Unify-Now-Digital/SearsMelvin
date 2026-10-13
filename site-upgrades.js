@@ -80,7 +80,7 @@
 
 
     // ---- Brochure ---------------------------------------------------------
-    var BROCHURE_SOURCES = ['header', 'home', 'product', 'listing', 'brochure_page', 'fab'];
+    var BROCHURE_SOURCES = ['header', 'home', 'product', 'listing', 'brochure_page'];
     var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
     // Google Ads click IDs, captured alongside UTMs for offline conversion import.
     var CLICK_KEYS = ['gclid', 'gbraid', 'wbraid'];
@@ -184,7 +184,7 @@
         return p !== '/brochure' && p.indexOf('/admin') !== 0;
     }
     function fabHtml() {
-        return '<a class="sm-brochure-fab" href="/brochure?from=fab" aria-label="View our brochure">' +
+        return '<a class="sm-brochure-fab" href="/brochure" aria-label="View our brochure">' +
             '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>' +
             '<span>Brochure</span></a>';
     }

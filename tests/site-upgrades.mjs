@@ -81,8 +81,7 @@ assert.equal(up.fabAllowed("/brochure"), false);
 assert.equal(up.fabAllowed("/brochure/"), false);
 assert.equal(up.fabAllowed("/brochure.html"), false);
 assert.match(up.fabHtml(), /aria-label="View our brochure"/);
-assert.match(up.fabHtml(), /href="\/brochure\?from=fab"/);
-assert.equal(up.normaliseSource("fab"), "fab");
+assert.match(up.fabHtml(), /href="\/brochure"/);
 console.log("fab: ok");
 
 // Call tracking: Google's forwarding-number swap only matches "020 3835 2548",
