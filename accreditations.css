@@ -1,7 +1,6 @@
 /* Official RQMF logo + registration number (sourced from rqmf.org.uk; see images/accreditations/SOURCES.md). */
-.accred-logo { display: inline-flex; align-items: center; line-height: 0; text-decoration: none; border-radius: 3px; }
+.accred-logo { display: inline-flex; align-items: center; line-height: 0; text-decoration: none; border-radius: 3px; cursor: default; }
 .accred-logo img { display: block; width: auto; }
-.accred-logo:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 /* RQMF artwork is white-on-transparent; on light backgrounds show it on RQMF's own navy, as rqmf.org.uk does. */
 .accred-logo--rqmf-chip { background: #292345; padding: 3px 5px; }
 /* Header chips */
@@ -27,8 +26,7 @@
 /* ---- Integrated treatment (v3) ----
    Cream surfaces: text link only (RQMF supplies a white logo, so it is shown only on dark footers).
    The logo is never recoloured or redrawn. */
-.accred-link { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent-dark, #6B5840); text-decoration: none; border-bottom: 1px solid var(--color-border, #E0DCD5); padding-bottom: 1px; white-space: nowrap; transition: color .2s, border-color .2s; }
-.accred-link:hover, .accred-link:focus-visible { color: var(--color-stone, #2C2C2C); border-color: currentColor; }
+.accred-link { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent-dark, #6B5840); text-decoration: none; border-bottom: 1px solid var(--color-border, #E0DCD5); padding-bottom: 1px; white-space: nowrap; cursor: default; }
 .nav-accred { padding-left: 1rem; border-left: 1px solid var(--color-border, #E0DCD5); }
 .nav-accred .accred-link { border-bottom: 0; font-size: 0.64rem; }
 .page-header-accred .accred-note { color: var(--color-text-muted, #595959); }
@@ -47,7 +45,6 @@
 /* Header badge: more noticeable, AA on cream (#5A4A35 on #FAF8F5 ≈ 8.6:1) */
 .nav-accred { border-left: 0; padding-left: 0.85rem; }
 .nav-accred .accred-link { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; color: #5A4A35; border: 1px solid rgba(90,74,53,0.35); border-radius: 999px; padding: 0.3rem 0.75rem; line-height: 1.2; }
-.nav-accred .accred-link:hover, .nav-accred .accred-link:focus-visible { color: var(--color-stone, #2C2C2C); border-color: currentColor; background: rgba(255,255,255,0.6); }
 @media (max-width: 1180px) { .nav-accred { padding-left: 0.5rem; margin-left: 0.5rem !important; } .nav-accred .accred-link { font-size: 0.7rem; padding: 0.2rem 0.55rem; letter-spacing: 0.03em; } }
 /* Narrow desktops: keep the full nav on screen with the badge */
 @media (min-width: 769px) and (max-width: 1180px) {
@@ -75,3 +72,6 @@
 @media (max-width: 768px) { nav .mobile-menu-btn { margin-left: auto; } }
 /* r2: footer accreditation label/note readable on dark */
 .footer-accreditations .accred-label, .footer-accreditations .accred-note { opacity: 1; color: rgba(255,255,255,0.68); }
+
+/* RQMF badge is plain content, not a link: no hover or pointer. */
+.accred-link, .accred-logo, .about-accred-logo { cursor: default; }
