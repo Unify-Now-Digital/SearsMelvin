@@ -41,9 +41,10 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
     price: "1",
     permit_fee: 999,
   }, catalogue);
-  assert.equal(product.price, 1535);
+  // The flower vase is retired: an old request for it is ignored, not charged.
+  assert.equal(product.price, 1450);
   assert.equal(product.permit_fee, 0);
-  assert.deepEqual(product.addonLineItems, [{ name: "Flower Vase", price: 85 }]);
+  assert.deepEqual(product.addonLineItems, []);
   assert.equal(product.infillType, undefined);
 }
 
@@ -145,7 +146,9 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.match(api, /updates\.value\s*=\s*safeProduct\.price/);
   assert.match(api, /product:\s*safeProduct/);
   assert.doesNotMatch(html, /Photo Plaque', price: 175/);
-  assert.doesNotMatch(html, /Flower Vase', price: 95/);
+  assert.doesNotMatch(html, /Flower Vase/);
+  const memorialHtml = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
+  assert.match(memorialHtml, /a\.slug !== 'flower-vase'/);
   assert.match(html, /Custom Motif'.*price: 120/);
 }
 

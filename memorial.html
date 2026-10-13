@@ -1642,12 +1642,10 @@
             document.getElementById('selectedSizeName').textContent = defaultSize.size_name + (defaultSize.dimensions ? ' (' + defaultSize.dimensions + ')' : '');
         }
 
-        // The vase price is not shown to customers; it still counts in the guide total.
-        function isVaseAddon(slug, name) {
-            return String(slug || '').indexOf('vase') !== -1 || String(name || '').toLowerCase().indexOf('vase') !== -1;
-        }
-
         function renderAddons(addons) {
+            // The flower vase is no longer offered. Hide it even while its
+            // catalogue row is still active.
+            addons = (addons || []).filter(function(a) { return a.slug !== 'flower-vase'; });
             const container = document.getElementById('addonsGrid');
             let html = '';
             // Photo Plaque addon (special handling)
@@ -1670,7 +1668,7 @@
                     + '<input type="checkbox" name="addon" value="' + esc(a.slug) + '" data-price="' + price + '">'
                     + '<div class="addon-header"><div>'
                     + '<div class="addon-name">' + esc(a.name) + '</div>'
-                    + '<div class="addon-price">' + (isVaseAddon(a.slug, a.name) ? 'Included in guide total' : '+£' + price.toLocaleString()) + '</div>'
+                    + '<div class="addon-price">+£' + price.toLocaleString() + '</div>'
                     + '</div><span class="addon-check"></span></div>'
                     + '<p class="addon-desc">' + esc(a.description) + '</p></div>';
             });
@@ -2148,9 +2146,7 @@
                 // Whole-pound extras stay unpadded so £350 does not become £350.00.
                 const priceText = item.name === 'Extra Lettering'
                     ? '+' + formatGbp(item.price)
-                    : isVaseAddon('', item.name)
-                        ? 'Included'
-                        : '+£' + Number(item.price).toLocaleString('en-GB');
+                    : '+£' + Number(item.price).toLocaleString('en-GB');
                 return '<div class="quote-config-row"><span>' + item.name + '</span>'
                      + '<span>' + priceText + '</span></div>';
             }).join('');

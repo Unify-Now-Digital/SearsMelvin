@@ -839,8 +839,7 @@
 
             addonItems.forEach(function(item) {
                 var p = parseFloat(item.price);
-                var isVase = String(item.name || '').toLowerCase().indexOf('vase') !== -1;
-                html += '<div class="quote-line-item"><span>' + esc(item.name) + '</span><span>' + (isVase ? 'Included' : (p > 0 ? '+' + formatPrice(p) : '—')) + '</span></div>';
+                html += '<div class="quote-line-item"><span>' + esc(item.name) + '</span><span>' + (p > 0 ? '+' + formatPrice(p) : '—') + '</span></div>';
             });
 
             if (permitFee > 0) {
@@ -926,13 +925,11 @@
                 var name = String(a.name || '');
                 var lower = name.toLowerCase();
                 if (lower.indexOf('photo plaque') !== -1) selectedAddons['Ceramic Photo Plaque'] = true;
-                else if (lower.indexOf('flower vase') !== -1) selectedAddons['Flower Vase'] = true;
                 else if (lower.indexOf('custom motif') !== -1) selectedAddons['Custom Motif'] = true;
                 else if (lower.indexOf('garden kerb surround') !== -1) selectedAddons['Garden Kerb Surround'] = true;
             });
             var availableAddons = [
                 { name: 'Ceramic Photo Plaque', slug: 'photo-plaque', price: 160, desc: 'Ceramic photo plaque set into the memorial.' },
-                { name: 'Flower Vase', slug: '', price: 85, desc: 'Built-in granite flower vase with drainage.' },
                 { name: 'Custom Motif', slug: '', price: 120, desc: 'A custom engraved design or motif.' }
             ];
             if (!product.type || (product.type.toLowerCase().indexOf('kerb') === -1 && product.type.toLowerCase().indexOf('cremation') === -1)) {
@@ -946,7 +943,7 @@
                     + '<span class="quote-addon-check">' + (isSelected ? '&#10003;' : '') + '</span>'
                     + '<div class="quote-addon-info"><div class="quote-addon-name">' + esc(addon.name) + '</div>'
                     + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + esc(addon.desc) + '</div></div>'
-                    + '<span class="quote-addon-price">' + (addon.name === 'Flower Vase' ? 'Included in guide total' : (addon.price > 0 ? '+£' + addon.price : 'Variable')) + '</span>'
+                    + '<span class="quote-addon-price">' + (addon.price > 0 ? '+£' + addon.price : 'Variable') + '</span>'
                     + '</div>';
             });
             html += '</div>';

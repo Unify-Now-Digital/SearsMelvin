@@ -8,6 +8,9 @@ const PHOTO_OPTIONS = Object.freeze({
   rectangle: { label: "Rectangle", price: 200 },
   heart: { label: "Heart", price: 240 },
 });
+// Extras no longer offered. Ignored (not charged) even if the catalogue row is
+// still active or an older saved quote still lists them.
+const RETIRED_ADDON_SLUGS = new Set(["flower-vase", "vase"]);
 const LEGACY_PHOTO_CODES = Object.freeze({ small: "oval", medium: "rectangle", large: "heart" });
 
 export class QuotePricingError extends Error {
@@ -80,7 +83,8 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
   const categorySlug = String(category.slug || "");
   const sizes = Array.isArray(catalogue.sizes) ? catalogue.sizes : [];
   const colours = Array.isArray(catalogue.colours) ? catalogue.colours : [];
-  const addons = Array.isArray(catalogue.addons) ? catalogue.addons : [];
+  const addons = (Array.isArray(catalogue.addons) ? catalogue.addons : [])
+    .filter(addon => !RETIRED_ADDON_SLUGS.has(String(addon?.slug || "").toLowerCase()));
 
   let size = null;
   const sizeCode = boundedText(rawProduct.sizeCode, 80).toLowerCase();
@@ -109,6 +113,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
   const specialSlugs = new Set(["photo-plaque", "garden-kerb", "garden-kerb-surround"]);
   for (const slug of requestedSlugs) {
     if (specialSlugs.has(slug)) continue;
+    if (RETIRED_ADDON_SLUGS.has(slug)) continue;
     if (!addons.some(addon => addon.slug === slug)) {
       throw new QuotePricingError("One of the selected extras is unavailable");
     }
