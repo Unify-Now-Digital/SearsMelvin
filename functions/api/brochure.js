@@ -28,7 +28,7 @@ const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
 const FROM = "Sears Melvin Memorials <info@searsmelvin.co.uk>";
 const PHONE = "020 3835 2548";
-export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
+export const SOURCES = ["header", "home", "product", "listing", "brochure_page", "fab"];
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

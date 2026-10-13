@@ -81,7 +81,8 @@ assert.equal(up.fabAllowed("/brochure"), false);
 assert.equal(up.fabAllowed("/brochure/"), false);
 assert.equal(up.fabAllowed("/brochure.html"), false);
 assert.match(up.fabHtml(), /aria-label="View our brochure"/);
-assert.match(up.fabHtml(), /href="\/brochure\?utm_source=website/);
+assert.match(up.fabHtml(), /href="\/brochure\?from=fab"/);
+assert.equal(up.normaliseSource("fab"), "fab");
 console.log("fab: ok");
 
 // Call tracking: Google's forwarding-number swap only matches "020 3835 2548",
@@ -95,3 +96,17 @@ for (const f of execSync("git ls-files '*.html'").toString().split("\n").filter(
   }
 }
 console.log("call-tracking numbers: ok");
+
+// Chat tracking: every page with the LeadConnector loader hooks beforeSubmit
+// and pushes sm_chat_submit (GTM trigger) + ghl_chat_submission, with no PII.
+for (const f of execSync("git grep -l 'LeadConnector chat' -- '*.html'").toString().split("\n").filter(Boolean)) {
+  const html = readFileSync(f, "utf8");
+  assert.match(html, /registerBeforeSubmit\(chatSubmitted\)/, `${f} hooks chat submit`);
+  assert.match(html, /window\.__smChatHook = true;/, `${f} disables the GTM fetch hook`);
+  const push = html.slice(html.indexOf("function chatSubmitted"), html.indexOf("function hookChat"));
+  assert.doesNotMatch(push, /email|phone|name|message/i, `${f}: no PII in chat push`);
+}
+// No internal links carry UTMs (UTMs are for inbound campaigns only).
+const internalUtm = execSync("git grep -n -E \"href=[\\\"'](/|https?://(www\\.)?searsmelvin\\.co\\.uk)[^\\\"']*utm_\" -- '*.html' '*.js' ':!functions/api/brochure.js' || true").toString().trim();
+assert.equal(internalUtm, "", `internal UTM links:\n${internalUtm}`);
+console.log("chat + internal utm: ok");
