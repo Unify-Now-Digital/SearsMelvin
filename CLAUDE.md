@@ -25,6 +25,11 @@ it whenever you audit or fix something in that list.
 - **Email** — Resend, from `info@searsmelvin.co.uk`. All templates are inline
   HTML string builders in the Function that sends them.
 - **CRM** — GoHighLevel (contact + opportunity) as a background side-effect.
+  Opportunity logic lives in `functions/api/_ghl-opportunity.js`. **Won
+  opportunities are human-owned** (Arin, 8 Oct 2026): their value is the full
+  order value excluding permit, so the site never writes a won card. A contact
+  with any won card gets the `returning-customer-enquiry` tag + a note instead
+  of a new card. Pinned by `tests/ghl-returning-customer.mjs`.
 
 ## Deliberate absences — do not "restore" these
 
