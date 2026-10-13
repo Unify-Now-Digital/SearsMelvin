@@ -1209,7 +1209,8 @@
                         enquiry_type: 'shortlist-enquiry',
                         source_page: window.location.pathname,
                         message: note || null,
-                        details: { items: shortlistItems }
+                        details: { items: shortlistItems },
+                        attribution: (window.SMUpgrades && window.SMUpgrades.getAttribution) ? window.SMUpgrades.getAttribution() : null
                     })
                 });
                 var result = await res.json();
@@ -1531,6 +1532,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=fab1" defer></script>
+    <script src="/site-upgrades.js?v=attr2" defer></script>
 </body>
 </html>

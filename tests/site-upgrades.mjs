@@ -60,6 +60,19 @@ const rec = up.mergeAttribution(null, fa, t0);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS - 1), rec);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS), null);
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { gbraid: "x1" }, t0 + 5)), { gbraid: "x1" });
+// First touch kept: a later UTM-only (or bare) visit does not overwrite it.
+assert.equal(up.mergeAttribution(rec, { utm_source: "facebook" }, t0 + 10), rec);
+// A new click ID refreshes the record and restarts the 90 days.
+const rec2 = up.mergeAttribution(rec, { wbraid: "w2", utm_source: "google" }, t0 + 20);
+assert.deepEqual(up.attributionFields(rec2), { wbraid: "w2", utm_source: "google" });
+assert.equal(rec2.ts, t0 + 20);
+// Expired first touch is replaced by any fresh UTMs.
+assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bing" }, t0 + up.ATTR_TTL_MS)), { utm_source: "bing" });
+// Every public form sends the stored attribution.
+for (const f of ["contact.html", "memorial.html", "memorials.html", "index.html"]) {
+  assert.match(readFileSync(f, "utf8"), /attribution: \(window\.SMUpgrades && window\.SMUpgrades\.getAttribution\)/, `${f} sends attribution`);
+}
+assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*attribution: storedAttribution\(\)/);
 
 // Floating brochure button
 assert.equal(up.fabAllowed("/"), true);

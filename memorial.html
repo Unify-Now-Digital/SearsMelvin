@@ -2535,6 +2535,8 @@
                             source_page: window.location.pathname + window.location.search,
                             location: cemetery || null,
                             cemetery_id: _selectedCemeteryId || null,
+                            // gclid/gbraid/wbraid + utm_* (90-day first-party store, site-upgrades.js)
+                            attribution: (window.SMUpgrades && window.SMUpgrades.getAttribution) ? window.SMUpgrades.getAttribution() : null,
                             product: {
                                 name:        productData ? productData.name : 'Memorial',
                                 slug:        productData ? productData.slug : null,
@@ -2830,6 +2832,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=fab1" defer></script>
+    <script src="/site-upgrades.js?v=attr2" defer></script>
 </body>
 </html>
