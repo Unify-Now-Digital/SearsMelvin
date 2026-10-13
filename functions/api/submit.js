@@ -1556,14 +1556,15 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
 }
 
 /**
- * Find this contact's existing open opportunity, if any.
+ * Find this contact's existing open opportunity in the SM pipeline, if any.
  * Returns { id, pipelineStageId } or null. Fails open (returns null) on any
  * error: a duplicate opportunity is recoverable, a silently dropped lead is not.
  */
-async function findOpenGHLOpportunity(env, contactId) {
+async function findOpenGHLOpportunity(env, contactId, pipelineId) {
   const params = new URLSearchParams({
     location_id: env.GHL_LOCATION_ID,
     contact_id: contactId,
+    pipeline_id: pipelineId,
     status: "open",
     limit: "1",
   });
@@ -1596,19 +1597,23 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue }) {
     "Content-Type": "application/json",
   };
 
-  const existing = await findOpenGHLOpportunity(env, contactId);
+  const existing = await findOpenGHLOpportunity(env, contactId, pipelineId);
 
   if (existing) {
+    // Never overwrite a known value with £0 (enquiry/appointment submissions
+    // send 0), and never touch status: the card is already open by lookup, and
+    // forcing "open" could reopen a card that was won/lost in the meantime.
+    const update = {
+      pipelineId,
+      pipelineStageId: existing.pipelineStageId || defaultStageId,
+      name,
+    };
+    const value = Number(monetaryValue);
+    if (Number.isFinite(value) && value > 0) update.monetaryValue = value;
     const res = await fetch(`https://services.leadconnectorhq.com/opportunities/${existing.id}`, {
       method: "PUT",
       headers,
-      body: JSON.stringify({
-        pipelineId,
-        pipelineStageId: existing.pipelineStageId || defaultStageId,
-        name,
-        monetaryValue: monetaryValue || 0,
-        status: "open",
-      }),
+      body: JSON.stringify(update),
     });
     if (!res.ok) throw new Error(`GHL Opportunity update returned ${res.status}`);
     return;
