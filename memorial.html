@@ -71,7 +71,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial | Sears Melvin Memorials</title>
-    <meta name="description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
+    <meta name="description" content="Hand-finished granite memorial with a 30-year fixing guarantee. Configure your memorial online.">
     <!-- Supabase data loaded via REST API directly -->
     <!-- Must be root-absolute. A relative `favicon.svg` resolves against the
          page path, so on /memorials/<slug> the browser requests
@@ -85,7 +85,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Memorial | Sears Melvin Memorials">
-    <meta property="og:description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
+    <meta property="og:description" content="Hand-finished granite memorial with a 30-year fixing guarantee. Configure your memorial online.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
     <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     <!-- Set canonical + og:url to the actual request URL before any other JS
@@ -107,7 +107,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Memorial | Sears Melvin Memorials">
-    <meta name="twitter:description" content="Hand-finished granite memorial with 30-year guarantee. Configure your memorial online.">
+    <meta name="twitter:description" content="Hand-finished granite memorial with a 30-year fixing guarantee. Configure your memorial online.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -221,6 +221,9 @@
         .product-lead { font-size: 1.12rem; line-height: 1.6; color: var(--color-text); margin: 0 0 1.25rem; }
         .product-quote-intro { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 1.25rem 0; margin: 0 0 1.5rem; }
         .product-quote-intro .btn { width: 100%; }
+        .product-guarantees { margin: 1.5rem 0; padding: 1rem 1.25rem; border: 1px solid var(--color-border); border-radius: 4px; background: #fff; }
+        .product-guarantees h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; margin: 0 0 0.6rem; }
+        .product-guarantees ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; font-size: 0.88rem; line-height: 1.5; }
         .product-reassurance { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.55rem; font-size: 0.87rem; }
         .product-reassurance li::before { content: '✓'; color: var(--color-accent-dark); font-weight: 700; margin-right: 0.55rem; }
 
@@ -749,7 +752,7 @@
         <div class="site-trust-row">
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                <span>30 Year Guarantee</span>
+                <span>30-year fixing guarantee</span>
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
@@ -834,12 +837,20 @@
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
                     <ul class="product-reassurance">
                         <li>Fully installed across England &amp; Wales</li>
-                        <li>30-year material &amp; workmanship guarantee</li>
-                        <li>10-year fixing guarantee</li>
+                        <li>30-year fixing guarantee</li>
+                        <li>10-year workmanship guarantee</li>
                     </ul>
                     <p class="product-brochure"><a href="/brochure" class="sm-brochure-link" data-brochure-source="product">Download our brochure</a></p>
                 </div>
                 <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
+                <section class="product-guarantees" aria-labelledby="guaranteesHeading">
+                    <h2 id="guaranteesHeading">Our guarantees</h2>
+                    <ul>
+                        <li><strong>30-year structural fixing guarantee.</strong> Covers our structural fixing, including faulty installation. If the headstone tilts or falls because of our fixing, it is covered.</li>
+                        <li><strong>10-year workmanship guarantee.</strong> Covers defects in our workmanship.</li>
+                        <li><strong>2-year subsidence guarantee.</strong> Covers sinking or tilting caused by normal ground settlement in the first two years.</li>
+                    </ul>
+                </section>
 
                 <!-- Stone Colour - Live Updates SVG -->
                 <div class="option-group">
@@ -1080,8 +1091,8 @@
                     <div class="trust-badge">
                         <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                         <div class="trust-badge-text">
-                            <strong>30 Year Guarantee</strong>
-                            <span>Against manufacturing defects</span>
+                            <strong>30-year fixing guarantee</strong>
+                            <span>Plus 10-year workmanship and 2-year subsidence guarantees</span>
                         </div>
                     </div>
                     <div class="trust-badge">
@@ -1426,7 +1437,7 @@
                 (function syncSocialMeta() {
                     const url = 'https://searsmelvin.co.uk/memorials/' + encodeURIComponent(product.slug || '');
                     const title = product.name + ' | Sears Melvin Memorials';
-                    const desc = (product.description || 'Hand-finished memorial with 30-year guarantee.').slice(0, 200);
+                    const desc = (product.description || 'Hand-finished memorial with a 30-year fixing guarantee.').slice(0, 200);
                     const img = safeImageUrl(product.image_url) || 'https://searsmelvin.co.uk/sm-logo.svg';
                     function setMeta(selector, attr, value) {
                         const el = document.querySelector(selector);
@@ -1455,7 +1466,7 @@
                         '@context': 'https://schema.org',
                         '@type': 'Product',
                         name: product.name,
-                        description: product.description || 'Hand-finished memorial with 30-year guarantee.',
+                        description: product.description || 'Hand-finished memorial with a 30-year fixing guarantee.',
                         image: productImage,
                         sku: product.slug || String(product.id || ''),
                         category: catName,
