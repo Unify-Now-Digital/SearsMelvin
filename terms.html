@@ -53,6 +53,34 @@
     <script>
       (function(){
         var loaded = false;
+        // Chat submission -> dataLayer, once per submission, no PII. The widget
+        // is a shadow-DOM web component whose beforeSubmit hook runs on this
+        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
+        // races the widget and missed most chats, so claim its guard flag here
+        // (this runs before the deferred GTM load) to avoid double counting.
+        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
+        // trigger on sm_chat_submit.
+        window.__smChatHook = true;
+        var lastChatPush = 0;
+        function chatSubmitted(){
+          try {
+            var now = Date.now();
+            if (now - lastChatPush > 3000) {
+              lastChatPush = now;
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({ event: 'sm_chat_submit' });
+              window.dataLayer.push({ event: 'ghl_chat_submission' });
+            }
+          } catch (e) {}
+          return true; // never block the chat
+        }
+        function hookChat(){
+          var cw = window.leadConnector && window.leadConnector.chatWidget;
+          if (!cw || cw.__smHooked || typeof cw.registerBeforeSubmit !== 'function') return;
+          cw.__smHooked = true;
+          cw.registerBeforeSubmit(chatSubmitted);
+        }
+        window.addEventListener('LC_chatWidgetLoaded', hookChat);
         function load(){
           if (loaded) return; loaded = true;
           var lc = document.createElement('script');
@@ -779,6 +807,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=attr2" defer></script>
+    <script src="/site-upgrades.js?v=chat1" defer></script>
 </body>
 </html>
