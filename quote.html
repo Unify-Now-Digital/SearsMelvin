@@ -924,13 +924,11 @@
                 var name = String(a.name || '');
                 var lower = name.toLowerCase();
                 if (lower.indexOf('photo plaque') !== -1) selectedAddons['Ceramic Photo Plaque'] = true;
-                else if (lower.indexOf('flower vase') !== -1) selectedAddons['Flower Vase'] = true;
                 else if (lower.indexOf('custom motif') !== -1) selectedAddons['Custom Motif'] = true;
                 else if (lower.indexOf('garden kerb surround') !== -1) selectedAddons['Garden Kerb Surround'] = true;
             });
             var availableAddons = [
                 { name: 'Ceramic Photo Plaque', slug: 'photo-plaque', price: 160, desc: 'Ceramic photo plaque set into the memorial.' },
-                { name: 'Flower Vase', slug: '', price: 85, desc: 'Built-in granite flower vase with drainage.' },
                 { name: 'Custom Motif', slug: '', price: 120, desc: 'A custom engraved design or motif.' }
             ];
             if (!product.type || (product.type.toLowerCase().indexOf('kerb') === -1 && product.type.toLowerCase().indexOf('cremation') === -1)) {

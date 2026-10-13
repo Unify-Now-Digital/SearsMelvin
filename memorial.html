@@ -1642,6 +1642,9 @@
         }
 
         function renderAddons(addons) {
+            // The flower vase is no longer offered. Hide it even while its
+            // catalogue row is still active.
+            addons = (addons || []).filter(function(a) { return a.slug !== 'flower-vase'; });
             const container = document.getElementById('addonsGrid');
             let html = '';
             // Photo Plaque addon (special handling)
