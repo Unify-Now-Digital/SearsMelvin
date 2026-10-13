@@ -24,7 +24,7 @@ import {
 } from "./_security.js";
 
 const SITE = "https://searsmelvin.co.uk";
-const PDF_PATH = "/assets/sears-melvin-brochure.pdf";
+const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
 const FROM = "Sears Melvin Memorials <info@searsmelvin.co.uk>";
 const PHONE = "020 3835 2548";
 export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
@@ -80,11 +80,11 @@ async function logDownload(env, row) {
 }
 
 export function brochureLink(source) {
-  return `${SITE}${PDF_PATH}?utm_source=brochure_email&utm_medium=email&utm_campaign=brochure_v5&utm_content=${cleanSource(source)}`;
+  return `${SITE}${PDF_PATH}&utm_source=brochure_email&utm_medium=email&utm_campaign=brochure_v5&utm_content=${cleanSource(source)}`;
 }
 
 const LOGO_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/brand/sm-logo.png";
-const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg`;
+const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=7`;
 
 // Gmail-safe: tables, inline styles, no background images, explicit colours on
 // every text node so dark-mode inversion keeps contrast.
@@ -110,7 +110,7 @@ export function brochureEmailHtml(link) {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#2C2C2C" style="background:#2C2C2C;border-radius:3px;">
 <a href="${link}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:3px;">Download the brochure</a>
 </td></tr></table>
-<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 21 pages · 2.2 MB</p>
+<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 21 pages · 2.3 MB</p>
 </td></tr>
 <tr><td style="padding:26px 32px 4px;font-family:Arial,Helvetica,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #E0DCD5;"><tr><td style="padding-top:20px;font-size:14px;line-height:1.65;color:#3D3D3D;">
@@ -142,6 +142,42 @@ export function brochureNote(date, { source, page, utm } = {}) {
   return lines.join("\n");
 }
 
+// Brochure requests open a New Lead card in the SM Memorial Pipeline, mirroring
+// createGHLOpportunity in submit.js, but never touch an existing open card:
+// if the contact already has one in this pipeline we skip (no rename, no stage move).
+export const SM_PIPELINE_ID = "ty7z50OQyVGXMS1NARrK";             // SM Memorial Pipeline
+export const SM_NEW_LEAD_STAGE_ID = "3c1dd6af-1ccd-4acd-bf0e-96a8cb478d08"; // New Lead
+
+export function brochureOppName(name, email) {
+  const n = typeof name === "string" ? name.trim() : "";
+  return `Brochure – ${n || email}`;
+}
+
+export function contactDisplayName(c) {
+  if (!c || typeof c !== "object") return "";
+  const parts = [c.firstName, c.lastName].filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim());
+  return parts.join(" ") || (typeof c.name === "string" ? c.name.trim() : "") || (typeof c.contactName === "string" ? c.contactName.trim() : "");
+}
+
+export async function createBrochureOpportunity(env, { contactId, name, email }, fetchImpl = fetch) {
+  const token = env.SM_GHL_PIT_CALL_TRANSCRIPTS;
+  if (!token || !contactId) return { skipped: "no_token_or_contact" };
+  const headers = { Authorization: `Bearer ${token}`, Version: "2021-07-28", "Content-Type": "application/json", Accept: "application/json" };
+  const params = new URLSearchParams({ location_id: SM_GHL_LOCATION_ID, contact_id: contactId, pipeline_id: SM_PIPELINE_ID, status: "open", limit: "20" });
+  const found = await fetchImpl(`${GHL_BASE}/opportunities/search?${params}`, { headers });
+  if (!found.ok) throw new Error(`GHL opportunity search returned ${found.status}`);
+  const list = (await found.json().catch(() => ({})))?.opportunities || [];
+  const open = list.find((o) => o && o.pipelineId === SM_PIPELINE_ID && o.status === "open");
+  if (open) return { skipped: "open_exists", id: open.id };
+  const res = await fetchImpl(`${GHL_BASE}/opportunities/`, {
+    method: "POST", headers,
+    body: JSON.stringify({ pipelineId: SM_PIPELINE_ID, pipelineStageId: SM_NEW_LEAD_STAGE_ID, locationId: SM_GHL_LOCATION_ID, contactId, name: brochureOppName(name, email), status: "open", monetaryValue: 0, source: "Website brochure" }),
+  });
+  if (!res.ok) throw new Error(`GHL opportunity create returned ${res.status}`);
+  const body = await res.json().catch(() => ({}));
+  return { created: true, id: body.opportunity?.id || body.id || null };
+}
+
 export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = fetch) {
   const token = env.SM_GHL_PIT_CALL_TRANSCRIPTS;
   if (!token) { console.error(JSON.stringify({ message: "sm_ghl_token_missing" })); return null; }
@@ -158,6 +194,13 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download"] }) }).catch(() => null);
   const note = await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/notes`, { method: "POST", headers, body: JSON.stringify({ body: brochureNote(new Date(), meta) }) });
   if (!note.ok) console.error(JSON.stringify({ message: "sm_ghl_note_failed", status: note.status }));
+  // Fail soft: an opportunity error is logged and never affects the email or contact.
+  try {
+    const opp = await createBrochureOpportunity(env, { contactId: id, name: contactDisplayName(body.contact), email }, fetchImpl);
+    console.log(JSON.stringify({ message: "sm_ghl_brochure_opp", ...opp }));
+  } catch (e) {
+    console.error(JSON.stringify({ message: "sm_ghl_brochure_opp_failed", error: String(e?.message || e) }));
+  }
   return id;
 }
 

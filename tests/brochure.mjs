@@ -15,9 +15,9 @@ vm.runInNewContext(readFileSync("site-config.js", "utf8"), ctx);
 const cfg = ctx.window.SM_SITE_CONFIG;
 for (const k of ["brochurePdfUrl", "brochureThumbUrl"]) {
   assert.match(cfg[k], /^\/assets\//, `${k} lives under /assets/`);
-  assert.ok(existsSync("." + cfg[k]), `${cfg[k]} exists`);
+  assert.ok(existsSync("." + cfg[k].split("?")[0]), `${cfg[k]} exists`);
 }
-const meta = pdfMeta("." + cfg.brochurePdfUrl);
+const meta = pdfMeta("." + cfg.brochurePdfUrl.split("?")[0]);
 assert.equal(cfg.brochurePages, meta.pages, "brochurePages must match the PDF (run node scripts/brochure-meta.mjs)");
 assert.equal(cfg.brochureBytes, meta.bytes, "brochureBytes must match the PDF (run node scripts/brochure-meta.mjs)");
 assert.ok(meta.bytes < 3 * 1024 * 1024, "brochure stays under 3 MB");
@@ -128,7 +128,11 @@ assert.equal(ghl.body.email, "jane@example.com");
 assert.ok(ghl.body.tags.includes("brochure-download"));
 const note = calls.find((c) => c.url.endsWith("/contacts/c1/notes"));
 assert.match(note.body.body, /^Downloaded brochure on \d{4}-\d{2}-\d{2} via website/);
-assert.ok(!calls.some((c) => c.url.includes("/opportunities")), "no opportunities");
+const oppCreate = calls.find((c) => c.url.endsWith("/opportunities/"));
+assert.ok(oppCreate, "brochure email opens a New Lead opportunity");
+assert.equal(oppCreate.body.pipelineId, "ty7z50OQyVGXMS1NARrK");
+assert.equal(oppCreate.body.name, "Brochure – jane@example.com");
+assert.equal(oppCreate.auth, "Bearer test-sm-pit", "SM PIT only");
 assert.match(mail.body.html, /sm-logo\.png/);
 assert.match(mail.body.html, /RQMF Registered · No\. 2263/);
 assert.ok(!/namm/i.test(mail.body.html));
