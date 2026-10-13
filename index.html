@@ -1542,14 +1542,34 @@
             const nextBtn = document.getElementById('installNext');
             if (!track || !marquee) return;
 
+            // Resized product images via Supabase image transforms (originals untouched).
+            // Falls back to the original file if the render URL fails.
+            function smRender(url, w) {
+                return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70&resize=contain';
+            }
+            function smIsBucketImg(url) { return /\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(String(url || '')); }
+            function smImgAttrs(url, sizes, escFn) {
+                var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
+                if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
+                return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+                        + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
+            }
+            function smSetImg(img, url, sizes) {
+                if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
+                img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
+                img.sizes = sizes;
+                img.srcset = [400, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+                img.src = smRender(url, 800);
+            }
             const SUPA_PUB = 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/';
             const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
             const pin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+            const imgAttrs = image => image.startsWith('/') ? 'src="' + esc(image) + '"' : smImgAttrs(SUPA_PUB + encodeURIComponent(image), '320px', esc);
             const resolveSrc = image => image.startsWith('/') ? image : (SUPA_PUB + encodeURIComponent(image));
             const card = ({ image, customer, cemetery }) =>
                 '<article class="install-card" aria-roledescription="slide">'
                 +   '<div class="install-image">'
-                +     '<img src="' + resolveSrc(image) + '" alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
+                +     '<img ' + imgAttrs(image) + ' alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
                 +   '</div>'
                 +   '<div class="install-info">'
                 +     '<p class="install-customer">' + esc(customer) + '</p>'

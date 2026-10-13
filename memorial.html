@@ -1712,7 +1712,7 @@
             }
 
             if (images.length > 0) {
-                mainImg.src = images[0];
+                smSetImg(mainImg, images[0], '(max-width: 768px) 100vw, 50vw');
                 mainImg.alt = product.name;
             }
 
@@ -1729,7 +1729,7 @@
                 var thumbsHTML = '';
                 images.forEach(function(url, i) {
                     thumbsHTML += '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '" data-url="' + esc(url) + '">'
-                        + '<img src="' + esc(url) + '" alt="View ' + (i + 1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
+                        + '<img ' + smImgAttrs(url, '120px', esc) + ' alt="View ' + (i + 1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;">'
                         + '</div>';
                 });
                 thumbsContainer.innerHTML = thumbsHTML;
@@ -1739,8 +1739,28 @@
             }
         }
 
+        // Resized product images via Supabase image transforms (originals untouched).
+        // Falls back to the original file if the render URL fails.
+        function smRender(url, w) {
+            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70&resize=contain';
+        }
+        function smIsBucketImg(url) { return /\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(String(url || '')); }
+        function smImgAttrs(url, sizes, escFn) {
+            var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
+            if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
+            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+                + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
+        }
+        function smSetImg(img, url, sizes) {
+            if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
+            img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
+            img.sizes = sizes;
+            img.srcset = [400, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+            img.src = smRender(url, 800);
+        }
+
         function switchGalleryImage(url, thumb) {
-            document.getElementById('galleryMainImg').src = url;
+            smSetImg(document.getElementById('galleryMainImg'), url, '(max-width: 768px) 100vw, 50vw');
             document.querySelectorAll('.gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
             thumb.classList.add('active');
         }
