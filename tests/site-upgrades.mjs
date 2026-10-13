@@ -83,3 +83,15 @@ assert.equal(up.fabAllowed("/brochure.html"), false);
 assert.match(up.fabHtml(), /aria-label="View our brochure"/);
 assert.match(up.fabHtml(), /href="\/brochure\?utm_source=website/);
 console.log("fab: ok");
+
+// Call tracking: Google's forwarding-number swap only matches "020 3835 2548",
+// so every visible/clickable number on the site uses that format.
+import { execSync } from "node:child_process";
+for (const f of execSync("git ls-files '*.html'").toString().split("\n").filter(Boolean)) {
+  const html = readFileSync(f, "utf8");
+  assert.doesNotMatch(html, /\+44 20 3835 2548/, `${f}: use 020 3835 2548`);
+  for (const m of html.matchAll(/<a[^>]*href="tel:[^"]+"[^>]*>([\s\S]*?)<\/a>/g)) {
+    assert.match(m[1].replace(/<[^>]+>/g, ""), /020 3835 2548/, `${f}: tel link without visible number`);
+  }
+}
+console.log("call-tracking numbers: ok");
