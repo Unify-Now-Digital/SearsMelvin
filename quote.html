@@ -839,7 +839,8 @@
 
             addonItems.forEach(function(item) {
                 var p = parseFloat(item.price);
-                html += '<div class="quote-line-item"><span>' + esc(item.name) + '</span><span>' + (p > 0 ? '+' + formatPrice(p) : '—') + '</span></div>';
+                var isVase = String(item.name || '').toLowerCase().indexOf('vase') !== -1;
+                html += '<div class="quote-line-item"><span>' + esc(item.name) + '</span><span>' + (isVase ? 'Included' : (p > 0 ? '+' + formatPrice(p) : '—')) + '</span></div>';
             });
 
             if (permitFee > 0) {
@@ -945,7 +946,7 @@
                     + '<span class="quote-addon-check">' + (isSelected ? '&#10003;' : '') + '</span>'
                     + '<div class="quote-addon-info"><div class="quote-addon-name">' + esc(addon.name) + '</div>'
                     + '<div style="font-size:0.8rem;color:var(--color-text-muted);">' + esc(addon.desc) + '</div></div>'
-                    + '<span class="quote-addon-price">' + (addon.price > 0 ? '+£' + addon.price : 'Variable') + '</span>'
+                    + '<span class="quote-addon-price">' + (addon.name === 'Flower Vase' ? 'Included in guide total' : (addon.price > 0 ? '+£' + addon.price : 'Variable')) + '</span>'
                     + '</div>';
             });
             html += '</div>';
