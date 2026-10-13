@@ -155,3 +155,31 @@ body:has(.search-overlay.active) .sm-brochure-fab { display: none; }
 }
 @media print { .sm-brochure-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .sm-brochure-fab { transition: none; } }
+/* Readability tokens (round 1). New variables only: defining them changes no
+   existing page; only rules that opt in below use them. */
+:root {
+  --sm-text-body: 1.0625rem;          /* 17px mobile */
+  --sm-text-small: 1rem;              /* 16px: captions, cards, step text */
+  --sm-text-kicker: 0.8125rem;        /* 13px uppercase labels */
+  --sm-leading-body: 1.65;
+  --sm-measure: 68ch;
+  --sm-text-muted-aa: #555049;        /* ~7:1 on cream */
+}
+@media (min-width: 769px) {
+  :root { --sm-text-body: 1.125rem; --sm-text-small: 1.0625rem; --sm-text-kicker: 0.875rem; } /* 18px / 17px / 14px */
+}
+
+/* /about: apply readability tokens */
+.about-page { max-width: 800px; }
+.about-page p,
+.about-page ul li { font-size: var(--sm-text-body); line-height: var(--sm-leading-body); max-width: var(--sm-measure); }
+.about-page .about-lead { font-size: clamp(1.35rem, 2.6vw, 1.7rem); line-height: 1.45; max-width: none; }
+.about-page .about-kicker,
+.about-hero .about-eyebrow { font-size: var(--sm-text-kicker); letter-spacing: 0.14em; }
+.about-hero p:not(.about-eyebrow) { font-size: var(--sm-text-body); line-height: var(--sm-leading-body); }
+.about-steps li { font-size: var(--sm-text-small); line-height: 1.55; color: var(--sm-text-muted-aa); }
+.about-steps strong { font-size: 1.2rem; }
+.about-page .about-facts li { font-size: var(--sm-text-small); line-height: 1.55; }
+.about-page .sm-btn { font-size: 0.9375rem; }
+.about-page .sm-brochure-cta, .about-page .sm-brochure-cta * { font-size: var(--sm-text-small); }
+@media (max-width: 900px) and (min-width: 769px) { .about-steps { grid-template-columns: repeat(2, minmax(0,1fr)); } }
