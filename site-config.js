@@ -7,14 +7,14 @@
  */
 (function () {
     window.SM_SITE_CONFIG = {
-        // Brochure v5 (generated from the live SM catalogue, Oct 2026).
+        // Brochure v7 (generated from the live SM catalogue, Oct 2026).
         // brochurePages / brochureBytes must match the real file: tests/brochure.mjs
-        // checks them against assets/sears-melvin-brochure.pdf. After swapping the
+        // checks them against assets/sears-melvin-brochure.pdf (query string stripped). After swapping the
         // PDF run `node scripts/brochure-meta.mjs` and copy the numbers here.
-        brochurePdfUrl: '/assets/sears-melvin-brochure.pdf',
-        brochureThumbUrl: '/assets/sears-melvin-brochure-cover.jpg',
+        brochurePdfUrl: '/assets/sears-melvin-brochure.pdf?v=7',
+        brochureThumbUrl: '/assets/sears-melvin-brochure-cover.jpg?v=7',
         brochurePages: 21,
-        brochureBytes: 2357623,
+        brochureBytes: 2441430,
 
         // Google tracking. The site loads GTM (GTM-KRDX4BQ5) only; no GA4
         // measurement ID or Google Ads tag is present in this repo. Every
