@@ -154,6 +154,10 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
       }),
     });
     if (!res.ok) throw new Error(`create_quote RPC returned ${res.status}`);
+    // create_quote doesn't know the attribution columns; stamp them on the
+    // enquiry it created. Best-effort: a failure here never loses the quote.
+    const rpcBody = await res.json().catch(() => null);
+    await saveEnquiryAttribution(env, rpcBody?.enquiry_id, data.attribution);
   } catch (err) {
     console.error(JSON.stringify({ message: "quote_save_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
@@ -163,6 +167,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   ctx.waitUntil(quoteSideEffects({
     env, name, email, phone, message, product, submittedAt,
     cemeteryOrLocation, firstName, stoneHex, cemetery, location,
+    attribution: data.attribution,
   }));
 
   return jsonResponse({ ok: true });
@@ -172,7 +177,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 // emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, cemetery, location,
+  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution,
 }) {
   const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
@@ -191,6 +196,7 @@ async function quoteSideEffects({
         product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
         product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
         product.image        ? { key: "product_image_url",  field_value: product.image } : null,
+        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "quote", product,
@@ -273,6 +279,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
       appointment_kind: data.appointment_kind || null,
       photo_urls,
       details: mergedDetails,
+      attribution: data.attribution,
     });
   } catch (err) {
     console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
@@ -409,6 +416,7 @@ async function handleAppointment(ctx, data, submittedAt) {
       message: notes || null,
       appointment_at: appointmentAtIso,
       appointment_kind: appointment_type || null,
+      attribution: data.attribution,
     });
   } catch (err) {
     console.error(JSON.stringify({ message: "appointment_insert_failed" }));
@@ -420,6 +428,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     env, name, email, phone, notes, submittedAt,
     appointment_type, appointment_date, appointment_time,
     typeLabel, dateFormatted, firstName,
+    attribution: data.attribution,
   }));
 
   return jsonResponse({ ok: true });
@@ -430,7 +439,7 @@ async function handleAppointment(ctx, data, submittedAt) {
 async function appointmentSideEffects({
   env, name, email, phone, notes, submittedAt,
   appointment_type, appointment_date, appointment_time,
-  typeLabel, dateFormatted, firstName,
+  typeLabel, dateFormatted, firstName, attribution,
 }) {
   let calendarLink = null;
   try {
@@ -458,6 +467,7 @@ async function appointmentSideEffects({
         appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
         appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
         notes            ? { key: "appointment_notes", field_value: notes } : null,
+        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "appointment", extraFields: ghlExtraFields,
@@ -1466,6 +1476,7 @@ async function createEnquiry(env, payload) {
     photo_urls: Array.isArray(payload.photo_urls) && payload.photo_urls.length > 0 ? payload.photo_urls : null,
     details: payload.details ?? null,
     order_id: null,
+    ...attributionColumns(payload.attribution),
   };
   const enqRes = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
@@ -1474,6 +1485,27 @@ async function createEnquiry(env, payload) {
   });
   if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
   return { personId: person.id };
+}
+
+// enquiries.gclid / gbraid / wbraid / utm_* (migration 2026-10-14). Only keys
+// that are present are sent, so the insert still works for empty attribution.
+export function attributionColumns(attribution) {
+  return cleanAttribution(attribution);
+}
+
+async function saveEnquiryAttribution(env, enquiryId, attribution) {
+  const cols = attributionColumns(attribution);
+  if (!enquiryId || !Object.keys(cols).length) return;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+      method: "PATCH",
+      headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+      body: JSON.stringify(cols),
+    });
+    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_attribution_save_failed", status: res.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "enquiry_attribution_save_failed" }));
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1496,11 +1528,12 @@ export function cleanAttribution(a) {
 }
 
 // Field IDs resolved by key (contact.<key>) at runtime, cached per isolate for 1h.
-let _ghlFieldCache = null;
-async function ghlContactFieldIds(env) {
-  if (_ghlFieldCache && Date.now() - _ghlFieldCache.at < 3600_000) return _ghlFieldCache.map;
-  const res = await fetch(`https://services.leadconnectorhq.com/locations/${env.GHL_LOCATION_ID}/customFields?model=contact`, {
-    headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28" },
+const _ghlFieldCache = new Map();
+async function ghlContactFieldIds(token, locationId, fetchImpl = fetch) {
+  const cached = _ghlFieldCache.get(locationId);
+  if (cached && Date.now() - cached.at < 3600_000) return cached.map;
+  const res = await fetchImpl(`https://services.leadconnectorhq.com/locations/${locationId}/customFields?model=contact`, {
+    headers: { "Authorization": `Bearer ${token}`, "Version": "2021-07-28" },
   });
   if (!res.ok) throw new Error(`GHL customFields ${res.status}`);
   const body = await res.json();
@@ -1513,16 +1546,21 @@ async function ghlContactFieldIds(env) {
     const bare = k.replace(/^contact_?/, "");
     if (ATTRIBUTION_KEYS.includes(bare) && !map[bare]) map[bare] = f.id;
   }
-  _ghlFieldCache = { at: Date.now(), map };
+  _ghlFieldCache.set(locationId, { at: Date.now(), map });
   return map;
 }
 
-export async function attributionCustomFields(env, attribution) {
+// GHL contact customFields for the attribution. Defaults to the submit.js
+// GHL credentials; the brochure endpoint passes its own SM PIT + location.
+export async function attributionCustomFields(env, attribution, { token, locationId, fetchImpl } = {}) {
   const a = cleanAttribution(attribution);
   const keys = Object.keys(a);
   if (!keys.length) return [];
+  token = token || env.GHL_API_KEY;
+  locationId = locationId || env.GHL_LOCATION_ID;
+  if (!token || !locationId) return [];
   let ids = {};
-  try { ids = await ghlContactFieldIds(env); }
+  try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); }
   catch (e) { console.error(JSON.stringify({ message: "ghl_field_lookup_failed", error: String(e?.message || e) })); return []; }
   const missing = keys.filter((k) => !ids[k]);
   if (missing.length) console.warn(JSON.stringify({ message: "ghl_attribution_fields_missing", missing }));
@@ -1654,6 +1692,8 @@ function validateSubmission(input, organizationId) {
   )) {
     return { ok: false, error: "Invalid product configuration" };
   }
+  // Ads click IDs + UTMs: silently cleaned (never a reason to reject a lead).
+  data.attribution = cleanAttribution(data.attribution);
   return { ok: true, data };
 }
 

@@ -258,3 +258,4 @@ html body main p { max-width: var(--sm-measure); }
 /* Cookie banner text (shown on first visit) */
 html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
 html body .floating-badge { background-color: var(--sm-accent-aa); }
+html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }

@@ -5,7 +5,7 @@
 //     Writes one row to public.brochure_downloads. Fails open: a missing table
 //     (migration not applied yet) or Supabase hiccup never breaks the download.
 //
-//   POST { action: "email", email, source, utm, page }
+//   POST { action: "email", email, source, utm, attribution, page }
 //     Emails the brochure link via Resend (same sender as quote emails), then
 //     (fail-soft, in the background) upserts the contact by email into SM GHL
 //     (location 7JJQ1fkS2z8zv5XIDV0P, secret SM_GHL_PIT_CALL_TRANSCRIPTS), tags it
@@ -22,6 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
+import { attributionCustomFields } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
@@ -182,9 +183,12 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   const token = env.SM_GHL_PIT_CALL_TRANSCRIPTS;
   if (!token) { console.error(JSON.stringify({ message: "sm_ghl_token_missing" })); return null; }
   const headers = { Authorization: `Bearer ${token}`, Version: "2021-07-28", "Content-Type": "application/json", Accept: "application/json" };
+  // gclid/gbraid/wbraid + utm_* into the SM contact attribution fields (only
+  // when the browser sent any, so a plain request makes no extra GHL call).
+  const customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
   const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
     method: "POST", headers,
-    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download"] }),
+    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download"], ...(customFields.length ? { customFields } : {}) }),
   });
   if (!res.ok) throw new Error(`GHL upsert returned ${res.status}`);
   const body = await res.json().catch(() => ({}));
@@ -261,7 +265,7 @@ export async function onRequestPost(context) {
       return hardenedJson({ ok: false, error: "Sorry, we couldn’t send that just now. Please use Just download." }, 502);
     }
     // Fail soft: runs after the email is accepted, errors are only logged.
-    bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email, { source: data.source, page: data.page, utm: data.utm }));
+    bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email, { source: data.source, page: data.page, utm: data.utm, attribution: data.attribution }));
     bg(context, "brochure_download_log", () => logDownload(env, downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page })));
     return hardenedJson({ ok: true });
   }

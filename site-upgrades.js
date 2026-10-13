@@ -133,11 +133,15 @@
         return out;
     }
 
-    // Merge fresh params into the stored record. A new ad click (any click ID)
-    // or new UTM set replaces the old attribution wholesale; expired records drop.
+    // Merge fresh params into the stored record. First touch wins for 90 days:
+    // a later visit with only UTMs (or nothing) keeps the stored record. A new
+    // ad click (any click ID) replaces it wholesale and restarts the 90 days.
+    // Expired records drop.
     function mergeAttribution(stored, fresh, now) {
         var valid = stored && typeof stored === 'object' && typeof stored.ts === 'number' && (now - stored.ts) < ATTR_TTL_MS;
-        if (!Object.keys(fresh).length) return valid ? stored : null;
+        var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
+        if (valid && !hasClick) return stored;
+        if (!Object.keys(fresh).length) return null;
         var rec = { ts: now };
         ATTR_KEYS.forEach(function (k) { if (fresh[k]) rec[k] = fresh[k]; });
         return rec;
@@ -278,7 +282,7 @@
                 if (btn) btn.disabled = true;
                 if (status) status.textContent = 'Sending…';
                 fetch('/api/brochure', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: sessionUtm(), page: location.pathname }) })
+                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: sessionUtm(), attribution: storedAttribution(), page: location.pathname }) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
                         if (res.ok) {

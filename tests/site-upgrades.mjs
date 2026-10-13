@@ -60,6 +60,19 @@ const rec = up.mergeAttribution(null, fa, t0);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS - 1), rec);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS), null);
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { gbraid: "x1" }, t0 + 5)), { gbraid: "x1" });
+// First touch kept: a later UTM-only (or bare) visit does not overwrite it.
+assert.equal(up.mergeAttribution(rec, { utm_source: "facebook" }, t0 + 10), rec);
+// A new click ID refreshes the record and restarts the 90 days.
+const rec2 = up.mergeAttribution(rec, { wbraid: "w2", utm_source: "google" }, t0 + 20);
+assert.deepEqual(up.attributionFields(rec2), { wbraid: "w2", utm_source: "google" });
+assert.equal(rec2.ts, t0 + 20);
+// Expired first touch is replaced by any fresh UTMs.
+assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bing" }, t0 + up.ATTR_TTL_MS)), { utm_source: "bing" });
+// Every public form sends the stored attribution.
+for (const f of ["contact.html", "memorial.html", "memorials.html", "index.html"]) {
+  assert.match(readFileSync(f, "utf8"), /attribution: \(window\.SMUpgrades && window\.SMUpgrades\.getAttribution\)/, `${f} sends attribution`);
+}
+assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*attribution: storedAttribution\(\)/);
 
 // Floating brochure button
 assert.equal(up.fabAllowed("/"), true);
@@ -70,3 +83,15 @@ assert.equal(up.fabAllowed("/brochure.html"), false);
 assert.match(up.fabHtml(), /aria-label="View our brochure"/);
 assert.match(up.fabHtml(), /href="\/brochure\?utm_source=website/);
 console.log("fab: ok");
+
+// Call tracking: Google's forwarding-number swap only matches "020 3835 2548",
+// so every visible/clickable number on the site uses that format.
+import { execSync } from "node:child_process";
+for (const f of execSync("git ls-files '*.html'").toString().split("\n").filter(Boolean)) {
+  const html = readFileSync(f, "utf8");
+  assert.doesNotMatch(html, /\+44 20 3835 2548/, `${f}: use 020 3835 2548`);
+  for (const m of html.matchAll(/<a[^>]*href="tel:[^"]+"[^>]*>([\s\S]*?)<\/a>/g)) {
+    assert.match(m[1].replace(/<[^>]+>/g, ""), /020 3835 2548/, `${f}: tel link without visible number`);
+  }
+}
+console.log("call-tracking numbers: ok");
