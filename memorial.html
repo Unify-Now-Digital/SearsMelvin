@@ -727,7 +727,7 @@
             Sears Melvin <span>Memorials</span>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
-            <a class="accred-link" href="https://rqmf.org.uk" target="_blank" rel="noopener" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</a>
+            <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
         </div>
         <ul class="nav-links">
             <li>
@@ -1642,6 +1642,9 @@
         }
 
         function renderAddons(addons) {
+            // The flower vase is no longer offered. Hide it even while its
+            // catalogue row is still active.
+            addons = (addons || []).filter(function(a) { return a.slug !== 'flower-vase'; });
             const container = document.getElementById('addonsGrid');
             let html = '';
             // Photo Plaque addon (special handling)

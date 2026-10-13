@@ -85,11 +85,12 @@ const payload = await response.json();
 
 assert.equal(response.status, 200);
 assert.equal(payload.ok, true);
-assert.equal(payload.value, 1535);
-assert.equal(payload.product.price, 1535);
-assert.equal(orderPatch.value, 1535);
-assert.equal(JSON.parse(orderPatch.product_config).price, 1535);
-assert.deepEqual(JSON.parse(orderPatch.product_config).addonLineItems, [{ name: "Flower Vase", price: 85 }]);
+// An old quote that still lists the retired flower vase re-prices without it.
+assert.equal(payload.value, 1450);
+assert.equal(payload.product.price, 1450);
+assert.equal(orderPatch.value, 1450);
+assert.equal(JSON.parse(orderPatch.product_config).price, 1450);
+assert.deepEqual(JSON.parse(orderPatch.product_config).addonLineItems, []);
 
 globalThis.fetch = originalFetch;
 console.log("quote edit pricing test passed");
