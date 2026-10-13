@@ -107,7 +107,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
   if (sizeAdjustment) lineItems.push({ name: `${size.size_name || "Selected"} size adjustment`, price: sizeAdjustment });
 
   const colourPrice = colour.is_premium ? premiumColourSurcharge(categorySlug) : 0;
-  if (colourPrice) lineItems.push({ name: `Premium stone — ${colour.name}`, price: colourPrice });
+  if (colourPrice) lineItems.push({ name: `Additional stone colour — ${colour.name}`, price: colourPrice });
 
   const requestedSlugs = requestedAddonSlugs(rawProduct);
   const specialSlugs = new Set(["photo-plaque", "garden-kerb", "garden-kerb-surround"]);

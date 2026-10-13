@@ -122,7 +122,7 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.equal(product.price, 1950);
   assert.deepEqual(product.addonLineItems, [
     { name: "Large size adjustment", price: 300 },
-    { name: "Premium stone — Black Galaxy", price: 200 },
+    { name: "Additional stone colour — Black Galaxy", price: 200 },
   ]);
 }
 
