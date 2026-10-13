@@ -1126,18 +1126,12 @@
                     // GTM: fire lead tags on confirmed submit, not on success-box visibility
                     // (the box renders above the viewport, so the visibility trigger missed real leads).
                     try {
-                        var ecPhone = (phone || '').replace(/[^\d+]/g, '');
-                        if (/^0\d{9,10}$/.test(ecPhone)) ecPhone = '+44' + ecPhone.slice(1);
-                        else if (/^44\d{9,10}$/.test(ecPhone)) ecPhone = '+' + ecPhone;
-                        var ud = {};
-                        if (email) ud.email = String(email).trim().toLowerCase();
-                        if (/^\+\d{10,15}$/.test(ecPhone)) ud.phone_number = ecPhone;
                         window.dataLayer = window.dataLayer || [];
                         window.dataLayer.push({
                             event: 'sm_lead_submit',
                             form_id: 'contactForm',
-                            enquiry_type: enquiryType || null,
-                            user_data: ud
+                            enquiry_type: enquiryType || null
+                            // No PII in dataLayer: GTM's EC variables read the (consent-gated) form fields.
                         });
                     } catch (e) { /* tracking must never break the form */ }
                     document.getElementById('formSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
