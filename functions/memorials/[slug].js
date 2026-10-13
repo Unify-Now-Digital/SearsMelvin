@@ -70,7 +70,7 @@ function buildSchema(product, canonicalUrl) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    description: product.description || "Hand-finished memorial with 30-year guarantee.",
+    description: product.description || "Hand-finished memorial with a 30-year fixing guarantee.",
     image: productImage,
     sku: product.slug || String(product.id || ""),
     category: catName,
@@ -126,7 +126,7 @@ export async function onRequestGet({ request, env, params }) {
   const canonicalUrl = `${BASE}/memorials/${encodeURIComponent(product.slug)}`;
   const title = `${product.name} | Sears Melvin Memorials`;
   const desc = clip(product.description, 200) ||
-    "Hand-finished memorial with 30-year guarantee. Configure your memorial online.";
+    "Hand-finished memorial with a 30-year fixing guarantee. Configure your memorial online.";
   const imageUrl = product.image_url || FALLBACK_IMAGE;
 
   const { productLd, breadcrumbLd } = buildSchema(product, canonicalUrl);
