@@ -20,7 +20,6 @@ const STATIC_PAGES = [
   { path: "/brochure",        priority: "0.6",  changefreq: "monthly" },
   { path: "/care-guide",      priority: "0.6",  changefreq: "monthly" },
   { path: "/faq",             priority: "0.6",  changefreq: "monthly" },
-  { path: "/permit-checker",  priority: "0.5",  changefreq: "monthly" },
   { path: "/resources",       priority: "0.6",  changefreq: "monthly" },
   { path: "/areas/barnet",    priority: "0.8",  changefreq: "monthly" },
   { path: "/areas/brent",     priority: "0.8",  changefreq: "monthly" },

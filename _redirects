@@ -19,3 +19,8 @@
 /partner           https://partner.searsmelvin.co.uk/  301
 /partner/          https://partner.searsmelvin.co.uk/  301
 /partner/*         https://partner.searsmelvin.co.uk/  301
+
+# Permit checker retired (Oct 2026). Static file removed so these rules apply.
+/permit-checker        /memorials  301
+/permit-checker.html   /memorials  301
+/permit-checker/       /memorials  301

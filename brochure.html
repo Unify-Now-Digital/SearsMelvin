@@ -465,7 +465,6 @@
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
                         <a href="/contact" class="search-quick-link">Get a Quote</a>
-                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
                 </div>
             </div>
@@ -482,11 +481,11 @@
             <!-- PDF path, cover, page count and size come from /site-config.js (brochure*). -->
             <div data-brochure-ready>
                 <div class="sm-brochure-hero">
-                    <div class="sm-brochure-cover" data-brochure-meta><img class="sm-brochure-thumb" src="/assets/sears-melvin-brochure-cover.jpg" alt="Sears Melvin brochure cover" width="72" height="102"><span class="sm-brochure-meta">PDF · 21 pages · 2.2 MB</span></div>
+                    <div class="sm-brochure-cover" data-brochure-meta><img class="sm-brochure-thumb" src="/assets/sears-melvin-brochure-cover.jpg?v=7" alt="Sears Melvin brochure cover" width="72" height="102"><span class="sm-brochure-meta">PDF · 21 pages · 2.3 MB</span></div>
                     <div>
                         <p>Our memorial designs with guide prices, what’s included and how ordering works — to read at your own pace. Every design links back to its page on our website.</p>
                         <div class="sm-cta-row">
-                            <a href="/assets/sears-melvin-brochure.pdf" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
+                            <a href="/assets/sears-melvin-brochure.pdf?v=7" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
                             <a href="/contact" class="sm-btn sm-btn-secondary">Request a quote</a>
                         </div>
                     </div>
@@ -655,7 +654,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
         }
 
         function handleSearch(query) {

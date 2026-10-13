@@ -742,7 +742,6 @@
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
                         <a href="/contact" class="search-quick-link">Get a Quote</a>
-                        <a href="/permit-checker" class="search-quick-link">Permit Info</a>
                     </div>
                 </div>
             </div>
@@ -1123,6 +1122,18 @@
                 if (result.ok) {
                     document.getElementById('contactForm').style.display = 'none';
                     document.getElementById('formSuccess').classList.add('active');
+                    // GTM: fire lead tags on confirmed submit, not on success-box visibility
+                    // (the box renders above the viewport, so the visibility trigger missed real leads).
+                    try {
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({
+                            event: 'sm_lead_submit',
+                            form_id: 'contactForm',
+                            enquiry_type: enquiryType || null
+                            // No PII in dataLayer: GTM's EC variables read the (consent-gated) form fields.
+                        });
+                    } catch (e) { /* tracking must never break the form */ }
+                    document.getElementById('formSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
                     throw new Error(result.error || 'Submission failed');
                 }
@@ -1229,7 +1240,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a><a href="/permit-checker" class="search-quick-link">Permit Info</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
         }
 
         function handleSearch(query) {
