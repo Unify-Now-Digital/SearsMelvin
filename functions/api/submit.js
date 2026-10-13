@@ -291,6 +291,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     appointment_time: data.appointment_time || null,
     appointment_at_iso: data.appointment_at || null,
     appointment_kind: data.appointment_kind || null,
+    attribution: data.attribution || null,
   }));
 
   return jsonResponse({ ok: true });
@@ -302,7 +303,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
-  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind,
+  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution,
 }) {
   await Promise.allSettled([
     bg("enquiry business email", async () => {
@@ -358,6 +359,7 @@ async function enquirySideEffects({
       const ghlExtraFields = [
         message      ? { key: "customer_message",  field_value: message } : null,
         enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
+        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "enquiry",
@@ -1477,6 +1479,56 @@ async function createEnquiry(env, payload) {
 // ═══════════════════════════════════════════════════════════════════
 // GOHIGHLEVEL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
+// ── Ads attribution → GHL contact custom fields ─────────────────────
+export const ATTRIBUTION_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+
+export function cleanAttribution(a) {
+  const out = {};
+  if (!a || typeof a !== "object" || Array.isArray(a)) return out;
+  for (const k of ATTRIBUTION_KEYS) {
+    if (typeof a[k] !== "string") continue;
+    const v = a[k].trim().slice(0, k.startsWith("utm_") ? 100 : 200);
+    if (!v) continue;
+    if (!k.startsWith("utm_") && !/^[\w\-.~]+$/.test(v)) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+// Field IDs resolved by key (contact.<key>) at runtime, cached per isolate for 1h.
+let _ghlFieldCache = null;
+async function ghlContactFieldIds(env) {
+  if (_ghlFieldCache && Date.now() - _ghlFieldCache.at < 3600_000) return _ghlFieldCache.map;
+  const res = await fetch(`https://services.leadconnectorhq.com/locations/${env.GHL_LOCATION_ID}/customFields?model=contact`, {
+    headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28" },
+  });
+  if (!res.ok) throw new Error(`GHL customFields ${res.status}`);
+  const body = await res.json();
+  const map = {};
+  for (const f of body.customFields || []) {
+    if (!f?.fieldKey || !f?.id) continue;
+    // GHL re-prefixes keys on create, so the SM fields are contact.contactgclid etc.
+    const k = String(f.fieldKey).replace(/^contact\./, "");
+    map[k] = f.id;
+    const bare = k.replace(/^contact_?/, "");
+    if (ATTRIBUTION_KEYS.includes(bare) && !map[bare]) map[bare] = f.id;
+  }
+  _ghlFieldCache = { at: Date.now(), map };
+  return map;
+}
+
+export async function attributionCustomFields(env, attribution) {
+  const a = cleanAttribution(attribution);
+  const keys = Object.keys(a);
+  if (!keys.length) return [];
+  let ids = {};
+  try { ids = await ghlContactFieldIds(env); }
+  catch (e) { console.error(JSON.stringify({ message: "ghl_field_lookup_failed", error: String(e?.message || e) })); return []; }
+  const missing = keys.filter((k) => !ids[k]);
+  if (missing.length) console.warn(JSON.stringify({ message: "ghl_attribution_fields_missing", missing }));
+  return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
+}
+
 async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");

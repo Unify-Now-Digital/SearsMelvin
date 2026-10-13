@@ -47,7 +47,7 @@ export function decideWebsiteOpportunityAction(opportunities) {
  * Every opportunity on this contact, across all statuses. Returns null on any
  * error so the caller can fail open.
  */
-export async function findContactOpportunities(env, contactId) {
+export async function findContactOpportunities(env, contactId, pipelineId) {
   const out = [];
   let startAfter, startAfterId;
   try {
@@ -58,6 +58,8 @@ export async function findContactOpportunities(env, contactId) {
         status: "all",
         limit: "100",
       });
+      // Pipeline-scoped (from #164): only SM-pipeline cards count.
+      if (pipelineId) params.set("pipeline_id", pipelineId);
       if (startAfter != null) params.set("startAfter", String(startAfter));
       if (startAfterId) params.set("startAfterId", startAfterId);
       const res = await fetch(`${GHL_BASE}/opportunities/search?${params}`, {
@@ -134,7 +136,7 @@ export async function upsertWebsiteOpportunity(env, {
     "Content-Type": "application/json",
   };
 
-  const decision = decideWebsiteOpportunityAction(await findContactOpportunities(env, contactId));
+  const decision = decideWebsiteOpportunityAction(await findContactOpportunities(env, contactId, pipelineId));
 
   if (decision.action === "returning-customer") {
     await flagReturningCustomer(env, contactId, {
@@ -146,16 +148,20 @@ export async function upsertWebsiteOpportunity(env, {
   }
 
   if (decision.action === "update") {
+    // From #164: never overwrite a known value with £0 (enquiry/appointment
+    // submissions send 0), and never touch status: the card is already open by
+    // lookup, and forcing "open" could reopen a card won/lost in the meantime.
+    const update = {
+      pipelineId,
+      pipelineStageId: decision.existing.pipelineStageId || defaultStageId,
+      name,
+    };
+    const value = Number(monetaryValue);
+    if (Number.isFinite(value) && value > 0) update.monetaryValue = value;
     const res = await fetch(`${GHL_BASE}/opportunities/${decision.existing.id}`, {
       method: "PUT",
       headers,
-      body: JSON.stringify({
-        pipelineId,
-        pipelineStageId: decision.existing.pipelineStageId || defaultStageId,
-        name,
-        monetaryValue: monetaryValue || 0,
-        status: "open",
-      }),
+      body: JSON.stringify(update),
     });
     if (!res.ok) throw new Error(`GHL Opportunity update returned ${res.status}`);
     return decision;

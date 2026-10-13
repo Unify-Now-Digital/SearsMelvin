@@ -117,7 +117,7 @@
         }
 
         /* Navigation */
-        nav { position: fixed; top: 36px; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -333,6 +333,8 @@
       ]
     }
     </script>
+    <link rel="stylesheet" href="/site-upgrades.css?v=fab1">
+    <link rel="stylesheet" href="/accreditations.css">
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
@@ -358,6 +360,8 @@
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/brochure" class="nav-brochure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Brochure</a></li>
             <li><a href="/contact" class="nav-cta">Get a Quote</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
@@ -370,6 +374,8 @@
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/about" onclick="toggleMobileMenu()">About</a>
+        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
         <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
     </div>
 
@@ -406,8 +412,7 @@
         <p>Cemetery-specific advice for Haringey families, with permits handled end-to-end</p>
         <div class="page-header-accred" style="margin-top:1.25rem;display:inline-flex;align-items:center;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-size:0.75rem;color:var(--color-text-muted);">
             <span style="text-transform:uppercase;letter-spacing:0.12em;font-size:0.65rem;">Accredited memorial mason</span>
-            <span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;border:1px solid var(--color-border);border-radius:3px;letter-spacing:0.04em;background:rgba(255,255,255,0.6);"><strong style="font-weight:600;color:var(--color-stone);">NAMM</strong> Member</span>
-            <span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;border:1px solid var(--color-border);border-radius:3px;letter-spacing:0.04em;background:rgba(255,255,255,0.6);"><strong style="font-weight:600;color:var(--color-stone);">RQMF</strong> Registered</span>
+            <a class="accred-link" href="https://rqmf.org.uk" target="_blank" rel="noopener" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</a><span class="accred-note">Fixers qualified to the NAMM-run RQMF standard</span>
         </div>
         </header>
     <main class="content">
@@ -468,6 +473,7 @@
             </div>
             <ul class="footer-links">
                 <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/contact">Contact</a></li>
@@ -477,7 +483,7 @@
                 <li><a href="/privacy">Privacy</a></li>
             </ul>
             <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);"><span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;">Accredited</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">NAMM</strong> Member</span><span class="accred-badge" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.85rem;border:1px solid rgba(255,255,255,0.2);border-radius:3px;font-size:0.75rem;letter-spacing:0.04em;color:rgba(255,255,255,0.75);"><strong style="font-weight:600;color:#fff;">RQMF</strong> Registered</span></div>
+            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><a class="accred-logo accred-logo--footer" href="https://rqmf.org.uk" target="_blank" rel="noopener" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></a><span class="accred-note">Fixers qualified to the NAMM-run RQMF standard</span></div>
             <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
         </div>
     </footer>
@@ -676,5 +682,7 @@ function declineCookies() {
     </script>
 
     <script src="/site-globals.js" defer></script>
+    <script src="/site-config.js" defer></script>
+    <script src="/site-upgrades.js?v=fab1" defer></script>
 </body>
 </html>
