@@ -120,6 +120,7 @@ console.log("chat + internal utm: ok");
   const push = q.slice(0, q.indexOf("quoteForm').style.display = 'none'"));
   assert.match(push, /event: 'sm_quote_submit'/, "quote pushes sm_quote_submit before hiding the form");
   assert.doesNotMatch(push.replace(/form_id: 'quoteForm'/, ""), /email|phone|name\b/i, "no PII in quote push");
-  assert.match(q, /quoteSuccessMsg'\)\.scrollIntoView/);
+  assert.match(q, /qBox\.scrollTop \+=/, "quote success scrolled inside the modal only");
+  assert.doesNotMatch(q.slice(0, q.indexOf("} else {")), /scrollIntoView/, "no page-level scrollIntoView");
 }
 console.log("lead/quote events: ok");
