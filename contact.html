@@ -53,6 +53,7 @@
     <script>
       (function(){
         var loaded = false;
+        // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
         // Chat submission -> dataLayer, once per submission, no PII. The widget
         // is a shadow-DOM web component whose beforeSubmit hook runs on this
         // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
@@ -1148,6 +1149,7 @@
                 const result = await res.json();
 
                 if (result.ok) {
+                    // Tracking contract: docs/TRACKING.md (sm_lead_submit).
                     // GTM: fire lead tags on the confirmed submit response, FIRST (before the
                     // form is hidden/reset), not on success-box visibility. GA4 generate_lead
                     // and Ads generate_lead both trigger on sm_lead_submit.

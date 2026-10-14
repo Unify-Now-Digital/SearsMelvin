@@ -83,6 +83,7 @@
     var BROCHURE_SOURCES = ['header', 'home', 'product', 'listing', 'brochure_page'];
     var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
     // Google Ads click IDs, captured alongside UTMs for offline conversion import.
+    // Tracking contract: docs/TRACKING.md (click-ID capture, 90 days, first touch).
     var CLICK_KEYS = ['gclid', 'gbraid', 'wbraid'];
     var ATTR_KEYS = CLICK_KEYS.concat(UTM_KEYS);
     var ATTR_STORE = 'sm_attr';
@@ -163,6 +164,7 @@
     }
 
     // Everything one download sends. Pure so tests can pin it.
+    // Tracking contract: docs/TRACKING.md (brochure_download, attribution).
     function brochureEvents(cfg, source, emailGiven) {
         var src = normaliseSource(source);
         var events = [{ event: 'brochure_download', source: src, email_given: !!emailGiven }];

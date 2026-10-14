@@ -1,0 +1,283 @@
+{
+  "container": "GTM-KRDX4BQ5",
+  "version": "21",
+  "tags": [
+    {
+      "function": "__awcc",
+      "id": "K1otCIWr1JodEK-15Oo-",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__awct",
+      "id": "_M8_CK2IrYkcEK-15Oo-",
+      "value": "400",
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},sm_lead_submit)"
+      ]
+    },
+    {
+      "function": "__awct",
+      "id": "l5TiCLCIrYkcEK-15Oo-",
+      "value": "{{variable}}",
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},sm_quote_submit)"
+      ]
+    },
+    {
+      "function": "__awct",
+      "id": "MipOCNXwuLscEK-15Oo-",
+      "value": "200",
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},sm_chat_submit)"
+      ]
+    },
+    {
+      "function": "__awct",
+      "id": "okRkCPGTqJsdEK-15Oo-",
+      "value": "270",
+      "params": {},
+      "triggers": [
+        "if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_7($|,))))"
+      ]
+    },
+    {
+      "function": "__awud",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _cn({{__v:gtm.elementClasses}},shortlist-btn-) && _eq({{__e}},gtm.click)",
+        "if _eq({{__e}},gtm.elementVisibility) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_15($|,))))",
+        "if _eq({{__e}},gtm.formSubmit) && _cn({{__u:PATH}},memorials) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_17($|,)))) ; unless _eq({{__v:gtm.elementId}},quoteForm)",
+        "if _eq({{__e}},sm_chat_submit)",
+        "if _eq({{__e}},sm_lead_submit)"
+      ]
+    },
+    {
+      "function": "__cl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__evl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__evl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__fsl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__fsl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "brochure_download",
+      "value": null,
+      "params": {
+        "source": "{{variable}}"
+      },
+      "triggers": [
+        "if _eq({{__e}},brochure_download)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "click_to_call",
+      "value": null,
+      "params": {
+        "value": "270",
+        "currency": "GBP"
+      },
+      "triggers": [
+        "if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_7($|,))))"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "click_to_email",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.linkClick) && _cn({{__v:gtm.elementUrl}},mailto:) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_9($|,))))"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "finder_start",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _cn({{__u:PATH}},finder) && _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "generate_lead",
+      "value": null,
+      "params": {
+        "form_name": "contact_enquiry",
+        "value": "400",
+        "currency": "GBP",
+        "transport_type": "beacon"
+      },
+      "triggers": [
+        "if _eq({{__e}},sm_lead_submit)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "generate_lead",
+      "value": null,
+      "params": {
+        "form_name": "shortlist",
+        "value": "400",
+        "currency": "GBP",
+        "transport_type": "beacon"
+      },
+      "triggers": [
+        "if _eq({{__e}},gtm.formSubmit) && _cn({{__u:PATH}},memorials) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_17($|,)))) ; unless _eq({{__v:gtm.elementId}},quoteForm)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "ghl_chat_submission",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},sm_chat_submit)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "request_quote",
+      "value": null,
+      "params": {
+        "value": "{{variable}}",
+        "currency": "GBP",
+        "transport_type": "beacon"
+      },
+      "triggers": [
+        "if _eq({{__e}},sm_quote_submit)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "share_shortlist",
+      "value": null,
+      "params": {
+        "method": "{{variable}}"
+      },
+      "triggers": [
+        "if _cn({{__v:gtm.elementClasses}},shortlist-btn-) && _eq({{__e}},gtm.click)"
+      ]
+    },
+    {
+      "function": "__gclidw",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__googtag",
+      "id": "AW-16866941615",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.init)"
+      ]
+    },
+    {
+      "function": "__googtag",
+      "id": "G-RF3LYJMFVE",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.init)"
+      ]
+    },
+    {
+      "function": "__html",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__lcl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__lcl",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    },
+    {
+      "function": "__paused",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _cn({{__u:PATH}},contact) && _eq({{__e}},gtm.formSubmit) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_11($|,))))"
+      ]
+    },
+    {
+      "function": "__paused",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
+      ]
+    }
+  ]
+}
