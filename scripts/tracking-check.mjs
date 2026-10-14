@@ -76,8 +76,11 @@ export function requiredTagProblems(snap) {
     if (trig && !ts.some((t) => t.triggers.some((s) => s.includes(trig)))) out.push(`GTM tag ${fn} ${id} no longer triggers on ${trig}`);
   }
   for (const ev of BEACON_EVENTS) {
-    if (!snap.tags.some((t) => t.function === "__gaawe" && t.id === ev && t.params?.transport_type === "beacon"))
-      out.push(`GA4 ${ev} tag lost transport_type=beacon`);
+    // Every GA4 tag for this event must use beacon (there are two generate_lead tags).
+    const evTags = snap.tags.filter((t) => t.function === "__gaawe" && t.id === ev);
+    if (!evTags.length) out.push(`GA4 ${ev} tag missing`);
+    evTags.filter((t) => t.params?.transport_type !== "beacon").forEach((t) =>
+      out.push(`GA4 ${ev} tag lost transport_type=beacon (triggers: ${t.triggers.join(" | ")})`));
   }
   return out;
 }
