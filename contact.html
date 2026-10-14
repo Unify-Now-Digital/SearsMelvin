@@ -1148,10 +1148,9 @@
                 const result = await res.json();
 
                 if (result.ok) {
-                    document.getElementById('contactForm').style.display = 'none';
-                    document.getElementById('formSuccess').classList.add('active');
-                    // GTM: fire lead tags on confirmed submit, not on success-box visibility
-                    // (the box renders above the viewport, so the visibility trigger missed real leads).
+                    // GTM: fire lead tags on the confirmed submit response, FIRST (before the
+                    // form is hidden/reset), not on success-box visibility. GA4 generate_lead
+                    // and Ads generate_lead both trigger on sm_lead_submit.
                     try {
                         window.dataLayer = window.dataLayer || [];
                         window.dataLayer.push({
@@ -1161,6 +1160,8 @@
                             // No PII in dataLayer: GTM's EC variables read the (consent-gated) form fields.
                         });
                     } catch (e) { /* tracking must never break the form */ }
+                    document.getElementById('contactForm').style.display = 'none';
+                    document.getElementById('formSuccess').classList.add('active');
                     document.getElementById('formSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
                     throw new Error(result.error || 'Submission failed');
