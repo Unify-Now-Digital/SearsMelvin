@@ -2589,10 +2589,30 @@
                     });
                     const result = await res.json();
                     if (result.ok) {
+                        // Confirmed submit: push first (no PII), before the form is hidden.
+                        try {
+                            window.dataLayer = window.dataLayer || [];
+                            window.dataLayer.push({ event: 'sm_quote_submit', form_id: 'quoteForm' });
+                        } catch (e) { /* tracking must never break the form */ }
                         document.getElementById('quoteForm').style.display = 'none';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
                             "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.";
+                        // GTM's request_quote tags (GA4 + Ads) still trigger on #quoteSuccessMsg being
+                        // 100% on screen; bring it fully into view so that trigger can't miss on
+                        // small screens / scrolled modals.
+                        // Only the modal's own scroll container moves (never the page behind the overlay).
+                        try {
+                            var qMsg = document.getElementById('quoteSuccessMsg');
+                            for (var qBox = qMsg.parentElement; qBox && qBox !== document.body; qBox = qBox.parentElement) {
+                                var oy = getComputedStyle(qBox).overflowY;
+                                if ((oy === 'auto' || oy === 'scroll') && qBox.scrollHeight > qBox.clientHeight) {
+                                    var mr = qMsg.getBoundingClientRect(), br = qBox.getBoundingClientRect();
+                                    qBox.scrollTop += (mr.top - br.top) - Math.max(0, (qBox.clientHeight - mr.height) / 2);
+                                    break;
+                                }
+                            }
+                        } catch (e) {}
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }

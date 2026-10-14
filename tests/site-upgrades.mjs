@@ -109,3 +109,18 @@ for (const f of execSync("git grep -l 'LeadConnector chat' -- '*.html'").toStrin
 const internalUtm = execSync("git grep -n -E \"href=[\\\"'](/|https?://(www\\.)?searsmelvin\\.co\\.uk)[^\\\"']*utm_\" -- '*.html' '*.js' ':!functions/api/brochure.js' || true").toString().trim();
 assert.equal(internalUtm, "", `internal UTM links:\n${internalUtm}`);
 console.log("chat + internal utm: ok");
+
+// Lead/quote events: pushed first on the confirmed submit response, no PII.
+{
+  const c = readFileSync("contact.html", "utf8");
+  const ok = c.slice(c.indexOf("if (result.ok) {"));
+  assert.ok(ok.indexOf("event: 'sm_lead_submit'") < ok.indexOf("contactForm').style.display = 'none'"), "contact pushes before hiding the form");
+  const m = readFileSync("memorial.html", "utf8");
+  const q = m.slice(m.indexOf("if (result.ok) {", m.indexOf("channel:  'quote'")));
+  const push = q.slice(0, q.indexOf("quoteForm').style.display = 'none'"));
+  assert.match(push, /event: 'sm_quote_submit'/, "quote pushes sm_quote_submit before hiding the form");
+  assert.doesNotMatch(push.replace(/form_id: 'quoteForm'/, ""), /email|phone|name\b/i, "no PII in quote push");
+  assert.match(q, /qBox\.scrollTop \+=/, "quote success scrolled inside the modal only");
+  assert.doesNotMatch(q.slice(0, q.indexOf("} else {")), /scrollIntoView/, "no page-level scrollIntoView");
+}
+console.log("lead/quote events: ok");
