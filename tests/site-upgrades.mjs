@@ -108,6 +108,9 @@ for (const f of execSync("git grep -l 'LeadConnector chat' -- '*.html'").toStrin
 // No internal links carry UTMs (UTMs are for inbound campaigns only).
 const internalUtm = execSync("git grep -n -E \"href=[\\\"'](/|https?://(www\\.)?searsmelvin\\.co\\.uk)[^\\\"']*utm_\" -- '*.html' '*.js' ':!functions/api/brochure.js' || true").toString().trim();
 assert.equal(internalUtm, "", `internal UTM links:\n${internalUtm}`);
+// Lead/quote pushes must exist too (full contract: tests/tracking-contract.mjs).
+assert.match(readFileSync("contact.html", "utf8"), /event: 'sm_lead_submit'/);
+assert.match(readFileSync("memorial.html", "utf8"), /event: 'sm_quote_submit'/);
 console.log("chat + internal utm: ok");
 
 // Lead/quote events: pushed first on the confirmed submit response, no PII.
