@@ -148,10 +148,13 @@ footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !impor
 .sm-brochure-fab:hover { background: #6B5840; color: #fff; text-decoration: none; }
 .sm-brochure-fab:focus-visible { outline: 3px solid #C9A96E; outline-offset: 3px; }
 body:has(#cookieConsent[style*="display: block"]) .sm-brochure-fab,
-body:has(.search-overlay.active) .sm-brochure-fab { display: none; }
+body:has(.search-overlay.active) .sm-brochure-fab,
+body:has(.quote-overlay.active) .sm-brochure-fab,
+body.sm-fab-hidden .sm-brochure-fab { display: none; }
 @media (max-width: 768px) {
   .sm-brochure-fab { left: 16px; bottom: calc(86px + env(safe-area-inset-bottom)); font-size: 0.875rem; }
-  body.has-mobile-bottom-bar .sm-brochure-fab { bottom: 160px; }
+  /* Lift above the memorial sticky price bar (height measured into --sm-sticky-bar-h by site-upgrades.js). */
+  body.has-mobile-bottom-bar .sm-brochure-fab { bottom: calc(var(--sm-sticky-bar-h, 82px) + 16px + env(safe-area-inset-bottom)); }
 }
 @media print { .sm-brochure-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .sm-brochure-fab { transition: none; } }

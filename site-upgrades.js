@@ -310,6 +310,28 @@
             (root.dataLayer = root.dataLayer || []).push({ event: 'brochure_fab_click', page_path: location.pathname });
         });
         document.body.appendChild(a);
+        watchFabOverlaps();
+    }
+
+    // Keep the FAB off sticky bars and modals: hide it while the quote/search
+    // modal or cookie banner is open (body.sm-fab-hidden, fallback for browsers
+    // without :has) and lift it above the memorial sticky price bar.
+    function watchFabOverlaps() {
+        var doc = document, body = doc.body, queued = false;
+        function shown(el) { return !!el && getComputedStyle(el).display !== 'none'; }
+        function sync() {
+            queued = false;
+            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent'));
+            body.classList.toggle('sm-fab-hidden', hide);
+            var bar = doc.querySelector('.mobile-bottom-bar');
+            if (bar) body.style.setProperty('--sm-sticky-bar-h', (shown(bar) ? Math.ceil(bar.getBoundingClientRect().height) : 0) + 'px');
+        }
+        function queue() { if (!queued) { queued = true; (root.requestAnimationFrame || setTimeout)(sync); } }
+        if ('MutationObserver' in root) {
+            new MutationObserver(queue).observe(body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        }
+        root.addEventListener('resize', queue);
+        sync();
     }
 
     function init() {
