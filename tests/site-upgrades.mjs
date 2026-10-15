@@ -76,7 +76,8 @@ assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*att
 
 // Floating brochure button
 assert.equal(up.fabAllowed("/"), true);
-assert.equal(up.fabAllowed("/about"), true);
+assert.equal(up.fabAllowed("/index.html"), true);
+for (const p of ["/about", "/memorials", "/memorials/the-castell", "/quote", "/contact", "/memorial.html"]) assert.equal(up.fabAllowed(p), false, p);
 assert.equal(up.fabAllowed("/brochure"), false);
 assert.equal(up.fabAllowed("/brochure/"), false);
 assert.equal(up.fabAllowed("/brochure.html"), false);

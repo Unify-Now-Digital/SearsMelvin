@@ -227,10 +227,10 @@
     }
 
 
-    // Floating "Brochure" button: shown on every public page except /brochure itself.
+    // Floating "Brochure" button: home page only (Arin, 15 Oct 2026).
     function fabAllowed(path) {
-        var p = String(path || '/').toLowerCase().replace(/\/+$/, '').replace(/\.html$/, '');
-        return p !== '/brochure' && p.indexOf('/admin') !== 0;
+        var p = String(path || '/').toLowerCase().replace(/\.html$/, '').replace(/\/+$/, '');
+        return p === '' || p === '/index';
     }
     function fabHtml() {
         return '<a class="sm-brochure-fab" href="/brochure" aria-label="View our brochure">' +
@@ -390,6 +390,26 @@
             (root.dataLayer = root.dataLayer || []).push({ event: 'brochure_fab_click', page_path: location.pathname });
         });
         document.body.appendChild(a);
+        watchFabOverlaps();
+    }
+
+    // Keep the FAB off sticky bars and modals: hide it while a quote/search
+    // modal or the cookie banner is open (body.sm-fab-hidden, fallback for
+    // browsers without :has).
+    function watchFabOverlaps() {
+        var doc = document, body = doc.body, queued = false;
+        function shown(el) { return !!el && getComputedStyle(el).display !== 'none'; }
+        function sync() {
+            queued = false;
+            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent'));
+            body.classList.toggle('sm-fab-hidden', hide);
+        }
+        function queue() { if (!queued) { queued = true; (root.requestAnimationFrame || setTimeout)(sync); } }
+        if ('MutationObserver' in root) {
+            new MutationObserver(queue).observe(body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        }
+        root.addEventListener('resize', queue);
+        sync();
     }
 
     function init() {

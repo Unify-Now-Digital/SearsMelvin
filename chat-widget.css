@@ -103,3 +103,13 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
 .shortlist-nav-btn-global.has-items {
     display: inline-flex;
 }
+
+/* Hide the chat widget (greeting bubble + round button) while the memorial
+   quote pop-up is open; it covered the configuration summary on mobile.
+   Restored when the pop-up closes (class removed in closeQuoteModal). */
+body.sm-quote-open chat-widget,
+body.sm-quote-open lc-chat-widget,
+body.sm-quote-open #chat-widget-button,
+body.sm-quote-open iframe[src*="leadconnectorhq"],
+body:has(.quote-overlay.active) chat-widget,
+body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
