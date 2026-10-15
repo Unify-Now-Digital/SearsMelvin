@@ -639,7 +639,7 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
         <p style="margin:0;color:#2C2C2C;font-weight:600;">${dateFormatted} at ${appointment_time}</p>
         <p style="margin:0.25rem 0 0;color:#666;">${typeLabel}</p>
       </div>
-      <p style="color:#666;line-height:1.8;">We'll confirm your appointment within 24 hours. Once confirmed, you'll receive a calendar invite with all the details.</p>
+      <p style="color:#666;line-height:1.8;">We'll confirm your appointment within one working day. Once confirmed, you'll receive a calendar invite with all the details.</p>
       <p style="color:#666;line-height:1.8;">If you need to change or cancel, just reply to this email or call us on <strong>+44 20 3835 2548</strong>.</p>
       <p style="color:#666;line-height:1.8;margin-top:1.5rem;">Warm regards,<br><strong>Sears Melvin Memorials</strong></p>
     </div>`;
@@ -993,7 +993,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
         <tr>
           <td style="padding:30px 28px 0;">
             <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
-            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for <strong style="color:#2C2C2C;">${esc(product.name || "your memorial")}</strong> and our team will be in touch within 24 hours.</p>
+            <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for <strong style="color:#2C2C2C;">${esc(product.name || "your memorial")}</strong> and our team will be in touch within one working day.</p>
           </td>
         </tr>
 
@@ -1098,7 +1098,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF8F5;border-radius:6px;border-left:3px solid #8B7355;">
               <tr>
                 <td style="padding:12px 14px;font-family:Arial,sans-serif;font-size:13px;color:#555555;line-height:1.6;">
-                  <strong style="color:#2C2C2C;">What happens next?</strong> There's nothing more you need to do right now — our team will be in touch within 24 hours to talk through your memorial. If you'd like to reach us sooner, just reply to this email or give us a call.
+                  <strong style="color:#2C2C2C;">What happens next?</strong> There's nothing more you need to do right now — our team will be in touch within one working day to talk through your memorial. If you'd like to reach us sooner, just reply to this email or give us a call.
                 </td>
               </tr>
             </table>
@@ -1245,7 +1245,7 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
       </td></tr>
       <tr><td style="padding:30px 28px 6px;">
         <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">Thank you, ${esc(firstName)}.</h2>
-        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within 24 hours.</p>
+        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within one working day.</p>
         <p style="color:#888888;font-size:13px;line-height:1.6;margin:0 0 18px 0;font-family:Arial,sans-serif;">A copy of your enquiry is below for your records.</p>
       </td></tr>
       <tr><td style="padding:0 28px 8px;">
