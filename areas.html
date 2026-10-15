@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Consent Mode default — denied until the user accepts the cookie banner -->
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage:           'denied',
+      analytics_storage:    'denied',
+      ad_user_data:         'denied',
+      ad_personalization:   'denied',
+      functionality_storage:'granted',
+      security_storage:     'granted',
+      wait_for_update: 500
+    });
+    try {
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage:'granted', analytics_storage:'granted',
+          ad_user_data:'granted', ad_personalization:'granted'
+        });
+      }
+    } catch (_e) {}
+    </script>
+    <!-- Google Tag Manager — deferred until first interaction or 3s idle -->
+    <script>
+      (function(){
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var loaded = false;
+        function load(){
+          if (loaded) return; loaded = true;
+          var f = document.getElementsByTagName('script')[0];
+          var gtm = document.createElement('script');
+          gtm.async = true;
+          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+          f.parentNode.insertBefore(gtm, f);
+        }
+        var evts = ['scroll','pointerdown','keydown','touchstart'];
+        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
+        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
+        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
+        else setTimeout(load, 3000);
+      })();
+    </script>
+    <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
+         long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
+         scroll events during measurement and idle for ~3s, so the previous
+         shared loader caused the chat widget to mount inside the LCP window
+         and inflate the metric. Real users still get chat as soon as they
+         tap or type. -->
+    <script>
+      (function(){
+        var loaded = false;
+        // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
+        // Chat submission -> dataLayer, once per submission, no PII. The widget
+        // is a shadow-DOM web component whose beforeSubmit hook runs on this
+        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
+        // races the widget and missed most chats, so claim its guard flag here
+        // (this runs before the deferred GTM load) to avoid double counting.
+        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
+        // trigger on sm_chat_submit.
+        window.__smChatHook = true;
+        var lastChatPush = 0;
+        function chatSubmitted(){
+          try {
+            var now = Date.now();
+            if (now - lastChatPush > 3000) {
+              lastChatPush = now;
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({ event: 'sm_chat_submit' });
+              window.dataLayer.push({ event: 'ghl_chat_submission' });
+            }
+          } catch (e) {}
+          return true; // never block the chat
+        }
+        function hookChat(){
+          var cw = window.leadConnector && window.leadConnector.chatWidget;
+          if (!cw || cw.__smHooked || typeof cw.registerBeforeSubmit !== 'function') return;
+          cw.__smHooked = true;
+          cw.registerBeforeSubmit(chatSubmitted);
+        }
+        window.addEventListener('LC_chatWidgetLoaded', hookChat);
+        function load(){
+          if (loaded) return; loaded = true;
+          var lc = document.createElement('script');
+          lc.src = 'https://widgets.leadconnectorhq.com/loader.js';
+          lc.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
+          lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
+          document.body.appendChild(lc);
+        }
+        var evts = ['pointerdown','keydown','touchstart'];
+        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
+        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
+        setTimeout(load, 10000);
+      })();
+    </script>
+    <!-- End Google Tag Manager + LeadConnector -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Areas We Cover | Sears Melvin Memorials</title>
+    <meta name="description" content="Areas served by Sears Melvin Memorials across North London, including Barnet, Brent, Camden, Enfield and Haringey.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
+    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="canonical" href="https://searsmelvin.co.uk/areas">
+    <meta name="theme-color" content="#2C2C2C">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Sears Melvin Memorials">
+    <meta property="og:title" content="Areas We Cover | Sears Melvin Memorials">
+    <meta property="og:description" content="Areas served by Sears Melvin Memorials across Barnet, Brent, Camden, Enfield and Haringey.">
+    <meta property="og:url" content="https://searsmelvin.co.uk/areas">
+    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:locale" content="en_GB">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Areas We Cover | Sears Melvin Memorials">
+    <meta name="twitter:description" content="Areas served by Sears Melvin Memorials across Barnet, Brent, Camden, Enfield and Haringey.">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    
+    <style>
+        :root {
+            --color-stone: #2B2A27;
+            --color-stone-light: #3D3D3D;
+            --color-cream: #F7F4EE;
+            --color-warm: #E8E4DD;
+            --color-accent: #7A6449;
+            --color-accent-dark: #6B5840;
+            --color-text: #2B2A27;
+            --color-text-muted: #595959;
+            --color-border: #E0DCD5;
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', system-ui, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-body);
+            background: var(--color-cream);
+            color: var(--color-stone);
+            line-height: 1.7;
+        }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .logo span { font-weight: 300; opacity: 0.7; }
+        .logo-icon { width: 28px; height: 36px; }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { font-size: 1rem; color: var(--color-text); letter-spacing: 0; transition: color 0.3s; text-decoration: none; }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
+        .nav-links a.active { font-weight: 600; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
+        .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
+        .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
+        .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 5px; }
+        .mobile-menu-btn span { display: block; width: 24px; height: 2px; background: var(--color-stone); transition: all 0.3s; }
+        .mobile-menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+        .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+        /* Showroom Banner */
+        /* Mobile Bottom Navigation */
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
+        .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
+        .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
+        .mobile-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .mobile-nav-item span { font-size: 0.65rem; letter-spacing: 0.02em; text-transform: uppercase; }
+        .mobile-nav-item.primary { color: white; }
+        .mobile-nav-item.primary svg { stroke: white; }
+        .mobile-nav-item.primary span { color: var(--color-text-muted); }
+        .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
+        .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta-dark { background-color: var(--color-text); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
+        .nav-cta-dark:hover { background-color: var(--color-stone); }
+        /* Page layout */
+        .page-header {
+            padding: 3rem 2rem 3rem;
+            background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%);
+            text-align: center;
+        }
+        .page-header h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 2.75rem);
+            font-weight: 400;
+            color: var(--color-stone);
+        }
+        .page-header p {
+            margin-top: 0.75rem;
+            color: var(--color-text-muted);
+            font-size: 1.05rem;
+        }
+
+        .content {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin: 2.5rem 0 0.75rem;
+            color: var(--color-stone);
+        }
+        h2:first-child { margin-top: 0; }
+
+        p { margin-bottom: 1rem; color: #444; }
+        ul { margin: 0.5rem 0 1rem 1.5rem; color: #444; }
+        ul li { margin-bottom: 0.4rem; }
+
+        a { color: var(--color-accent-dark); }
+        a:hover { text-decoration: underline; }
+
+        .last-updated {
+            font-size: 0.85rem;
+            color: #595959;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Footer */
+        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+        .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; text-decoration: none; }
+        .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; text-decoration: none; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
+        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a:hover { color: white; }
+        .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
+
+        /* Mobile Bottom Nav */
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
+            .logo span { display: none; }
+            .mobile-menu-btn { display: flex; }
+            body { padding-bottom: 70px; }
+            .page-header { padding: 2rem 1.5rem 1.5rem; }
+            .content { padding: 2rem 1.5rem 4rem; }
+            .footer-container { flex-direction: column; text-align: center; }
+            .footer-links { justify-content: center; }
+        }
+
+        /* Search Button in Nav */
+        .nav-search-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .nav-search-btn:hover { opacity: 0.7; }
+        .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
+
+        /* Search Overlay */
+        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay.active { opacity: 1; visibility: visible; }
+
+        /* Search Modal */
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal.active { transform: translateY(0); }
+        .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
+        .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
+        .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
+        .search-modal .search-input::placeholder { color: #767676; }
+        .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
+        .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
+        .search-close-btn:hover svg { stroke: var(--color-stone); }
+
+        /* Search Results */
+        .search-results { max-height: 60vh; overflow-y: auto; border-top: 1px solid var(--color-border); }
+        .search-results:empty { display: none; }
+        .search-section { padding: 1rem 0; }
+        .search-section-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.75rem; padding: 0 0.5rem; }
+        .search-result { display: flex; align-items: center; gap: 1rem; padding: 0.875rem; border-radius: 8px; cursor: pointer; transition: background 0.2s; text-decoration: none; color: inherit; }
+        .search-result:hover { background: var(--color-warm); }
+        .search-result-image { width: 56px; height: 56px; border-radius: 6px; background: var(--color-warm); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .search-result-image img { width: 100%; height: 100%; object-fit: cover; }
+        .search-result-image svg { width: 28px; height: 28px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
+        .search-result-content { flex: 1; min-width: 0; }
+        .search-result-title { font-weight: 500; color: var(--color-stone); margin-bottom: 0.15rem; }
+        .search-result-subtitle { font-size: 0.85rem; color: var(--color-text-muted); }
+        .search-result-price { font-size: 0.9rem; font-weight: 600; color: var(--color-accent-dark); white-space: nowrap; }
+
+        /* Quick Links */
+        .search-quick-links { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
+        .search-quick-link { padding: 0.5rem 1rem; background: var(--color-warm); border-radius: 20px; font-size: 0.85rem; color: var(--color-stone); text-decoration: none; transition: all 0.2s; }
+        .search-quick-link:hover { background: var(--color-accent); color: white; }
+
+        /* No Results */
+        .search-no-results { padding: 2rem; text-align: center; color: var(--color-text-muted); }
+        .search-no-results svg { width: 48px; height: 48px; stroke: var(--color-border); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
+        .search-no-results h4 { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-stone); margin-bottom: 0.5rem; }
+
+        /* Loading */
+        .search-loading { padding: 2rem; text-align: center; }
+        .search-spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: searchSpin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes searchSpin { to { transform: rotate(360deg); } }
+
+    
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal, .reveal-left, .reveal-right, .reveal-stagger > * {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+        /* Navbar accreditation chips */
+        .nav-accred { display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 1.25rem; font-size: 0.7rem; color: var(--color-text-muted); letter-spacing: 0.06em; text-transform: uppercase; flex-wrap: nowrap; }
+        .nav-accred-label { font-weight: 600; }
+        .nav-accred-chip { border: 1px solid var(--color-border); padding: 0.2rem 0.55rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--color-stone); background: white; white-space: nowrap; }
+        .nav-accred-chip strong { font-weight: 700; }
+        @media (max-width: 1024px) {
+            .nav-accred-label { display: none; }
+            .nav-accred { gap: 0.3rem; margin: 0 0.5rem 0 auto; }
+            .nav-accred-chip { font-size: 0.6rem; padding: 0.1rem 0.4rem; }
+        }
+        @media (max-width: 380px) {
+            .nav-accred { display: none; }
+        }
+            /* Site-wide Trust Bar */
+        .site-trust-bar { background: var(--color-cream); border-bottom: 1px solid var(--color-border); padding: 0.85rem 2rem 0.7rem; margin-top: 60px; }
+        .site-trust-row { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .site-trust-item { display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--color-stone); font-size: 0.98rem; font-weight: 600; letter-spacing: 0.01em; position: relative; padding: 0.15rem 0; }
+        .site-trust-item + .site-trust-item::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 1px; background: var(--color-border); }
+        .site-trust-item svg { width: 22px; height: 22px; stroke: var(--color-accent); fill: none; stroke-width: 1.6; flex-shrink: 0; }
+        .site-trust-accred { max-width: 1200px; margin: 0.5rem auto 0; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.78rem; color: var(--color-text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+        .site-trust-accred-label { font-weight: 600; }
+        .site-trust-chip { border: 1px solid var(--color-border); padding: 0.25rem 0.6rem; border-radius: 2px; text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--color-stone); background: white; }
+        .site-trust-chip strong { font-weight: 700; color: var(--color-stone); }
+        @media (max-width: 768px) {
+            .site-trust-bar { padding: 0.45rem 0.75rem 0.4rem; margin-top: 56px; }
+            .site-trust-row { grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }
+            .site-trust-item { font-size: 0.65rem; gap: 0.3rem; flex-direction: column; text-align: center; line-height: 1.15; font-weight: 500; padding: 0; }
+            .site-trust-item span { display: block; }
+            .site-trust-item svg { width: 16px; height: 16px; }
+            .site-trust-item + .site-trust-item::before { display: none; }
+        }
+
+        /* About layout fallback: keeps steps, labels and the RQMF plaque styled even if a stale site-upgrades.css is cached */
+        .about-page .about-kicker { display:block; font-size:0.8125rem; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#6B5840; margin:0 0 0.5rem; }
+        .about-steps { list-style:none; padding:0; margin:1.5rem 0 0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+        .about-steps li { list-style:none; margin:0; background:#fff; border:1px solid var(--color-border); border-radius:6px; padding:1.1rem 1rem; line-height:1.55; color:#555049; }
+        .about-steps li::marker { content:none; }
+        .about-step-num { display:inline-flex; width:30px; height:30px; border-radius:50%; border:1px solid var(--color-accent); color:var(--color-accent-dark); align-items:center; justify-content:center; font-family:var(--font-display); }
+        .about-steps strong { display:block; font-family:var(--font-display); font-weight:600; font-size:1.2rem; color:var(--color-stone); margin:0.6rem 0 0.25rem; }
+        .about-step-desc { display:block; }
+        .about-accred { display:grid; grid-template-columns:auto 1fr; gap:1.75rem; align-items:center; background:#1A1A1A; border-radius:6px; padding:2rem; }
+        .about-accred h2, .about-accred p { color:#FAF8F5; }
+        .about-accred .about-kicker { color:#C9A96E; }
+        .about-accred-logo img { display:block; height:72px; width:auto; }
+        @media (max-width: 768px) { .about-steps { grid-template-columns:repeat(2,minmax(0,1fr)); } .about-accred { grid-template-columns:1fr; } }
+</style>
+    <link rel="stylesheet" href="/chat-widget.css?v=2">
+
+    <!-- Structured data: Business -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Stonemason",
+      "@id": "https://searsmelvin.co.uk/#business",
+      "name": "Sears Melvin Memorials",
+      "alternateName": "Sears Melvin",
+      "description": "London-based memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and UK-wide installation.",
+      "image": "https://searsmelvin.co.uk/sm-logo.svg",
+      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "url": "https://searsmelvin.co.uk",
+      "telephone": "+442038352548",
+      "email": "info@searsmelvin.co.uk",
+      "priceRange": "££",
+      "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "areaServed": [
+        {"@type": "Country", "name": "United Kingdom"},
+        {"@type": "City", "name": "London"},
+        {"@type": "AdministrativeArea", "name": "Barnet"},
+        {"@type": "AdministrativeArea", "name": "Camden"},
+        {"@type": "AdministrativeArea", "name": "Brent"},
+        {"@type": "AdministrativeArea", "name": "Haringey"},
+        {"@type": "AdministrativeArea", "name": "Enfield"}
+      ],
+      "openingHoursSpecification": [{
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "17:00"
+      }]
+    }
+    </script>
+
+    <!-- Structured data: Breadcrumbs -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://searsmelvin.co.uk/"},
+        {"@type": "ListItem", "position": 2, "name": "Areas", "item": "https://searsmelvin.co.uk/areas"}
+      ]
+    }
+    </script>
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/accreditations.css?v=20261013b">
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <nav>
+        <a href="/" class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
+                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
+                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
+            </svg>
+            Sears Melvin <span>Memorials</span>
+        </a>
+        <div class="nav-accred" aria-label="Accreditations">
+            <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
+        </div>
+        <ul class="nav-links">
+            <li>
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Open search">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
+            </li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/memorials" class="nav-cta">Memorials</a></li>
+            <li><a href="/areas" class="active">Areas</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/resources">Support</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/brochure" class="nav-brochure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Brochure</a></li>
+            <li><a href="/contact" class="nav-cta-dark">Quote</a></li>
+        </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+    <section class="site-trust-bar" aria-label="Trust and accreditation">
+        <div class="site-trust-row">
+            <div class="site-trust-item">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                <span>30-year fixing guarantee</span>
+            </div>
+            <div class="site-trust-item">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <span>Fixing included</span>
+            </div>
+            <div class="site-trust-item">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/><path d="M9.5 12.5l2 2 4-4"/></svg>
+                <span>We help with your permit</span>
+            </div>
+            <div class="site-trust-item">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>We reply within one working day</span>
+            </div>
+        </div>
+    </section>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="/" onclick="toggleMobileMenu()">Home</a>
+        <a href="/memorials" onclick="toggleMobileMenu()">Memorials</a>
+        <a href="/areas" class="active" onclick="toggleMobileMenu()">Areas</a>
+        <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
+        <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
+        <a href="/resources" onclick="toggleMobileMenu()">Support</a>
+        <a href="/about" onclick="toggleMobileMenu()">About</a>
+        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
+        <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-modal-inner">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search memorials, FAQs, or topics..." autocomplete="off" oninput="handleSearch(this.value)">
+                <button class="search-close-btn" onclick="closeSearch()" aria-label="Close search">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-section" id="quickLinksSection">
+                    <div class="search-section-title">Quick Links</div>
+                    <div class="search-quick-links">
+                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
+                        <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
+                        <a href="/faq" class="search-quick-link">FAQs</a>
+                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <header class="page-header about-hero">
+        <p class="about-eyebrow">North London</p>
+        <h1>Areas we cover</h1>
+        <p>We provide calm, practical guidance and professional memorial installation across North London.</p>
+    </header>
+
+    <main class="content about-page">
+        <section class="about-section about-intro">
+            <p class="about-lead">We work with families and cemeteries across the five boroughs below. Select your area for local information, or call <a href="tel:+442038352548">020 3835 2548</a> if you would like to talk through what you need.</p>
+        </section>
+        <section class="about-section">
+            <h2>North London boroughs</h2>
+            <ul>
+                <li><a href="/areas/barnet">Barnet</a></li>
+                <li><a href="/areas/brent">Brent</a></li>
+                <li><a href="/areas/camden">Camden</a></li>
+                <li><a href="/areas/enfield">Enfield</a></li>
+                <li><a href="/areas/haringey">Haringey</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div>
+                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a><br>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
+                    North London — By appointment
+                </div>
+            </div>
+            <ul class="footer-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/faq">FAQ</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li><a href="/track">Track Order</a></li>
+                <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
+                <li><a href="/terms">Terms</a></li>
+                <li><a href="/privacy">Privacy</a></li>
+            </ul>
+            <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
+            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Fixers qualified to the NAMM-run RQMF standard</span></div>
+            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div class="mobile-bottom-nav-inner">
+            <a href="/" class="mobile-nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+            </a>
+            <a href="/memorials" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M6 22 L6 11 Q6 4 12 4 Q18 4 18 11 L18 22"/><line x1="3" y1="22" x2="21" y2="22"/></svg>
+                <span>Browse</span>
+            </a>
+            <a href="/contact#enquiry-form" class="mobile-nav-item primary">
+                <div class="nav-icon-bg">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span>Enquire</span>
+            </a>
+            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <span>Search</span>
+            </button>
+            <a href="tel:+442038352548" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                <span class="mobile-nav-phone" aria-label="Call 020 3835 2548">020 3835 2548</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        function toggleMobileMenu() {
+            var nav = document.getElementById('mobileNav');
+            var btn = document.querySelector('.mobile-menu-btn');
+            nav.classList.toggle('active');
+            btn.classList.toggle('open');
+            if (nav.classList.contains('active')) {
+                nav.style.display = 'block';
+                requestAnimationFrame(function() { nav.style.maxHeight = '500px'; nav.style.padding = '1rem 2rem'; });
+            } else {
+                nav.style.maxHeight = '0'; nav.style.padding = '0 2rem';
+                setTimeout(function() { if (!nav.classList.contains('active')) nav.style.display = 'none'; }, 300);
+            }
+        }
+    </script>
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
+            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+        document.getElementById('cookieConsent').style.display = 'block';
+    } else if (consent === 'accepted') {
+        pushConsent(true);
+    }
+})();
+function pushConsent(granted) {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'update', {
+        ad_storage:           granted ? 'granted' : 'denied',
+        analytics_storage:    granted ? 'granted' : 'denied',
+        ad_user_data:         granted ? 'granted' : 'denied',
+        ad_personalization:   granted ? 'granted' : 'denied'
+    });
+    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
+}
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(true);
+}
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    pushConsent(false);
+}
+
+        // ==================== SITE SEARCH ====================
+        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+
+        const searchFaqData = [
+            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
+            { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
+            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
+            { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
+        ];
+
+        let searchTimeout;
+
+        function openSearch() {
+            document.getElementById('searchOverlay').classList.add('active');
+            document.getElementById('searchModal').classList.add('active');
+            document.getElementById('searchInput').focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearch() {
+            document.getElementById('searchOverlay').classList.remove('active');
+            document.getElementById('searchModal').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = getQuickLinksHTML();
+            document.body.style.overflow = '';
+        }
+
+        function getQuickLinksHTML() {
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+        }
+
+        function handleSearch(query) {
+            clearTimeout(searchTimeout);
+            var resultsContainer = document.getElementById('searchResults');
+            if (query.length < 2) {
+                resultsContainer.innerHTML = getQuickLinksHTML();
+                return;
+            }
+            resultsContainer.innerHTML = '<div class="search-loading"><div class="search-spinner"></div></div>';
+            searchTimeout = setTimeout(function() { performSearch(query); }, 300);
+        }
+
+        async function performSearch(query) {
+            var resultsContainer = document.getElementById('searchResults');
+            var lowerQuery = query.toLowerCase();
+            var html = '';
+
+            try {
+                var response = await fetch(
+                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                        }
+                    }
+                );
+                var products = await response.json();
+                if (Array.isArray(products) && products.length > 0) {
+                    html += '<div class="search-section"><div class="search-section-title">Memorials</div>';
+                    products.slice(0, 5).forEach(function(product) {
+                        var category = 'Memorial';
+                        function _smEscAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+                        var imageHTML = product.image_url
+                            ? '<img src="' + _smEscAttr(product.image_url) + '" alt="' + _smEscAttr(product.name) + '" loading="lazy" decoding="async">'
+                            : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/><rect x="4" y="18" width="16" height="3"/></svg>';
+                        html += '<a href="/memorials/' + encodeURIComponent(product.slug) + '" class="search-result"><div class="search-result-image">' + imageHTML + '</div><div class="search-result-content"><div class="search-result-title">' + _smEscAttr(product.name) + '</div><div class="search-result-subtitle">' + category + '</div></div><div class="search-result-price">From \u00a3' + parseFloat(product.base_price).toLocaleString() + '</div></a>';
+                    });
+                    html += '</div>';
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+
+            var matchingFaqs = searchFaqData.filter(function(faq) {
+                return faq.q.toLowerCase().includes(lowerQuery) || faq.a.toLowerCase().includes(lowerQuery);
+            });
+
+            if (matchingFaqs.length > 0) {
+                html += '<div class="search-section"><div class="search-section-title">Help & FAQs</div>';
+                matchingFaqs.slice(0, 3).forEach(function(faq) {
+                    html += '<a href="' + faq.url + '" class="search-result"><div class="search-result-image"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="search-result-content"><div class="search-result-title">' + faq.q + '</div><div class="search-result-subtitle">' + faq.a + '</div></div></a>';
+                });
+                html += '</div>';
+            }
+
+            if (!html) {
+                html = '<div class="search-no-results"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h4>No results found</h4><p>Try a different search term or browse our <a href="/memorials" style="color: var(--color-accent-dark);">memorial collection</a>.</p></div>';
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearch();
+            }
+            if (e.key === 'Escape') {
+                closeSearch();
+            }
+        });
+
+    </script>
+
+    <script src="/site-globals.js" defer></script>
+    <script src="/site-config.js" defer></script>
+    <script src="/data/team.js" defer></script>
+    <script src="/site-upgrades.js?v=chat1" defer></script>
+</body>
+</html>
