@@ -180,10 +180,10 @@
     }
 
 
-    // Floating "Brochure" button: shown on every public page except /brochure itself.
+    // Floating "Brochure" button: home page only (Arin, 15 Oct 2026).
     function fabAllowed(path) {
-        var p = String(path || '/').toLowerCase().replace(/\/+$/, '').replace(/\.html$/, '');
-        return p !== '/brochure' && p.indexOf('/admin') !== 0;
+        var p = String(path || '/').toLowerCase().replace(/\.html$/, '').replace(/\/+$/, '');
+        return p === '' || p === '/index';
     }
     function fabHtml() {
         return '<a class="sm-brochure-fab" href="/brochure" aria-label="View our brochure">' +
@@ -313,9 +313,9 @@
         watchFabOverlaps();
     }
 
-    // Keep the FAB off sticky bars and modals: hide it while the quote/search
-    // modal or cookie banner is open (body.sm-fab-hidden, fallback for browsers
-    // without :has) and lift it above the memorial sticky price bar.
+    // Keep the FAB off sticky bars and modals: hide it while a quote/search
+    // modal or the cookie banner is open (body.sm-fab-hidden, fallback for
+    // browsers without :has).
     function watchFabOverlaps() {
         var doc = document, body = doc.body, queued = false;
         function shown(el) { return !!el && getComputedStyle(el).display !== 'none'; }
@@ -323,8 +323,6 @@
             queued = false;
             var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent'));
             body.classList.toggle('sm-fab-hidden', hide);
-            var bar = doc.querySelector('.mobile-bottom-bar');
-            if (bar) body.style.setProperty('--sm-sticky-bar-h', (shown(bar) ? Math.ceil(bar.getBoundingClientRect().height) : 0) + 'px');
         }
         function queue() { if (!queued) { queued = true; (root.requestAnimationFrame || setTimeout)(sync); } }
         if ('MutationObserver' in root) {

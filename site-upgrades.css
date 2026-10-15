@@ -132,7 +132,7 @@ footer .footer-copy, footer .footer-legal { color: rgba(255,255,255,0.68) !impor
   .about-accred-logo img { height: 56px; }
 }
 
-/* Floating "Brochure" button (bottom-left; GHL chat sits bottom-right).
+/* Floating "Brochure" button: home page only (bottom-left; GHL chat sits bottom-right).
    Mobile: above the 70px bottom nav. Hidden while the cookie banner shows. */
 .sm-brochure-fab {
   position: fixed; left: 24px; bottom: 24px; z-index: 900;
@@ -153,8 +153,6 @@ body:has(.quote-overlay.active) .sm-brochure-fab,
 body.sm-fab-hidden .sm-brochure-fab { display: none; }
 @media (max-width: 768px) {
   .sm-brochure-fab { left: 16px; bottom: calc(86px + env(safe-area-inset-bottom)); font-size: 0.875rem; }
-  /* Lift above the memorial sticky price bar (height measured into --sm-sticky-bar-h by site-upgrades.js). */
-  body.has-mobile-bottom-bar .sm-brochure-fab { bottom: calc(var(--sm-sticky-bar-h, 82px) + 16px + env(safe-area-inset-bottom)); }
 }
 @media print { .sm-brochure-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .sm-brochure-fab { transition: none; } }
