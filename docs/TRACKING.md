@@ -14,7 +14,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 1. Push conversion events **only on a confirmed successful server response**, **first**, before the form is hidden, reset or redirected.
 2. **No personal details in `dataLayer`** (no name, email, phone, message, address). Enhanced conversions read the consent-gated form fields inside GTM instead.
 3. GA4 lead/quote events use **`transport_type: beacon`** (set on the GTM tags) so they survive the page unloading.
-4. Every visible phone number is exactly **`020 3835 2548`** (the Google forwarding-number swap only matches this format). Every `tel:` link must show it as text. Schema JSON-LD keeps `+442038352548`.
+4. Every visible phone number is exactly **`020 3835 2548`** (the Google forwarding-number swap only matches this format). Every `tel:` link must show it as text. Schema JSON-LD keeps `+442038352548`. Exception (Oct 2026): ad visitors only (90-day `sm_ad` cookie) may see the dedicated Ads number from `SM_ADS_PHONE`, swapped at runtime by site-upgrades.js. The HTML always ships `020 3835 2548`.
 5. **No `utm_*` on internal links.** UTMs are only for inbound campaigns (and the outbound brochure email/PDF links in `functions/api/brochure.js` / the PDF).
 6. Every public page loads GTM (GTM-KRDX4BQ5) and the GHL chat loader with the chat hook.
 7. Never change conversion values, primary/secondary or bidding from the website side.
@@ -117,3 +117,21 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - **CI:** `node tests/tracking-contract.mjs` (all `tests/*.mjs` run on every PR).
 - **Live, read-only:** `node scripts/tracking-check.mjs` (exit 1 on any problem, 2 on error).
   `--base <url>` checks a preview, `--json` for machines, `--update-snapshot` after an intended GTM change.
+
+
+## Lead source, channel and landing page (Oct 2026)
+- **Client** (`site-upgrades.js`):
+  - `localStorage.sm_lp` = `{ts, landing_page, referrer}`: the first-touch path with no query, plus the external referrer host. Kept 90 days; a new click ID restarts it.
+  - `getAttribution()` now also returns `landing_page` and `referrer`.
+  - An ad visit (gclid/gbraid/wbraid, or `utm_medium` cpc/ppc/paid*) sets the first-party cookie `sm_ad=1` (Max-Age 90 days, SameSite=Lax, Secure).
+- **Server** (`submit.js`) derives these itself and never trusts the page:
+  - `lead_source`: a click ID, or utm google + cpc, gives Google Ads. A search-engine referrer or utm_medium=organic gives Organic. Anything else is Unknown. Funeral director, Referral and Repeat are set only by staff.
+  - `lead_channel`: a quote is RAQ; contact, shortlist, appointment and call-back forms are Contact form; the brochure is Brochure.
+  - The values go into the `create_quote` payload (with utm/gclid/landing_page; the PATCH stays as a fallback) and the enquiries insert. `lead_channel` is dropped and retried if the column doesn't exist yet (Mason migration 20261015120000).
+  - GHL: tags `source-<x>` and `channel-<y>`. The custom fields `lead_source`, `lead_channel` and `landing_page` are written only if they exist in the SM location; otherwise they are skipped silently.
+- **Ads phone:**
+  - `/api/config` returns `adsPhone` from env `SM_ADS_PHONE`. It returns empty when the value is unset, `PLACEHOLDER`, the main number, or not a UK number.
+  - When it is set and the visitor has `sm_ad=1`, every tel: link and visible `020 3835 2548` is swapped.
+  - Until a GHL number is bought, leave `SM_ADS_PHONE=PLACEHOLDER`, and nothing changes.
+  - **Clash:** GTM's Google forwarding-number swap (conversion 7840535941) also rewrites `020 3835 2548` for ad visitors. When the Ads number goes live, either turn that GFN tag off or set its target to the new number, so the two swaps don't race.
+- Tests: `tests/lead-source.mjs`.

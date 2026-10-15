@@ -155,6 +155,53 @@
         return out;
     }
 
+    // ---- First-touch landing page + ad-visitor phone (docs/TRACKING.md) ----
+    // Landing page (path only, never the query) and external referrer host are
+    // kept 90 days, first touch wins; a new click ID restarts them, like sm_attr.
+    var LANDING_STORE = 'sm_lp';
+    var AD_COOKIE = 'sm_ad';
+    var MAIN_PHONE_DIGITS = '02038352548';
+    function cleanPath(p) {
+        p = String(p || '').split('?')[0].split('#')[0];
+        return /^\/[\w\-./~%]*$/.test(p) ? p.slice(0, 300) : '';
+    }
+    function referrerHost(ref, ownHost) {
+        var m = /^https?:\/\/([^/?#:]+)/i.exec(String(ref || ''));
+        if (!m) return '';
+        var h = m[1].toLowerCase();
+        var own = String(ownHost || '').toLowerCase().replace(/^www\./, '');
+        if (own && (h === own || h.slice(-(own.length + 1)) === '.' + own)) return '';
+        return h.slice(0, 100);
+    }
+    function mergeLanding(stored, page, refHost, hasClick, now) {
+        var valid = stored && typeof stored === 'object' && typeof stored.ts === 'number' && (now - stored.ts) < ATTR_TTL_MS;
+        if (valid && !hasClick) return stored;
+        var lp = cleanPath(page);
+        if (!lp) return valid ? stored : null;
+        var rec = { ts: now, landing_page: lp };
+        if (refHost) rec.referrer = refHost;
+        return rec;
+    }
+    // An ad visitor = arrived with a Google click ID or utm_medium cpc/ppc/paid*.
+    function isAdVisit(fresh) {
+        fresh = fresh || {};
+        if (CLICK_KEYS.some(function (k) { return !!fresh[k]; })) return true;
+        return /^(cpc|ppc|paid)/i.test(fresh.utm_medium || '');
+    }
+    // A UK number we can show: 10–11 digits after normalising +44 → 0.
+    function normalisePhone(p) {
+        var d = String(p || '').replace(/[^\d+]/g, '').replace(/^\+44/, '0');
+        return /^0\d{9,10}$/.test(d) ? d : '';
+    }
+    function displayPhone(d) {
+        return d.length === 11 && /^02/.test(d) ? d.slice(0, 3) + ' ' + d.slice(3, 7) + ' ' + d.slice(7) : d.slice(0, 5) + ' ' + d.slice(5);
+    }
+    // The number to show: the ad number only for an ad visitor AND a real number configured.
+    function phoneFor(adVisitor, adsPhone) {
+        var d = normalisePhone(adsPhone);
+        return adVisitor && d && d !== MAIN_PHONE_DIGITS ? d : MAIN_PHONE_DIGITS;
+    }
+
     function adsConversionTarget(ads) {
         if (!ads) return null;
         var id = ads.conversionId, label = ads.brochureConversionLabel;
@@ -191,7 +238,7 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -199,17 +246,50 @@
     // Capture on every page load so the landing page records the click,
     // then persist for 90 days (localStorage) for later form submits.
     function storedAttribution() {
-        var stored = null;
+        var stored = null, storedLp = null, now = Date.now();
+        var fresh = readAttribution(location.search);
         try { stored = JSON.parse(localStorage.getItem(ATTR_STORE) || 'null'); } catch (_e) {}
-        var rec = mergeAttribution(stored, readAttribution(location.search), Date.now());
+        try { storedLp = JSON.parse(localStorage.getItem(LANDING_STORE) || 'null'); } catch (_e) {}
+        var rec = mergeAttribution(stored, fresh, now);
+        var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
+        var lp = mergeLanding(storedLp, location.pathname, referrerHost(document.referrer, location.hostname), hasClick, now);
         try {
             if (rec) localStorage.setItem(ATTR_STORE, JSON.stringify(rec));
             else localStorage.removeItem(ATTR_STORE);
+            if (lp) localStorage.setItem(LANDING_STORE, JSON.stringify(lp));
         } catch (_e) {}
-        return attributionFields(rec);
+        if (isAdVisit(fresh)) {
+            // 90-day first-party cookie so the ad phone number survives localStorage loss.
+            try { document.cookie = AD_COOKIE + '=1; Max-Age=' + Math.round(ATTR_TTL_MS / 1000) + '; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (_e) {}
+        }
+        var out = attributionFields(rec);
+        if (lp && lp.landing_page) out.landing_page = lp.landing_page;
+        if (lp && lp.referrer) out.referrer = lp.referrer;
+        return out;
     }
     storedAttribution();
     api.getAttribution = storedAttribution;
+
+    // Ad visitors (sm_ad cookie, 90 days) see the dedicated Ads number from
+    // /api/config (env SM_ADS_PHONE). No number configured → nothing changes.
+    function hasAdCookie() { return /(?:^|;\s*)sm_ad=1(?:;|$)/.test(document.cookie || ''); }
+    function swapPhone(adsPhone) {
+        var d = phoneFor(hasAdCookie(), adsPhone);
+        if (d === MAIN_PHONE_DIGITS) return;
+        var shown = displayPhone(d), tel = 'tel:+44' + d.slice(1);
+        document.querySelectorAll('a[href^="tel:"]').forEach(function (a) {
+            if (normalisePhone(a.getAttribute('href').slice(4)) === MAIN_PHONE_DIGITS) { a.setAttribute('href', tel); a.setAttribute('data-sm-ad-phone', '1'); }
+        });
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        var nodes = []; while (walker.nextNode()) if (/020\s?3835\s?2548/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+        nodes.forEach(function (n) { n.nodeValue = n.nodeValue.replace(/020\s?3835\s?2548/g, shown); });
+    }
+    if (hasAdCookie()) {
+        try {
+            fetch('/api/config', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (c) { if (c && c.adsPhone) swapPhone(c.adsPhone); }).catch(function () {});
+        } catch (_e) {}
+    }
 
 
     function sessionUtm() {

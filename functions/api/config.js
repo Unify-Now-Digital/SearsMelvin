@@ -4,6 +4,11 @@ function publicValue(value, maxLength) {
   return typeof value === "string" && value.length <= maxLength ? value : "";
 }
 
+export function adsPhone(v) {
+  const d = String(v || "").replace(/[^\d+]/g, "").replace(/^\+44/, "0");
+  return /^0\d{9,10}$/.test(d) && d !== "02038352548" ? d : "";
+}
+
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
@@ -26,5 +31,8 @@ export async function onRequestGet({ request, env }) {
     stripePublishableKey: publicValue(env.STRIPE_PUBLISHABLE_KEY, 256),
     googleMapsKey: publicValue(env.GOOGLE_MAPS_KEY, 256),
     googleClientId: publicValue(env.GOOGLE_CLIENT_ID, 512),
+    // Ads-visitor phone (shown only to visitors with the 90-day sm_ad cookie).
+    // Public by design. Unset / PLACEHOLDER / not a UK number → "" → the site keeps 020 3835 2548.
+    adsPhone: adsPhone(env.SM_ADS_PHONE),
   });
 }

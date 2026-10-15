@@ -150,12 +150,15 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
           location: cemeteryOrLocation,
           cemetery_id: data.cemetery_id || null,
           product,
+          // Attribution travels inside create_quote so it can't drift; the PATCH below is the fallback.
+          ...cleanAttribution(data.attribution),
+          ...leadColumns(data.attribution, { withChannel: true }),
         },
       }),
     });
     if (!res.ok) throw new Error(`create_quote RPC returned ${res.status}`);
-    // create_quote doesn't know the attribution columns; stamp them on the
-    // enquiry it created. Best-effort: a failure here never loses the quote.
+    // Fallback for an older create_quote: stamp the attribution on the enquiry it
+    // created (blank-safe PATCH). Best-effort: a failure here never loses the quote.
     const rpcBody = await res.json().catch(() => null);
     await saveEnquiryAttribution(env, rpcBody?.enquiry_id, data.attribution);
   } catch (err) {
@@ -202,6 +205,7 @@ async function quoteSideEffects({
         name, email, phone, type: "quote", product,
         cemetery: cemeteryOrLocation,
         extraFields: ghlExtraFields,
+        lead: attribution,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -372,6 +376,7 @@ async function enquirySideEffects({
         name, email, phone, type: "enquiry",
         cemetery: location,
         extraFields: ghlExtraFields,
+        lead: attribution,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -470,7 +475,7 @@ async function appointmentSideEffects({
         ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "appointment", extraFields: ghlExtraFields,
+        name, email, phone, type: "appointment", extraFields: ghlExtraFields, lead: attribution,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -1477,12 +1482,20 @@ async function createEnquiry(env, payload) {
     details: payload.details ?? null,
     order_id: null,
     ...attributionColumns(payload.attribution),
+    ...leadColumns(payload.attribution, { withChannel: true }),
   };
-  const enqRes = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
+  const post = (body) => fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
     headers: supabaseHeaders(env),
-    body: JSON.stringify(enqBody),
+    body: JSON.stringify(body),
   });
+  let enqRes = await post(enqBody);
+  // Until Mason migration 20261015120000 adds enquiries.lead_channel, PostgREST
+  // rejects the unknown column (PGRST204): never lose the lead — retry without it.
+  if (!enqRes.ok && enqRes.status === 400 && "lead_channel" in enqBody && /PGRST204|lead_channel/.test(await enqRes.clone().text().catch(() => ""))) {
+    const { lead_channel: _drop, ...legacy } = enqBody;
+    enqRes = await post(legacy);
+  }
   if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
   return { personId: person.id };
 }
@@ -1494,7 +1507,8 @@ export function attributionColumns(attribution) {
 }
 
 async function saveEnquiryAttribution(env, enquiryId, attribution) {
-  const cols = attributionColumns(attribution);
+  // lead_channel is set by the migrated create_quote itself; the fallback only sends columns that exist today.
+  const cols = { ...attributionColumns(attribution), ...leadColumns(attribution) };
   if (!enquiryId || !Object.keys(cols).length) return;
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
@@ -1525,6 +1539,75 @@ export function cleanAttribution(a) {
     out[k] = v;
   }
   return out;
+}
+
+// ── Lead source + channel (Mason vocab, 15 Oct 2026) ─────────────────
+export const LEAD_SOURCES = ["Google Ads", "Organic", "Funeral director", "Referral", "Repeat", "Unknown"];
+export const LEAD_CHANNELS = ["Contact form", "RAQ", "Brochure", "Web chat", "Call", "Email"];
+const SEARCH_ENGINES = /(^|\.)(google|bing|yahoo|duckduckgo|ecosia|baidu|yandex|ask)\.[a-z.]+$/i;
+
+export function cleanLanding(a) {
+  const out = {};
+  if (!a || typeof a !== "object" || Array.isArray(a)) return out;
+  const lp = typeof a.landing_page === "string" ? a.landing_page.split("?")[0].split("#")[0].trim() : "";
+  if (/^\/[\w\-./~%]*$/.test(lp)) out.landing_page = lp.slice(0, 300);
+  const ref = typeof a.referrer === "string" ? a.referrer.trim().toLowerCase() : "";
+  if (/^[a-z0-9.-]{3,100}$/.test(ref)) out.referrer = ref;
+  return out;
+}
+
+// Source: a Google click ID (or utm google + cpc/ppc/paid) = Google Ads; a
+// search-engine referrer with no click = Organic; anything else = Unknown.
+// Funeral director / Referral / Repeat are only ever set by people in Mason/GHL.
+export function deriveLeadSource(a) {
+  const c = cleanAttribution(a);
+  if (c.gclid || c.gbraid || c.wbraid) return "Google Ads";
+  if (/^google$/i.test(c.utm_source || "") && /^(cpc|ppc|paid)/i.test(c.utm_medium || "")) return "Google Ads";
+  if (/^(cpc|ppc|paid)/i.test(c.utm_medium || "")) return "Unknown"; // paid, but not Google: don't call it organic
+  const ref = cleanLanding(a).referrer || "";
+  if (/^organic$/i.test(c.utm_medium || "") || (ref && SEARCH_ENGINES.test(ref))) return "Organic";
+  return "Unknown";
+}
+
+export function deriveLeadChannel(kind, subType) {
+  const k = String(kind || "").toLowerCase();
+  if (k === "quote") return "RAQ";
+  if (k === "brochure" || String(subType || "").toLowerCase() === "brochure") return "Brochure";
+  return "Contact form"; // contact, shortlist, appointment and call-back forms
+}
+
+export function leadMeta(rawAttribution, kind, subType) {
+  return { ...cleanLanding(rawAttribution), lead_source: deriveLeadSource(rawAttribution), lead_channel: deriveLeadChannel(kind, subType) };
+}
+
+// enquiries columns. lead_channel only when the caller can cope with the column missing.
+export function leadColumns(a, { withChannel = false } = {}) {
+  const out = {};
+  if (!a || typeof a !== "object") return out;
+  if (LEAD_SOURCES.includes(a.lead_source)) out.lead_source = a.lead_source;
+  const lp = cleanLanding(a).landing_page;
+  if (lp) out.landing_page = lp;
+  if (withChannel && LEAD_CHANNELS.includes(a.lead_channel)) out.lead_channel = a.lead_channel;
+  return out;
+}
+
+// GHL: tags always (no setup needed); custom fields lead_source / lead_channel /
+// landing_page only when those fields exist in the SM location (resolved by key).
+export function leadTags(a) {
+  const t = [];
+  if (a && LEAD_SOURCES.includes(a.lead_source)) t.push("source-" + a.lead_source.toLowerCase().replace(/\s+/g, "-"));
+  if (a && LEAD_CHANNELS.includes(a.lead_channel)) t.push("channel-" + a.lead_channel.toLowerCase().replace(/\s+/g, "-"));
+  return t;
+}
+export async function leadCustomFields(env, a, { token, locationId, fetchImpl } = {}) {
+  const vals = { lead_source: a?.lead_source, lead_channel: a?.lead_channel, landing_page: cleanLanding(a).landing_page };
+  token = token || env.GHL_API_KEY;
+  locationId = locationId || env.GHL_LOCATION_ID;
+  if (!token || !locationId || !Object.values(vals).some(Boolean)) return [];
+  let ids = {};
+  try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); } catch { return []; }
+  const pick = (k) => ids[k] || ids["contact" + k] || ids["contact_" + k];
+  return Object.entries(vals).filter(([k, v]) => v && pick(k)).map(([k, v]) => ({ id: pick(k), field_value: v }));
 }
 
 // Field IDs resolved by key (contact.<key>) at runtime, cached per isolate for 1h.
@@ -1567,10 +1650,10 @@ export async function attributionCustomFields(env, attribution, { token, locatio
   return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
 }
 
-async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields }) {
+async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields, lead }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");
-  const tags = ["website-lead", type === "quote" ? "quote-request" : type];
+  const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
   const customFields = [
@@ -1583,6 +1666,7 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
     // on a memorial job, but nothing has ever written to it.
     cemetery && cemeteryFieldId ? { id: cemeteryFieldId, field_value: String(cemetery).trim() } : null,
     ...(extraFields || []),
+    ...(lead ? await leadCustomFields(env, lead) : []),
   ].filter(Boolean);
   const res = await fetch("https://services.leadconnectorhq.com/contacts/", {
     method: "POST",
@@ -1693,7 +1777,10 @@ function validateSubmission(input, organizationId) {
     return { ok: false, error: "Invalid product configuration" };
   }
   // Ads click IDs + UTMs: silently cleaned (never a reason to reject a lead).
-  data.attribution = cleanAttribution(data.attribution);
+  // Lead source + channel are derived HERE, server-side, so a page can't claim them.
+  const rawAttribution = data.attribution;
+  data.attribution = cleanAttribution(rawAttribution);
+  Object.assign(data.attribution, leadMeta(rawAttribution, data.channel || data.type, data.enquiry_type || data.sub_type));
   return { ok: true, data };
 }
 
