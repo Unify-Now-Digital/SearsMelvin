@@ -8,7 +8,7 @@ import { execSync } from "node:child_process";
 const read = (f) => readFileSync(f, "utf8");
 const skip = new Set(["404.html", "admin.html", "admin-products.html"]);
 const pages = execSync("git ls-files '*.html'").toString().split("\n").filter((f) => f && !skip.has(f));
-assert.ok(pages.length >= 15, "expected the public pages to be found");
+assert.ok(pages.length >= 13, "expected the public pages to be found"); // 13 after the 6 area pages were removed (Oct 2026)
 
 for (const f of pages) {
   const s = read(f);

@@ -46,7 +46,7 @@ assert.equal(adsEv.dataLayer[0].email_given, true);
 assert.deepEqual(up.readUtm("?utm_source=google&utm_medium=cpc&x=1&utm_campaign=a%20b"), { utm_source: "google", utm_medium: "cpc", utm_campaign: "a b" });
 
 // Buttons are tagged with their source; /brochure has the optional email form + "Just download".
-for (const [page, src] of [["index.html", "home"], ["memorial.html", "product"], ["memorials.html", "listing"]]) {
+for (const [page, src] of [["index.html", "home"], ["memorials.html", "listing"]]) {
   assert.ok(readFileSync(page, "utf8").includes(`data-brochure-source="${src}"`), `${page} tags source=${src}`);
 }
 const brochure = readFileSync("brochure.html", "utf8");

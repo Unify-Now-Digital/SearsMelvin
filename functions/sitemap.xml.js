@@ -21,12 +21,6 @@ const STATIC_PAGES = [
   { path: "/care-guide",      priority: "0.6",  changefreq: "monthly" },
   { path: "/faq",             priority: "0.6",  changefreq: "monthly" },
   { path: "/resources",       priority: "0.6",  changefreq: "monthly" },
-  { path: "/areas",           priority: "0.8",  changefreq: "monthly" },
-  { path: "/areas/barnet",    priority: "0.8",  changefreq: "monthly" },
-  { path: "/areas/brent",     priority: "0.8",  changefreq: "monthly" },
-  { path: "/areas/camden",    priority: "0.8",  changefreq: "monthly" },
-  { path: "/areas/enfield",   priority: "0.8",  changefreq: "monthly" },
-  { path: "/areas/haringey",  priority: "0.8",  changefreq: "monthly" },
   { path: "/terms",           priority: "0.3",  changefreq: "yearly"  },
   { path: "/privacy",         priority: "0.3",  changefreq: "yearly"  },
 ];
