@@ -39,7 +39,7 @@ async function fetchProduct(env, slug) {
   if (looksLikeAsset(slug)) return null;
   try {
     const res = await fetch(
-      `${url}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID)}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=id,name,slug,description,image_url,base_price,product_categories(name,slug)&limit=1`,
+      `${url}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID)}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=id,name,slug,short_description,description,image_url,base_price,product_categories(name,slug)&limit=1`,
       {
         headers: {
           apikey: key,
@@ -128,6 +128,18 @@ export async function onRequestGet({ request, env, params }) {
   const desc = clip(product.description, 200) ||
     "Hand-finished memorial with a 30-year fixing guarantee. Configure your memorial online.";
   const imageUrl = product.image_url || FALLBACK_IMAGE;
+  const categoryName = product.product_categories?.name || "Memorial";
+  const shortDescription = String(product.short_description || "").trim();
+  let longDescription = String(product.description || "").trim();
+  if (shortDescription && longDescription.startsWith(shortDescription)) {
+    longDescription = longDescription.slice(shortDescription.length).trim();
+  }
+  const lead = shortDescription || longDescription ||
+    "Hand-finished memorial, professionally installed.";
+  const price = parseFloat(product.base_price);
+  const displayedPrice = Number.isFinite(price)
+    ? `From £${price.toLocaleString("en-GB")}`
+    : "Guide price on request";
 
   const { productLd, breadcrumbLd } = buildSchema(product, canonicalUrl);
 
@@ -167,6 +179,30 @@ export async function onRequestGet({ request, env, params }) {
     })
     .on("script#productJsonLd", {
       element(el) { el.setInnerContent(JSON.stringify(productLd), { html: false }); },
+    })
+    .on("#productName", {
+      element(el) { el.setInnerContent(product.name || "Memorial", { html: false }); },
+    })
+    .on("#productCategory", {
+      element(el) { el.setInnerContent(categoryName, { html: false }); },
+    })
+    .on("#productLead", {
+      element(el) { el.setInnerContent(lead, { html: false }); },
+    })
+    .on("#productDescription", {
+      element(el) { el.setInnerContent(longDescription, { html: false }); },
+    })
+    .on("#priceTotal", {
+      element(el) { el.setInnerContent(displayedPrice, { html: false }); },
+    })
+    .on("#mobilePriceTotal", {
+      element(el) { el.setInnerContent(displayedPrice, { html: false }); },
+    })
+    .on("#galleryMainImg", {
+      element(el) {
+        el.setAttribute("src", imageUrl);
+        el.setAttribute("alt", product.name || "Memorial");
+      },
     })
     .transform(
       new Response(shell.body, {

@@ -526,6 +526,7 @@
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
+      "address": {"@type":"PostalAddress","addressLocality":"London","addressRegion":"North London","addressCountry":"GB"},
       "areaServed": [
         {"@type": "Country", "name": "United Kingdom"},
         {"@type": "City", "name": "London"},
@@ -582,6 +583,7 @@
             </li>
             <li><a href="/">Home</a></li>
             <li><a href="/memorials" class="nav-cta active">Memorials</a></li>
+            <li><a href="/areas">Areas</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li><a href="/about">About</a></li>
@@ -619,6 +621,7 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="/" onclick="toggleMobileMenu()">Home</a>
         <a href="/memorials" class="active" onclick="toggleMobileMenu()">Memorials</a>
+        <a href="/areas" onclick="toggleMobileMenu()">Areas</a>
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
@@ -646,19 +649,19 @@
                 <div class="filter-group">
                     <h4 class="filter-title">Memorial Type</h4>
                     <div class="filter-options" id="typeFilters">
-                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">All types</span>
                     </div>
                 </div>
                 <div class="filter-group">
                     <h4 class="filter-title">Stone Colour</h4>
                     <div class="colour-swatches" id="colourFilters">
-                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">All colours</span>
                     </div>
                 </div>
                 <div class="filter-group">
                     <h4 class="filter-title">Price Range</h4>
                     <div class="filter-options" id="priceFilters">
-                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading...</span>
+                        <span style="color: var(--color-text-muted); font-size: 0.9rem;">All prices</span>
                     </div>
                 </div>
             </aside>
@@ -949,6 +952,7 @@
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
+            grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
 
             let productsHTML = '';
             state.productsData.forEach((product, index) => {

@@ -707,6 +707,7 @@
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
+      "address": {"@type":"PostalAddress","addressLocality":"London","addressRegion":"North London","addressCountry":"GB"},
       "areaServed": [
         {"@type": "Country", "name": "United Kingdom"},
         {"@type": "City", "name": "London"},
@@ -769,6 +770,7 @@
             </li>
             <li><a href="/">Home</a></li>
             <li><a href="/memorials" class="nav-cta active">Memorials</a></li>
+            <li><a href="/areas">Areas</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/resources">Support</a></li>
             <li><a href="/about">About</a></li>
@@ -800,6 +802,7 @@
     <div class="mobile-nav" id="mobileNav">
         <a href="/" onclick="toggleMobileMenu()">Home</a>
         <a href="/memorials" class="active" onclick="toggleMobileMenu()">Memorials</a>
+        <a href="/areas" onclick="toggleMobileMenu()">Areas</a>
         <a href="/faq" onclick="toggleMobileMenu()">FAQ</a>
         <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
         <a href="/resources" onclick="toggleMobileMenu()">Support</a>
@@ -859,9 +862,9 @@
 
             <!-- Product Info & Configurator -->
             <div class="product-info">
-                <span class="product-category animate-in" id="productCategory">Loading...</span>
-                <h1 class="animate-in animate-delay-1" id="productName">Loading...</h1>
-                <p class="product-lead animate-in animate-delay-2" id="productLead">Loading...</p>
+                <span class="product-category animate-in" id="productCategory">Memorial</span>
+                <h1 class="animate-in animate-delay-1" id="productName">Memorial</h1>
+                <p class="product-lead animate-in animate-delay-2" id="productLead">Hand-finished memorial, professionally installed.</p>
                 <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
                     <ul class="product-reassurance">
@@ -871,7 +874,7 @@
                     </ul>
                     <p class="product-brochure"><a href="/brochure" class="sm-brochure-link" data-brochure-source="product">Download our brochure</a></p>
                 </div>
-                <p class="product-description animate-in animate-delay-3" id="productDescription">Loading...</p>
+                <p class="product-description animate-in animate-delay-3" id="productDescription"></p>
                 <section class="product-guarantees" aria-labelledby="guaranteesHeading">
                     <h2 id="guaranteesHeading">Our guarantees</h2>
                     <ul>
