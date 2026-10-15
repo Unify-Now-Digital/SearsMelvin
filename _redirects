@@ -24,3 +24,9 @@
 /permit-checker        /memorials  301
 /permit-checker.html   /memorials  301
 /permit-checker/       /memorials  301
+
+# Area landing pages removed Oct 2026 (Arin approved 15 Oct) -> homepage.
+/areas        /  301
+/areas/       /  301
+/areas.html   /  301
+/areas/*      /  301

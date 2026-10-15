@@ -6,7 +6,6 @@ import { readFile, readdir } from "node:fs/promises";
 const root = new URL("../", import.meta.url);
 const files = [
   ...(await readdir(root)).filter(f => f.endsWith(".html")),
-  ...(await readdir(new URL("areas/", root))).filter(f => f.endsWith(".html")).map(f => `areas/${f}`),
 ];
 const anchorRe = /<a\b[^>]*>[\s\S]*?<\/a>/gi;
 for (const file of files) {
