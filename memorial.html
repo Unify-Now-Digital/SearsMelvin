@@ -1247,7 +1247,7 @@
             <div class="quote-modal-header">
                 <div>
                     <h2>Request a quote</h2>
-                    <p class="quote-modal-subtitle">We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.</p>
+                    <p class="quote-modal-subtitle">We’ll aim to get back to you within one working day to confirm the next steps, cemetery requirements and your tailored quotation.</p>
                 </div>
                 <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
                     <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1306,7 +1306,7 @@
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
                     <h3>Quote request sent</h3>
-                    <p id="quoteSuccessMsg">We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.</p>
+                    <p id="quoteSuccessMsg">We’ve received your quote request. We’ll aim to get back to you within one working day to confirm the next steps, cemetery requirements and your tailored quotation.</p>
                     <button class="quote-success-close" onclick="closeQuoteModal()">Close</button>
                 </div>
             </div>
@@ -2603,7 +2603,7 @@
                         document.getElementById('quoteForm').style.display = 'none';
                         document.getElementById('quoteSuccess').style.display = 'block';
                         document.getElementById('quoteSuccessMsg').innerHTML =
-                            "We’ve received your quote request. We’ll aim to get back to you within 24 hours to confirm the next steps, cemetery requirements and your tailored quotation.";
+                            "We’ve received your quote request. We’ll aim to get back to you within one working day to confirm the next steps, cemetery requirements and your tailored quotation.";
                         // GTM's request_quote tags (GA4 + Ads) still trigger on #quoteSuccessMsg being
                         // 100% on screen; bring it fully into view so that trigger can't miss on
                         // small screens / scrolled modals.

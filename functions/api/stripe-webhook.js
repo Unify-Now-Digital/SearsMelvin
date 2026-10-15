@@ -499,7 +499,7 @@ function depositConfirmationEmail({ name, amountPaid, product, productUrl, cemet
       <h2 style="font-family:Georgia,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 12px;">Deposit received, ${esc(firstName)}.</h2>
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">
         Your <strong style="color:#2C2C2C;">£${esc(amountPaid)}</strong> deposit has been received and your order is confirmed.
-        We'll be in touch within 24 hours to discuss the next steps.
+        We'll be in touch within one working day to discuss the next steps.
       </p>
     </td></tr>
 
