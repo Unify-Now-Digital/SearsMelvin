@@ -114,7 +114,7 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - Offline: transactionId per order + ledger.
 
 ## Checks
-- **CI:** `node tests/tracking-contract.mjs` (all `tests/*.mjs` run on every PR).
+- **CI:** `node tests/tracking-contract.mjs` and `node tests/tracking-guard.mjs` (page-level GTM, consent defaults, gclid capture) (all `tests/*.mjs` run on every PR).
 - **Live, read-only:** `node scripts/tracking-check.mjs` (exit 1 on any problem, 2 on error).
   `--base <url>` checks a preview, `--json` for machines, `--update-snapshot` after an intended GTM change.
 
