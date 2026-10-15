@@ -690,7 +690,7 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    <link rel="stylesheet" href="/chat-widget.css?v=3">
 
     <!-- Structured data: Business -->
     <script type="application/ld+json">
@@ -2230,12 +2230,14 @@
             document.getElementById('quoteError').style.display   = 'none';
             document.getElementById('quoteOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
+            document.body.classList.add('sm-quote-open'); // hides chat widget (chat-widget.css)
             syncMobileQuoteBar();
         }
 
         function closeQuoteModal() {
             document.getElementById('quoteOverlay').classList.remove('active');
             document.body.style.overflow = '';
+            document.body.classList.remove('sm-quote-open');
             syncMobileQuoteBar();
         }
 
