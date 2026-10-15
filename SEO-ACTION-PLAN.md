@@ -51,7 +51,7 @@ Each item includes a plain-English explanation of what it is, why it's good, and
 ## Phase 2 — Local SEO (Weeks 3–6)
 
 ### Add full `PostalAddress` to global Stonemason schema
-TODO: The street address and postcode await confirmation by Arin.
+Done (Oct 2026): full PostalAddress added (1 The Market Place, Falloden Way, London NW11 6LB, confirmed by Arin). Geo coordinates still to add once verified.
 
 **ELI5:** schema is invisible code that tells Google "I am a business at this address, with these hours, in these areas." Right now the code says everything except the actual address.
 **Why it matters for us:** for a local trade like memorial masonry, the address is the single most important piece of local SEO data. Without it, Google is less likely to show us in the local "map pack" — the boxed results at the top of Google with three businesses and a map. That box is where most local leads click.
