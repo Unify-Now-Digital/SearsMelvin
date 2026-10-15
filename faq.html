@@ -569,7 +569,7 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <nav>
+    <nav id="navbar">
         <a href="/" class="logo">
             <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
                 <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
@@ -586,14 +586,11 @@
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 </button>
             </li>
-            <li><a href="/">Home</a></li>
-            <li><a href="/memorials" class="nav-cta">Memorials</a></li>
+            <li><a href="/memorials">Memorials</a></li>
             <li><a href="/areas">Areas</a></li>
-            <li><a href="/faq" class="active">FAQ</a></li>
-            <li><a href="/resources">Support</a></li>
             <li><a href="/about">About</a></li>
-            <li><a href="/brochure" class="nav-brochure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Brochure</a></li>
-            <li><a href="/contact" class="nav-cta-dark">Quote</a></li>
+            <li><a href="/contact" class="nav-cta">Get a quote</a></li>
+            <li><a href="tel:+442038352548">020 3835 2548</a></li>
         </ul>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </nav>
@@ -618,15 +615,11 @@
         </div>
     </section>
     <div class="mobile-nav" id="mobileNav">
-        <a href="/" onclick="toggleMobileMenu()">Home</a>
         <a href="/memorials" onclick="toggleMobileMenu()">Memorials</a>
         <a href="/areas" onclick="toggleMobileMenu()">Areas</a>
-        <a href="/faq" class="active" onclick="toggleMobileMenu()">FAQ</a>
-        <a href="/care-guide" onclick="toggleMobileMenu()">Care Guide</a>
-        <a href="/resources" onclick="toggleMobileMenu()">Support</a>
         <a href="/about" onclick="toggleMobileMenu()">About</a>
-        <a href="/brochure" onclick="toggleMobileMenu()">Brochure</a>
-        <a href="/contact" onclick="toggleMobileMenu()">Contact</a>
+        <a href="/contact" class="nav-cta" onclick="toggleMobileMenu()">Get a quote</a>
+        <a href="tel:+442038352548" onclick="toggleMobileMenu()">020 3835 2548</a>
     </div>
     <header class="page-header">
         <h1>Headstone FAQ: permits, costs and timescales</h1>
@@ -987,8 +980,10 @@
                 <li><a href="/about">About</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/care-guide">Memorial Care</a></li>
                 <li><a href="/resources">Support Resources</a></li>
+                <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
                 <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
