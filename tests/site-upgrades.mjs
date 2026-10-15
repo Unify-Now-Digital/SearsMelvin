@@ -34,13 +34,14 @@ assert.match(up.teamHtml([{ name: "<b>x</b>", role: "r", line: "l" }]), /&lt;b&g
 const listing = readFileSync("memorials.html", "utf8");
 assert.ok(listing.includes("Installed guide price · cemetery fees extra"));
 
-// /about and /brochure exist, are linked, and /about is in the sitemap.
+// /about and /brochure exist, and the main public navigation stays consistent.
 assert.ok(existsSync("about.html") && existsSync("brochure.html"));
 for (const page of ["index.html", "memorials.html", "memorial.html", "contact.html"]) {
   const html = readFileSync(page, "utf8");
   assert.ok(html.includes('href="/about"'), `${page} links /about`);
-  assert.ok(html.includes('href="/brochure"'), `${page} links /brochure`);
-  assert.ok(html.includes('class="nav-cta-dark">Quote'), `${page} keeps Quote as the primary nav CTA`);
+  assert.ok(html.includes('class="nav-cta'), `${page} keeps the quote CTA`);
+  assert.ok(html.includes('>Get a quote</a>'), `${page} labels the quote CTA consistently`);
+  assert.ok(html.includes('<a href="tel:+442038352548">020 3835 2548</a>'), `${page} keeps the tracked phone link`);
 }
 assert.match(readFileSync("functions/sitemap.xml.js", "utf8"), /path: "\/about"/);
 
