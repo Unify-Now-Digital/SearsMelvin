@@ -48,7 +48,6 @@
   text-align: center;
 }
 .quote-product-preview[hidden], .sm-reviews-wrap[hidden], [data-sm-team][hidden], [data-brochure-ready][hidden], [data-brochure-pending][hidden] { display: none !important; }
-.product-brochure { margin: 1rem 0 0; }
 .about-section { margin: 0 0 3rem; }
 .about-section h2 { margin-bottom: 1rem; }
 .about-facts { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
