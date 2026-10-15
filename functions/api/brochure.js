@@ -22,7 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
-import { attributionCustomFields } from "./submit.js";
+import { attributionCustomFields, deriveLeadSource, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
@@ -188,7 +188,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   const customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
   const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
     method: "POST", headers,
-    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download"], ...(customFields.length ? { customFields } : {}) }),
+    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" })], ...(customFields.length ? { customFields } : {}) }),
   });
   if (!res.ok) throw new Error(`GHL upsert returned ${res.status}`);
   const body = await res.json().catch(() => ({}));
