@@ -14,6 +14,8 @@
 .sm-star svg { fill: var(--color-border, #E0DCD5); }
 .sm-star.on svg { fill: #D4AF37; }
 .product-price-note { margin: 0.2rem 0 0; font-size: 0.75rem; color: var(--color-text-muted, #595959); letter-spacing: 0.01em; }
+.guide-price-note { margin: 0.2rem 0 0; font-size: 1rem; line-height: 1.5; color: var(--color-text-muted, #595959); }
+.hero-guide-price-note { position: absolute; right: -30px; bottom: -74px; width: 190px; text-align: center; }
 .quote-product-preview { display: flex; align-items: center; gap: 0.9rem; padding: 1rem 1.75rem; border-bottom: 1px solid var(--color-border, #E0DCD5); background: var(--color-cream, #FAF8F5); }
 .quote-product-preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; background: var(--color-warm, #E8E4DD); flex-shrink: 0; }
 .quote-product-preview .qp-label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted, #595959); }
