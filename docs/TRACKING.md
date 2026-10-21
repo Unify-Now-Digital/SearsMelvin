@@ -87,6 +87,9 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - `site-upgrades.js` reads `gclid`, `gbraid`, `wbraid` and `utm_source/medium/campaign/term/content`
   on every page load and stores them in `localStorage.sm_attr` for **90 days**.
   **First touch wins**; only a **new click ID** replaces the record (UTM-only revisits don't).
+- `track.html` also loads `site-upgrades.js` so customer-portal landings capture the
+  same click IDs. It does not need `site-config.js`; the portal has no enhancement
+  targets and the shared script's brochure FAB is home-only.
 - Every form sends `attribution: SMUpgrades.getAttribution()`: contact, quote (memorial), shortlist,
   home appointment and brochure email.
 - `functions/api/submit.js` cleans it (`cleanAttribution`) and writes it to the Supabase
@@ -94,6 +97,10 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   quotes: PATCH of the enquiry returned by `create_quote`), and to the GHL contact custom fields
   `contact.contactgclid / contactgbraid / contactwbraid / contactutm_*` (resolved by key).
 - `functions/api/brochure.js` sets the same GHL fields on the brochure upsert (SM PIT).
+- Direct brochure-download beacons also send the stored `gclid` to the Worker. The
+  counter stores only a validated `gclid` and a server-side SHA-256 user-agent hash
+  (no raw UA, IP or PII); its additive 2026-10-21 migration is not yet applied, so
+  the Worker retries a schema-related 400 once without those new columns.
 
 ## Daily offline upload (outside this repo)
 

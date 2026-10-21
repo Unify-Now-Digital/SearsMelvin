@@ -71,6 +71,16 @@ half is independent and unaffected.
 
 ## Verified good — do not re-litigate without re-running the check
 
+- **2026-10-21 — brochure counter attribution stays service-role-only and
+  privacy-limited.** The unapplied additive migration keeps RLS enabled and
+  revokes anon/authenticated access; it stores a validated gclid and SHA-256
+  user-agent hash, never raw UA, IP or email. The Worker fails open and retries
+  one PostgREST 400 without the new columns while the migration is pending.
+- **2026-10-21 — customer portal click-ID capture matches public pages.**
+  `track.html` loads `site-upgrades.js` without `site-config.js`. On `/track` the
+  shared script has no brochure/review/team targets, its FAB is home-only and it
+  does not load chat; only attribution capture and the existing conditional ad
+  phone lookup can run.
 - **2026-08-31 — leftover marketing-site partner desk is gone.** `partner.html`
   deleted; `/partner`, `/partner/`, `/partner.html`, `/partner/*` 301 to
   `https://partner.searsmelvin.co.uk/` via `_redirects` plus Pages Functions

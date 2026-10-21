@@ -31,6 +31,7 @@ const PHONE = "020 3835 2548";
 export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GCLID_RE = /^[\w\-.~]{1,200}$/;
 
 export function cleanSource(s) {
   s = String(s || "").toLowerCase();
@@ -46,7 +47,18 @@ export function cleanUtm(utm) {
   return out;
 }
 
-export function downloadRow(env, { source, utm, emailGiven, page }) {
+export function cleanGclid(value) {
+  return typeof value === "string" && GCLID_RE.test(value) ? value : null;
+}
+
+export async function hashUserAgent(request) {
+  const ua = request?.headers?.get("User-Agent") || "";
+  if (!ua) return null;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ua));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function downloadRow(env, { source, utm, emailGiven, page, gclid }, request) {
   const u = cleanUtm(utm);
   return {
     organization_id: env.SM_ORG_ID || null,
@@ -58,20 +70,30 @@ export function downloadRow(env, { source, utm, emailGiven, page }) {
     utm_content: u.utm_content || null,
     email_given: emailGiven === true,
     page_path: typeof page === "string" && /^\/[\w\-/.]{0,200}$/.test(page) ? page : null,
+    gclid: cleanGclid(gclid),
+    ua_hash: await hashUserAgent(request),
   };
 }
 
-async function logDownload(env, row) {
+export async function logDownload(env, row) {
   // Structured log line too, so Workers observability can count downloads even
   // before the migration is applied.
   console.log(JSON.stringify({ message: "brochure_download", source: row.source, email_given: row.email_given, utm_campaign: row.utm_campaign }));
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return false;
   try {
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/brochure_downloads`, {
+    const url = `${env.SUPABASE_URL}/rest/v1/brochure_downloads`;
+    const options = {
       method: "POST",
       headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
       body: JSON.stringify(row),
-    });
+    };
+    let res = await fetch(url, options);
+    // The additive migration may lag the Worker deploy. PostgREST reports
+    // unknown gclid/ua_hash columns as 400, so retry the legacy row once.
+    if (res.status === 400) {
+      const { gclid: _gclid, ua_hash: _uaHash, ...legacyRow } = row;
+      res = await fetch(url, { ...options, body: JSON.stringify(legacyRow) });
+    }
     if (!res.ok) console.error(JSON.stringify({ message: "brochure_download_log_failed", status: res.status }));
     return res.ok;
   } catch {
@@ -232,7 +254,7 @@ export async function onRequestPost(context) {
   if (data.action === "download") {
     const limit = env.SUPABASE_URL ? await checkRateLimit(env, request, "brochure-log-ip", ip, { maxAttempts: 30, windowSeconds: 3600, blockSeconds: 3600, failClosed: false }) : { allowed: true };
     if (limit.allowed) {
-      bg(context, "brochure_download_log", () => logDownload(env, downloadRow(env, { source: data.source, utm: data.utm, emailGiven: data.email_given === true, page: data.page })));
+      bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: data.email_given === true, page: data.page, gclid: data.gclid }, request)));
     }
     return hardenedJson({ ok: true });
   }
@@ -266,7 +288,7 @@ export async function onRequestPost(context) {
     }
     // Fail soft: runs after the email is accepted, errors are only logged.
     bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email, { source: data.source, page: data.page, utm: data.utm, attribution: data.attribution }));
-    bg(context, "brochure_download_log", () => logDownload(env, downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page })));
+    bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page, gclid: data.gclid || data.attribution?.gclid }, request)));
     return hardenedJson({ ok: true });
   }
 

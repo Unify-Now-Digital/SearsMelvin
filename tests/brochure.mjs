@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
 import { pdfMeta } from "../scripts/brochure-meta.mjs";
-import { onRequestPost, downloadRow, cleanSource, brochureLink, SM_GHL_LOCATION_ID } from "../functions/api/brochure.js";
+import { onRequestPost, downloadRow, cleanGclid, cleanSource, brochureLink, SM_GHL_LOCATION_ID } from "../functions/api/brochure.js";
 
 const require = createRequire(import.meta.url);
 const up = require("../site-upgrades.js");
@@ -44,6 +44,9 @@ const adsEv = up.brochureEvents({ googleAds: { conversionId: "AW-123456789", bro
 assert.equal(adsEv.adsSendTo, "AW-123456789/Label_1");
 assert.equal(adsEv.dataLayer[0].email_given, true);
 assert.deepEqual(up.readUtm("?utm_source=google&utm_medium=cpc&x=1&utm_campaign=a%20b"), { utm_source: "google", utm_medium: "cpc", utm_campaign: "a b" });
+const upgradesSource = readFileSync("site-upgrades.js", "utf8");
+assert.match(upgradesSource, /attribution\s*=\s*api\.getAttribution\(\)/, "download beacon reads stored attribution");
+assert.match(upgradesSource, /gclid:\s*attribution\.gclid\s*\|\|\s*null/, "download beacon includes stored gclid");
 
 // Buttons are tagged with their source; /brochure has the optional email form + "Just download".
 for (const [page, src] of [["index.html", "home"], ["memorials.html", "listing"]]) {
@@ -67,11 +70,12 @@ const env = {
 let ghlFail = false;
 let calls = [];
 let allow = true;
+let brochureInsertStatuses = [];
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input);
   calls.push({ url, body: init.body ? JSON.parse(init.body) : null });
   if (url.includes("/rpc/check_portal_rate_limit")) return Response.json([{ allowed: allow, retry_after_seconds: allow ? 0 : 60 }]);
-  if (url.endsWith("/rest/v1/brochure_downloads")) return new Response(null, { status: 201 });
+  if (url.endsWith("/rest/v1/brochure_downloads")) return new Response(null, { status: brochureInsertStatuses.shift() || 201 });
   if (url === "https://api.resend.com/emails") return Response.json({ id: "e1" });
   if (url.startsWith("https://services.leadconnectorhq.com/")) {
     calls[calls.length - 1].auth = init.headers?.Authorization;
@@ -87,7 +91,7 @@ async function post(body, headers = {}) {
   const res = await onRequestPost({
     request: new Request("https://searsmelvin.co.uk/api/brochure", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Origin: "https://searsmelvin.co.uk", ...headers },
+      headers: { "Content-Type": "application/json", Origin: "https://searsmelvin.co.uk", "User-Agent": "Brochure Test Agent", ...headers },
       body: JSON.stringify(body),
     }),
     env,
@@ -98,7 +102,7 @@ async function post(body, headers = {}) {
 }
 
 // Download beacon logs one SM-scoped row and never stores an email.
-let r = await post({ action: "download", source: "listing", utm: { utm_source: "google", evil: "x" }, page: "/memorials", email: "x@y.com" });
+let r = await post({ action: "download", source: "listing", utm: { utm_source: "google", evil: "x" }, gclid: "safe_GCLID-1.~", page: "/memorials", email: "x@y.com" });
 assert.equal(r.res.status, 200);
 let log = calls.find((c) => c.url.endsWith("/brochure_downloads"));
 assert.ok(log, "download logged");
@@ -106,11 +110,28 @@ assert.equal(log.body.organization_id, env.SM_ORG_ID);
 assert.equal(log.body.source, "listing");
 assert.equal(log.body.utm_source, "google");
 assert.equal(log.body.email_given, false);
+assert.equal(log.body.gclid, "safe_GCLID-1.~");
+assert.match(log.body.ua_hash, /^[a-f0-9]{64}$/);
+const expectedUaHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("Brochure Test Agent"))), (byte) => byte.toString(16).padStart(2, "0")).join("");
+assert.equal(log.body.ua_hash, expectedUaHash, "user agent is SHA-256 hashed server-side");
 assert.ok(!JSON.stringify(log.body).includes("x@y.com"), "no email stored in the log");
 
 // Bad source collapses to brochure_page.
-assert.equal(downloadRow(env, { source: "nope" }).source, "brochure_page");
+assert.equal((await downloadRow(env, { source: "nope" })).source, "brochure_page");
 assert.equal(cleanSource("HOME"), "home");
+assert.equal(cleanGclid("abc_DEF-1.~"), "abc_DEF-1.~");
+for (const bad of ["", "has space", "<script>", "x".repeat(201), 123]) assert.equal(cleanGclid(bad), null);
+
+// Until the additive migration is applied, a PostgREST 400 retries once with
+// the legacy columns only.
+brochureInsertStatuses = [400, 201];
+r = await post({ action: "download", source: "home", gclid: "retry-me" });
+const fallbackLogs = calls.filter((c) => c.url.endsWith("/brochure_downloads"));
+assert.equal(fallbackLogs.length, 2);
+assert.equal(fallbackLogs[0].body.gclid, "retry-me");
+assert.match(fallbackLogs[0].body.ua_hash, /^[a-f0-9]{64}$/);
+assert.ok(!("gclid" in fallbackLogs[1].body));
+assert.ok(!("ua_hash" in fallbackLogs[1].body));
 
 // Email path: Resend + GHL upsert tagged Brochure + log with email_given.
 r = await post({ action: "email", email: " Jane@Example.com ", source: "brochure_page", utm: {} });
@@ -183,5 +204,12 @@ assert.equal(r.res.status, 200);
 const mig = readFileSync("migrations/2026-10-11-add-brochure-downloads.sql", "utf8");
 assert.match(mig, /NOT YET APPLIED/);
 assert.match(mig, /create table if not exists public\.brochure_downloads/);
+const attrMig = readFileSync("migrations/2026-10-21-brochure-downloads-gclid-ua-hash.sql", "utf8");
+assert.match(attrMig, /NOT YET APPLIED \(apply after 2026-10-11 file\)/);
+assert.match(attrMig, /add column if not exists gclid text/);
+assert.match(attrMig, /security_invoker = true/g);
+assert.match(attrMig, /with_gclid/);
+assert.match(attrMig, /public\.brochure_download_daily/);
+assert.match(attrMig, /3770972d-1bbd-417b-b413-297e844db285/);
 
 console.log("brochure: ok");
