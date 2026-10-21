@@ -102,6 +102,15 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   (no raw UA, IP or PII); its additive 2026-10-21 migration is not yet applied, so
   the Worker retries a schema-related 400 once without those new columns.
 
+## Click-ID intents (chat/call)
+
+- Chat submissions and `tel:` clicks send the stored Google Ads click ID to
+  `/api/click-intent`; chat may also include a sanitised email/phone supplied by
+  the widget. Calls never include contact details.
+- The endpoint is same-origin, fail-soft, and writes service-role-only rows to
+  `click_intents` for a backend job to match to GHL contacts. Its draft migration
+  is unapplied, needs Arin's approval, and specifies 120-day retention.
+
 ## Daily offline upload (outside this repo)
 
 `/workspace/sm-ads-offline/sm_offline_upload.py` (box), weekdays 08:17 Madrid, to Ads action

@@ -1,0 +1,75 @@
+// /api/click-intent — fail-soft capture of ad click IDs for chat/call matching.
+import { hardenedJson, isSameOriginRequest, readBoundedJson, RequestValidationError, supabaseHeaders } from "./_security.js";
+import { cleanAttribution } from "./submit.js";
+
+function cleanPath(value) {
+  if (typeof value !== "string") return null;
+  const path = value.trim().split("?")[0].split("#")[0];
+  return /^\/[\w\-./~%]*$/.test(path) ? path.slice(0, 300) : null;
+}
+
+function cleanEmail(value) {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase().slice(0, 200);
+  return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+function cleanPhone(value) {
+  if (typeof value !== "string") return null;
+  const phone = value.trim().replace(/[^\d+]/g, "").slice(0, 20);
+  return phone || null;
+}
+
+function noContent() {
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+}
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: { Allow: "POST, OPTIONS", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+  });
+}
+
+export async function onRequestPost({ request, env }) {
+  if (!isSameOriginRequest(request)) return hardenedJson({ ok: false, error: "Forbidden" }, 403);
+  let data;
+  try {
+    data = await readBoundedJson(request, 4 * 1024);
+  } catch (error) {
+    const status = error instanceof RequestValidationError ? error.status : 400;
+    return hardenedJson({ ok: false, error: "Invalid request" }, status);
+  }
+
+  const attribution = cleanAttribution(data);
+  const kind = data.kind === "chat" || data.kind === "call" ? data.kind : null;
+  if (!kind || !(attribution.gclid || attribution.gbraid || attribution.wbraid)) return noContent();
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
+    console.error(JSON.stringify({ message: "click_intent_config_missing" }));
+    return noContent();
+  }
+
+  const row = {
+    organization_id: env.SM_ORG_ID,
+    kind,
+    gclid: attribution.gclid || null,
+    gbraid: attribution.gbraid || null,
+    wbraid: attribution.wbraid || null,
+    landing_page: cleanPath(data.landing_page),
+    page: cleanPath(data.page),
+    email: kind === "chat" ? cleanEmail(data.email) : null,
+    phone: kind === "chat" ? cleanPhone(data.phone) : null,
+    user_agent: (request.headers.get("User-Agent") || "").slice(0, 300) || null,
+  };
+  try {
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/click_intents`, {
+      method: "POST",
+      headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+      body: JSON.stringify(row),
+    });
+    if (!response.ok) console.error(JSON.stringify({ message: "click_intent_insert_failed", status: response.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "click_intent_insert_failed" }));
+  }
+  return noContent();
+}
