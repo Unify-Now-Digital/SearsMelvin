@@ -2766,6 +2766,7 @@ function acceptCookies() {
     try { localStorage.setItem('cookieConsent', 'accepted'); } catch (e) { console.warn('Could not persist cookie consent', e); }
     pushConsent(true);
     if (typeof syncMobileQuoteBar === 'function') syncMobileQuoteBar();
+    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
 }
 function declineCookies() {
     var banner = document.getElementById('cookieConsent');
