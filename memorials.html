@@ -1446,6 +1446,7 @@ function acceptCookies() {
     localStorage.setItem('cookieConsent', 'accepted');
     document.getElementById('cookieConsent').style.display = 'none';
     pushConsent(true);
+    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
 }
 function declineCookies() {
     localStorage.setItem('cookieConsent', 'declined');
