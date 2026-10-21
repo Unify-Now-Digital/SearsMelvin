@@ -155,6 +155,36 @@
         return out;
     }
 
+    // Minimal, privacy-bounded payload linking an ad click to a chat/call intent.
+    // Pure so the browser and Node tests exercise exactly the same sanitising.
+    function clickIntentBody(kind, attribution, contact, now, page) {
+        if (kind !== 'chat' && kind !== 'call') return null;
+        attribution = attribution && typeof attribution === 'object' ? attribution : {};
+        var ids = {};
+        CLICK_KEYS.forEach(function (k) {
+            var v = typeof attribution[k] === 'string' ? attribution[k].trim().slice(0, 200) : '';
+            if (v && /^[\w\-.~]+$/.test(v)) ids[k] = v;
+        });
+        if (!Object.keys(ids).length) return null;
+        var body = { kind: kind };
+        CLICK_KEYS.forEach(function (k) { if (ids[k]) body[k] = ids[k]; });
+        var landing = cleanPath(attribution.landing_page);
+        if (landing) body.landing_page = landing;
+        var current = cleanPath(page);
+        if (current) body.page = current;
+        body.ts = now;
+        if (kind === 'chat' && contact && typeof contact === 'object') {
+            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+            var email = typeof contact.email === 'string' ? contact.email : nested.email;
+            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+            if (email) body.email = email;
+            if (phone) body.phone = phone;
+        }
+        return body;
+    }
+
     // ---- First-touch landing page + ad-visitor phone (docs/TRACKING.md) ----
     // Landing page (path only, never the query) and external referrer host are
     // kept 90 days, first touch wins; a new click ID restarts them, like sm_attr.
@@ -238,7 +268,7 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -269,6 +299,32 @@
     }
     storedAttribution();
     api.getAttribution = storedAttribution;
+
+    var lastClickIntent = { chat: 0, call: 0 };
+    api.clickIntent = function (kind, contact) {
+        try {
+            var now = Date.now();
+            if (lastClickIntent[kind] && now - lastClickIntent[kind] < 3000) return;
+            var body = clickIntentBody(kind, api.getAttribution(), contact, now, location.pathname);
+            if (!body) return;
+            lastClickIntent[kind] = now;
+            var json = JSON.stringify(body);
+            try {
+                if (navigator.sendBeacon && navigator.sendBeacon('/api/click-intent', new Blob([json], { type: 'application/json' }))) return;
+            } catch (_e) {}
+            try {
+                var sent = fetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });
+                if (sent && typeof sent.catch === 'function') sent.catch(function () {});
+            } catch (_e) {}
+        } catch (_e) {}
+    };
+    document.addEventListener('click', function (event) {
+        try {
+            var node = event.target;
+            var anchor = node && node.closest ? node.closest('a[href^="tel:"]') : null;
+            if (anchor) api.clickIntent('call');
+        } catch (_e) {}
+    }, true);
 
     // Ad visitors (sm_ad cookie, 90 days) see the dedicated Ads number from
     // /api/config (env SM_ADS_PHONE). No number configured → nothing changes.
