@@ -318,7 +318,11 @@
             if (typeof root.gtag === 'function') root.gtag('event', 'conversion', { send_to: ev.adsSendTo });
             else root.dataLayer.push(['event', 'conversion', { send_to: ev.adsSendTo }]);
         }
-        if (!logged) logBrochure({ action: 'download', source: ev.source, utm: sessionUtm(), email_given: !!emailGiven, page: location.pathname });
+        if (!logged) {
+            var attribution = {};
+            try { attribution = api.getAttribution() || {}; } catch (_e) {}
+            logBrochure({ action: 'download', source: ev.source, utm: sessionUtm(), gclid: attribution.gclid || null, email_given: !!emailGiven, page: location.pathname });
+        }
     }
 
     function initBrochure(cfg) {

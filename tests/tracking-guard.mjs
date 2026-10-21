@@ -15,8 +15,7 @@ for (const f of pages) {
   assert.ok(/googletagmanager\.com\/gtm\.js\?id=|googletagmanager\.com\/gtm\.js'/.test(s), `${f}: GTM loader script missing`);
   assert.ok(s.includes("GTM-KRDX4BQ5"), `${f}: GTM-KRDX4BQ5 missing`);
   assert.ok(/ns\.html\?id=GTM-KRDX4BQ5/.test(s), `${f}: GTM noscript missing`);
-  if (f !== "track.html") // track.html is the noindex customer portal; no forms, no site-upgrades.js today
-    assert.ok(/<script[^>]+src="\/site-upgrades\.js[^"]*"/.test(s), `${f}: site-upgrades.js (gclid/attribution capture) missing`);
+  assert.ok(/<script[^>]+src="\/site-upgrades\.js[^"]*"/.test(s), `${f}: site-upgrades.js (gclid/attribution capture) missing`);
   assert.ok(/gtag\('consent', 'default', \{[\s\S]*?ad_storage:\s*'denied'[\s\S]*?analytics_storage:\s*'denied'[\s\S]*?ad_user_data:\s*'denied'[\s\S]*?ad_personalization:\s*'denied'/.test(s),
     `${f}: consent mode defaults changed or missing`);
 }
