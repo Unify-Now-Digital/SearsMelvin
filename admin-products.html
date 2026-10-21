@@ -177,6 +177,7 @@
         .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
         .product-price strong { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); }
+        .guide-price-note { margin: 0.2rem 0 0; font-size: 0.9rem; color: var(--color-text-muted); }
         .no-results { display: none; grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 2px dashed var(--color-border); }
         .no-results.visible { display: block; }
         .no-results svg { width: 64px; height: 64px; stroke: var(--color-border); margin-bottom: 1rem; }
@@ -742,7 +743,7 @@
                 ).join('');
                 const adminClass = product.is_active === false ? ' admin-hidden' : '';
 
-                productsHTML += '<a href="/memorials/' + slug + '" class="product-card' + adminClass + '" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card' + adminClass + '" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="guide-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
@@ -1203,10 +1204,10 @@ function declineCookies() {
         // ==================== SITE SEARCH ==
 
         const searchFaqData = [
-            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "How long does a memorial take?", a: "Typically 12 to 24 weeks from order to installation.", url: "/faq#timing" },
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
-            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "How does payment work?", a: "A 50% deposit confirms your order. We send each invoice by email, payable by card or bank transfer.", url: "/faq#payment" },
             { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },

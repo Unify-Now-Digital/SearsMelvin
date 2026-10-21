@@ -875,10 +875,11 @@
                 <section class="product-guarantees" aria-labelledby="guaranteesHeading">
                     <h2 id="guaranteesHeading">Our guarantees</h2>
                     <ul>
-                        <li><strong>30-year structural fixing guarantee.</strong> Covers our structural fixing, including faulty installation. If the headstone tilts or falls because of our fixing, it is covered.</li>
-                        <li><strong>10-year workmanship guarantee.</strong> Covers defects in our workmanship.</li>
-                        <li><strong>2-year subsidence guarantee.</strong> Covers sinking or tilting caused by normal ground settlement in the first two years.</li>
+                        <li><strong>Structural fixing – 30 years.</strong></li>
+                        <li><strong>Workmanship – 10 years.</strong></li>
+                        <li><strong>Ground settlement – 2 years.</strong></li>
                     </ul>
+                    <p><a href="/terms">See our terms for full guarantee details.</a></p>
                 </section>
 
                 <!-- Stone Colour - Live Updates SVG -->
@@ -1120,8 +1121,8 @@
                     <div class="trust-badge">
                         <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                         <div class="trust-badge-text">
-                            <strong>30-year fixing guarantee</strong>
-                            <span>Plus 10-year workmanship and 2-year subsidence guarantees</span>
+                            <strong>Structural fixing – 30 years</strong>
+                            <span>Workmanship – 10 years · Ground settlement – 2 years</span>
                         </div>
                     </div>
                     <div class="trust-badge">
@@ -1176,6 +1177,7 @@
                         <span>Guide total (installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
+                    <p class="guide-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -1195,6 +1197,7 @@
     <div class="mobile-bottom-bar">
         <div class="mobile-price">
             <span id="mobilePriceTotal">—</span><span class="mobile-price-suffix">installed</span>
+            <span class="guide-price-note">Cemetery permit fees are extra and vary by cemetery.</span>
         </div>
         <div class="mobile-actions">
             <button class="btn btn-secondary" onclick="saveMemorial()" style="padding:0.5rem;" aria-label="Save">
@@ -1506,7 +1509,8 @@
                             priceCurrency: 'GBP',
                             price: state.basePrice,
                             availability: 'https://schema.org/InStock',
-                            priceValidUntil: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+                            priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+                            description: 'Cemetery permit fees are extra and vary by cemetery.',
                             seller: { '@type': 'Organization', name: 'Sears Melvin Memorials' }
                         }
                     };
@@ -2779,10 +2783,10 @@ function declineCookies() {
         // ==================== SITE SEARCH ==
 
         const searchFaqData = [
-            { q: "How long does a memorial take?", a: "Typically 12-18 weeks from order to installation.", url: "/faq#timing" },
+            { q: "How long does a memorial take?", a: "Typically 12 to 24 weeks from order to installation.", url: "/faq#timing" },
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
-            { q: "Do you offer payment plans?", a: "We require a 50% deposit with the balance due before installation.", url: "/faq#payment" },
+            { q: "How does payment work?", a: "A 50% deposit confirms your order. We send each invoice by email, payable by card or bank transfer.", url: "/faq#payment" },
             { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
