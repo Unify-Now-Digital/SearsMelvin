@@ -1,6 +1,6 @@
 {
   "container": "GTM-KRDX4BQ5",
-  "version": "21",
+  "version": "22",
   "tags": [
     {
       "function": "__awcc",
@@ -181,6 +181,15 @@
       "params": {},
       "triggers": [
         "if _eq({{__e}},sm_chat_submit)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "page_view",
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},consent_granted_by_click)"
       ]
     },
     {

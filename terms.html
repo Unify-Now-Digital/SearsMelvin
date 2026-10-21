@@ -63,7 +63,7 @@
         // trigger on sm_chat_submit.
         window.__smChatHook = true;
         var lastChatPush = 0;
-        function chatSubmitted(){
+        function chatSubmitted(data){
           try {
             var now = Date.now();
             if (now - lastChatPush > 3000) {
@@ -73,6 +73,7 @@
               window.dataLayer.push({ event: 'ghl_chat_submission' });
             }
           } catch (e) {}
+          try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
           return true; // never block the chat
         }
         function hookChat(){
@@ -697,6 +698,7 @@ function acceptCookies() {
     localStorage.setItem('cookieConsent', 'accepted');
     document.getElementById('cookieConsent').style.display = 'none';
     pushConsent(true);
+    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
 }
 function declineCookies() {
     localStorage.setItem('cookieConsent', 'declined');
