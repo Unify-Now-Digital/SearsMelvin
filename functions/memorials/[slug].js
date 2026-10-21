@@ -81,6 +81,7 @@ function buildSchema(product, canonicalUrl) {
       priceCurrency: "GBP",
       price: Number.isFinite(price) ? price.toFixed(2) : undefined,
       availability: "https://schema.org/MadeToOrder",
+      description: "Cemetery permit fees are extra and vary by cemetery.",
       seller: { "@type": "Organization", name: "Sears Melvin Memorials" },
     },
   };

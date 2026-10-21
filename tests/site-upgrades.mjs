@@ -32,7 +32,7 @@ assert.match(up.teamHtml([{ name: "<b>x</b>", role: "r", line: "l" }]), /&lt;b&g
 
 // Listing cards carry the price honesty line.
 const listing = readFileSync("memorials.html", "utf8");
-assert.ok(listing.includes("Installed guide price · cemetery fees extra"));
+assert.ok(listing.includes("Cemetery permit fees are extra and vary by cemetery."));
 
 // /about and /brochure exist, and the main public navigation stays consistent.
 assert.ok(existsSync("about.html") && existsSync("brochure.html"));

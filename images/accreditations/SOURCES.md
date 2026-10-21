@@ -9,5 +9,5 @@ Sears Melvin is RQMF registered, No. 2263. Remove the logo if that status lapses
 
 Sears Melvin is NOT a NAMM member: do not use any NAMM logo or claim NAMM membership.
 The only permitted NAMM mention is the plain-text line
-"Fixers qualified to the NAMM-run RQMF standard" next to the RQMF badge.
+"Our fixers are NAMM-qualified and RQMF registered." next to the RQMF badge.
 (NAMM logo files were removed on 2026-10-12.)
