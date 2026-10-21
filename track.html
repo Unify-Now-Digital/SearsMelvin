@@ -3,6 +3,13 @@
 <head>
     <!-- Consent Mode default — denied until the user accepts the cookie banner -->
     <script>
+    // Google's call-number swap can reject when its endpoint returns an empty/non-JSON 200.
+    window.addEventListener('unhandledrejection', function(e) {
+      var message = e.reason && e.reason.message;
+      if (typeof message === 'string' && message.startsWith('Invalid JSON string')) {
+        e.preventDefault();
+      }
+    });
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('consent', 'default', {
