@@ -130,22 +130,32 @@ assert.equal(attributedRow.gbraid, "gb1");
 assert.equal(attributedRow.wbraid, "wb1");
 assert.equal(attributedRow.utm_source, "stored-wins");
 assert.equal(attributedRow.utm_medium, "cpc");
+assert.equal(attributedRow.lead_source, "Google Ads");
+const lastTouchRow = await downloadRow(env, { source: "home", attribution: { last_gclid: "LG1", last_utm_campaign: "Recent" } });
+assert.equal(lastTouchRow.last_gclid, "LG1");
+assert.equal(lastTouchRow.last_utm_campaign, "Recent");
 
 // Until the additive migration is applied, a PostgREST 400 retries once with
 // the legacy columns only.
-brochureInsertStatuses = [400, 400, 201];
-r = await post({ action: "download", source: "home", gclid: "retry-me" });
+brochureInsertStatuses = [400, 400, 400, 201];
+r = await post({ action: "download", source: "home", gclid: "retry-me", attribution: { last_gclid: "last-click" } });
 const fallbackLogs = calls.filter((c) => c.url.endsWith("/brochure_downloads"));
-assert.equal(fallbackLogs.length, 3);
+assert.equal(fallbackLogs.length, 4);
 assert.equal(fallbackLogs[0].body.gclid, "retry-me");
 assert.match(fallbackLogs[0].body.ua_hash, /^[a-f0-9]{64}$/);
-// First retry drops only gbraid/wbraid, keeping gclid.
+assert.equal(fallbackLogs[0].body.last_gclid, "last-click");
+assert.equal(fallbackLogs[0].body.lead_source, "Unknown");
+// First retry drops last-touch + lead_source, keeping click IDs.
 assert.equal(fallbackLogs[1].body.gclid, "retry-me");
-assert.ok(!("gbraid" in fallbackLogs[1].body));
-assert.ok(!("gclid" in fallbackLogs[2].body));
+assert.ok(!("last_gclid" in fallbackLogs[1].body));
+assert.ok(!("lead_source" in fallbackLogs[1].body));
+// Second retry drops braid IDs while retaining gclid.
+assert.equal(fallbackLogs[2].body.gclid, "retry-me");
 assert.ok(!("gbraid" in fallbackLogs[2].body));
 assert.ok(!("wbraid" in fallbackLogs[2].body));
-assert.ok(!("ua_hash" in fallbackLogs[2].body));
+// Final legacy retry drops gclid and ua_hash.
+assert.ok(!("gclid" in fallbackLogs[3].body));
+assert.ok(!("ua_hash" in fallbackLogs[3].body));
 
 // Email path: Resend + GHL upsert tagged Brochure + log with email_given.
 r = await post({ action: "email", email: " Jane@Example.com ", source: "brochure_page", utm: {} });
@@ -233,9 +243,9 @@ console.log("brochure: ok");
   const { logDownload } = await import("../functions/api/brochure.js");
   const bodies = [];
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async (_u, o) => { bodies.push(JSON.parse(o.body)); return { ok: bodies.length > 1, status: bodies.length > 1 ? 201 : 400 }; };
+  globalThis.fetch = async (_u, o) => { bodies.push(JSON.parse(o.body)); return { ok: bodies.length > 2, status: bodies.length > 2 ? 201 : 400 }; };
   const ok = await logDownload({ SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_KEY: "k", SM_ORG_ID: "org" }, { organization_id: "org", source: "header", gclid: "G1", gbraid: "B1", wbraid: null, ua_hash: "h" });
   globalThis.fetch = realFetch;
-  if (!ok || bodies.length !== 2 || bodies[1].gclid !== "G1" || "gbraid" in bodies[1]) throw new Error("gbraid retry dropped gclid");
+  if (!ok || bodies.length !== 3 || bodies[2].gclid !== "G1" || "gbraid" in bodies[2]) throw new Error("gbraid retry dropped gclid");
   console.log("brochure gbraid-retry keeps gclid ok");
 }

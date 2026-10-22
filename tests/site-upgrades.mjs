@@ -72,6 +72,10 @@ assert.deepEqual(up.mergeLastAttribution({ ts: t0, gclid: "first" }, { utm_campa
 const rec2 = up.mergeAttribution(rec, { wbraid: "w2", utm_source: "google" }, t0 + 20);
 assert.deepEqual(up.attributionFields(rec2), { wbraid: "w2", utm_source: "google" });
 assert.equal(rec2.ts, t0 + 20);
+const upgradesSource = readFileSync("site-upgrades.js", "utf8");
+assert.match(upgradesSource, /\['gclid', 'gbraid', 'wbraid', 'utm_source'/, "stored attribution exposes every last-touch click ID");
+assert.match(upgradesSource, /sendBeacon\('\/api\/click-intent', json\)/, "click intent beacon uses a plain string body");
+assert.doesNotMatch(upgradesSource, /sendBeacon\('\/api\/click-intent', new Blob/);
 // Expired first touch is replaced by any fresh UTMs.
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bing" }, t0 + up.ATTR_TTL_MS)), { utm_source: "bing" });
 // Every public form sends the stored attribution.
