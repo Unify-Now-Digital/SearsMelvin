@@ -25,7 +25,7 @@ import {
 import { attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
-const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
+const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=8";
 const FROM = "Sears Melvin Memorials <info@searsmelvin.co.uk>";
 const PHONE = "020 3835 2548";
 export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
@@ -117,7 +117,7 @@ export function brochureLink(source) {
 }
 
 const LOGO_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/brand/sm-logo.png";
-const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=7`;
+const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=8`;
 
 // Gmail-safe: tables, inline styles, no background images, explicit colours on
 // every text node so dark-mode inversion keeps contrast.
