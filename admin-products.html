@@ -985,7 +985,8 @@
                         enquiry_type: 'shortlist-enquiry',
                         source_page: window.location.pathname,
                         message: note || null,
-                        details: { items: shortlistItems }
+                        details: { items: shortlistItems },
+                        attribution: (window.SMUpgrades && window.SMUpgrades.getAttribution) ? window.SMUpgrades.getAttribution() : null
                     })
                 });
                 var result = await res.json();

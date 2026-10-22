@@ -1663,6 +1663,10 @@ export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
 }
 
 export async function createGHLContact(env, args, fetchOverride) {
+  if (!createGHLContact._locationChecked) {
+    createGHLContact._locationChecked = true;
+    console.log(JSON.stringify({ message: "ghl_location_check", is_sm_location: env.GHL_LOCATION_ID === "7JJQ1fkS2z8zv5XIDV0P" }));
+  }
   const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead } = args;
   const fetchImpl = args.fetchImpl || fetchOverride || fetch;
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
@@ -1689,6 +1693,7 @@ export async function createGHLContact(env, args, fetchOverride) {
   const res = await fetchImpl("https://services.leadconnectorhq.com/contacts/", {
     method: "POST",
     headers,
+    // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
       email, phone: phone || undefined, source: "Website", tags, customFields,
