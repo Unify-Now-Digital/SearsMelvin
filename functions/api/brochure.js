@@ -25,7 +25,7 @@ import {
 import { attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
-const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
+const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
 const FROM = "Sears Melvin Memorials <info@searsmelvin.co.uk>";
 const PHONE = "020 3835 2548";
 export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
@@ -117,7 +117,7 @@ export function brochureLink(source) {
 }
 
 const LOGO_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/brand/sm-logo.png";
-const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=7`;
+const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=9`;
 
 // Gmail-safe: tables, inline styles, no background images, explicit colours on
 // every text node so dark-mode inversion keeps contrast.
@@ -143,7 +143,7 @@ export function brochureEmailHtml(link) {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#2C2C2C" style="background:#2C2C2C;border-radius:3px;">
 <a href="${link}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:3px;">Download the brochure</a>
 </td></tr></table>
-<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 21 pages · 2.3 MB</p>
+<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 30 pages · 2.3 MB</p>
 </td></tr>
 <tr><td style="padding:26px 32px 4px;font-family:Arial,Helvetica,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #E0DCD5;"><tr><td style="padding-top:20px;font-size:14px;line-height:1.65;color:#3D3D3D;">
