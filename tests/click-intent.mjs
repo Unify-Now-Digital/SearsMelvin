@@ -8,6 +8,8 @@ const require = createRequire(import.meta.url);
 const { clickIntentBody } = require("../site-upgrades.js");
 
 assert.equal(clickIntentBody("chat", {}, {}, 1, "/contact"), null);
+assert.deepEqual(clickIntentBody("call", {}, {}, 2, "/contact"), { kind: "call", page: "/contact", ts: 2 });
+assert.deepEqual(clickIntentBody("chat", { utm_source: "newsletter" }, {}, 3, "/contact"), { kind: "chat", utm_source: "newsletter", page: "/contact", ts: 3 });
 assert.equal(clickIntentBody("email", { gclid: "click-1" }, {}, 1, "/contact"), null);
 assert.deepEqual(
   clickIntentBody("call", { gclid: "click-1", landing_page: "/quote?x=1" }, { email: "x@example.com", phone: "020 123" }, 123, "/contact?x=1"),
@@ -24,9 +26,10 @@ assert.deepEqual(
 
 const env = { SUPABASE_URL: "https://db.example", SUPABASE_SERVICE_KEY: "service-secret", SM_ORG_ID: "11111111-1111-1111-1111-111111111111" };
 function request(body, headers = {}) {
+  const contentType = headers["Content-Type"] || "application/json";
   return new Request("https://searsmelvin.co.uk/api/click-intent", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Origin: "https://searsmelvin.co.uk", ...headers },
+    headers: { "Content-Type": contentType, Origin: "https://searsmelvin.co.uk", ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -36,21 +39,32 @@ const originalError = console.error;
 try {
   let calls = [];
   let logs = [];
-  globalThis.fetch = async (...args) => { calls.push(args); return new Response(null, { status: 500 }); };
+  globalThis.fetch = async (...args) => {
+    calls.push(args);
+    if (String(args[0]).includes("check_portal_rate_limit")) return Response.json([{ allowed: true }]);
+    return new Response(null, { status: 500 });
+  };
   console.error = (...args) => logs.push(args.join(" "));
 
   const forbidden = await onRequestPost({ request: request({ kind: "call", gclid: "x" }, { Origin: "https://evil.example" }), env });
   assert.equal(forbidden.status, 403);
 
-  const ignored = await onRequestPost({ request: request({ kind: "call" }), env });
+  const ignored = await onRequestPost({ request: request({ kind: "chat" }), env });
   assert.equal(ignored.status, 204);
-  assert.equal(calls.length, 0, "no click ID must not call Supabase");
+  assert.equal(calls.length, 0, "chat without click ID or UTM must not call Supabase");
 
+  const callAccepted = await onRequestPost({ request: request({ kind: "call", page: "/contact" }, { "Content-Type": "text/plain;charset=UTF-8" }), env });
+  assert.equal(callAccepted.status, 204);
+  assert.equal(calls.filter(([url]) => String(url).endsWith("/rest/v1/click_intents")).length, 1, "call without click ID is inserted");
+  assert.equal(JSON.parse(calls.at(-1)[1].body).gclid, null);
+
+  calls = [];
   const accepted = await onRequestPost({ request: request({ kind: "chat", gclid: "click-secret", email: " Person@Example.com ", phone: "+44 (0)20 1234", page: "/contact?bad=1" }, { "User-Agent": "test-agent" }), env });
   assert.equal(accepted.status, 204);
-  assert.equal(calls.length, 1);
-  assert.match(String(calls[0][0]), /\/rest\/v1\/click_intents$/);
-  const row = JSON.parse(calls[0][1].body);
+  const inserts = calls.filter(([url]) => String(url).endsWith("/rest/v1/click_intents"));
+  assert.equal(inserts.length, 1);
+  assert.match(String(inserts[0][0]), /\/rest\/v1\/click_intents$/);
+  const row = JSON.parse(inserts[0][1].body);
   assert.equal(row.email, "person@example.com");
   assert.equal(row.phone, "+440201234");
   assert.equal(row.page, "/contact");
@@ -61,11 +75,18 @@ try {
   }
 
   calls = [];
-  globalThis.fetch = async (...args) => { calls.push(args); return new Response(null, { status: calls.length === 1 ? 400 : 201 }); };
+  let insertCount = 0;
+  globalThis.fetch = async (...args) => {
+    calls.push(args);
+    if (String(args[0]).includes("check_portal_rate_limit")) return Response.json([{ allowed: true }]);
+    insertCount += 1;
+    return new Response(null, { status: insertCount === 1 ? 400 : 201 });
+  };
   await onRequestPost({ request: request({ kind: "call", gclid: "click", utm_source: "google", utm_medium: "cpc" }), env });
-  assert.equal(calls.length, 2, "a lagging UTM migration retries once");
-  assert.equal(JSON.parse(calls[0][1].body).utm_source, "google");
-  assert.ok(!("utm_source" in JSON.parse(calls[1][1].body)));
+  const retryInserts = calls.filter(([url]) => String(url).endsWith("/rest/v1/click_intents"));
+  assert.equal(retryInserts.length, 2, "a lagging UTM migration retries once");
+  assert.equal(JSON.parse(retryInserts[0][1].body).utm_source, "google");
+  assert.ok(!("utm_source" in JSON.parse(retryInserts[1][1].body)));
 } finally {
   globalThis.fetch = originalFetch;
   console.error = originalError;

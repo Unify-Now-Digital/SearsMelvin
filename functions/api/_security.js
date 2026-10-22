@@ -8,9 +8,11 @@ export class RequestValidationError extends Error {
   }
 }
 
-export async function readBoundedJson(request, maxBytes = MAX_JSON_BYTES) {
+export async function readBoundedJson(request, maxBytes = MAX_JSON_BYTES, { allowTextPlain = false } = {}) {
   const contentType = request.headers.get("Content-Type") || "";
-  if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
+  const isJson = /^application\/json(?:\s*;|$)/i.test(contentType);
+  const isTextPlain = allowTextPlain && /^text\/plain(?:\s*;|$)/i.test(contentType);
+  if (!isJson && !isTextPlain) {
     throw new RequestValidationError("Content-Type must be application/json", 415);
   }
 

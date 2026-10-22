@@ -22,7 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
-import { adSourceCustomField, attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, leadTags } from "./submit.js";
+import { adSourceCustomField, attributionCustomFields, cleanLastAttribution, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, lastTouchCustomFields, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
@@ -75,6 +75,8 @@ export async function downloadRow(env, { source, utm, emailGiven, page, gclid, g
     gclid: cleanGclid(gclid) || cleanGclid(attribution?.gclid),
     gbraid: cleanGclid(gbraid) || cleanGclid(attribution?.gbraid),
     wbraid: cleanGclid(wbraid) || cleanGclid(attribution?.wbraid),
+    lead_source: deriveLeadSource({ ...(attribution || {}), ...u }),
+    ...cleanLastAttribution(attribution),
     ua_hash: await hashUserAgent(request),
   };
 }
@@ -94,15 +96,22 @@ export async function logDownload(env, row) {
     let res = await fetch(url, options);
     // The additive migration may lag the Worker deploy. PostgREST reports
     // unknown click-ID/ua_hash columns as 400, so retry the legacy row once.
-    // Step 1: drop only gbraid/wbraid (2026-10-22 migration) so gclid still lands.
+    // Step 1: deploy safely before the last-touch/lead-source migration lands.
+    if (res.status === 400) {
+      const noLastTouch = Object.fromEntries(Object.entries(row).filter(([key]) => key !== "lead_source" && !key.startsWith("last_")));
+      res = await fetch(url, { ...options, body: JSON.stringify(noLastTouch) });
+    }
+    // Step 2: drop only gbraid/wbraid so gclid still lands.
     if (res.status === 400 && ("gbraid" in row || "wbraid" in row)) {
       const { gbraid: _gbraid, wbraid: _wbraid, ...noBraid } = row;
-      res = await fetch(url, { ...options, body: JSON.stringify(noBraid) });
+      const compatible = Object.fromEntries(Object.entries(noBraid).filter(([key]) => key !== "lead_source" && !key.startsWith("last_")));
+      res = await fetch(url, { ...options, body: JSON.stringify(compatible) });
     }
-    // Step 2: legacy table without gclid/ua_hash either.
+    // Step 3: legacy table without gclid/ua_hash either.
     if (res.status === 400) {
       const { gclid: _gclid, gbraid: _gbraid, wbraid: _wbraid, ua_hash: _uaHash, ...legacyRow } = row;
-      res = await fetch(url, { ...options, body: JSON.stringify(legacyRow) });
+      const compatible = Object.fromEntries(Object.entries(legacyRow).filter(([key]) => key !== "lead_source" && !key.startsWith("last_")));
+      res = await fetch(url, { ...options, body: JSON.stringify(compatible) });
     }
     if (!res.ok) console.error(JSON.stringify({ message: "brochure_download_log_failed", status: res.status }));
     return res.ok;
@@ -218,6 +227,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   // gclid/gbraid/wbraid + utm_* into the SM contact attribution fields (only
   // when the browser sent any, so a plain request makes no extra GHL call).
   let customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
+  const lastTouchFields = await lastTouchCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
   customFields.push(...await adSourceCustomField(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl }));
   const duplicate = !customFields.length ? { ok: false } : await fetchImpl(`${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(SM_GHL_LOCATION_ID)}&email=${encodeURIComponent(email)}`, { headers });
   if (duplicate.ok) {
@@ -225,6 +235,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
     const found = foundBody.contact || foundBody.contacts?.[0];
     if (found) customFields = fillOnlyCustomFields(found.customFields, customFields);
   }
+  customFields.push(...lastTouchFields);
   // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
   const googleAdsTags = isGoogleAdsLead(meta.attribution) ? ["source-google-ads"] : [];
   const tags = [...new Set(["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" }), ...googleAdsTags])];

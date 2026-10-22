@@ -180,7 +180,8 @@
             var v = typeof attribution[k] === 'string' ? attribution[k].trim().slice(0, 200) : '';
             if (v && /^[\w\-.~]+$/.test(v)) ids[k] = v;
         });
-        if (!Object.keys(ids).length) return null;
+        var hasUtm = UTM_KEYS.some(function (k) { return typeof attribution[k] === 'string' && !!attribution[k].trim(); });
+        if (kind === 'chat' && !Object.keys(ids).length && !hasUtm) return null;
         var body = { kind: kind };
         CLICK_KEYS.forEach(function (k) { if (ids[k]) body[k] = ids[k]; });
         UTM_KEYS.forEach(function (k) {
@@ -317,7 +318,7 @@
         var out = attributionFields(rec);
         if (lp && lp.landing_page) out.landing_page = lp.landing_page;
         if (lp && lp.referrer) out.referrer = lp.referrer;
-        ['gclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (k) {
+        ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (k) {
             if (storedLast && typeof storedLast[k] === 'string' && storedLast[k]) out['last_' + k] = storedLast[k];
         });
         return out;
@@ -335,7 +336,7 @@
             lastClickIntent[kind] = now;
             var json = JSON.stringify(body);
             try {
-                if (navigator.sendBeacon && navigator.sendBeacon('/api/click-intent', new Blob([json], { type: 'application/json' }))) return;
+                if (navigator.sendBeacon && navigator.sendBeacon('/api/click-intent', json)) return;
             } catch (_e) {}
             try {
                 var sent = fetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });

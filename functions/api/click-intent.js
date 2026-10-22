@@ -1,5 +1,5 @@
 // /api/click-intent — fail-soft capture of ad click IDs for chat/call matching.
-import { hardenedJson, isSameOriginRequest, readBoundedJson, RequestValidationError, supabaseHeaders } from "./_security.js";
+import { checkRateLimit, getClientAddress, hardenedJson, isSameOriginRequest, readBoundedJson, RequestValidationError, supabaseHeaders } from "./_security.js";
 import { cleanAttribution } from "./submit.js";
 
 function cleanPath(value) {
@@ -35,7 +35,7 @@ export async function onRequestPost({ request, env }) {
   if (!isSameOriginRequest(request)) return hardenedJson({ ok: false, error: "Forbidden" }, 403);
   let data;
   try {
-    data = await readBoundedJson(request, 4 * 1024);
+    data = await readBoundedJson(request, 4 * 1024, { allowTextPlain: true });
   } catch (error) {
     const status = error instanceof RequestValidationError ? error.status : 400;
     return hardenedJson({ ok: false, error: "Invalid request" }, status);
@@ -43,11 +43,20 @@ export async function onRequestPost({ request, env }) {
 
   const attribution = cleanAttribution(data);
   const kind = data.kind === "chat" || data.kind === "call" ? data.kind : null;
-  if (!kind || !(attribution.gclid || attribution.gbraid || attribution.wbraid)) return noContent();
+  const hasClickId = attribution.gclid || attribution.gbraid || attribution.wbraid;
+  const hasUtm = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].some((key) => attribution[key]);
+  if (!kind || (kind === "chat" && !hasClickId && !hasUtm)) return noContent();
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
     console.error(JSON.stringify({ message: "click_intent_config_missing" }));
     return noContent();
   }
+  const ipLimit = await checkRateLimit(env, request, "click-intent-ip", getClientAddress(request), {
+    maxAttempts: 60,
+    windowSeconds: 3600,
+    blockSeconds: 3600,
+    failClosed: false,
+  });
+  if (!ipLimit.allowed) return noContent();
 
   const row = {
     organization_id: env.SM_ORG_ID,

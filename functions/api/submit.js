@@ -1452,7 +1452,7 @@ export async function upsertPerson(env, { name, email, phone }) {
 // Persist a non-quote submission: always a `people` row (deduped by email) plus
 // an `enquiries` row. Quotes go through the atomic create_quote RPC instead
 // (see handleQuoteRequest); this path covers contact, appointment and shortlist.
-async function createEnquiry(env, payload) {
+export async function createEnquiry(env, payload) {
   // Person upsert and the best-effort cemetery lookup are independent; run them
   // concurrently. Cemetery lookup is best-effort (free-text submissions still
   // save with cemetery_id=null).
@@ -1485,6 +1485,7 @@ async function createEnquiry(env, payload) {
     details: payload.details ?? null,
     order_id: null,
     ...attributionColumns(payload.attribution),
+    ...cleanLastAttribution(payload.attribution),
     ...leadColumns(payload.attribution, { withChannel: true }),
   };
   const post = (body) => fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
@@ -1492,12 +1493,23 @@ async function createEnquiry(env, payload) {
     headers: supabaseHeaders(env),
     body: JSON.stringify(body),
   });
-  let enqRes = await post(enqBody);
+  let currentBody = enqBody;
+  let enqRes = await post(currentBody);
   // Until Mason migration 20261015120000 adds enquiries.lead_channel, PostgREST
   // rejects the unknown column (PGRST204): never lose the lead — retry without it.
-  if (!enqRes.ok && enqRes.status === 400 && "lead_channel" in enqBody && /PGRST204|lead_channel/.test(await enqRes.clone().text().catch(() => ""))) {
-    const { lead_channel: _drop, ...legacy } = enqBody;
-    enqRes = await post(legacy);
+  for (let attempt = 0; !enqRes.ok && enqRes.status === 400 && attempt < 2; attempt += 1) {
+    const error = await enqRes.clone().text().catch(() => "");
+    let nextBody = currentBody;
+    if (/PGRST204|last_/.test(error) && LAST_ATTRIBUTION_KEYS.some((key) => key in nextBody)) {
+      nextBody = Object.fromEntries(Object.entries(nextBody).filter(([key]) => !LAST_ATTRIBUTION_KEYS.includes(key)));
+    }
+    if (/PGRST204|lead_channel/.test(error) && "lead_channel" in nextBody) {
+      const { lead_channel: _drop, ...withoutChannel } = nextBody;
+      nextBody = withoutChannel;
+    }
+    if (nextBody === currentBody) break;
+    currentBody = nextBody;
+    enqRes = await post(currentBody);
   }
   if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
   return { personId: person.id };
@@ -1509,19 +1521,33 @@ export function attributionColumns(attribution) {
   return cleanAttribution(attribution);
 }
 
-async function saveEnquiryAttribution(env, enquiryId, attribution) {
+export async function saveEnquiryAttribution(env, enquiryId, attribution) {
   // lead_channel is set by the migrated create_quote itself; the fallback only sends columns that exist today.
   const cols = { ...attributionColumns(attribution), ...leadColumns(attribution) };
-  if (!enquiryId || !Object.keys(cols).length) return;
+  if (!enquiryId) return;
+  if (Object.keys(cols).length) {
+    try {
+      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+        method: "PATCH",
+        headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+        body: JSON.stringify(cols),
+      });
+      if (!res.ok) console.error(JSON.stringify({ message: "enquiry_attribution_save_failed", status: res.status }));
+    } catch {
+      console.error(JSON.stringify({ message: "enquiry_attribution_save_failed" }));
+    }
+  }
+  const lastCols = cleanLastAttribution(attribution);
+  if (!Object.keys(lastCols).length) return;
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
       method: "PATCH",
       headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
-      body: JSON.stringify(cols),
+      body: JSON.stringify(lastCols),
     });
-    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_attribution_save_failed", status: res.status }));
+    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing", status: res.status }));
   } catch {
-    console.error(JSON.stringify({ message: "enquiry_attribution_save_failed" }));
+    console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing" }));
   }
 }
 
@@ -1530,6 +1556,7 @@ async function saveEnquiryAttribution(env, enquiryId, attribution) {
 // ═══════════════════════════════════════════════════════════════════
 // ── Ads attribution → GHL contact custom fields ─────────────────────
 export const ATTRIBUTION_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+export const LAST_ATTRIBUTION_KEYS = ["last_gclid", "last_gbraid", "last_wbraid", "last_utm_source", "last_utm_medium", "last_utm_campaign", "last_utm_term", "last_utm_content"];
 
 export function cleanAttribution(a) {
   const out = {};
@@ -1539,6 +1566,19 @@ export function cleanAttribution(a) {
     const v = a[k].trim().slice(0, k.startsWith("utm_") ? 100 : 200);
     if (!v) continue;
     if (!k.startsWith("utm_") && !/^[\w\-.~]+$/.test(v)) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+export function cleanLastAttribution(a) {
+  const out = {};
+  if (!a || typeof a !== "object" || Array.isArray(a)) return out;
+  for (const k of LAST_ATTRIBUTION_KEYS) {
+    if (typeof a[k] !== "string") continue;
+    const isUtm = k.startsWith("last_utm_");
+    const v = a[k].trim().slice(0, isUtm ? 100 : 200);
+    if (!v || (!isUtm && !/^[\w\-.~]+$/.test(v))) continue;
     out[k] = v;
   }
   return out;
@@ -1640,10 +1680,30 @@ async function ghlContactFieldIds(token, locationId, fetchImpl = fetch) {
     const k = String(f.fieldKey).replace(/^contact\./, "");
     map[k] = f.id;
     const bare = k.replace(/^contact_?/, "");
-    if (ATTRIBUTION_KEYS.includes(bare) && !map[bare]) map[bare] = f.id;
+    if ([...ATTRIBUTION_KEYS, ...LAST_ATTRIBUTION_KEYS].includes(bare) && !map[bare]) map[bare] = f.id;
   }
   _ghlFieldCache.set(locationId, { at: Date.now(), map });
   return map;
+}
+
+let _warnedMissingLastTouchFields = false;
+export async function lastTouchCustomFields(env, attribution, { token, locationId, fetchImpl } = {}) {
+  const a = cleanLastAttribution(attribution);
+  const keys = Object.keys(a);
+  if (!keys.length) return [];
+  token = token || env.GHL_API_KEY;
+  locationId = locationId || env.GHL_LOCATION_ID;
+  if (!token || !locationId) return [];
+  let ids = {};
+  try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); }
+  catch { /* unresolved below */ }
+  const pick = (key) => ids[key] || ids["contact" + key] || ids["contact_" + key];
+  const missing = keys.filter((key) => !pick(key));
+  if (missing.length && !_warnedMissingLastTouchFields) {
+    _warnedMissingLastTouchFields = true;
+    console.warn(JSON.stringify({ message: "ghl_last_touch_fields_missing", missing }));
+  }
+  return keys.filter((key) => pick(key)).map((key) => ({ id: pick(key), field_value: a[key] }));
 }
 
 let _warnedMissingAdSourceField = false;
@@ -1708,6 +1768,7 @@ export async function createGHLContact(env, args, fetchOverride) {
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
   const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
   const adSourceFields = await adSourceCustomField(env, lead, { fetchImpl });
+  const lastTouchFields = await lastTouchCustomFields(env, lead, { fetchImpl });
   const trackedFields = [...(attributionFields || []), ...leadFields, ...adSourceFields];
   const customFields = [
     { key: "lead_type", field_value: type },
@@ -1722,6 +1783,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     ...(attributionFields || []),
     ...leadFields,
     ...adSourceFields,
+    ...lastTouchFields,
   ].filter(Boolean);
   const headers = { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" };
   const res = await fetchImpl("https://services.leadconnectorhq.com/contacts/", {
@@ -1742,7 +1804,7 @@ export async function createGHLContact(env, args, fetchOverride) {
       const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
       if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
       const existingBody = await existingRes.json();
-      const fields = fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields);
+      const fields = [...fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields), ...lastTouchFields];
       if (fields.length) {
         const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
           method: "PUT", headers, body: JSON.stringify({ customFields: fields }),
@@ -1785,7 +1847,7 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue, enqui
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function validateSubmission(input, organizationId) {
+export function validateSubmission(input, organizationId) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return { ok: false, error: "Invalid submission" };
   }
@@ -1865,6 +1927,7 @@ function validateSubmission(input, organizationId) {
   // Lead source + channel are derived HERE, server-side, so a page can't claim them.
   const rawAttribution = data.attribution;
   data.attribution = cleanAttribution(rawAttribution);
+  Object.assign(data.attribution, cleanLastAttribution(rawAttribution));
   Object.assign(data.attribution, leadMeta(rawAttribution, data.channel || data.type, data.enquiry_type || data.sub_type));
   return { ok: true, data };
 }
