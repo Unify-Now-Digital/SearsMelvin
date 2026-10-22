@@ -71,6 +71,10 @@ Current images are from Unsplash. To use your own:
    <img src="images/your-memorial-photo.jpg" alt="...">
    ```
 
+## Environment variables
+
+- `GHL_AD_SOURCE_FIELD_ID` — optional GHL contact custom-field ID for the fill-only “Ad source” value (otherwise resolved by field key).
+
 ## 🔧 Future Enhancements
 
 - [ ] Contact form backend (n8n workflow or Cloudflare Workers)

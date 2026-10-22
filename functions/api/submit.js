@@ -1572,6 +1572,16 @@ export function deriveLeadSource(a) {
   return "Unknown";
 }
 
+// Deliberately excludes deriveLeadSource's referrer/organic branch: this is
+// true only when the submitted attribution itself contains Google Ads evidence.
+export function isGoogleAdsLead(attribution) {
+  const a = cleanAttribution(attribution);
+  return Boolean(
+    a.gclid || a.gbraid || a.wbraid ||
+    (/^google$/i.test(a.utm_source || "") && /^(cpc|ppc|paid)/i.test(a.utm_medium || ""))
+  );
+}
+
 export function deriveLeadChannel(kind, subType) {
   const k = String(kind || "").toLowerCase();
   if (k === "quote") return "RAQ";
@@ -1636,6 +1646,26 @@ async function ghlContactFieldIds(token, locationId, fetchImpl = fetch) {
   return map;
 }
 
+let _warnedMissingAdSourceField = false;
+export async function adSourceCustomField(env, attribution, { token, locationId, fetchImpl } = {}) {
+  if (!isGoogleAdsLead(attribution)) return [];
+  const configuredId = typeof env.GHL_AD_SOURCE_FIELD_ID === "string" ? env.GHL_AD_SOURCE_FIELD_ID.trim() : "";
+  if (configuredId) return [{ id: configuredId, field_value: "Google Ads" }];
+  token = token || env.GHL_API_KEY;
+  locationId = locationId || env.GHL_LOCATION_ID;
+  let ids = {};
+  if (token && locationId) {
+    try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); } catch { /* unresolved below */ }
+  }
+  const id = ids.ad_source || ids.contactad_source || ids.adsource;
+  if (id) return [{ id, field_value: "Google Ads" }];
+  if (!_warnedMissingAdSourceField) {
+    _warnedMissingAdSourceField = true;
+    console.warn(JSON.stringify({ message: "ghl_ad_source_field_missing" }));
+  }
+  return [];
+}
+
 // GHL contact customFields for the attribution. Defaults to the submit.js
 // GHL credentials; the brochure endpoint passes its own SM PIT + location.
 export async function attributionCustomFields(env, attribution, { token, locationId, fetchImpl } = {}) {
@@ -1672,10 +1702,13 @@ export async function createGHLContact(env, args, fetchOverride) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
+  if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
+  const dedupedTags = [...new Set(tags)];
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
   const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
-  const trackedFields = [...(attributionFields || []), ...leadFields];
+  const adSourceFields = await adSourceCustomField(env, lead, { fetchImpl });
+  const trackedFields = [...(attributionFields || []), ...leadFields, ...adSourceFields];
   const customFields = [
     { key: "lead_type", field_value: type },
     product?.name ? { key: "memorial_product", field_value: product.name } : null,
@@ -1688,6 +1721,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     ...(extraFields || []),
     ...(attributionFields || []),
     ...leadFields,
+    ...adSourceFields,
   ].filter(Boolean);
   const headers = { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" };
   const res = await fetchImpl("https://services.leadconnectorhq.com/contacts/", {
@@ -1696,7 +1730,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
-      email, phone: phone || undefined, source: "Website", tags, customFields,
+      email, phone: phone || undefined, source: "Website", tags: dedupedTags, customFields,
     }),
   });
   const body = await res.json().catch(() => ({}));
@@ -1720,7 +1754,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     }
     try {
       const tagsRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/tags`, {
-        method: "POST", headers, body: JSON.stringify({ tags }),
+        method: "POST", headers, body: JSON.stringify({ tags: dedupedTags }),
       });
       if (!tagsRes.ok) throw new Error(`GHL contact tags returned ${tagsRes.status}`);
     } catch (error) {

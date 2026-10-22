@@ -22,7 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
-import { attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, leadTags } from "./submit.js";
+import { adSourceCustomField, attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
@@ -218,6 +218,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   // gclid/gbraid/wbraid + utm_* into the SM contact attribution fields (only
   // when the browser sent any, so a plain request makes no extra GHL call).
   let customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
+  customFields.push(...await adSourceCustomField(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl }));
   const duplicate = !customFields.length ? { ok: false } : await fetchImpl(`${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(SM_GHL_LOCATION_ID)}&email=${encodeURIComponent(email)}`, { headers });
   if (duplicate.ok) {
     const foundBody = await duplicate.json().catch(() => ({}));
@@ -225,16 +226,18 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
     if (found) customFields = fillOnlyCustomFields(found.customFields, customFields);
   }
   // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
+  const googleAdsTags = isGoogleAdsLead(meta.attribution) ? ["source-google-ads"] : [];
+  const tags = [...new Set(["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" }), ...googleAdsTags])];
   const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
     method: "POST", headers,
-    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" })], ...(customFields.length ? { customFields } : {}) }),
+    body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags, ...(customFields.length ? { customFields } : {}) }),
   });
   if (!res.ok) throw new Error(`GHL upsert returned ${res.status}`);
   const body = await res.json().catch(() => ({}));
   const id = body.contact?.id;
   if (!id) return null;
   // Upsert replaces tags on some API versions; add the tag explicitly too.
-  await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download"] }) }).catch(() => null);
+  await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download", ...googleAdsTags] }) }).catch(() => null);
   const note = await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/notes`, { method: "POST", headers, body: JSON.stringify({ body: brochureNote(new Date(), meta) }) });
   if (!note.ok) console.error(JSON.stringify({ message: "sm_ghl_note_failed", status: note.status }));
   // Fail soft: an opportunity error is logged and never affects the email or contact.
