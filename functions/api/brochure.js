@@ -22,7 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
-import { adSourceCustomField, attributionCustomFields, cleanLastAttribution, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, lastTouchCustomFields, leadTags } from "./submit.js";
+import { adSourceCustomField, attributionCustomFields, cleanConsent, consentCustomFields, cleanLastAttribution, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, lastTouchCustomFields, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
@@ -76,6 +76,7 @@ export async function downloadRow(env, { source, utm, emailGiven, page, gclid, g
     gbraid: cleanGclid(gbraid) || cleanGclid(attribution?.gbraid),
     wbraid: cleanGclid(wbraid) || cleanGclid(attribution?.wbraid),
     lead_source: deriveLeadSource({ ...(attribution || {}), ...u }),
+    ...cleanConsent(attribution),
     ...cleanLastAttribution(attribution),
     ua_hash: await hashUserAgent(request),
   };
@@ -94,6 +95,13 @@ export async function logDownload(env, row) {
       body: JSON.stringify(row),
     };
     let res = await fetch(url, options);
+    if (res.status === 400 && Object.keys(cleanConsent(row)).length) {
+      const error = await res.clone().text().catch(() => "");
+      if (/consent_/i.test(error)) {
+        const noConsent = Object.fromEntries(Object.entries(row).filter(([key]) => !key.startsWith("consent_")));
+        res = await fetch(url, { ...options, body: JSON.stringify(noConsent) });
+      }
+    }
     // The additive migration may lag the Worker deploy. PostgREST reports
     // unknown click-ID/ua_hash columns as 400, so retry the legacy row once.
     // Step 1: deploy safely before the last-touch/lead-source migration lands.
@@ -228,6 +236,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   // when the browser sent any, so a plain request makes no extra GHL call).
   let customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
   const lastTouchFields = await lastTouchCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
+  const consentFields = await consentCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
   customFields.push(...await adSourceCustomField(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl }));
   const duplicate = !customFields.length ? { ok: false } : await fetchImpl(`${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(SM_GHL_LOCATION_ID)}&email=${encodeURIComponent(email)}`, { headers });
   if (duplicate.ok) {
@@ -235,6 +244,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
     const found = foundBody.contact || foundBody.contacts?.[0];
     if (found) customFields = fillOnlyCustomFields(found.customFields, customFields);
   }
+  customFields.push(...consentFields);
   customFields.push(...lastTouchFields);
   // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
   const googleAdsTags = isGoogleAdsLead(meta.attribution) ? ["source-google-ads"] : [];

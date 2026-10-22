@@ -92,6 +92,9 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   targets and the shared script's brochure FAB is home-only.
 - Every form sends `attribution: SMUpgrades.getAttribution()`: contact, quote (memorial), shortlist,
   home appointment and brochure email.
+- At send time that attribution also snapshots Consent Mode values as `granted`, `denied`, or
+  `unknown`, plus an ISO capture timestamp. These values are stored with enquiries and brochure
+  downloads for later consent-aware offline conversion uploads; they do not change browser tracking.
 - `functions/api/submit.js` cleans it (`cleanAttribution`) and writes it to the Supabase
   `enquiries` columns `gclid, gbraid, wbraid, utm_*` (migration `2026-10-14-add-enquiry-attribution.sql`;
   quotes: PATCH of the enquiry returned by `create_quote`), and to the GHL contact custom fields
