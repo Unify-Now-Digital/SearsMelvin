@@ -152,6 +152,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
           product,
           // Attribution travels inside create_quote so it can't drift; the PATCH below is the fallback.
           ...cleanAttribution(data.attribution),
+          ...cleanConsent(data.attribution),
           ...leadColumns(data.attribution, { withChannel: true }),
         },
       }),
@@ -1485,6 +1486,7 @@ export async function createEnquiry(env, payload) {
     details: payload.details ?? null,
     order_id: null,
     ...attributionColumns(payload.attribution),
+    ...cleanConsent(payload.attribution),
     ...cleanLastAttribution(payload.attribution),
     ...leadColumns(payload.attribution, { withChannel: true }),
   };
@@ -1497,9 +1499,12 @@ export async function createEnquiry(env, payload) {
   let enqRes = await post(currentBody);
   // Until Mason migration 20261015120000 adds enquiries.lead_channel, PostgREST
   // rejects the unknown column (PGRST204): never lose the lead — retry without it.
-  for (let attempt = 0; !enqRes.ok && enqRes.status === 400 && attempt < 2; attempt += 1) {
+  for (let attempt = 0; !enqRes.ok && enqRes.status === 400 && attempt < 4; attempt += 1) {
     const error = await enqRes.clone().text().catch(() => "");
     let nextBody = currentBody;
+    if (/consent_/i.test(error) && CONSENT_KEYS.some((key) => key in nextBody)) {
+      nextBody = Object.fromEntries(Object.entries(nextBody).filter(([key]) => !CONSENT_KEYS.includes(key)));
+    }
     if (/PGRST204|last_/.test(error) && LAST_ATTRIBUTION_KEYS.some((key) => key in nextBody)) {
       nextBody = Object.fromEntries(Object.entries(nextBody).filter(([key]) => !LAST_ATTRIBUTION_KEYS.includes(key)));
     }
@@ -1523,15 +1528,24 @@ export function attributionColumns(attribution) {
 
 export async function saveEnquiryAttribution(env, enquiryId, attribution) {
   // lead_channel is set by the migrated create_quote itself; the fallback only sends columns that exist today.
-  const cols = { ...attributionColumns(attribution), ...leadColumns(attribution) };
+  const cols = { ...attributionColumns(attribution), ...leadColumns(attribution), ...cleanConsent(attribution) };
   if (!enquiryId) return;
   if (Object.keys(cols).length) {
     try {
-      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+      const url = `${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`;
+      const options = {
         method: "PATCH",
         headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
         body: JSON.stringify(cols),
-      });
+      };
+      let res = await fetch(url, options);
+      if (!res.ok && res.status === 400 && CONSENT_KEYS.some((key) => key in cols)) {
+        const error = await res.clone().text().catch(() => "");
+        if (/consent_/i.test(error)) {
+          const compatible = Object.fromEntries(Object.entries(cols).filter(([key]) => !CONSENT_KEYS.includes(key)));
+          res = await fetch(url, { ...options, body: JSON.stringify(compatible) });
+        }
+      }
       if (!res.ok) console.error(JSON.stringify({ message: "enquiry_attribution_save_failed", status: res.status }));
     } catch {
       console.error(JSON.stringify({ message: "enquiry_attribution_save_failed" }));
@@ -1557,6 +1571,20 @@ export async function saveEnquiryAttribution(env, enquiryId, attribution) {
 // ── Ads attribution → GHL contact custom fields ─────────────────────
 export const ATTRIBUTION_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
 export const LAST_ATTRIBUTION_KEYS = ["last_gclid", "last_gbraid", "last_wbraid", "last_utm_source", "last_utm_medium", "last_utm_campaign", "last_utm_term", "last_utm_content"];
+export const CONSENT_KEYS = ["consent_ad_user_data", "consent_ad_personalization", "consent_captured_at"];
+
+export function cleanConsent(a, now = Date.now()) {
+  const out = {};
+  if (!a || typeof a !== "object" || Array.isArray(a)) return out;
+  for (const key of CONSENT_KEYS.slice(0, 2)) {
+    if (["granted", "denied", "unknown"].includes(a[key])) out[key] = a[key];
+  }
+  if (typeof a.consent_captured_at === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(a.consent_captured_at)) {
+    const captured = Date.parse(a.consent_captured_at);
+    if (Number.isFinite(captured) && Math.abs(captured - now) <= 86_400_000) out.consent_captured_at = new Date(captured).toISOString();
+  }
+  return out;
+}
 
 export function cleanAttribution(a) {
   const out = {};
@@ -1743,6 +1771,18 @@ export async function attributionCustomFields(env, attribution, { token, locatio
   return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
 }
 
+export async function consentCustomFields(env, attribution, { token, locationId, fetchImpl } = {}) {
+  const values = cleanConsent(attribution);
+  if (!Object.keys(values).length) return [];
+  token = token || env.GHL_API_KEY;
+  locationId = locationId || env.GHL_LOCATION_ID;
+  if (!token || !locationId) return [];
+  let ids = {};
+  try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); } catch { return []; }
+  const pick = (key) => ids[key] || ids["contact" + key] || ids["contact_" + key];
+  return Object.entries(values).filter(([key]) => pick(key)).map(([key, value]) => ({ id: pick(key), field_value: value }));
+}
+
 export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
   const existing = new Map((existingCustomFields || []).filter(field => field?.id).map(field => [field.id, field.field_value ?? field.value]));
   return (candidateFields || []).filter(field => {
@@ -1769,6 +1809,7 @@ export async function createGHLContact(env, args, fetchOverride) {
   const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
   const adSourceFields = await adSourceCustomField(env, lead, { fetchImpl });
   const lastTouchFields = await lastTouchCustomFields(env, lead, { fetchImpl });
+  const consentFields = await consentCustomFields(env, lead, { fetchImpl });
   const trackedFields = [...(attributionFields || []), ...leadFields, ...adSourceFields];
   const customFields = [
     { key: "lead_type", field_value: type },
@@ -1784,6 +1825,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     ...leadFields,
     ...adSourceFields,
     ...lastTouchFields,
+    ...consentFields,
   ].filter(Boolean);
   const headers = { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" };
   const res = await fetchImpl("https://services.leadconnectorhq.com/contacts/", {
@@ -1804,7 +1846,7 @@ export async function createGHLContact(env, args, fetchOverride) {
       const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
       if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
       const existingBody = await existingRes.json();
-      const fields = [...fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields), ...lastTouchFields];
+      const fields = [...fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields), ...lastTouchFields, ...consentFields];
       if (fields.length) {
         const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
           method: "PUT", headers, body: JSON.stringify({ customFields: fields }),
@@ -1928,6 +1970,7 @@ export function validateSubmission(input, organizationId) {
   const rawAttribution = data.attribution;
   data.attribution = cleanAttribution(rawAttribution);
   Object.assign(data.attribution, cleanLastAttribution(rawAttribution));
+  Object.assign(data.attribution, cleanConsent(rawAttribution));
   Object.assign(data.attribution, leadMeta(rawAttribution, data.channel || data.type, data.enquiry_type || data.sub_type));
   return { ok: true, data };
 }

@@ -165,6 +165,15 @@
         return out;
     }
 
+    function consentFields(choice, now) {
+        var value = choice === 'accepted' ? 'granted' : choice === 'declined' ? 'denied' : 'unknown';
+        return {
+            consent_ad_user_data: value,
+            consent_ad_personalization: value,
+            consent_captured_at: new Date(now == null ? Date.now() : now).toISOString()
+        };
+    }
+
     function mergeLastAttribution(stored, fresh, now) {
         if (!fresh || !Object.keys(fresh).length) return stored;
         return Object.assign({ ts: now }, fresh);
@@ -288,7 +297,7 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, consentFields: consentFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -321,6 +330,9 @@
         ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (k) {
             if (storedLast && typeof storedLast[k] === 'string' && storedLast[k]) out['last_' + k] = storedLast[k];
         });
+        var cookieConsent = null;
+        try { cookieConsent = localStorage.getItem('cookieConsent'); } catch (_e) {}
+        Object.assign(out, consentFields(cookieConsent, now));
         return out;
     }
     storedAttribution();
