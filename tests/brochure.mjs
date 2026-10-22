@@ -121,17 +121,31 @@ assert.equal((await downloadRow(env, { source: "nope" })).source, "brochure_page
 assert.equal(cleanSource("HOME"), "home");
 assert.equal(cleanGclid("abc_DEF-1.~"), "abc_DEF-1.~");
 for (const bad of ["", "has space", "<script>", "x".repeat(201), 123]) assert.equal(cleanGclid(bad), null);
+const attributedRow = await downloadRow(env, {
+  source: "home", utm: { utm_source: "stored-wins" },
+  attribution: { gclid: "g1", gbraid: "gb1", wbraid: "wb1", utm_source: "fallback", utm_medium: "cpc" },
+});
+assert.equal(attributedRow.gclid, "g1");
+assert.equal(attributedRow.gbraid, "gb1");
+assert.equal(attributedRow.wbraid, "wb1");
+assert.equal(attributedRow.utm_source, "stored-wins");
+assert.equal(attributedRow.utm_medium, "cpc");
 
 // Until the additive migration is applied, a PostgREST 400 retries once with
 // the legacy columns only.
-brochureInsertStatuses = [400, 201];
+brochureInsertStatuses = [400, 400, 201];
 r = await post({ action: "download", source: "home", gclid: "retry-me" });
 const fallbackLogs = calls.filter((c) => c.url.endsWith("/brochure_downloads"));
-assert.equal(fallbackLogs.length, 2);
+assert.equal(fallbackLogs.length, 3);
 assert.equal(fallbackLogs[0].body.gclid, "retry-me");
 assert.match(fallbackLogs[0].body.ua_hash, /^[a-f0-9]{64}$/);
-assert.ok(!("gclid" in fallbackLogs[1].body));
-assert.ok(!("ua_hash" in fallbackLogs[1].body));
+// First retry drops only gbraid/wbraid, keeping gclid.
+assert.equal(fallbackLogs[1].body.gclid, "retry-me");
+assert.ok(!("gbraid" in fallbackLogs[1].body));
+assert.ok(!("gclid" in fallbackLogs[2].body));
+assert.ok(!("gbraid" in fallbackLogs[2].body));
+assert.ok(!("wbraid" in fallbackLogs[2].body));
+assert.ok(!("ua_hash" in fallbackLogs[2].body));
 
 // Email path: Resend + GHL upsert tagged Brochure + log with email_given.
 r = await post({ action: "email", email: " Jane@Example.com ", source: "brochure_page", utm: {} });
@@ -213,3 +227,15 @@ assert.match(attrMig, /public\.brochure_download_daily/);
 assert.match(attrMig, /3770972d-1bbd-417b-b413-297e844db285/);
 
 console.log("brochure: ok");
+
+// 2026-10-22: a 400 for missing gbraid/wbraid columns must keep gclid on the retry.
+{
+  const { logDownload } = await import("../functions/api/brochure.js");
+  const bodies = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (_u, o) => { bodies.push(JSON.parse(o.body)); return { ok: bodies.length > 1, status: bodies.length > 1 ? 201 : 400 }; };
+  const ok = await logDownload({ SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_KEY: "k", SM_ORG_ID: "org" }, { organization_id: "org", source: "header", gclid: "G1", gbraid: "B1", wbraid: null, ua_hash: "h" });
+  globalThis.fetch = realFetch;
+  if (!ok || bodies.length !== 2 || bodies[1].gclid !== "G1" || "gbraid" in bodies[1]) throw new Error("gbraid retry dropped gclid");
+  console.log("brochure gbraid-retry keeps gclid ok");
+}

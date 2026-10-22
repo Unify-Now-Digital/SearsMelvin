@@ -87,6 +87,7 @@
     var CLICK_KEYS = ['gclid', 'gbraid', 'wbraid'];
     var ATTR_KEYS = CLICK_KEYS.concat(UTM_KEYS);
     var ATTR_STORE = 'sm_attr';
+    var ATTR_LAST_STORE = 'sm_attr_last';
     var ATTR_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days, matches Google Ads click window
 
     function normaliseSource(s) {
@@ -135,13 +136,22 @@
     }
 
     // Merge fresh params into the stored record. First touch wins for 90 days:
-    // a later visit with only UTMs (or nothing) keeps the stored record. A new
+    // a later visit with only UTMs fills missing values without overwriting. A new
     // ad click (any click ID) replaces it wholesale and restarts the 90 days.
     // Expired records drop.
     function mergeAttribution(stored, fresh, now) {
         var valid = stored && typeof stored === 'object' && typeof stored.ts === 'number' && (now - stored.ts) < ATTR_TTL_MS;
         var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
-        if (valid && !hasClick) return stored;
+        if (valid && !hasClick) {
+            var filled = null;
+            UTM_KEYS.forEach(function (k) {
+                if (!stored[k] && fresh[k]) {
+                    if (!filled) filled = Object.assign({}, stored);
+                    filled[k] = fresh[k];
+                }
+            });
+            return filled || stored;
+        }
         if (!Object.keys(fresh).length) return null;
         var rec = { ts: now };
         ATTR_KEYS.forEach(function (k) { if (fresh[k]) rec[k] = fresh[k]; });
@@ -153,6 +163,11 @@
         if (!rec) return out;
         ATTR_KEYS.forEach(function (k) { if (typeof rec[k] === 'string' && rec[k]) out[k] = rec[k]; });
         return out;
+    }
+
+    function mergeLastAttribution(stored, fresh, now) {
+        if (!fresh || !Object.keys(fresh).length) return stored;
+        return Object.assign({ ts: now }, fresh);
     }
 
     // Minimal, privacy-bounded payload linking an ad click to a chat/call intent.
@@ -168,6 +183,10 @@
         if (!Object.keys(ids).length) return null;
         var body = { kind: kind };
         CLICK_KEYS.forEach(function (k) { if (ids[k]) body[k] = ids[k]; });
+        UTM_KEYS.forEach(function (k) {
+            var v = typeof attribution[k] === 'string' ? attribution[k].trim().slice(0, 100) : '';
+            if (v) body[k] = v;
+        });
         var landing = cleanPath(attribution.landing_page);
         if (landing) body.landing_page = landing;
         var current = cleanPath(page);
@@ -268,7 +287,7 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -276,16 +295,19 @@
     // Capture on every page load so the landing page records the click,
     // then persist for 90 days (localStorage) for later form submits.
     function storedAttribution() {
-        var stored = null, storedLp = null, now = Date.now();
+        var stored = null, storedLast = null, storedLp = null, now = Date.now();
         var fresh = readAttribution(location.search);
         try { stored = JSON.parse(localStorage.getItem(ATTR_STORE) || 'null'); } catch (_e) {}
+        try { storedLast = JSON.parse(localStorage.getItem(ATTR_LAST_STORE) || 'null'); } catch (_e) {}
         try { storedLp = JSON.parse(localStorage.getItem(LANDING_STORE) || 'null'); } catch (_e) {}
         var rec = mergeAttribution(stored, fresh, now);
+        storedLast = mergeLastAttribution(storedLast, fresh, now);
         var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
         var lp = mergeLanding(storedLp, location.pathname, referrerHost(document.referrer, location.hostname), hasClick, now);
         try {
             if (rec) localStorage.setItem(ATTR_STORE, JSON.stringify(rec));
             else localStorage.removeItem(ATTR_STORE);
+            if (storedLast) localStorage.setItem(ATTR_LAST_STORE, JSON.stringify(storedLast));
             if (lp) localStorage.setItem(LANDING_STORE, JSON.stringify(lp));
         } catch (_e) {}
         if (isAdVisit(fresh)) {
@@ -295,6 +317,9 @@
         var out = attributionFields(rec);
         if (lp && lp.landing_page) out.landing_page = lp.landing_page;
         if (lp && lp.referrer) out.referrer = lp.referrer;
+        ['gclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (k) {
+            if (storedLast && typeof storedLast[k] === 'string' && storedLast[k]) out['last_' + k] = storedLast[k];
+        });
         return out;
     }
     storedAttribution();
@@ -377,7 +402,9 @@
         if (!logged) {
             var attribution = {};
             try { attribution = api.getAttribution() || {}; } catch (_e) {}
-            logBrochure({ action: 'download', source: ev.source, utm: sessionUtm(), gclid: attribution.gclid || null, email_given: !!emailGiven, page: location.pathname });
+            var session = sessionUtm(), utm = {};
+            UTM_KEYS.forEach(function (k) { if (attribution[k] || session[k]) utm[k] = attribution[k] || session[k]; });
+            logBrochure({ action: 'download', source: ev.source, utm: utm, gclid: attribution.gclid || null, gbraid: attribution.gbraid || null, wbraid: attribution.wbraid || null, attribution: attribution, email_given: !!emailGiven, page: location.pathname });
         }
     }
 
@@ -423,8 +450,10 @@
                 if (!email || (input.checkValidity && !input.checkValidity())) { if (status) status.textContent = 'Please enter a valid email address, or just download it below.'; return; }
                 if (btn) btn.disabled = true;
                 if (status) status.textContent = 'Sending…';
+                var attribution = storedAttribution(), session = sessionUtm(), utm = {};
+                UTM_KEYS.forEach(function (k) { if (attribution[k] || session[k]) utm[k] = attribution[k] || session[k]; });
                 fetch('/api/brochure', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: sessionUtm(), attribution: storedAttribution(), page: location.pathname }) })
+                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: utm, attribution: attribution, page: location.pathname }) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
                         if (res.ok) {

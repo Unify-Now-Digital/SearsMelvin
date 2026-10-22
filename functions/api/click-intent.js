@@ -61,12 +61,21 @@ export async function onRequestPost({ request, env }) {
     phone: kind === "chat" ? cleanPhone(data.phone) : null,
     user_agent: (request.headers.get("User-Agent") || "").slice(0, 300) || null,
   };
+  for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
+    if (attribution[key]) row[key] = attribution[key];
+  }
   try {
-    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/click_intents`, {
+    const url = `${env.SUPABASE_URL}/rest/v1/click_intents`;
+    const options = {
       method: "POST",
       headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
       body: JSON.stringify(row),
-    });
+    };
+    let response = await fetch(url, options);
+    if (response.status === 400) {
+      const { utm_source, utm_medium, utm_campaign, utm_term, utm_content, ...legacyRow } = row;
+      response = await fetch(url, { ...options, body: JSON.stringify(legacyRow) });
+    }
     if (!response.ok) console.error(JSON.stringify({ message: "click_intent_insert_failed", status: response.status }));
   } catch {
     console.error(JSON.stringify({ message: "click_intent_insert_failed" }));

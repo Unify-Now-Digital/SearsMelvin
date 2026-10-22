@@ -61,8 +61,13 @@ const rec = up.mergeAttribution(null, fa, t0);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS - 1), rec);
 assert.equal(up.mergeAttribution(rec, {}, t0 + up.ATTR_TTL_MS), null);
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { gbraid: "x1" }, t0 + 5)), { gbraid: "x1" });
-// First touch kept: a later UTM-only (or bare) visit does not overwrite it.
+// First touch kept: a later UTM-only visit fills gaps but never overwrites it.
 assert.equal(up.mergeAttribution(rec, { utm_source: "facebook" }, t0 + 10), rec);
+const filled = up.mergeAttribution(rec, { utm_source: "facebook", utm_medium: "cpc" }, t0 + 10);
+assert.deepEqual(up.attributionFields(filled), { gclid: "Cj0_abc-1", utm_source: "google", utm_medium: "cpc" });
+assert.equal(filled.ts, t0);
+assert.deepEqual(up.mergeLastAttribution(null, { gclid: "first", utm_source: "google" }, t0), { ts: t0, gclid: "first", utm_source: "google" });
+assert.deepEqual(up.mergeLastAttribution({ ts: t0, gclid: "first" }, { utm_campaign: "later" }, t0 + 1), { ts: t0 + 1, utm_campaign: "later" });
 // A new click ID refreshes the record and restarts the 90 days.
 const rec2 = up.mergeAttribution(rec, { wbraid: "w2", utm_source: "google" }, t0 + 20);
 assert.deepEqual(up.attributionFields(rec2), { wbraid: "w2", utm_source: "google" });
@@ -73,7 +78,7 @@ assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bi
 for (const f of ["contact.html", "memorial.html", "memorials.html", "index.html"]) {
   assert.match(readFileSync(f, "utf8"), /attribution: \(window\.SMUpgrades && window\.SMUpgrades\.getAttribution\)/, `${f} sends attribution`);
 }
-assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*attribution: storedAttribution\(\)/);
+assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*attribution: attribution/);
 
 // Floating brochure button
 assert.equal(up.fabAllowed("/"), true);

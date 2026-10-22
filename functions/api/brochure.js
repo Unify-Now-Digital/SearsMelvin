@@ -22,7 +22,7 @@ import {
   RequestValidationError,
   supabaseHeaders,
 } from "./_security.js";
-import { attributionCustomFields, deriveLeadSource, leadTags } from "./submit.js";
+import { attributionCustomFields, deriveLeadSource, fillOnlyCustomFields, leadTags } from "./submit.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=7";
@@ -58,8 +58,10 @@ export async function hashUserAgent(request) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export async function downloadRow(env, { source, utm, emailGiven, page, gclid }, request) {
-  const u = cleanUtm(utm);
+export async function downloadRow(env, { source, utm, emailGiven, page, gclid, gbraid, wbraid, attribution }, request) {
+  const fallback = cleanUtm(attribution);
+  const supplied = cleanUtm(utm);
+  const u = { ...fallback, ...supplied };
   return {
     organization_id: env.SM_ORG_ID || null,
     source: cleanSource(source),
@@ -70,7 +72,9 @@ export async function downloadRow(env, { source, utm, emailGiven, page, gclid },
     utm_content: u.utm_content || null,
     email_given: emailGiven === true,
     page_path: typeof page === "string" && /^\/[\w\-/.]{0,200}$/.test(page) ? page : null,
-    gclid: cleanGclid(gclid),
+    gclid: cleanGclid(gclid) || cleanGclid(attribution?.gclid),
+    gbraid: cleanGclid(gbraid) || cleanGclid(attribution?.gbraid),
+    wbraid: cleanGclid(wbraid) || cleanGclid(attribution?.wbraid),
     ua_hash: await hashUserAgent(request),
   };
 }
@@ -89,9 +93,15 @@ export async function logDownload(env, row) {
     };
     let res = await fetch(url, options);
     // The additive migration may lag the Worker deploy. PostgREST reports
-    // unknown gclid/ua_hash columns as 400, so retry the legacy row once.
+    // unknown click-ID/ua_hash columns as 400, so retry the legacy row once.
+    // Step 1: drop only gbraid/wbraid (2026-10-22 migration) so gclid still lands.
+    if (res.status === 400 && ("gbraid" in row || "wbraid" in row)) {
+      const { gbraid: _gbraid, wbraid: _wbraid, ...noBraid } = row;
+      res = await fetch(url, { ...options, body: JSON.stringify(noBraid) });
+    }
+    // Step 2: legacy table without gclid/ua_hash either.
     if (res.status === 400) {
-      const { gclid: _gclid, ua_hash: _uaHash, ...legacyRow } = row;
+      const { gclid: _gclid, gbraid: _gbraid, wbraid: _wbraid, ua_hash: _uaHash, ...legacyRow } = row;
       res = await fetch(url, { ...options, body: JSON.stringify(legacyRow) });
     }
     if (!res.ok) console.error(JSON.stringify({ message: "brochure_download_log_failed", status: res.status }));
@@ -207,7 +217,14 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   const headers = { Authorization: `Bearer ${token}`, Version: "2021-07-28", "Content-Type": "application/json", Accept: "application/json" };
   // gclid/gbraid/wbraid + utm_* into the SM contact attribution fields (only
   // when the browser sent any, so a plain request makes no extra GHL call).
-  const customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
+  let customFields = await attributionCustomFields(env, meta.attribution, { token, locationId: SM_GHL_LOCATION_ID, fetchImpl });
+  const duplicate = !customFields.length ? { ok: false } : await fetchImpl(`${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(SM_GHL_LOCATION_ID)}&email=${encodeURIComponent(email)}`, { headers });
+  if (duplicate.ok) {
+    const foundBody = await duplicate.json().catch(() => ({}));
+    const found = foundBody.contact || foundBody.contacts?.[0];
+    if (found) customFields = fillOnlyCustomFields(found.customFields, customFields);
+  }
+  // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
   const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
     method: "POST", headers,
     body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags: ["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" })], ...(customFields.length ? { customFields } : {}) }),
@@ -254,7 +271,7 @@ export async function onRequestPost(context) {
   if (data.action === "download") {
     const limit = env.SUPABASE_URL ? await checkRateLimit(env, request, "brochure-log-ip", ip, { maxAttempts: 30, windowSeconds: 3600, blockSeconds: 3600, failClosed: false }) : { allowed: true };
     if (limit.allowed) {
-      bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: data.email_given === true, page: data.page, gclid: data.gclid }, request)));
+      bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: data.email_given === true, page: data.page, gclid: data.gclid, gbraid: data.gbraid, wbraid: data.wbraid, attribution: data.attribution }, request)));
     }
     return hardenedJson({ ok: true });
   }
@@ -288,7 +305,7 @@ export async function onRequestPost(context) {
     }
     // Fail soft: runs after the email is accepted, errors are only logged.
     bg(context, "brochure_ghl_contact", () => upsertBrochureContact(env, email, { source: data.source, page: data.page, utm: data.utm, attribution: data.attribution }));
-    bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page, gclid: data.gclid || data.attribution?.gclid }, request)));
+    bg(context, "brochure_download_log", async () => logDownload(env, await downloadRow(env, { source: data.source, utm: data.utm, emailGiven: true, page: data.page, gclid: data.gclid, gbraid: data.gbraid, wbraid: data.wbraid, attribution: data.attribution }, request)));
     return hardenedJson({ ok: true });
   }
 

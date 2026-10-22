@@ -55,4 +55,24 @@ assert.equal(contactDisplayName({ lastName: "Smith" }), "Smith");
 assert.equal(contactDisplayName({ name: "Ann Lee" }), "Ann Lee");
 assert.equal(contactDisplayName({ firstName: "Jo", lastName: "B" }), "Jo B");
 assert.equal(contactDisplayName({}), "");
+
+{ // existing contact attribution fields are fill-only before upsert
+  const calls = [];
+  const f = async (url, init = {}) => {
+    const call = { url: String(url), method: init.method || "GET", body: init.body ? JSON.parse(init.body) : null };
+    calls.push(call);
+    if (call.url.includes("/customFields")) return ok({ customFields: [
+      { id: "source-id", fieldKey: "contact.utm_source" },
+      { id: "medium-id", fieldKey: "contact.utm_medium" },
+    ] });
+    if (call.url.includes("/contacts/search/duplicate")) return ok({ contact: { id: "existing", customFields: [{ id: "source-id", field_value: "original" }] } });
+    if (call.url.endsWith("/contacts/upsert")) return ok({ contact: { id: "existing" } });
+    if (call.url.includes("/opportunities/search")) return ok({ opportunities: [{ id: "old", pipelineId: SM_PIPELINE_ID, status: "open" }] });
+    return ok({});
+  };
+  await upsertBrochureContact(env, "existing@example.com", { attribution: { utm_source: "new", utm_medium: "cpc" } }, f);
+  const body = calls.find((c) => c.url.endsWith("/contacts/upsert")).body;
+  assert.deepEqual(body.customFields, [{ id: "medium-id", field_value: "cpc" }]);
+  assert.equal(body.locationId, "7JJQ1fkS2z8zv5XIDV0P");
+}
 console.log("brochure-opp tests passed");

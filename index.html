@@ -1413,6 +1413,7 @@
                         sub_type: type,
                         source_page: '/',
                         message: notes || null,
+                        notes: notes || null,
                         appointment_type: type,
                         appointment_date: date,
                         appointment_time: time,
@@ -1423,6 +1424,15 @@
                 });
                 const result = await res.json();
                 if (result.ok) {
+                    // Tracking contract: docs/TRACKING.md (sm_lead_submit).
+                    try {
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({
+                            event: 'sm_lead_submit',
+                            form_id: 'apptFormFields',
+                            enquiry_type: type || null
+                        });
+                    } catch (e) { /* tracking must never break the form */ }
                     document.getElementById('apptFormFields').style.display = 'none';
                     document.getElementById('apptSuccess').classList.add('show');
                 } else {
@@ -1880,6 +1890,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=chat1" defer></script>
+    <script src="/site-upgrades.js?v=utm2" defer></script>
 </body>
 </html>

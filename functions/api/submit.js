@@ -190,6 +190,7 @@ async function quoteSideEffects({
       html:    quoteBusinessEmail({ name, email, phone, location: cemeteryOrLocation, message, product, stoneHex, submittedAt }),
     })),
     bg("ghl quote contact+opportunity", async () => {
+      const attributionFields = await attributionCustomFields(env, attribution);
       const ghlExtraFields = [
         message              ? { key: "customer_message",   field_value: message } : null,
         product.type         ? { key: "memorial_type",      field_value: product.type } : null,
@@ -199,12 +200,12 @@ async function quoteSideEffects({
         product.permit_fee   ? { key: "permit_fee",         field_value: `£${formatPrice(product.permit_fee)}` } : null,
         product.addons?.length ? { key: "product_addons",   field_value: product.addons.join(", ") } : null,
         product.image        ? { key: "product_image_url",  field_value: product.image } : null,
-        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "quote", product,
         cemetery: cemeteryOrLocation,
         extraFields: ghlExtraFields,
+        attributionFields,
         lead: attribution,
       });
       if (contactId) {
@@ -367,15 +368,16 @@ async function enquirySideEffects({
             }))
           : null),
     bg("ghl enquiry contact+opportunity", async () => {
+      const attributionFields = await attributionCustomFields(env, attribution);
       const ghlExtraFields = [
         message      ? { key: "customer_message",  field_value: message } : null,
         enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "enquiry",
         cemetery: location,
         extraFields: ghlExtraFields,
+        attributionFields,
         lead: attribution,
       });
       if (contactId) {
@@ -396,7 +398,8 @@ async function enquirySideEffects({
 
 async function handleAppointment(ctx, data, submittedAt) {
   const env = ctx.env;
-  const { name, email, phone, appointment_type, appointment_date, appointment_time, notes } = data;
+  const { name, email, phone, appointment_type, appointment_date, appointment_time } = data;
+  const notes = appointmentNotes(data);
   if (!appointment_date || !appointment_time)
     return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
 
@@ -467,15 +470,15 @@ async function appointmentSideEffects({
       html: appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appointment_time }),
     })),
     bg("ghl appointment contact+opportunity", async () => {
+      const attributionFields = await attributionCustomFields(env, attribution);
       const ghlExtraFields = [
         appointment_type ? { key: "appointment_type", field_value: typeLabel } : null,
         appointment_date ? { key: "appointment_date", field_value: dateFormatted } : null,
         appointment_time ? { key: "appointment_time", field_value: appointment_time } : null,
         notes            ? { key: "appointment_notes", field_value: notes } : null,
-        ...(await attributionCustomFields(env, attribution)),
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "appointment", extraFields: ghlExtraFields, lead: attribution,
+        name, email, phone, type: "appointment", extraFields: ghlExtraFields, attributionFields, lead: attribution,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -1619,7 +1622,7 @@ async function ghlContactFieldIds(token, locationId, fetchImpl = fetch) {
     headers: { "Authorization": `Bearer ${token}`, "Version": "2021-07-28" },
   });
   if (!res.ok) throw new Error(`GHL customFields ${res.status}`);
-  const body = await res.json();
+  const body = await res.json().catch(() => ({}));
   const map = {};
   for (const f of body.customFields || []) {
     if (!f?.fieldKey || !f?.id) continue;
@@ -1650,12 +1653,29 @@ export async function attributionCustomFields(env, attribution, { token, locatio
   return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
 }
 
-async function createGHLContact(env, { name, email, phone, type, product, cemetery, extraFields, lead }) {
+export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
+  const existing = new Map((existingCustomFields || []).filter(field => field?.id).map(field => [field.id, field.field_value ?? field.value]));
+  return (candidateFields || []).filter(field => {
+    if (!field?.id || field.field_value === undefined || field.field_value === null || String(field.field_value).trim() === "") return false;
+    const value = existing.get(field.id);
+    return !existing.has(field.id) || value === undefined || value === null || String(value).trim() === "";
+  });
+}
+
+export async function createGHLContact(env, args, fetchOverride) {
+  if (!createGHLContact._locationChecked) {
+    createGHLContact._locationChecked = true;
+    console.log(JSON.stringify({ message: "ghl_location_check", is_sm_location: env.GHL_LOCATION_ID === "7JJQ1fkS2z8zv5XIDV0P" }));
+  }
+  const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead } = args;
+  const fetchImpl = args.fetchImpl || fetchOverride || fetch;
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
+  const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
+  const trackedFields = [...(attributionFields || []), ...leadFields];
   const customFields = [
     { key: "lead_type", field_value: type },
     product?.name ? { key: "memorial_product", field_value: product.name } : null,
@@ -1666,18 +1686,48 @@ async function createGHLContact(env, { name, email, phone, type, product, cemete
     // on a memorial job, but nothing has ever written to it.
     cemetery && cemeteryFieldId ? { id: cemeteryFieldId, field_value: String(cemetery).trim() } : null,
     ...(extraFields || []),
-    ...(lead ? await leadCustomFields(env, lead) : []),
+    ...(attributionFields || []),
+    ...leadFields,
   ].filter(Boolean);
-  const res = await fetch("https://services.leadconnectorhq.com/contacts/", {
+  const headers = { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" };
+  const res = await fetchImpl("https://services.leadconnectorhq.com/contacts/", {
     method: "POST",
-    headers: { "Authorization": `Bearer ${env.GHL_API_KEY}`, "Version": "2021-07-28", "Content-Type": "application/json" },
+    headers,
+    // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
       email, phone: phone || undefined, source: "Website", tags, customFields,
     }),
   });
-  if (!res.ok) throw new Error(`GHL returned ${res.status}`);
-  const body = await res.json();
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const existingId = body?.meta?.contactId || body?.meta?.contact?.id;
+    const duplicate = [400, 409, 422].includes(res.status) && existingId && /duplicat/i.test(String(body?.message || ""));
+    if (!duplicate) throw new Error(`GHL returned ${res.status}`);
+    try {
+      const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
+      if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
+      const existingBody = await existingRes.json();
+      const fields = fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields);
+      if (fields.length) {
+        const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
+          method: "PUT", headers, body: JSON.stringify({ customFields: fields }),
+        });
+        if (!updateRes.ok) throw new Error(`GHL contact update returned ${updateRes.status}`);
+      }
+    } catch (error) {
+      console.error(JSON.stringify({ message: "ghl_duplicate_contact_update_failed", status: error?.message || "unknown" }));
+    }
+    try {
+      const tagsRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/tags`, {
+        method: "POST", headers, body: JSON.stringify({ tags }),
+      });
+      if (!tagsRes.ok) throw new Error(`GHL contact tags returned ${tagsRes.status}`);
+    } catch (error) {
+      console.error(JSON.stringify({ message: "ghl_duplicate_contact_tags_failed", status: error?.message || "unknown" }));
+    }
+    return existingId;
+  }
   return body.contact?.id || null;
 }
 
@@ -1734,6 +1784,7 @@ function validateSubmission(input, organizationId) {
   }
   const boundedText = [
     ["message", 5000],
+    ["notes", 5000],
     ["sub_type", 120],
     ["enquiry_type", 120],
     ["source_page", 300],
@@ -1782,6 +1833,11 @@ function validateSubmission(input, organizationId) {
   data.attribution = cleanAttribution(rawAttribution);
   Object.assign(data.attribution, leadMeta(rawAttribution, data.channel || data.type, data.enquiry_type || data.sub_type));
   return { ok: true, data };
+}
+
+export function appointmentNotes(data) {
+  const value = data?.notes ?? data?.message;
+  return typeof value === "string" ? (value.trim() || null) : null;
 }
 
 async function verifyPhotoSubmissionCapabilities(env, paths, tokens) {

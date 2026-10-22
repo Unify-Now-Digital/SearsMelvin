@@ -14,6 +14,10 @@ assert.deepEqual(
   { kind: "call", gclid: "click-1", landing_page: "/quote", page: "/contact", ts: 123 },
 );
 assert.deepEqual(
+  clickIntentBody("call", { gclid: "click-2", utm_source: " google ", utm_campaign: "x".repeat(110) }, {}, 789, "/"),
+  { kind: "call", gclid: "click-2", utm_source: "google", utm_campaign: "x".repeat(100), page: "/", ts: 789 },
+);
+assert.deepEqual(
   clickIntentBody("chat", { wbraid: "wide.1" }, { contact: { email: "  PERSON@Example.COM  ", phone: "+44 (0)20 1234-5678" } }, 456, "/"),
   { kind: "chat", wbraid: "wide.1", page: "/", ts: 456, email: "person@example.com", phone: "+4402012345678" },
 );
@@ -55,6 +59,13 @@ try {
   for (const secret of ["click-secret", "service-secret", "person@example.com", "+440201234"]) {
     assert.doesNotMatch(logText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "failure logs must redact click IDs, credentials, and PII");
   }
+
+  calls = [];
+  globalThis.fetch = async (...args) => { calls.push(args); return new Response(null, { status: calls.length === 1 ? 400 : 201 }); };
+  await onRequestPost({ request: request({ kind: "call", gclid: "click", utm_source: "google", utm_medium: "cpc" }), env });
+  assert.equal(calls.length, 2, "a lagging UTM migration retries once");
+  assert.equal(JSON.parse(calls[0][1].body).utm_source, "google");
+  assert.ok(!("utm_source" in JSON.parse(calls[1][1].body)));
 } finally {
   globalThis.fetch = originalFetch;
   console.error = originalError;
