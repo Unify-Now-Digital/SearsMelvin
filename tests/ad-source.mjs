@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { adSourceCustomField, createGHLContact, isGoogleAdsLead } from "../functions/api/submit.js";
+import { adSourceCustomField, createGHLContact, deriveLeadSource, isGoogleAdsLead } from "../functions/api/submit.js";
 import { upsertBrochureContact } from "../functions/api/brochure.js";
 
-for (const attribution of [{ gclid: "g" }, { gbraid: "b" }, { wbraid: "w" }, { utm_source: "GoOgLe", utm_medium: "CPC-search" }]) {
+for (const attribution of [{ gclid: "g" }, { gbraid: "b" }, { wbraid: "w" }, { utm_source: "GoOgLe", utm_medium: "CPC-search" }, { utm_source: "google" }]) {
   assert.equal(isGoogleAdsLead(attribution), true);
 }
-for (const attribution of [{ utm_source: "google", utm_medium: "organic" }, { utm_source: "bing", utm_medium: "cpc" }, {}]) {
+for (const attribution of [{ utm_source: "google", utm_medium: "organic" }, { utm_source: "google", utm_medium: "referral" }, { utm_source: "bing", utm_medium: "cpc" }, {}]) {
   assert.equal(isGoogleAdsLead(attribution), false);
 }
+assert.equal(deriveLeadSource({ utm_source: "google" }), "Google Ads");
 
 const response = (status, body = {}) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 const baseEnv = { GHL_API_KEY: "test", GHL_LOCATION_ID: "ad-source-tests", GHL_AD_SOURCE_FIELD_ID: "ad-source-id" };

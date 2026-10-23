@@ -23,6 +23,7 @@ import {
   supabaseHeaders,
 } from "./_security.js";
 import { adSourceCustomField, attributionCustomFields, cleanLastAttribution, deriveLeadSource, fillOnlyCustomFields, isGoogleAdsLead, lastTouchCustomFields, leadTags } from "./submit.js";
+import { isTestSubmission } from "./_test-flags.js";
 
 const SITE = "https://searsmelvin.co.uk";
 const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
@@ -238,7 +239,8 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   customFields.push(...lastTouchFields);
   // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
   const googleAdsTags = isGoogleAdsLead(meta.attribution) ? ["source-google-ads"] : [];
-  const tags = [...new Set(["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" }), ...googleAdsTags])];
+  const testTags = isTestSubmission({ email, ...(meta.attribution || {}) }).is_test ? ["test-lead"] : [];
+  const tags = [...new Set(["brochure-download", ...leadTags({ lead_source: deriveLeadSource(meta.attribution), lead_channel: "Brochure" }), ...googleAdsTags, ...testTags])];
   const res = await fetchImpl(`${GHL_BASE}/contacts/upsert`, {
     method: "POST", headers,
     body: JSON.stringify({ locationId: SM_GHL_LOCATION_ID, email, source: "Website brochure", tags, ...(customFields.length ? { customFields } : {}) }),
@@ -248,7 +250,7 @@ export async function upsertBrochureContact(env, email, meta = {}, fetchImpl = f
   const id = body.contact?.id;
   if (!id) return null;
   // Upsert replaces tags on some API versions; add the tag explicitly too.
-  await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download", ...googleAdsTags] }) }).catch(() => null);
+  await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/tags`, { method: "POST", headers, body: JSON.stringify({ tags: ["brochure-download", ...googleAdsTags, ...testTags] }) }).catch(() => null);
   const note = await fetchImpl(`${GHL_BASE}/contacts/${encodeURIComponent(id)}/notes`, { method: "POST", headers, body: JSON.stringify({ body: brochureNote(new Date(), meta) }) });
   if (!note.ok) console.error(JSON.stringify({ message: "sm_ghl_note_failed", status: note.status }));
   // Fail soft: an opportunity error is logged and never affects the email or contact.

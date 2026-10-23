@@ -110,6 +110,21 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - The endpoint is same-origin, fail-soft, and writes service-role-only rows to
   `click_intents` for a backend job to match to GHL contacts. Its draft migration
   is unapplied, needs Arin's approval, and specifies 120-day retention.
+- The box cron `scripts/ghl-chat-sync/sm_ghl_chat_sync.py` creates chat enquiries
+  with `details.source=ghl_chat_sync`. It carries all five first-touch UTMs and
+  all five `last_utm_*` values plus last-touch click IDs; matched click intents
+  fill missing first-touch UTMs. Google Ads means any click ID, or
+  `utm_source=google` unless the medium is organic (website submissions also
+  exclude explicit referral).
+
+## Test leads
+
+- New `people` rows are marked `is_test=true` (and existing rows are only ever
+  promoted to true) for a whole-word `test` name token, QA/test email aliases or
+  the internal allowlist, `example.com`/`test.com`, tracking values beginning
+  `TEST`, or `utm_source`/`utm_campaign` equal to `qa` or `test`.
+- GHL contacts get `test-lead` after the Supabase write. The chat sync uses the
+  same rules, also honours the existing exact `test` tag, and skips test contacts.
 
 ## Daily offline upload (outside this repo)
 
