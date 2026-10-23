@@ -13,6 +13,7 @@ import {
 } from "./_security.js";
 import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
 import { upsertWebsiteOpportunity } from "./_ghl-opportunity.js";
+import { isTestSubmission } from "./_test-flags.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -136,6 +137,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // current quote workflow upserts the person/job and creates an enquiry; it
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
+  const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_quote`, {
       method: "POST",
@@ -150,6 +152,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
           location: cemeteryOrLocation,
           cemetery_id: data.cemetery_id || null,
           product,
+          ...(testFlag.is_test ? { is_test: true } : {}),
           // Attribution travels inside create_quote so it can't drift; the PATCH below is the fallback.
           ...cleanAttribution(data.attribution),
           ...leadColumns(data.attribution, { withChannel: true }),
@@ -157,6 +160,9 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
       }),
     });
     if (!res.ok) throw new Error(`create_quote RPC returned ${res.status}`);
+    // The deployed RPC predates people.is_test. Ensure test quotes promote the
+    // person before any GHL side effect; this helper never demotes a true flag.
+    if (testFlag.is_test) await upsertPerson(env, { name, email, phone, is_test: true }).catch(() => console.error(JSON.stringify({ message: "quote_test_flag_failed" })));
     // Fallback for an older create_quote: stamp the attribution on the enquiry it
     // created (blank-safe PATCH). Best-effort: a failure here never loses the quote.
     const rpcBody = await res.json().catch(() => null);
@@ -171,6 +177,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     env, name, email, phone, message, product, submittedAt,
     cemeteryOrLocation, firstName, stoneHex, cemetery, location,
     attribution: data.attribution,
+    isTest: testFlag.is_test,
   }));
 
   return jsonResponse({ ok: true });
@@ -180,7 +187,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 // emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution,
+  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution, isTest,
 }) {
   const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
@@ -207,6 +214,7 @@ async function quoteSideEffects({
         extraFields: ghlExtraFields,
         attributionFields,
         lead: attribution,
+        isTest,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -241,6 +249,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
   const grave_number = data.grave_number ? String(data.grave_number).trim() : null;
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
+  const testFlag = isTestSubmission({ name, email, phone, message, ...cleanAttribution(data.attribution) });
 
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
   const isShortlist = enquiry_type === "shortlist-enquiry";
@@ -285,6 +294,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
       photo_urls,
       details: mergedDetails,
       attribution: data.attribution,
+      is_test: testFlag.is_test,
     });
   } catch (err) {
     console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
@@ -304,6 +314,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     appointment_at_iso: data.appointment_at || null,
     appointment_kind: data.appointment_kind || null,
     attribution: data.attribution || null,
+    isTest: testFlag.is_test,
   }));
 
   return jsonResponse({ ok: true });
@@ -315,7 +326,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
-  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution,
+  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest,
 }) {
   await Promise.allSettled([
     bg("enquiry business email", async () => {
@@ -379,6 +390,7 @@ async function enquirySideEffects({
         extraFields: ghlExtraFields,
         attributionFields,
         lead: attribution,
+        isTest,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -400,6 +412,7 @@ async function handleAppointment(ctx, data, submittedAt) {
   const env = ctx.env;
   const { name, email, phone, appointment_type, appointment_date, appointment_time } = data;
   const notes = appointmentNotes(data);
+  const testFlag = isTestSubmission({ name, email, phone, message: notes, ...cleanAttribution(data.attribution) });
   if (!appointment_date || !appointment_time)
     return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
 
@@ -425,6 +438,7 @@ async function handleAppointment(ctx, data, submittedAt) {
       appointment_at: appointmentAtIso,
       appointment_kind: appointment_type || null,
       attribution: data.attribution,
+      is_test: testFlag.is_test,
     });
   } catch (err) {
     console.error(JSON.stringify({ message: "appointment_insert_failed" }));
@@ -437,6 +451,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     appointment_type, appointment_date, appointment_time,
     typeLabel, dateFormatted, firstName,
     attribution: data.attribution,
+    isTest: testFlag.is_test,
   }));
 
   return jsonResponse({ ok: true });
@@ -447,7 +462,7 @@ async function handleAppointment(ctx, data, submittedAt) {
 async function appointmentSideEffects({
   env, name, email, phone, notes, submittedAt,
   appointment_type, appointment_date, appointment_time,
-  typeLabel, dateFormatted, firstName, attribution,
+  typeLabel, dateFormatted, firstName, attribution, isTest,
 }) {
   let calendarLink = null;
   try {
@@ -478,7 +493,7 @@ async function appointmentSideEffects({
         notes            ? { key: "appointment_notes", field_value: notes } : null,
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "appointment", extraFields: ghlExtraFields, attributionFields, lead: attribution,
+        name, email, phone, type: "appointment", extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -1388,7 +1403,7 @@ async function lookupCemeteryIdByName(env, location) {
 // tenant must be reused — otherwise the INSERT below would 23505 and abort
 // the entire submission. The enquiry row itself carries SM_ORG_ID, so
 // multi-tenant reporting is unaffected by sharing the people record.
-export async function upsertPerson(env, { name, email, phone }) {
+export async function upsertPerson(env, { name, email, phone, is_test = false }) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) return null;
   if (!email) return null;
   const normalisedEmail = email.trim().toLowerCase();
@@ -1396,7 +1411,7 @@ export async function upsertPerson(env, { name, email, phone }) {
   const { first_name, last_name } = splitName(name);
 
   const existingRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer&limit=1`,
+    `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
     { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
   );
   if (!existingRes.ok) throw new Error(`Supabase people lookup returned ${existingRes.status}`);
@@ -1407,6 +1422,7 @@ export async function upsertPerson(env, { name, email, phone }) {
     if (first_name) patchBody.first_name = first_name;
     if (last_name && last_name !== "-") patchBody.last_name = last_name;
     if (phone) patchBody.phone = phone;
+    if (is_test && !existing.is_test) patchBody.is_test = true;
     if (Object.keys(patchBody).length > 0) {
       const patchRes = await fetch(
         `${env.SUPABASE_URL}/rest/v1/people?id=eq.${existing.id}`,
@@ -1426,6 +1442,7 @@ export async function upsertPerson(env, { name, email, phone }) {
       first_name,
       last_name,
       phone: phone || null,
+      ...(is_test ? { is_test: true } : {}),
     }),
   });
   // Race-condition fallback: a concurrent submission for the same email
@@ -1435,12 +1452,20 @@ export async function upsertPerson(env, { name, email, phone }) {
     const errBody = await insertRes.text();
     if (insertRes.status === 409 || /duplicate key|23505/i.test(errBody)) {
       const refetch = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer&limit=1`,
+        `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
         { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
       );
       if (refetch.ok) {
         const row = (await refetch.json())[0];
-        if (row?.id) return { id: row.id, is_customer: !!row.is_customer };
+        if (row?.id) {
+          if (is_test && !row.is_test) {
+            const patchRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people?id=eq.${row.id}`, {
+              method: "PATCH", headers, body: JSON.stringify({ is_test: true }),
+            });
+            if (!patchRes.ok) throw new Error(`Supabase people test flag update returned ${patchRes.status}`);
+          }
+          return { id: row.id, is_customer: !!row.is_customer };
+        }
       }
     }
     throw new Error(`Supabase people insert error ${insertRes.status}: ${errBody}`);
@@ -1458,7 +1483,7 @@ export async function createEnquiry(env, payload) {
   // save with cemetery_id=null).
   const cemeteryNeeded = !payload.cemetery_id && payload.location;
   const [person, lookedUpCemeteryId] = await Promise.all([
-    upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone }),
+    upsertPerson(env, { name: payload.name, email: payload.email, phone: payload.phone, is_test: payload.is_test }),
     cemeteryNeeded
       ? lookupCemeteryIdByName(env, payload.location).catch(err => {
           console.error(JSON.stringify({ message: "cemetery_lookup_failed" }));
@@ -1605,7 +1630,7 @@ export function cleanLanding(a) {
 export function deriveLeadSource(a) {
   const c = cleanAttribution(a);
   if (c.gclid || c.gbraid || c.wbraid) return "Google Ads";
-  if (/^google$/i.test(c.utm_source || "") && /^(cpc|ppc|paid)/i.test(c.utm_medium || "")) return "Google Ads";
+  if (/^google$/i.test(c.utm_source || "") && !/^(organic|referral)$/i.test(c.utm_medium || "")) return "Google Ads";
   if (/^(cpc|ppc|paid)/i.test(c.utm_medium || "")) return "Unknown"; // paid, but not Google: don't call it organic
   const ref = cleanLanding(a).referrer || "";
   if (/^organic$/i.test(c.utm_medium || "") || (ref && SEARCH_ENGINES.test(ref))) return "Organic";
@@ -1618,7 +1643,7 @@ export function isGoogleAdsLead(attribution) {
   const a = cleanAttribution(attribution);
   return Boolean(
     a.gclid || a.gbraid || a.wbraid ||
-    (/^google$/i.test(a.utm_source || "") && /^(cpc|ppc|paid)/i.test(a.utm_medium || ""))
+    (/^google$/i.test(a.utm_source || "") && !/^(organic|referral)$/i.test(a.utm_medium || ""))
   );
 }
 
@@ -1757,12 +1782,13 @@ export async function createGHLContact(env, args, fetchOverride) {
     createGHLContact._locationChecked = true;
     console.log(JSON.stringify({ message: "ghl_location_check", is_sm_location: env.GHL_LOCATION_ID === "7JJQ1fkS2z8zv5XIDV0P" }));
   }
-  const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead } = args;
+  const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead, isTest } = args;
   const fetchImpl = args.fetchImpl || fetchOverride || fetch;
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
   const parts = name.trim().split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
   if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
+  if (isTest) tags.push("test-lead");
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
   const dedupedTags = [...new Set(tags)];
   const cemeteryFieldId = env.GHL_CEMETERY_FIELD_ID || GHL_CEMETERY_FIELD_ID_DEFAULT;
