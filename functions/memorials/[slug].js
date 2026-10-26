@@ -128,12 +128,23 @@ export async function onRequestGet({ request, env, params }) {
 
   const product = await fetchProduct(env, slug);
   if (product === NOT_FOUND) {
-    // Same HTML shell (GTM/GA4, consent mode, call-number swap and gclid
-    // capture all unchanged); only the status and indexing hint differ.
-    const headers = new Headers(shell.headers);
-    headers.set("X-Robots-Tag", "noindex");
-    headers.set("Cache-Control", "no-store");
-    return new Response(shell.body, { status: 404, headers });
+    // Unknown or retired/unlisted slug (Supabase answered, no listed row):
+    // send visitors to the listing instead of a dead page. 302 (temporary)
+    // because a slug may be re-listed later and we don't want browsers or
+    // Google to cache a permanent move. The original query string (gclid,
+    // gbraid, wbraid, utm_*, etc.) is carried over verbatim so the /memorials
+    // page (GTM-KRDX4BQ5, consent mode, gclid capture) still sees it.
+    const src = new URL(request.url);
+    const dest = new URL("/memorials", src.origin);
+    dest.search = src.search;
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: dest.pathname + dest.search,
+        "X-Robots-Tag": "noindex",
+        "Cache-Control": "no-store",
+      },
+    });
   }
   if (!product) return shell;
 
