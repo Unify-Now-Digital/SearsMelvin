@@ -107,7 +107,10 @@ export async function onRequestPost(context) {
 // hand it to ctx.waitUntil. Preserves error logging.
 function bg(label, task) {
   return Promise.resolve().then(task).catch(err => {
-    console.error(JSON.stringify({ message: "background_task_failed", task: label }));
+    // Include the (PII-free) error text, e.g. "GHL returned 401", so a silent GHL
+    // hand-off failure is diagnosable from Worker logs instead of only the label.
+    const error = String(err?.message || err || "unknown").replace(/[^\w .:/-]/g, "").slice(0, 160);
+    console.error(JSON.stringify({ message: "background_task_failed", task: label, error }));
   });
 }
 
@@ -1784,7 +1787,10 @@ export async function createGHLContact(env, args, fetchOverride) {
   }
   const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead, isTest } = args;
   const fetchImpl = args.fetchImpl || fetchOverride || fetch;
-  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
+  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) {
+    console.error(JSON.stringify({ message: "ghl_contact_skipped_missing_env", has_key: !!env.GHL_API_KEY, has_location: !!env.GHL_LOCATION_ID }));
+    return null;
+  }
   const parts = name.trim().split(" ");
   const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
   if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
@@ -1825,7 +1831,10 @@ export async function createGHLContact(env, args, fetchOverride) {
   if (!res.ok) {
     const existingId = body?.meta?.contactId || body?.meta?.contact?.id;
     const duplicate = [400, 409, 422].includes(res.status) && existingId && /duplicat/i.test(String(body?.message || ""));
-    if (!duplicate) throw new Error(`GHL returned ${res.status}`);
+    if (!duplicate) {
+      const ghlMsg = String(body?.message || "").replace(/[^\w .:-]/g, "").slice(0, 120);
+      throw new Error(`GHL returned ${res.status}${ghlMsg ? ` ${ghlMsg}` : ""}`);
+    }
     try {
       const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
       if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
