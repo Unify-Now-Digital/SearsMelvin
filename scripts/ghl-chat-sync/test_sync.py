@@ -151,5 +151,33 @@ class SyncTests(unittest.TestCase):
         request.assert_not_called()
 
 
+    def test_utm_filled_from_landing_url(self):
+        row = contact(attributionSource={"url": "https://searsmelvin.co.uk/memorials?gclid=x&utm_source=google&utm_medium=cpc&utm_campaign=c1"})
+        p = sync.enquiry_payload(row, "p1", {"gclid": "x"}, "2026-10-26")
+        self.assertEqual((p["utm_source"], p["utm_medium"], p["utm_campaign"]), ("google", "cpc", "c1"))
+        self.assertEqual(p["landing_page"], "/memorials")
+        self.assertNotIn("utm_derived", p["details"])
+
+    def test_utm_derived_only_for_click_without_utms(self):
+        row = contact(attributionSource={"url": "https://searsmelvin.co.uk/memorials?gclid=x&gad_source=1", "utmSource": None})
+        p = sync.enquiry_payload(row, "p1", {"gclid": "x"}, "2026-10-26")
+        self.assertEqual((p["utm_source"], p["utm_medium"]), ("google", "cpc"))
+        self.assertEqual(p["details"]["utm_derived"], "google_ads_click")
+        row = contact(attributionSource={"url": "https://x/memorials?utm_source=bing"})
+        p = sync.enquiry_payload(row, "p1", {"gclid": "x"}, "2026-10-26")
+        self.assertEqual(p["utm_source"], "bing"); self.assertIsNone(p["utm_medium"])
+        row = contact(attributionSource={"url": "https://x/memorials"})
+        p = sync.enquiry_payload(row, "p1", {}, "2026-10-26")
+        self.assertIsNone(p["utm_source"])
+
+    def test_mirror_is_fill_blank_only(self):
+        payload = {"utm_source": "google", "utm_medium": "cpc", "landing_page": "/memorials", "lead_source": "Google Ads"}
+        fields = {sync.MIRROR_FIELD_IDS["utm_source"]: "kept", sync.MIRROR_FIELD_IDS["utm_medium"]: " "}
+        keys = sync.mirror_keys(sync.mirror_updates(fields, payload))
+        self.assertNotIn("utm_source", keys)
+        self.assertEqual(sorted(keys), ["ad_source", "landing_page", "lead_source", "utm_medium"])
+        self.assertEqual(sync.apply_mirror("t", "c1", fields, payload, False)["planned"][-1], "add_tag:source-google-ads")
+
+
 if __name__ == "__main__":
     unittest.main()
