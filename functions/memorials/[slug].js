@@ -31,6 +31,8 @@ function looksLikeAsset(slug) {
   return /\.[a-z0-9]{2,5}$/i.test(slug);
 }
 
+const NOT_FOUND = Symbol("not-found");
+
 async function fetchProduct(env, slug) {
   // This is a public route: never make the service-role key available to it.
   // Catalogue rows are intentionally readable through the public anon role.
@@ -49,7 +51,10 @@ async function fetchProduct(env, slug) {
     );
     if (!res.ok) return null;
     const rows = await res.json();
-    return rows[0] || null;
+    // Supabase answered and there is no public, listed product with this
+    // slug (e.g. the unlisted £1 `test-product`): tell the caller it is a
+    // definite miss so we can send a real 404 instead of a soft-404 200.
+    return rows[0] || NOT_FOUND;
   } catch {
     return null;
   }
@@ -122,6 +127,14 @@ export async function onRequestGet({ request, env, params }) {
   if (!slug) return shell;
 
   const product = await fetchProduct(env, slug);
+  if (product === NOT_FOUND) {
+    // Same HTML shell (GTM/GA4, consent mode, call-number swap and gclid
+    // capture all unchanged); only the status and indexing hint differ.
+    const headers = new Headers(shell.headers);
+    headers.set("X-Robots-Tag", "noindex");
+    headers.set("Cache-Control", "no-store");
+    return new Response(shell.body, { status: 404, headers });
+  }
   if (!product) return shell;
 
   const canonicalUrl = `${BASE}/memorials/${encodeURIComponent(product.slug)}`;
