@@ -158,17 +158,26 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(p["landing_page"], "/memorials")
         self.assertNotIn("utm_derived", p["details"])
 
-    def test_utm_derived_only_for_click_without_utms(self):
+    def test_utm_never_derived(self):
         row = contact(attributionSource={"url": "https://searsmelvin.co.uk/memorials?gclid=x&gad_source=1", "utmSource": None})
         p = sync.enquiry_payload(row, "p1", {"gclid": "x"}, "2026-10-26")
-        self.assertEqual((p["utm_source"], p["utm_medium"]), ("google", "cpc"))
-        self.assertEqual(p["details"]["utm_derived"], "google_ads_click")
+        self.assertIsNone(p["utm_source"]); self.assertIsNone(p["utm_medium"])
+        self.assertNotIn("utm_derived", p["details"])
         row = contact(attributionSource={"url": "https://x/memorials?utm_source=bing"})
         p = sync.enquiry_payload(row, "p1", {"gclid": "x"}, "2026-10-26")
         self.assertEqual(p["utm_source"], "bing"); self.assertIsNone(p["utm_medium"])
-        row = contact(attributionSource={"url": "https://x/memorials"})
-        p = sync.enquiry_payload(row, "p1", {}, "2026-10-26")
-        self.assertIsNone(p["utm_source"])
+
+    def test_tag_only_from_supabase_evidence_and_not_repeated(self):
+        self.assertNotIn("add_tag:source-google-ads", sync.apply_mirror("t", "c1", {}, {"lead_source": "Unknown"}, False)["planned"])
+        self.assertEqual(sync.apply_mirror("t", "c1", {sync.AD_SOURCE_FIELD_ID: "Google Ads"},
+                                           {"lead_source": "Google Ads"}, False,
+                                           existing_tags=["source-google-ads"])["planned"], ["lead_source"])
+
+    def test_existing_chat_mirrors_supabase_row_not_ghl(self):
+        with mock.patch.object(sync, "request_json", return_value=[{"id": "e1", "utm_source": None, "landing_page": "/m"}]):
+            row = sync.existing_enquiry_row("c1", "https://x", "k")
+        keys = sync.mirror_keys(sync.mirror_updates({}, row))
+        self.assertEqual(keys, ["landing_page"])
 
     def test_mirror_is_fill_blank_only(self):
         payload = {"utm_source": "google", "utm_medium": "cpc", "landing_page": "/memorials", "lead_source": "Google Ads"}

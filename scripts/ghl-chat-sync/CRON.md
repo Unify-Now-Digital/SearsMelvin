@@ -23,10 +23,13 @@ For n8n, use an hourly **Schedule Trigger** followed by an **Execute Command** n
 ```
 Order 285 excluded (order + its GHL contact) until Arin says otherwise.
 
-## 26 Oct 2026: cron missing after the 24 Oct box reset
+## 26 Oct 2026: cron missing after the 24 Oct box reset (restored on the box 26 Oct 11:07 Madrid)
 The box reset removed the crontab (and `cron` itself), `/workspace/sm-ads-offline/ghl-chat-sync/` and the
 `SUPABASE_URL` / `SUPABASE_KEY` env vars, so no chat sync has run since 24 Oct. Reinstall only with Arin's OK:
 re-create the folder from this repo, restore the two Supabase env vars, install cron, and add the line above.
 This version also mirrors UTMs, landing page, lead source/channel and Ad source to GHL (fill-blank only),
-reads UTMs from the landing URL when GHL's utmSource/utmMedium are empty, and as a last resort records
-`google`/`cpc` for a Google Ads click (flagged as `details.utm_derived = "google_ads_click"`).
+reads UTMs from the landing URL when GHL's utmSource/utmMedium are empty.
+
+27 Oct 2026: no derived/guessed UTMs. The GHL copy uses only values present in the Supabase enquiry row
+(the linked row for existing chats, the inserted row for new ones); the source-google-ads tag is added only
+when that row's lead_source is "Google Ads" and the tag is missing.
