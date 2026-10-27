@@ -335,19 +335,14 @@ def url_params(attr):
 
 
 def fill_utms(utms, attr, clicks):
-    """Fill missing UTMs from the landing URL query, then (only when source AND
-    medium are both still missing on a Google Ads click) derive google/cpc.
-    Returns True when the derived values were used. Never overwrites."""
+    """Fill missing UTMs from the landing URL query only. Never derives or
+    guesses a value (Supabase is the source of truth). Never overwrites.
+    Always returns False (kept for call-site compatibility)."""
     params = url_params(attr)
     for key in UTM_KEYS:
         raw = str(params.get(key) or "").strip()[:100]
         if key not in utms and raw and raw.lower() not in ("none", "null", "undefined"):
             utms[key] = raw
-    if "utm_source" in utms or "utm_medium" in utms:
-        return False
-    if any(clicks.get(key) for key in CLICK_KEYS) or params.get("gad_source"):
-        utms["utm_source"], utms["utm_medium"] = "google", "cpc"
-        return True
     return False
 
 
@@ -549,9 +544,21 @@ def mirror_keys(updates):
     return [names.get(item["id"], item["id"]) for item in updates]
 
 
-def apply_mirror(token, contact_id, fields, payload, apply, extra_ids=None):
+def existing_enquiry_row(contact_id, base, key):
+    """The Supabase enquiry already linked to this GHL contact (tracking columns)."""
+    rows = request_json("Supabase linked enquiry lookup", supabase_url(base, "enquiries", {
+        "organization_id": "eq." + SM_ORG, "details->>ghl_contact_id": "eq." + str(contact_id),
+        "select": "id,created_at," + ",".join(dict.fromkeys(ENQUIRY_TRACKING_COLUMNS)),
+        "order": "created_at.asc", "limit": "1"}), supabase_headers(key)) or []
+    return rows[0] if rows else None
+
+
+def apply_mirror(token, contact_id, fields, payload, apply, extra_ids=None, existing_tags=None):
+    """payload must be a Supabase enquiry row (or the exact row being inserted)."""
     updates = mirror_updates(fields, payload, extra_ids)
-    tags = ["source-google-ads"] if payload.get("lead_source") == "Google Ads" else []
+    have = {str(t).lower() for t in (existing_tags or [])}
+    tags = [t for t in (["source-google-ads"] if payload.get("lead_source") == "Google Ads" else [])
+            if t not in have]
     mirror = {"planned": mirror_keys(updates) + ["add_tag:" + t for t in tags]}
     if not apply:
         return mirror
@@ -750,16 +757,20 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         )
         if exists:
             record["enquiry"]["reason"] = reason
-            # Older chat/call contacts: still backfill blank GHL UTMs/landing page.
-            preview = enquiry_payload(full_contact, person_id, clicks, today, kind, used_intent=used_intent)
-            record["ghl_mirror"] = apply_mirror(token, contact_id, fields, preview, args.apply)
+            # Older chat/call contacts: backfill blank GHL fields from the Supabase
+            # row only (never from GHL-side or derived values).
+            row = existing_enquiry_row(contact_id, supabase_base, supabase_key)
+            record["ghl_mirror"] = (apply_mirror(token, contact_id, fields, row, args.apply,
+                                                 existing_tags=full_contact.get("tags"))
+                                    if row else {"planned": [], "reason": "no_linked_supabase_row"})
             return record
         if not args.apply:
             record["enquiry"] = {
                 "action": "plan_insert", "reason": None, "new_enquiry_id": None
             }
             preview = enquiry_payload(full_contact, person_id, clicks, today, kind, used_intent=used_intent)
-            record["ghl_mirror"] = apply_mirror(token, contact_id, fields, preview, False)
+            record["ghl_mirror"] = apply_mirror(token, contact_id, fields, preview, False,
+                                                existing_tags=full_contact.get("tags"))
             return record
 
         payload = enquiry_payload(full_contact, person_id, clicks, today, kind, used_intent=used_intent)
@@ -767,7 +778,8 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         record["enquiry"] = {
             "action": "inserted", "reason": None, "new_enquiry_id": new_id
         }
-        record["ghl_mirror"] = apply_mirror(token, contact_id, fields, payload, True)
+        record["ghl_mirror"] = apply_mirror(token, contact_id, fields, payload, True,
+                                            existing_tags=full_contact.get("tags"))
         return record
     except Exception as exc:
         record["error"] = str(exc) if isinstance(exc, ApiError) else type(exc).__name__
@@ -788,7 +800,7 @@ def mirror_form_from_supabase(full_contact, args, token, base, key):
             return {"reason": "no_enquiry"}
         fields = custom_field_values(full_contact)
         return apply_mirror(token, str(full_contact.get("id")), fields, row, args.apply,
-                            ENQUIRY_MIRROR_FIELD_IDS)
+                            ENQUIRY_MIRROR_FIELD_IDS, existing_tags=full_contact.get("tags"))
     except Exception as exc:
         return {"errors": [str(exc) if isinstance(exc, ApiError) else type(exc).__name__]}
 
