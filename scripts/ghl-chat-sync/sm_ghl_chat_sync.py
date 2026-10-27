@@ -39,6 +39,19 @@ MIRROR_FIELD_IDS = {
     "lead_source": "hibtgT5Fud7K91PnKPen",
     "lead_channel": "Na4hf6DRzmn3MZHiUJy1",
 }
+# Extra fields copied only from a Supabase enquiry row (quotes/forms), fill-blank only.
+ENQUIRY_MIRROR_FIELD_IDS = {
+    **GHL_FIELD_IDS,
+    "last_gclid": "JgZtSf521VQ1VpgCBwQF",
+    "last_gbraid": "enCgjyv1ppTZ62Z6pwE9",
+    "last_wbraid": "c9sjGGhaNrr9EpApV5Sy",
+    "last_utm_source": "1EH7hMMYGrjHSem5K8I9",
+    "last_utm_medium": "aJlzUlYplOuWKdsxaDft",
+    "last_utm_campaign": "iLYeISfTJcBlUSnzWllw",
+    "last_utm_term": "P91sMC50MsvJgyoKJdKs",
+    "last_utm_content": "qOpcUwONwqYuf2PVQ26X",
+}
+ENQUIRY_TRACKING_COLUMNS = tuple(MIRROR_FIELD_IDS) + tuple(ENQUIRY_MIRROR_FIELD_IDS)
 LOG_DIR = os.environ.get("SM_CHAT_SYNC_LOG_DIR", "/workspace/sm-ads-offline/ghl-chat-sync/logs")
 
 
@@ -518,11 +531,12 @@ def enquiry_payload(contact, person_id, clicks, today, kind="chat", used_intent=
     }
 
 
-def mirror_updates(fields, payload):
+def mirror_updates(fields, payload, extra_ids=None):
     """Fill-blank-only GHL updates for UTMs, landing page, lead source/channel
     and Ad source. A non-empty GHL value is never overwritten."""
     blank = lambda fid: fields.get(fid) is None or str(fields.get(fid)).strip() == ""
-    updates = [{"id": fid, "field_value": payload[key]} for key, fid in MIRROR_FIELD_IDS.items()
+    ids = {**MIRROR_FIELD_IDS, **(extra_ids or {})}
+    updates = [{"id": fid, "field_value": payload[key]} for key, fid in ids.items()
                if payload.get(key) and blank(fid)]
     if payload.get("lead_source") == "Google Ads" and blank(AD_SOURCE_FIELD_ID):
         updates.append({"id": AD_SOURCE_FIELD_ID, "field_value": "Google Ads"})
@@ -530,13 +544,13 @@ def mirror_updates(fields, payload):
 
 
 def mirror_keys(updates):
-    names = {fid: key for key, fid in MIRROR_FIELD_IDS.items()}
+    names = {fid: key for key, fid in {**MIRROR_FIELD_IDS, **ENQUIRY_MIRROR_FIELD_IDS}.items()}
     names[AD_SOURCE_FIELD_ID] = "ad_source"
     return [names.get(item["id"], item["id"]) for item in updates]
 
 
-def apply_mirror(token, contact_id, fields, payload, apply):
-    updates = mirror_updates(fields, payload)
+def apply_mirror(token, contact_id, fields, payload, apply, extra_ids=None):
+    updates = mirror_updates(fields, payload, extra_ids)
     tags = ["source-google-ads"] if payload.get("lead_source") == "Google Ads" else []
     mirror = {"planned": mirror_keys(updates) + ["add_tag:" + t for t in tags]}
     if not apply:
@@ -619,7 +633,7 @@ def nearest_enquiry(person_id, when, base, key):
     rows = request_json("Supabase nearest enquiry lookup", supabase_url(base, "enquiries", {
         "organization_id": "eq." + SM_ORG, "person_id": "eq." + str(person_id),
         "and": f"(created_at.gte.{iso(when-dt.timedelta(days=1))},created_at.lte.{iso(when+dt.timedelta(days=1))})",
-        "select": "id,created_at,gclid,gbraid,wbraid"}), supabase_headers(key)) or []
+        "select": "id,created_at," + ",".join(dict.fromkeys(ENQUIRY_TRACKING_COLUMNS))}), supabase_headers(key)) or []
     rows = [row for row in rows if parse_time(row.get("created_at"))]
     return min(rows, key=lambda row: abs((parse_time(row["created_at"]) - when).total_seconds())) if rows else None
 
@@ -655,6 +669,12 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         if is_excluded_contact(full_contact, getattr(args, "exclusion", None)):
             record["enquiry"]["reason"] = "excluded_order"
             return record
+        if kind == "form":
+            # Quotes/forms: Supabase is the source of truth. If the website's own GHL
+            # hand-off failed (e.g. the n8n Gmail safety net created the contact),
+            # copy the enquiry's click IDs/UTMs/landing page/Ad source onto blank GHL fields.
+            record["supabase_mirror"] = mirror_form_from_supabase(
+                full_contact, args, token, supabase_base, supabase_key)
         clicks, click_source = contact_clicks(full_contact)
         used_intent = None
         if not clicks:
@@ -755,6 +775,22 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
             "action": "skip", "reason": "error", "new_enquiry_id": None
         }
         return record
+
+
+def mirror_form_from_supabase(full_contact, args, token, base, key):
+    try:
+        people, method = find_person(full_contact, base, key)
+        if len(people or []) != 1:
+            return {"reason": "no_person" if not people else "ambiguous_person"}
+        when = parse_time(full_contact.get("dateAdded"))
+        row = nearest_enquiry(next(iter(people)), when, base, key) if when else None
+        if not row:
+            return {"reason": "no_enquiry"}
+        fields = custom_field_values(full_contact)
+        return apply_mirror(token, str(full_contact.get("id")), fields, row, args.apply,
+                            ENQUIRY_MIRROR_FIELD_IDS)
+    except Exception as exc:
+        return {"errors": [str(exc) if isinstance(exc, ApiError) else type(exc).__name__]}
 
 
 def find_person_values(email, phone, base, key):

@@ -178,6 +178,15 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(sorted(keys), ["ad_source", "landing_page", "lead_source", "utm_medium"])
         self.assertEqual(sync.apply_mirror("t", "c1", fields, payload, False)["planned"][-1], "add_tag:source-google-ads")
 
+    def test_form_mirror_copies_supabase_row_fill_blank(self):
+        row = {"gclid": "g1", "utm_source": "google", "landing_page": "/memorials",
+               "lead_source": "Google Ads", "last_gclid": "g2", "utm_medium": None}
+        fields = {sync.GHL_FIELD_IDS["gclid"]: "existing"}
+        keys = sync.mirror_keys(sync.mirror_updates(fields, row, sync.ENQUIRY_MIRROR_FIELD_IDS))
+        self.assertNotIn("gclid", keys)
+        self.assertEqual(sorted(keys), ["ad_source", "landing_page", "last_gclid", "lead_source", "utm_source"])
+        self.assertNotIn("last_gclid", sync.mirror_keys(sync.mirror_updates({}, row)))
+
 
 if __name__ == "__main__":
     unittest.main()
