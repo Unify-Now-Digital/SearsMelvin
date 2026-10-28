@@ -29,6 +29,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit` (fires once per submission, 3 s debounce) | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` |
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
+| `whatsapp_click` `{location}` | `site-upgrades.js` click listener on `a[data-wa-location]` | WhatsApp link click | **No GTM tag yet.** The page pushes the event only. GA4 does not receive it until a GA4 Event tag named `whatsapp_click` is added, with parameter `location`, the same analytics consent as the other GA4 event tags, and no Ads conversion. Locations: `contact`, `footer`, `brochure`, `home`, `listing`, `order`, `permit`. |
 | `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
 
 The chat loader also sets `window.__smChatHook = true` before GTM loads. That disables the
@@ -145,6 +146,7 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - Offline: transactionId per order + ledger.
 
 ## Checks
+- **WhatsApp links** are `https://wa.me/message/…` deep links, not phone numbers. Do not show `+44 20 3835 2548` as their text, do not let the call-number swap rewrite them, and do not send the click to `/api/click-intent` (that path is for calls and chat). `tests/whatsapp.mjs` pins the links and the `whatsapp_click` push.
 - **CI:** `node tests/tracking-contract.mjs` and `node tests/tracking-guard.mjs` (page-level GTM, consent defaults, gclid capture) (all `tests/*.mjs` run on every PR).
 - **Live, read-only:** `node scripts/tracking-check.mjs` (exit 1 on any problem, 2 on error).
   `--base <url>` checks a preview, `--json` for machines, `--update-snapshot` after an intended GTM change.

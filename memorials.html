@@ -332,6 +332,8 @@
         .shortlist-enquiry-btn { width: 100%; padding: 0.75rem; background: var(--color-stone); border: none; color: white; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .shortlist-enquiry-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .shortlist-enquiry-success { color: #4CAF50; font-size: 0.85rem; text-align: center; padding: 0.5rem; display: none; }
+        .shortlist-channel-note { font-size: 0.75rem; line-height: 1.45; color: var(--color-text-muted); margin: 0 0 0.5rem; }
+        .shortlist-channel-note a { color: var(--color-accent-dark); }
         .save-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2C2C2C; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .save-toast.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
         .save-toast svg { width: 18px; height: 18px; stroke: #e8665a; fill: #e8665a; flex-shrink: 0; }
@@ -557,7 +559,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261028a">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body>
@@ -700,7 +702,10 @@
                 </div>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
-                    <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
+                    <div class="sm-brochure-actions">
+                        <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
+                        <a class="sm-whatsapp" href="https://wa.me/message/SDK7YQSPTKCYP1" target="_blank" rel="noopener" data-wa-location="listing">Message us on WhatsApp</a>
+                    </div>
                 </div>
             </main>
         </div>
@@ -776,6 +781,7 @@
                     <input type="text" id="slEnqName" placeholder="Your name" required>
                     <input type="email" id="slEnqEmail" placeholder="Your email" required>
                     <input type="tel" id="slEnqPhone" placeholder="Phone (optional)">
+                    <p class="shortlist-channel-note">If you give a phone number, you agree we may send updates about your enquiry or order by WhatsApp, SMS or email. Reply STOP at any time. <a href="/privacy">Privacy policy</a></p>
                     <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
                     <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -1359,6 +1365,7 @@
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a><br>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
+                    <a class="sm-whatsapp" href="https://wa.me/message/U6K6IFOOIBTBI1" target="_blank" rel="noopener" data-wa-location="footer">Message us on WhatsApp</a><br>
                     North London — By appointment
                 </div>
             </div>
@@ -1564,6 +1571,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=wa1" defer></script>
 </body>
 </html>
