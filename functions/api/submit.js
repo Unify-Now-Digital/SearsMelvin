@@ -214,6 +214,7 @@ async function quoteSideEffects({
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "quote", product,
         cemetery: cemeteryOrLocation,
+        message,
         extraFields: ghlExtraFields,
         attributionFields,
         lead: attribution,
@@ -390,6 +391,7 @@ async function enquirySideEffects({
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "enquiry",
         cemetery: location,
+        message,
         extraFields: ghlExtraFields,
         attributionFields,
         lead: attribution,
@@ -496,7 +498,7 @@ async function appointmentSideEffects({
         notes            ? { key: "appointment_notes", field_value: notes } : null,
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "appointment", extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
+        name, email, phone, type: "appointment", message: notes, extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
       });
       if (contactId) {
         await createGHLOpportunity(env, {
@@ -1780,12 +1782,36 @@ export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
   });
 }
 
+const isBlank = (v) => v == null || String(v).trim() === "";
+
+/** Fill-only patch for a duplicate GHL contact: blank phone / first / last name only. */
+export function returningContactUpdate(existing, { firstName, lastName, phone }) {
+  const update = {};
+  if (isBlank(existing?.phone) && !isBlank(phone)) update.phone = String(phone).trim();
+  if (isBlank(existing?.firstName) && !isBlank(firstName)) update.firstName = firstName;
+  if (isBlank(existing?.lastName) && !isBlank(lastName)) update.lastName = lastName;
+  return update;
+}
+
+const normName = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, " ");
+/** True when GHL already holds a (non-blank) name that differs from the submitted one. */
+export function returningNameDiffers(existing, submittedName) {
+  const ghlName = [existing?.firstName, existing?.lastName].filter((x) => !isBlank(x)).join(" ") || existing?.contactName || existing?.name || "";
+  return !isBlank(ghlName) && !isBlank(submittedName) && normName(ghlName) !== normName(submittedName);
+}
+
+export function returningEnquiryNote({ name, phone, message, product, cemetery }, now = new Date()) {
+  const date = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(now);
+  const dash = (v) => (isBlank(v) ? "-" : String(v).trim());
+  return `Returning enquiry ${date} as '${dash(name)}', phone ${dash(phone)}, message: ${dash(message)}, product/cemetery: ${dash(product)} / ${dash(cemetery)}`;
+}
+
 export async function createGHLContact(env, args, fetchOverride) {
   if (!createGHLContact._locationChecked) {
     createGHLContact._locationChecked = true;
     console.log(JSON.stringify({ message: "ghl_location_check", is_sm_location: env.GHL_LOCATION_ID === "7JJQ1fkS2z8zv5XIDV0P" }));
   }
-  const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead, isTest } = args;
+  const { name, email, phone, type, product, cemetery, message, extraFields, attributionFields, lead, isTest } = args;
   const fetchImpl = args.fetchImpl || fetchOverride || fetch;
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) {
     console.error(JSON.stringify({ message: "ghl_contact_skipped_missing_env", has_key: !!env.GHL_API_KEY, has_location: !!env.GHL_LOCATION_ID }));
@@ -1839,19 +1865,29 @@ export async function createGHLContact(env, args, fetchOverride) {
       const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
       if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
       const existingBody = await existingRes.json();
-      const fields = [...fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields), ...lastTouchFields];
-      if (fields.length) {
+      const existing = existingBody?.contact || existingBody || {};
+      const fields = [...fillOnlyCustomFields(existing.customFields, trackedFields), ...lastTouchFields];
+      const update = returningContactUpdate(existing, { firstName: parts[0], lastName: parts.slice(1).join(" "), phone });
+      if (fields.length) update.customFields = fields;
+      if (Object.keys(update).length) {
         const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
-          method: "PUT", headers, body: JSON.stringify({ customFields: fields }),
+          method: "PUT", headers, body: JSON.stringify(update),
         });
         if (!updateRes.ok) throw new Error(`GHL contact update returned ${updateRes.status}`);
+      }
+      if (returningNameDiffers(existing, name)) {
+        const noteRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/notes`, {
+          method: "POST", headers,
+          body: JSON.stringify({ body: returningEnquiryNote({ name, phone, message, product: product?.name, cemetery }) }),
+        });
+        if (!noteRes.ok) throw new Error(`GHL contact note returned ${noteRes.status}`);
       }
     } catch (error) {
       console.error(JSON.stringify({ message: "ghl_duplicate_contact_update_failed", status: error?.message || "unknown" }));
     }
     try {
       const tagsRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/tags`, {
-        method: "POST", headers, body: JSON.stringify({ tags: dedupedTags }),
+        method: "POST", headers, body: JSON.stringify({ tags: [...new Set([...dedupedTags, "returning-enquiry"])] }),
       });
       if (!tagsRes.ok) throw new Error(`GHL contact tags returned ${tagsRes.status}`);
     } catch (error) {

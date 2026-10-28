@@ -27,7 +27,7 @@ const jsonResponse = (status, body) => ({ ok: status >= 200 && status < 300, sta
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
     if (calls.length === 1) return jsonResponse(409, { message: "Location does not allow duplicated contacts", meta: { contactId: "existing-1" } });
-    if (calls.length === 2) return jsonResponse(200, { contact: { customFields: [{ id: "gclid-id", field_value: "" }, { id: "utm-id", field_value: "saved" }] } });
+    if (calls.length === 2) return jsonResponse(200, { contact: { firstName: "Test", lastName: "Person", phone: "+440000", customFields: [{ id: "gclid-id", field_value: "" }, { id: "utm-id", field_value: "saved" }] } });
     return jsonResponse(200, {});
   };
   const id = await createGHLContact(env, {
@@ -45,7 +45,7 @@ const jsonResponse = (status, body) => ({ ok: status >= 200 && status < 300, sta
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
     if (calls.length === 1) return jsonResponse(422, { message: "does not allow duplicated contacts", meta: { contact: { id: "existing-2" } } });
-    if (calls.length === 2) return jsonResponse(200, { contact: { customFields: [{ id: "gclid-id", field_value: "saved" }] } });
+    if (calls.length === 2) return jsonResponse(200, { contact: { firstName: "Test", lastName: "Person", phone: "+440000", customFields: [{ id: "gclid-id", field_value: "saved" }] } });
     return jsonResponse(200, {});
   };
   assert.equal(await createGHLContact(env, {
