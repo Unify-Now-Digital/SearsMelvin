@@ -79,6 +79,13 @@ class SyncTests(unittest.TestCase):
         intents[0]["created_at"] = "2026-10-20T11:29:59Z"
         self.assertIsNone(sync.choose_click_intent(row, "chat", intents, [row]))
 
+    def test_no_time_only_intent_match(self):
+        # 27 Oct regression: anonymous phone tap 2 min before an unrelated call contact.
+        row = contact(phone="+447700900939", dateAdded="2026-10-27T11:35:28Z")
+        intents = [{"id": "lloyd-tap", "kind": "call", "created_at": "2026-10-27T11:33:16Z",
+                    "gclid": "someone-else", "phone": None, "email": None}]
+        self.assertIsNone(sync.choose_click_intent(row, "call", intents, [row]))
+
     def test_order_window_boundaries(self):
         centre = sync.parse_time("2026-10-20T12:00:00Z")
         self.assertTrue(sync.in_order_window("2026-07-22T12:00:00Z", centre))
