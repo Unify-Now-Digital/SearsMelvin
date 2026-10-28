@@ -1501,7 +1501,13 @@
                 var grid = document.getElementById('categoriesGrid');
                 if (grid) {
                     var html = '';
-                    categories.forEach(function(cat) {
+                    // Only show categories that have at least one active, listed SM product
+                    // (same rule as memorials.html renderFilters). Keeps shared / other-brand
+                    // categories (e.g. a CM-only Vases category) off the SM homepage.
+                    var categoriesWithProducts = categories.filter(function(cat) {
+                        return products.some(function(p) { return p.category_id === cat.id; });
+                    });
+                    categoriesWithProducts.forEach(function(cat) {
                         var product = categoryImageMap[cat.slug];
                         var imageUrl = product ? homepageImageUrl(product.image_url) : '';
                         var imageHtml = imageUrl
