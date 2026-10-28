@@ -386,13 +386,10 @@ def choose_click_intent(contact, kind, intents, contacts):
                      (phone and phone_digits(row.get("phone"))[-10:] == phone))]
     if identity:
         return max(identity, key=lambda row: parse_time(row.get("created_at")))
-    if kind not in ("chat", "call"):
-        return None
-    timed = [row for row in usable if str(row.get("kind") or "").lower() == kind and
-             in_window(row.get("created_at"), centre, dt.timedelta(minutes=15), dt.timedelta(minutes=5))]
-    nearby = [row for row in contacts if classify(row) == kind and
-              in_window(row.get("dateAdded"), centre, dt.timedelta(minutes=15), dt.timedelta(minutes=5))]
-    return timed[0] if len(timed) == 1 and len(nearby) == 1 else None
+    # No time-only fallback: an anonymous tap/chat click near in time is NOT proof
+    # it belongs to this contact (27 Oct 2026: another visitor's phone-tap click IDs
+    # were copied onto a different caller's contact). Identity (email/phone) only.
+    return None
 
 
 def in_order_window(value, order_time):
