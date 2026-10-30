@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isLegacyJwtKey, supabaseKeyHeaders } from "../functions/api/_supabase-keys.js";
 
 const IDS = [
   "72c61a5c-83d4-44dc-9cce-b753f1b9ef6e",
@@ -15,7 +16,7 @@ if (!base || !key) {
   process.exit(1);
 }
 
-const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+const headers = supabaseKeyHeaders(key, { "Content-Type": "application/json" });
 const peopleFilter = `id=in.(${IDS.join(",")})`;
 const getJson = async (url, options = {}) => {
   const response = await fetch(url, { headers, ...options });
@@ -48,7 +49,8 @@ console.log('Body: {"is_test":true}');
 console.log("Rollback commands (restore each backed-up value):");
 for (const row of people) {
   const keyExpr = process.env.SUPABASE_SERVICE_KEY ? "$SUPABASE_SERVICE_KEY" : "$SUPABASE_KEY";
-  console.log(`curl -X PATCH "$SUPABASE_URL/rest/v1/people?id=eq.${row.id}" -H "apikey: ${keyExpr}" -H "Authorization: Bearer ${keyExpr}" -H "Content-Type: application/json" -d '${JSON.stringify({ is_test: row.is_test })}'`);
+  const bearer = isLegacyJwtKey(key) ? ` -H "Authorization: Bearer ${keyExpr}"` : "";
+  console.log(`curl -X PATCH "$SUPABASE_URL/rest/v1/people?id=eq.${row.id}" -H "apikey: ${keyExpr}"${bearer} -H "Content-Type: application/json" -d '${JSON.stringify({ is_test: row.is_test })}'`);
 }
 
 const applying = process.argv.includes("--apply") && process.env.CONFIRM_TEST_FLAGS === "yes";

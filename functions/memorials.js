@@ -1,8 +1,8 @@
 /** Server-render the unfiltered memorial catalogue for non-JavaScript crawlers. */
 
-const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
+import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
+
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
-const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -46,9 +46,8 @@ function imageAttributes(url) {
 }
 
 async function fetchCatalogue(env) {
-  const base = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
-  const headers = { apikey: key, Authorization: `Bearer ${key}` };
+  const base = publicSupabaseUrl(env);
+  const headers = supabaseKeyHeaders(publishableKey(env));
   const org = encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID);
   const [productsResponse, coloursResponse] = await Promise.all([
     fetch(`${base}/rest/v1/products?organization_id=eq.${org}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=*,product_categories(name,slug)&order=display_order`, { headers }),

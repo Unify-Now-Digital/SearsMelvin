@@ -18,11 +18,11 @@
  * normal "no slug" message.
  */
 
+import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
+
 const BASE = "https://searsmelvin.co.uk";
 const FALLBACK_IMAGE = `${BASE}/sm-logo.svg`;
-const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
-const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Asset requests (favicon.svg, robots.txt, *.map …) can be resolved by the
 // browser against /memorials/<slug>/ and land on this route. They're never
@@ -34,18 +34,12 @@ function looksLikeAsset(slug) {
 async function fetchProduct(env, slug) {
   // This is a public route: never make the service-role key available to it.
   // Catalogue rows are intentionally readable through the public anon role.
-  const url = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
+  const url = publicSupabaseUrl(env);
   if (looksLikeAsset(slug)) return null;
   try {
     const res = await fetch(
       `${url}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID)}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=id,name,slug,short_description,description,image_url,base_price,product_categories(name,slug)&limit=1`,
-      {
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${key}`,
-        },
-      },
+      { headers: supabaseKeyHeaders(publishableKey(env)) },
     );
     if (!res.ok) return null;
     const rows = await res.json();

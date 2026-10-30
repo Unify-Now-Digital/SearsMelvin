@@ -22,7 +22,7 @@ Earlier Cloudflare/Supabase/GitHub sweep: **2026-08-26**.
 | 6 | Low | Headers | CSP is `Report-Only` with **no** `report-uri`/`report-to`, so it collects nothing and can never graduate to enforced | Open |
 | 7 | Low | Headers | `X-Robots-Tag: noindex` was on `/partner*` only | **Fixed** — added to `/admin*` and `/track*` |
 | 8 | Low | Worker code | Customer confirmation email was sent to an empty address on phone-only submissions (Resend 400, swallowed) | **Fixed** |
-| 9 | Low | Frontend | The Supabase anon key is hardcoded in **16** HTML files; rotating it means 16 edits. `site-globals.js` already loads everywhere and is the natural home. It is also a legacy JWT anon key rather than a publishable key. | Open |
+| 9 | Low | Frontend | The Supabase anon key is hardcoded in **16** HTML files; rotating it means 16 edits. `site-globals.js` already loads everywhere and is the natural home. It is also a legacy JWT anon key rather than a publishable key. | **Fixed 2026-10-30** — pages load `/supabase-config` (`SUPABASE_PUBLISHABLE_KEY`, else `SUPABASE_ANON_KEY`, else the legacy anon JWT in `functions/api/_supabase-keys.js`). REST/Storage send `apikey`, and `Authorization: Bearer` only for a legacy JWT. |
 | 10 | Low | Cloudflare | `round-violet-3531` and `cool-dawn-8e53` are empty placeholder Workers from a quickstart | Open — safe to delete |
 | 11 | Low | GitHub | 15 stale remote branches (`agent/*`, `claude/*`, `codex/*`, `cloudflare/*`) | Open |
 | 12 | Low | Supabase | Test organisations in production: `New Test Org`, `NEW TEST ORG 2`, `WRITE TEST TARGET`, `Riverside Memorials` | Open |
@@ -112,6 +112,12 @@ half is independent and unaffected.
 - **2026-08-26 — no secrets committed.** The only key in the HTML is the Supabase
   anon key (public by design). No service-role key, Stripe secret, or Resend key
   in tracked files. `node_modules` is not committed.
+- **2026-10-30 — public Supabase key has one source.** HTML no longer contains
+  the anon JWT. `/supabase-config` serves it. Server catalogue routes use
+  `publishableKey()`. This site does not call Supabase Edge Functions.
+  The shared project still has functions with `verify_jwt=true` (not invoked
+  here); they will not accept a publishable key as a Bearer token. Do not
+  disable the legacy JWT keys until those other callers are migrated.
 - **2026-08-26 — the destructive org RPCs guard themselves.** Supabase flags 15
   SECURITY DEFINER functions as callable by `authenticated`. Twelve were reviewed
   (the other three are the `user_is_*` authz primitives themselves); 11 of those
@@ -141,7 +147,10 @@ where o.order_type='quote' and o.created_at > '2026-05-21' and i.id is not null;
 **What can the public anon key actually read?** (expect 0 rows / 401 on everything
 but the catalogue)
 ```bash
-KEY=$(grep -oP "(?<=SUPABASE_ANON_KEY = ')[^']+" index.html | head -1)
+# Fallback anon JWT in the repo. Production may override it with
+# SUPABASE_PUBLISHABLE_KEY, which the browser reads from /supabase-config.
+# After that swap, send the publishable key on apikey only (it is not a JWT).
+KEY=$(node --input-type=module -e "import { publishableKey } from './functions/api/_supabase-keys.js'; process.stdout.write(publishableKey({}))")
 for t in enquiries orders people invoices payments activity_logs products; do
   echo -n "$t: "; curl -s "https://bfwohzcugtwbhhxdqgme.supabase.co/rest/v1/$t?select=*&limit=1" \
     -H "apikey: $KEY" -H "Authorization: Bearer $KEY" | head -c 60; echo

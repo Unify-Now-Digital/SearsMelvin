@@ -834,10 +834,12 @@
         </div>
     </nav>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script src="/supabase-config"></script>
+<script>
         // Supabase config
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SUPABASE_URL = window.SM_SUPABASE.url;
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
 
         // Enquiry type selection
         function selectEnquiryType(type) {
@@ -879,7 +881,7 @@
             const status = document.getElementById('cemeteryStatus');
             try {
                 const url = SUPABASE_URL + '/rest/v1/cemeteries?select=id,name,area,postcode&organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_test=eq.false&order=display_order';
-                const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+                const res = await fetch(url, { headers: window.SM_SUPABASE.headers() });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 contactCemeteries = await res.json();
                 if (!contactCemeteries.length) throw new Error('anonymous cemetery query returned no rows');
@@ -1295,10 +1297,7 @@ function declineCookies() {
                 var response = await fetch(
                     SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();

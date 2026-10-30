@@ -547,7 +547,8 @@
         </div>
     </div>
 
-    <script>
+<script src="/supabase-config"></script>
+<script>
         // ==================== ADMIN AUTH GATE ====================
         async function requireAdminSession() {
             const res = await fetch('/api/admin', {
@@ -564,9 +565,9 @@
         }
 
         // ==================== SUPABASE CONFIG ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
-        const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+        const SUPABASE_URL = window.SM_SUPABASE.url;
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
+        const SUPABASE_HEADERS = window.SM_SUPABASE.headers();
 
         async function supabaseFetch(table, params) {
             const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
@@ -1255,10 +1256,7 @@ function declineCookies() {
                 var response = await fetch(
                     SUPABASE_URL + '/rest/v1/products?or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id,is_active',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();
