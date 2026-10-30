@@ -1,3 +1,5 @@
+import { supabaseKeyHeaders } from "./_supabase-keys.js";
+
 const MAX_JSON_BYTES = 16 * 1024;
 
 export class RequestValidationError extends Error {
@@ -177,9 +179,7 @@ export function hardenedJson(data, status = 200, extraHeaders = {}) {
 }
 
 export function supabaseHeaders(env) {
-  return {
-    apikey: env.SUPABASE_SERVICE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+  return supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
     "Content-Type": "application/json",
-  };
+  });
 }

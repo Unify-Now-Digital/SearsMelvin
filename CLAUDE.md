@@ -81,12 +81,20 @@ Use the existing convention:
   does **not** vet the fields inside it. Anything from `product` that reaches an
   `href`, a URL, or SQL must be re-validated at the point of use — see
   `productPageUrl()` for the pattern.
-- The browser holds the Supabase **anon** key (published in ~16 HTML files, by
-  design). It must never be able to read anything but the catalogue. Verified
-  2026-08-26: `enquiries`, `orders`, `people`, `invoices`, `payments`,
-  `activity_logs` all return 0 rows to anon. Re-check after any RLS change —
-  the playbook in the audit doc has the one-liner.
-- Never put a secret in `/api/config`; it is a public browser payload.
+- The browser holds the Supabase **publishable** key (the legacy anon JWT
+  until `SUPABASE_PUBLISHABLE_KEY` is set). Pages load it from
+  `/supabase-config`. The only copy in the repo is the legacy anon fallback in
+  `functions/api/_supabase-keys.js`. It must never be able to read anything but
+  the catalogue. Verified 2026-08-26: `enquiries`, `orders`, `people`,
+  `invoices`, `payments`, `activity_logs` all return 0 rows to anon. Re-check
+  after any RLS change — the playbook in the audit doc has the one-liner.
+- Supabase REST and Storage calls send `apikey`. `Authorization: Bearer` is
+  added only when the key is a legacy JWT. Publishable (`sb_publishable_…`)
+  and secret (`sb_secret_…`) keys are not JWTs; a Bearer header makes
+  Supabase reject them. Use `supabaseKeyHeaders()` — do not hand-roll the pair.
+- Never put a secret in `/api/config` or `/supabase-config`. Both are public
+  browser payloads. `/supabase-config` refuses `sb_secret_` and `service_role`
+  values and falls back to the legacy anon key.
 
 ## Working on emails
 

@@ -907,6 +907,7 @@
         </div>
     </div>
 </div>
+<script src="/supabase-config"></script>
 <script>
 (function(){
     var consent = localStorage.getItem('cookieConsent');
@@ -940,8 +941,8 @@ function declineCookies() {
 }
 
         // ==================== SITE SEARCH ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SUPABASE_URL = window.SM_SUPABASE.url;
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
 
         const searchFaqData = [
             { q: "How long does a memorial take?", a: "Typically 12 to 24 weeks from order to installation.", url: "/faq#timing" },
@@ -994,10 +995,7 @@ function declineCookies() {
                 var response = await fetch(
                     SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();

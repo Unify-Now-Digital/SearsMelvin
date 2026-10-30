@@ -14,6 +14,7 @@ import {
 import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
 import { upsertWebsiteOpportunity } from "./_ghl-opportunity.js";
 import { isTestSubmission } from "./_test-flags.js";
+import { supabaseAuthHeaders, supabaseKeyHeaders } from "./_supabase-keys.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -1305,12 +1306,10 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
 // SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
 function supabaseHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+  return supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
-  };
+  });
 }
 
 function splitName(full) {
@@ -1356,7 +1355,7 @@ async function signEnquiryPhotoUrls(env, paths) {
     `${env.SUPABASE_URL}/storage/v1/object/sign/${ENQUIRY_PHOTO_BUCKET}`,
     {
       method: "POST",
-      headers: { apikey: headers.apikey, Authorization: headers.Authorization, "Content-Type": "application/json" },
+      headers: { ...supabaseAuthHeaders(headers), "Content-Type": "application/json" },
       body: JSON.stringify({ expiresIn: ENQUIRY_PHOTO_SIGN_TTL_S, paths }),
     },
   );
@@ -1391,7 +1390,7 @@ async function lookupCemeteryIdByName(env, location) {
   ];
   for (const filter of tries) {
     const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&is_test=eq.false${orgFilter}&select=id&limit=1`;
-    const res = await fetch(url, { headers: { apikey: headers.apikey, Authorization: headers.Authorization } });
+    const res = await fetch(url, { headers: supabaseAuthHeaders(headers) });
     if (!res.ok) continue;
     const rows = await res.json();
     if (rows?.[0]?.id) return rows[0].id;
@@ -1417,7 +1416,7 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
 
   const existingRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
-    { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+    { headers: supabaseAuthHeaders(headers) }
   );
   if (!existingRes.ok) throw new Error(`Supabase people lookup returned ${existingRes.status}`);
   const existing = (await existingRes.json())[0] || null;
@@ -1458,7 +1457,7 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
     if (insertRes.status === 409 || /duplicate key|23505/i.test(errBody)) {
       const refetch = await fetch(
         `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
-        { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+        { headers: supabaseAuthHeaders(headers) }
       );
       if (refetch.ok) {
         const row = (await refetch.json())[0];

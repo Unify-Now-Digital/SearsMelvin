@@ -65,6 +65,13 @@
 /sitemap.xml
   Cache-Control: public, max-age=3600
 
+# Public Supabase publishable key. Short cache so an env swap shows up
+# within a minute. This response must stay public; it is not a secret.
+/supabase-config
+  Cache-Control: public, max-age=60
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+
 # HTML: short browser cache, longer SWR so edge can serve stale while
 # revalidating in the background. Ensures content updates propagate
 # within ~5 minutes while keeping repeat-visit latency near-zero.

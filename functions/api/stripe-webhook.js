@@ -16,6 +16,7 @@
 
 import { formatNameForSubject } from "./submit.js";
 import { flipQuoteOrderTypeAfterDeposit } from "./order-type-after-deposit.js";
+import { supabaseAuthHeaders, supabaseKeyHeaders } from "./_supabase-keys.js";
 
 const BUSINESS_NAME  = "Sears Melvin Memorials";
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
@@ -131,7 +132,7 @@ async function markPersonAsPayingCustomer(env, sbHeaders, orderId) {
   try {
     const orderRes = await fetch(
       `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}&select=person_id`,
-      { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
+      { headers: supabaseAuthHeaders(sbHeaders) },
     );
     if (!orderRes.ok) {
       console.error(JSON.stringify({ message: "customer_flag_order_lookup_failed", status: orderRes.status }));
@@ -184,10 +185,7 @@ async function validatePaymentTarget(env, pi, invoiceId) {
   if (paymentType !== "deposit" && paymentType !== "full") return null;
   if (pi.metadata?.organization_id !== env.SM_ORG_ID) return null;
 
-  const headers = {
-    apikey: env.SUPABASE_SERVICE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-  };
+  const headers = supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY);
   const invoiceRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoiceId)}` +
       `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` +
@@ -255,7 +253,7 @@ async function paymentAlreadyRecorded(env, sbHeaders, piId) {
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/payments?reference=eq.${encodeURIComponent(piId)}&select=id&limit=1`,
-      { headers: { apikey: sbHeaders.apikey, Authorization: sbHeaders.Authorization } },
+      { headers: supabaseAuthHeaders(sbHeaders) },
     );
     if (!res.ok) return false;
     const rows = await res.json();
@@ -288,10 +286,7 @@ async function handlePaymentSucceeded(env, pi) {
   // payments-row check is the source of truth because every successful path
   // writes one.
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY) {
-    const sbHeadersForCheck = {
-      apikey:        env.SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-    };
+    const sbHeadersForCheck = supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY);
     if (await paymentAlreadyRecorded(env, sbHeadersForCheck, pi.id)) {
       console.log(JSON.stringify({ message: "stripe_webhook_duplicate_skipped" }));
       return;
@@ -301,11 +296,9 @@ async function handlePaymentSucceeded(env, pi) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     console.warn("Supabase not configured — skipping invoice/payment insert");
   } else {
-    const sbHeaders = {
-      "apikey":        env.SUPABASE_SERVICE_KEY,
-      "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      "Content-Type":  "application/json",
-    };
+    const sbHeaders = supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
+      "Content-Type": "application/json",
+    });
 
     const invoiceType = verifiedTarget.paymentType || await fetchInvoiceType(env, pi);
     const isFull = invoiceType === "full";
