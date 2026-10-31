@@ -45,12 +45,9 @@ for (const page of ["index.html", "memorials.html", "memorial.html", "contact.ht
 }
 assert.match(readFileSync("functions/sitemap.xml.js", "utf8"), /path: "\/about"/);
 
-// Quote popup shows product preview; no WhatsApp anywhere new.
+// Quote popup shows product preview. WhatsApp links are pinned in tests/whatsapp.mjs.
 const memorial = readFileSync("memorial.html", "utf8");
 assert.ok(memorial.includes('id="quoteProductPreview"'));
-for (const f of ["about.html", "brochure.html", "site-upgrades.js", "site-config.js"]) {
-  assert.doesNotMatch(readFileSync(f, "utf8"), /whatsapp/i);
-}
 console.log("site-upgrades: ok");
 
 // Ads attribution: click IDs + UTMs captured, kept 90 days.

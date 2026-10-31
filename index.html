@@ -418,6 +418,8 @@
         .appt-group input:focus, .appt-group select:focus, .appt-group textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(139,115,85,0.08); }
         .appt-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; cursor: pointer; }
         .appt-group textarea { min-height: 80px; resize: vertical; }
+        .appt-channel-note { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted); }
+        .appt-channel-note a { color: var(--color-accent-dark); }
         .appt-submit { width: 100%; padding: 1rem; margin-top: 1rem; background: var(--color-accent); color: white; border: none; border-radius: 8px; font-family: var(--font-body); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .appt-submit:hover { background: var(--color-stone); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,44,44,0.2); }
         .appt-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -657,7 +659,7 @@
       }]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261028a">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body class="page-transition">
@@ -773,6 +775,7 @@
                     <a href="/contact" class="btn btn-secondary">Get in Touch</a>
                 </div>
                 <p class="hero-brochure"><a href="/brochure" class="sm-brochure-link" data-brochure-source="home">Download our brochure</a></p>
+                <p class="sm-whatsapp-line"><a class="sm-whatsapp" href="https://wa.me/message/SDK7YQSPTKCYP1" target="_blank" rel="noopener" data-wa-location="home">Message us on WhatsApp</a></p>
                 <!-- Google review stars: hidden until SM_SITE_CONFIG.googleReviews is set (TODO in /site-config.js) -->
                 <div class="sm-reviews-wrap" data-sm-reviews hidden></div>
             </div>
@@ -1205,6 +1208,7 @@
                             <textarea id="apptNotes" placeholder="E.g. type of memorial you're considering, cemetery name..."></textarea>
                         </div>
                     </div>
+                    <p class="appt-channel-note">If you give a phone number, you agree we may send updates about your enquiry or order by WhatsApp, SMS or email. Reply STOP at any time. <a href="/privacy">Privacy policy</a></p>
                     <button class="appt-submit" id="apptSubmit" onclick="submitAppointment()">
                         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Request Appointment
@@ -1242,6 +1246,8 @@
                     <a href="tel:+442038352548">020 3835 2548</a>
                     <span class="footer-contact-sep" aria-hidden="true">·</span>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span class="footer-contact-sep" aria-hidden="true">·</span>
+                    <a class="sm-whatsapp" href="https://wa.me/message/U6K6IFOOIBTBI1" target="_blank" rel="noopener" data-wa-location="footer">Message us on WhatsApp</a>
                     <span class="footer-contact-sep" aria-hidden="true">·</span>
                     <span>North London — By appointment</span>
                 </div>
@@ -1888,6 +1894,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=wa1" defer></script>
 </body>
 </html>
