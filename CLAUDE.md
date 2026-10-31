@@ -151,3 +151,29 @@ in the file header when it hasn't been.
 Cloudflare Pages builds from `main`. Branch, PR, and let a human merge; the
 designated working branch is set per task. Env vars live in the Pages dashboard,
 never in `wrangler.jsonc`.
+
+`wrangler.jsonc` has no `pages_build_output_dir` and no `assets.directory`,
+so it does not choose what Git deploys. The dashboard build output is the repo
+root, which would publish internal files (`CLAUDE.md`, `docs/`, `tests/`,
+`scripts/`, `migrations/`, `wrangler.jsonc`, and the other paths listed in
+`functions/_internal-paths.js`). `_routes.json` sends those paths to Pages
+Functions, which return 404. Public HTML, `assets/`, `images/`, `data/team.js`,
+`/api/*`, `/sitemap.xml`, `/supabase-config`, and the `_redirects` rules stay
+as they are. Do not point `assets.directory` at the repo root: Wrangler then
+serves those files before the Function.
+
+Do not add `pages_build_output_dir` until `npx wrangler pages download config`
+has been reviewed. That key makes this file the Pages source of truth and
+would replace dashboard bindings, including secrets that are not in the repo.
+
+The preferred later fix, in the Cloudflare dashboard only (Workers & Pages →
+this project → Settings → Build): set the build command to copy the public
+files into `dist/` (`*.html`, the root CSS/JS the pages load, `data/team.js`,
+`assets/`, `images/`, `favicon.svg`, `sm-logo.svg`, `robots.txt`, `_headers`,
+`_redirects`, `_routes.json`) and set the build output directory to `dist`.
+Leave `functions/` at the repo root. Do not change that dashboard setting
+from a pull request.
+
+Homepage "What Families Say" (Sarah M. of Islington, David R. of Barnet,
+Angela K. of Enfield) are real customer reviews. Keep the visible wording.
+Do not mark them as placeholders.
