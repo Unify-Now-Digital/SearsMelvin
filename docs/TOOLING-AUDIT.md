@@ -71,6 +71,20 @@ half is independent and unaffected.
 
 ## Verified good — do not re-litigate without re-running the check
 
+- **2026-10-31 — homepage "What Families Say" reviews are real.** Sarah M.
+  (Islington), David R. (Barnet) and Angela K. (Enfield) were confirmed by the
+  owner. The visible wording stays. Do not put placeholder / sample / dummy /
+  fake wording back on those three reviews. Team-member placeholders in
+  `data/team.js` are a separate feature.
+- **2026-10-31 — internal repo files are not a public route.** Pages Git still
+  uploads the dashboard build output (the repo root). `assets.directory` was
+  removed from `wrangler.jsonc` because Wrangler served that directory before
+  Functions. `_routes.json` invokes a Function for `CLAUDE.md`,
+  `SEO-ACTION-PLAN.md`, `docs/`, `tests/`, `scripts/` (including ghl-chat-sync),
+  `migrations/`, `wrangler.jsonc`, `.gitignore`, and the other paths in
+  `functions/_internal-paths.js`, and that Function returns 404. Switching the
+  dashboard build output to an allowlisted `dist/` is the follow-up; do not
+  add `pages_build_output_dir` until the downloaded dashboard config is reviewed.
 - **2026-10-21 — brochure counter attribution stays service-role-only and
   privacy-limited.** The unapplied additive migration keeps RLS enabled and
   revokes anon/authenticated access; it stores a validated gclid and SHA-256

@@ -8,9 +8,11 @@
   "vars": {
     "GOOGLE_CLIENT_ID": "319514824800-fbfkndi500m9b8tm7vueu04vbg2bqjus.apps.googleusercontent.com"
   },
-  "assets": {
-    "directory": "."
-  },
+  // No assets.directory: pointing it at the repo root makes Wrangler serve
+  // every file before Pages Functions, so the _routes.json 404s never run.
+  // No pages_build_output_dir either: that key makes this file the Pages
+  // source of truth and would replace dashboard bindings. Git deploys still
+  // use the dashboard build output (currently the repo root).
   "compatibility_flags": [
     "nodejs_compat"
   ]
