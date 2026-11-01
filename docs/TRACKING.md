@@ -16,7 +16,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 3. GA4 lead/quote events use **`transport_type: beacon`** (set on the GTM tags) so they survive the page unloading.
 4. Every visible phone number is exactly **`020 3835 2548`** (the Google forwarding-number swap only matches this format). Every `tel:` link must show it as text. Schema JSON-LD keeps `+442038352548`. Exception (Oct 2026): ad visitors only (90-day `sm_ad` cookie) may see the dedicated Ads number from `SM_ADS_PHONE`, swapped at runtime by site-upgrades.js. The HTML always ships `020 3835 2548`.
 5. **No `utm_*` on internal links.** UTMs are only for inbound campaigns (and the outbound brochure email/PDF links in `functions/api/brochure.js` / the PDF).
-6. Every public page loads GTM (GTM-KRDX4BQ5) and the GHL chat loader with the chat hook.
+6. Every public page loads GTM (GTM-KRDX4BQ5) and the GHL chat loader with the chat hook. GTM loads **at page start** in `<head>` (async), straight after the consent defaults; it must not wait for scroll/tap/idle (that deferral, from #67, hid ~75% of paid visits from GA4). The LeadConnector chat stays deferred (tap/type or 10 s). `tests/tracking-guard.mjs` enforces both.
 7. Never change conversion values, primary/secondary or bidding from the website side.
 8. If you change GTM, run `node scripts/tracking-check.mjs --update-snapshot` and commit the new `docs/gtm-snapshot.json` in the same PR, with a GTM version name that says what changed.
 
@@ -31,7 +31,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
 | `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
 
-The chat loader also sets `window.__smChatHook = true` before GTM loads. That disables the
+The GTM loader (and the chat loader) set `window.__smChatHook = true` before gtm.js can run. That disables the
 older GTM Custom HTML "GHL Chat Widget Listener" (fetch/XHR hook), which raced the widget
 and missed most chats. Do not remove the flag, or chats will be counted twice.
 
