@@ -18,6 +18,23 @@ for (const f of pages) {
   assert.ok(/<script[^>]+src="\/site-upgrades\.js[^"]*"/.test(s), `${f}: site-upgrades.js (gclid/attribution capture) missing`);
   assert.ok(/gtag\('consent', 'default', \{[\s\S]*?ad_storage:\s*'denied'[\s\S]*?analytics_storage:\s*'denied'[\s\S]*?ad_user_data:\s*'denied'[\s\S]*?ad_personalization:\s*'denied'/.test(s),
     `${f}: consent mode defaults changed or missing`);
+  // GTM loads at page start (not on first scroll/tap/idle), and only after the
+  // consent defaults; the chat-hook flag is claimed before gtm.js can run.
+  const iConsent = s.indexOf("gtag('consent', 'default'");
+  const iGtm = s.indexOf("googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5");
+  assert.ok(iConsent > -1 && iGtm > iConsent, `${f}: consent defaults must come before the GTM loader`);
+  const head = s.slice(0, s.indexOf("</head>"));
+  assert.ok(iGtm > -1 && iGtm < head.length, `${f}: GTM loader must be in <head>`);
+  const gtmBlock = s.slice(s.lastIndexOf("<script>", iGtm), s.indexOf("</script>", iGtm));
+  assert.doesNotMatch(gtmBlock, /requestIdleCallback|addEventListener|setTimeout/, `${f}: GTM loader must not be deferred`);
+  assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
+  // LeadConnector chat stays deferred (interaction or 10s), never loaded at parse time.
+  const iLc = s.indexOf("widgets.leadconnectorhq.com/loader.js");
+  assert.ok(iLc > -1, `${f}: LeadConnector loader missing`);
+  const lcBlock = s.slice(s.lastIndexOf("<script>", iLc), s.indexOf("</script>", iLc));
+  assert.match(lcBlock, /function load\(\)\{\s*if \(loaded\) return; loaded = true;[\s\S]*widgets\.leadconnectorhq\.com\/loader\.js/, `${f}: LeadConnector chat must stay behind the deferred load()`);
+  assert.match(lcBlock, /setTimeout\(load, 10000\)/, `${f}: LeadConnector 10s fallback missing`);
+  assert.doesNotMatch(lcBlock, /'scroll'/, `${f}: LeadConnector must not load on scroll`);
 }
 
 // gclid / gbraid / wbraid capture and attribution on submit.
