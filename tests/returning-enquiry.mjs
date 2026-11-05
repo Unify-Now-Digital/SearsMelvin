@@ -26,17 +26,20 @@ async function run(existing, args) {
 
 let calls = await run({ firstName: "ann", lastName: "kelle", phone: "", customFields: [] }, { name: "Lowri P.", phone: "07767618004", message: "WA", cemetery: "Newhaven Cemetery" });
 let put = calls.find((c) => c.method === "PUT");
-assert.deepEqual(put.body, { phone: "07767618004" }, "only blank phone filled, name kept");
+assert.deepEqual(put.body, { phone: "07767618004", source: "Website enquiry" }, "blank phone filled + blank source labelled");
 let note = calls.find((c) => c.url.endsWith("/contacts/c9/notes"));
 assert.match(note.body.body, /^Returning enquiry .* as 'Lowri P\.', phone 07767618004, message: WA, product\/cemetery: - \/ Newhaven Cemetery$/);
 let tags = calls.find((c) => c.url.endsWith("/contacts/c9/tags"));
 assert.ok(tags.body.tags.includes("returning-enquiry"));
 
-calls = await run({ firstName: "Lowri", lastName: "Perez", phone: "+447767618004", customFields: [] }, { name: "Lowri Perez", phone: "07767618004", message: "hi" });
-assert.equal(calls.find((c) => c.method === "PUT"), undefined, "nothing to fill");
+calls = await run({ firstName: "Lowri", lastName: "Perez", phone: "+447767618004", customFields: [], source: "Website enquiry" }, { name: "Lowri Perez", phone: "07767618004", message: "hi" });
+assert.equal(calls.find((c) => c.method === "PUT"), undefined, "nothing to fill when source already website");
 assert.equal(calls.find((c) => c.url.endsWith("/notes")), undefined, "same name: no note");
 assert.ok(calls.find((c) => c.url.endsWith("/tags")).body.tags.includes("returning-enquiry"));
 
+calls = await run({ firstName: "Lowri", lastName: "Perez", phone: "+447767618004", customFields: [], source: "chat widget" }, { name: "Lowri Perez", phone: "07767618004", message: "hi" });
+assert.deepEqual(calls.find((c) => c.method === "PUT").body, { source: "Website enquiry" }, "chat widget source replaced on returning form");
+
 calls = await run({ firstName: "", lastName: "", phone: "", customFields: [] }, { name: "Lowri Perez", phone: "07767618004" });
-assert.deepEqual(calls.find((c) => c.method === "PUT").body, { phone: "07767618004", firstName: "Lowri", lastName: "Perez" });
+assert.deepEqual(calls.find((c) => c.method === "PUT").body, { phone: "07767618004", firstName: "Lowri", lastName: "Perez", source: "Website enquiry" });
 console.log("returning-enquiry OK");

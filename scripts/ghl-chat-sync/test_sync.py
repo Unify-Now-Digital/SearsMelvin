@@ -57,6 +57,10 @@ class SyncTests(unittest.TestCase):
                                                attributionSource={"medium": "other"})), "call")
         self.assertEqual(sync.classify(contact(source="Website quote")), "form")
         self.assertEqual(sync.classify(contact(tags=["quote-request"])), "form")
+        # Website form tags beat leftover chat_widget medium (Emily N. case).
+        self.assertEqual(sync.classify(contact(
+            source="Website quote", tags=["website-quote", "chat-lead"],
+            attributionSource={"medium": "chat_widget"})), "form")
         self.assertEqual(sync.classify(contact(source="Referral")), "other")
 
     def test_click_source_precedence(self):

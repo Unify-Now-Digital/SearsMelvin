@@ -237,25 +237,31 @@ def contact_name(contact):
 
 
 def is_chat(contact):
+    tags = contact.get("tags") or []
+    tags = {str(tag).lower() for tag in (tags if isinstance(tags, list) else [tags])}
+    # A later website form submission (quote/enquiry) wins over leftover chat_widget
+    # medium on attributionSource — otherwise Emily-style quote leads stay "chat".
+    if tags.intersection({"website-quote", "website-enquiry", "website-lead", "quote-request", "website-appointment"}):
+        return False
     attribution = contact.get("attributionSource") or {}
     medium = attribution.get("medium", "") if isinstance(attribution, dict) else ""
     return "chat" in str(contact.get("source") or "").lower() or "chat" in str(medium).lower()
 
 
 def classify(contact):
-    if is_chat(contact):
-        return "chat"
     source = str(contact.get("source") or "").strip()
     tags = contact.get("tags") or []
     tags = {str(tag).lower() for tag in (tags if isinstance(tags, list) else [tags])}
+    if source.startswith("Website") or tags.intersection({"website-quote", "website-enquiry", "website-lead", "quote-request", "website-appointment"}):
+        return "form"
+    if is_chat(contact):
+        return "chat"
     attribution = contact.get("attributionSource") or {}
     medium = str(attribution.get("medium") or "").lower() if isinstance(attribution, dict) else ""
     if ("call" in source.lower() or tags.intersection({"call", "missed-call"}) or
             (medium in ("other", "") and not contact.get("email") and
              contact.get("phone") and not source)):
         return "call"
-    if source.startswith("Website") or tags.intersection({"website-lead", "quote-request"}):
-        return "form"
     return "other"
 
 
