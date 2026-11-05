@@ -15,6 +15,10 @@ Disallow: /partner.html
 Disallow: /track
 Disallow: /track.html
 
+# Form confirmation. noindex, and not listed in the sitemap.
+Disallow: /thank-you
+Disallow: /thank-you.html
+
 # API endpoints — never indexable
 Disallow: /api/
 

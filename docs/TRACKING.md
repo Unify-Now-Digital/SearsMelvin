@@ -30,6 +30,9 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
 | `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
+| `sm_thank_you` `{form_type}` | `thank-you.html` | Page load after a successful contact or quote redirect. `form_type` is `contact`, `quote`, or `unknown`. No personal details. | **Not wired in GTM yet.** See “Thank-you page” below. Do not add a trigger until that note is followed, or contact leads are counted twice. |
+
+The mobile quote/call bar’s call control is a normal `tel:+442038352548` link whose visible text is `020 3835 2548`. Existing click-to-call tags and `clickIntent('call')` cover it, including the Ads number swap. The “Get a quote” control is a link to `/contact` (class `sm-mobile-action-quote`). It is not a new conversion.
 
 The GTM loader (and the chat loader) set `window.__smChatHook = true` before gtm.js can run. That disables the
 older GTM Custom HTML "GHL Chat Widget Listener" (fetch/XHR hook), which raced the widget
@@ -166,3 +169,27 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   - Until a GHL number is bought, leave `SM_ADS_PHONE=PLACEHOLDER`, and nothing changes.
   - **Clash:** GTM's Google forwarding-number swap (conversion 7840535941) also rewrites `020 3835 2548` for ad visitors. When the Ads number goes live, either turn that GFN tag off or set its target to the new number, so the two swaps don't race.
 - Tests: `tests/lead-source.mjs`.
+
+## Thank-you page (Nov 2026)
+
+`/thank-you` is where the contact form and the memorial quote form go after a **successful** `/api/submit`. The existing on-page success message is still in the form page and shows if the redirect does not run.
+
+Order on the form page, unchanged: push `sm_lead_submit` (contact) or `sm_quote_submit` (quote) **first**, then hide the form, then `location.replace('/thank-you?form=contact|quote')`. Those events already fire GA4 and Ads, with `transport_type: beacon`, so the redirect does not drop them.
+
+`/thank-you` then pushes `sm_thank_you` with `form_type`. It is `noindex`, disallowed in `robots.txt`, and absent from `sitemap.xml`. The home appointment form and the shortlist enquiry are not redirected.
+
+### GTM change — do this in the GTM UI, not in the website
+
+Container **GTM-KRDX4BQ5**. This cannot be done from the repo. Do **not** publish it until the double count below is decided, and do not run `--update-snapshot` until the live container actually changes.
+
+1. Variable: Data Layer Variable `form_type` (version 2).
+2. Trigger, either:
+   - Custom Event, event name `sm_thank_you`, or
+   - Page View, Page Path equals `/thank-you`.
+   The custom event is the one the page pushes, and it already carries `form_type`. A page-path trigger also works; read `form` from the query (`contact` or `quote`) if you use that instead of the data layer variable.
+3. Tag: GA4 Event, event name `generate_lead`, parameter `form_type` = `{{form_type}}`, `transport_type` = `beacon`.
+4. **Double count:** contact submissions already fire GA4 `generate_lead` and Ads `generate_lead` on `sm_lead_submit` before the redirect. A second `generate_lead` on `/thank-you` would count the same contact twice. Quote submissions fire `request_quote`, not `generate_lead`.
+   - Leave the new tag **unpublished** until Arin chooses.
+   - If the thank-you URL should become the contact conversion, pause the existing contact `generate_lead` tag (the one on `sm_lead_submit`) in the same GTM version as you publish the new one, and say so in the version name. Do not pause the Ads `sm_lead_submit` tag from a website change.
+   - Do not mark the new event as a GA4 key event, and do not import it into Google Ads, until that choice is made.
+5. After a real GTM publish, run `node scripts/tracking-check.mjs --update-snapshot` and commit `docs/gtm-snapshot.json` in that PR.
