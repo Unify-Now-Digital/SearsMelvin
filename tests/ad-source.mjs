@@ -59,7 +59,8 @@ for (const [existingValue, expectPut] of [["Referral", false], ["", true]]) {
   const fetchImpl = async (url, init = {}) => {
     calls.push({ url: String(url), init });
     if (calls.length === 1) return response(409, { message: "duplicate contact", meta: { contactId: `duplicate-${expectPut}` } });
-    if ((init.method || "GET") === "GET") return response(200, { contact: { firstName: "Ann", lastName: "Existing", phone: "+440000", customFields: [{ id: "ad-source-id", field_value: existingValue }] } });
+    // Existing website source so this assertion stays about Ad source fill-only, not source relabel.
+    if ((init.method || "GET") === "GET") return response(200, { contact: { firstName: "Ann", lastName: "Existing", phone: "+440000", source: "Website enquiry", customFields: [{ id: "ad-source-id", field_value: existingValue }] } });
     return response(200);
   };
   await createGHLContact(baseEnv, { ...contactArgs, fetchImpl });

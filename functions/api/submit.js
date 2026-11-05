@@ -142,6 +142,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
   const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
+  let enquiryId = null;
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_quote`, {
       method: "POST",
@@ -170,7 +171,8 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     // Fallback for an older create_quote: stamp the attribution on the enquiry it
     // created (blank-safe PATCH). Best-effort: a failure here never loses the quote.
     const rpcBody = await res.json().catch(() => null);
-    await saveEnquiryAttribution(env, rpcBody?.enquiry_id, data.attribution);
+    enquiryId = rpcBody?.enquiry_id || null;
+    await saveEnquiryAttribution(env, enquiryId, data.attribution);
   } catch (err) {
     console.error(JSON.stringify({ message: "quote_save_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
@@ -182,6 +184,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     cemeteryOrLocation, firstName, stoneHex, cemetery, location,
     attribution: data.attribution,
     isTest: testFlag.is_test,
+    enquiryId,
   }));
 
   return jsonResponse({ ok: true });
@@ -191,7 +194,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 // emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution, isTest,
+  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution, isTest, enquiryId,
 }) {
   const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
@@ -222,11 +225,13 @@ async function quoteSideEffects({
         isTest,
       });
       if (contactId) {
+        await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
           contactId,
           name: `${product.name || "Memorial"} — ${name}`,
           monetaryValue: parseFloat(product.price) || 0,
           enquiry: { type: "quote request", message },
+          source: websiteGhlLabels("quote").source,
         });
       }
     }),
@@ -255,6 +260,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
   const testFlag = isTestSubmission({ name, email, phone, message, ...cleanAttribution(data.attribution) });
+  let enquiryId = null;
 
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
   const isShortlist = enquiry_type === "shortlist-enquiry";
@@ -281,7 +287,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     const mergedDetails = grave_number
       ? { ...(baseDetails || {}), grave_number }
       : baseDetails;
-    await createEnquiry(env, {
+    const saved = await createEnquiry(env, {
       channel,
       name, email, phone,
       sub_type: enquiry_type || null,
@@ -301,6 +307,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
       attribution: data.attribution,
       is_test: testFlag.is_test,
     });
+    enquiryId = saved?.enquiryId || null;
   } catch (err) {
     console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
@@ -320,6 +327,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     appointment_kind: data.appointment_kind || null,
     attribution: data.attribution || null,
     isTest: testFlag.is_test,
+    enquiryId,
   }));
 
   return jsonResponse({ ok: true });
@@ -331,7 +339,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
-  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest,
+  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest, enquiryId,
 }) {
   await Promise.allSettled([
     bg("enquiry business email", async () => {
@@ -399,11 +407,13 @@ async function enquirySideEffects({
         isTest,
       });
       if (contactId) {
+        await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
           contactId,
           name: `${enquiryTypeLabel} — ${name}`,
           monetaryValue: 0,
           enquiry: { type: "enquiry", message },
+          source: websiteGhlLabels("enquiry").source,
         });
       }
     }),
@@ -419,6 +429,7 @@ async function handleAppointment(ctx, data, submittedAt) {
   const { name, email, phone, appointment_type, appointment_date, appointment_time } = data;
   const notes = appointmentNotes(data);
   const testFlag = isTestSubmission({ name, email, phone, message: notes, ...cleanAttribution(data.attribution) });
+  let enquiryId = null;
   if (!appointment_date || !appointment_time)
     return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
 
@@ -435,7 +446,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     ? new Date(`${appointment_date}T${appointment_time}:00`).toISOString()
     : (data.appointment_at || null);
   try {
-    await createEnquiry(env, {
+    const saved = await createEnquiry(env, {
       channel: apptChannel,
       name, email, phone,
       sub_type: appointment_type || null,
@@ -446,6 +457,7 @@ async function handleAppointment(ctx, data, submittedAt) {
       attribution: data.attribution,
       is_test: testFlag.is_test,
     });
+    enquiryId = saved?.enquiryId || null;
   } catch (err) {
     console.error(JSON.stringify({ message: "appointment_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
@@ -458,6 +470,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     typeLabel, dateFormatted, firstName,
     attribution: data.attribution,
     isTest: testFlag.is_test,
+    enquiryId,
   }));
 
   return jsonResponse({ ok: true });
@@ -468,7 +481,7 @@ async function handleAppointment(ctx, data, submittedAt) {
 async function appointmentSideEffects({
   env, name, email, phone, notes, submittedAt,
   appointment_type, appointment_date, appointment_time,
-  typeLabel, dateFormatted, firstName, attribution, isTest,
+  typeLabel, dateFormatted, firstName, attribution, isTest, enquiryId,
 }) {
   let calendarLink = null;
   try {
@@ -502,11 +515,13 @@ async function appointmentSideEffects({
         name, email, phone, type: "appointment", message: notes, extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
       });
       if (contactId) {
+        await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
           contactId,
           name: `${typeLabel} — ${name}`,
           monetaryValue: 0,
           enquiry: { type: "appointment request", message: notes },
+          source: websiteGhlLabels("appointment").source,
         });
       }
     }),
@@ -1519,7 +1534,7 @@ export async function createEnquiry(env, payload) {
   };
   const post = (body) => fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
-    headers: supabaseHeaders(env),
+    headers: { ...supabaseHeaders(env), Prefer: "return=representation" },
     body: JSON.stringify(body),
   });
   let currentBody = enqBody;
@@ -1541,7 +1556,9 @@ export async function createEnquiry(env, payload) {
     enqRes = await post(currentBody);
   }
   if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
-  return { personId: person.id };
+  const created = await enqRes.json().catch(() => null);
+  const enquiryId = Array.isArray(created) ? created[0]?.id : created?.id;
+  return { personId: person.id, enquiryId: enquiryId || null };
 }
 
 // enquiries.gclid / gbraid / wbraid / utm_* (migration 2026-10-14). Only keys
@@ -1578,6 +1595,46 @@ export async function saveEnquiryAttribution(env, enquiryId, attribution) {
   } catch {
     console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing" }));
   }
+}
+
+/** Best-effort write-back of the matched/created GHL contact onto the enquiry row. */
+export async function saveEnquiryGhlContactId(env, enquiryId, contactId) {
+  if (!enquiryId || !contactId) return;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+      method: "PATCH",
+      headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+      body: JSON.stringify({ ghl_contact_id: String(contactId) }),
+    });
+    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_ghl_contact_id_save_failed", status: res.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "enquiry_ghl_contact_id_save_failed" }));
+  }
+}
+
+/** Contact source + tags for website forms (Supabase is SoT; GHL is a mirror). */
+export function websiteGhlLabels(type) {
+  const t = String(type || "").toLowerCase();
+  if (t === "quote") {
+    return { source: "Website quote", tags: ["website-quote", "website-lead", "quote-request"] };
+  }
+  if (t === "appointment") {
+    return { source: "Website appointment", tags: ["website-appointment", "website-lead", "appointment"] };
+  }
+  // contact / shortlist / generic enquiry
+  return { source: "Website enquiry", tags: ["website-enquiry", "website-lead", "enquiry"] };
+}
+
+/** Chat-widget (or blank) sources are overwritten by a later website form submission. */
+export function shouldReplaceGhlSource(existingSource, nextSource) {
+  if (!nextSource) return false;
+  if (existingSource == null || String(existingSource).trim() === "") return true;
+  const cur = String(existingSource).trim().toLowerCase();
+  if (cur.includes("chat")) return true;
+  if (cur === String(nextSource).trim().toLowerCase()) return false;
+  // Never clobber a different non-chat source (manual / Ads / YOPA etc.).
+  if (cur.startsWith("website")) return true; // allow quote/enquiry/appointment relabel among website*
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1767,9 +1824,10 @@ export async function attributionCustomFields(env, attribution, { token, locatio
   let ids = {};
   try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); }
   catch (e) { console.error(JSON.stringify({ message: "ghl_field_lookup_failed", error: String(e?.message || e) })); return []; }
-  const missing = keys.filter((k) => !ids[k]);
+  const pick = (key) => ids[key] || ids["contact" + key] || ids["contact_" + key];
+  const missing = keys.filter((k) => !pick(k));
   if (missing.length) console.warn(JSON.stringify({ message: "ghl_attribution_fields_missing", missing }));
-  return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
+  return keys.filter((k) => pick(k)).map((k) => ({ id: pick(k), field_value: a[k] }));
 }
 
 export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
@@ -1817,7 +1875,8 @@ export async function createGHLContact(env, args, fetchOverride) {
     return null;
   }
   const parts = name.trim().split(" ");
-  const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
+  const labels = websiteGhlLabels(type);
+  const tags = [...labels.tags, ...leadTags(lead)];
   if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
   if (isTest) tags.push("test-lead");
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
@@ -1826,6 +1885,8 @@ export async function createGHLContact(env, args, fetchOverride) {
   const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
   const adSourceFields = await adSourceCustomField(env, lead, { fetchImpl });
   const lastTouchFields = await lastTouchCustomFields(env, lead, { fetchImpl });
+  // First-touch click IDs / UTMs / lead meta / Ad source: fill-blank only on duplicate.
+  // Last-touch fields always take the latest value (see #207 / last-touch tests).
   const trackedFields = [...(attributionFields || []), ...leadFields, ...adSourceFields];
   const customFields = [
     { key: "lead_type", field_value: type },
@@ -1847,9 +1908,10 @@ export async function createGHLContact(env, args, fetchOverride) {
     method: "POST",
     headers,
     // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
+    // Contact `source` + tags are ours: Website quote / enquiry / appointment.
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
-      email, phone: phone || undefined, source: "Website", tags: dedupedTags, customFields,
+      email, phone: phone || undefined, source: labels.source, tags: dedupedTags, customFields,
     }),
   });
   const body = await res.json().catch(() => ({}));
@@ -1868,6 +1930,8 @@ export async function createGHLContact(env, args, fetchOverride) {
       const fields = [...fillOnlyCustomFields(existing.customFields, trackedFields), ...lastTouchFields];
       const update = returningContactUpdate(existing, { firstName: parts[0], lastName: parts.slice(1).join(" "), phone });
       if (fields.length) update.customFields = fields;
+      // Relabel chat-widget (or blank) contacts that later submit a website form.
+      if (shouldReplaceGhlSource(existing.source, labels.source)) update.source = labels.source;
       if (Object.keys(update).length) {
         const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
           method: "PUT", headers, body: JSON.stringify(update),
@@ -1903,7 +1967,7 @@ export async function createGHLContact(env, args, fetchOverride) {
  * a WON opportunity gets a `returning-customer-enquiry` tag + note instead of a
  * new card; won opportunities are never written from here.
  */
-async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry }) {
+async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry, source }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
   return upsertWebsiteOpportunity(env, {
     contactId,
@@ -1912,6 +1976,7 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue, enqui
     pipelineId: env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT,
     defaultStageId: env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT,
     enquiry,
+    source,
     submittedAt: new Date(),
   });
 }
