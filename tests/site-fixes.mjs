@@ -38,6 +38,8 @@ const memorial = read("memorial.html");
 assert.doesNotMatch(memorial, /nav-quote-mobile/, "product template keeps its own quote control");
 assert.match(memorial, /sm-logo\.svg/, "product shell still has an image the rewriter replaces");
 assert.match(memorial, /og-memorials\.jpg/);
+assert.match(memorial, /placeholder="Your phone number"/);
+assert.doesNotMatch(memorial, /07123 456 789/);
 assert.match(memorial, /location\.replace\('\/thank-you\?form=quote'\)/);
 const q = memorial.slice(memorial.indexOf("if (result.ok) {", memorial.indexOf("channel:  'quote'")));
 assert.ok(q.indexOf("event: 'sm_quote_submit'") < q.indexOf("quoteForm').style.display = 'none'"));
@@ -54,7 +56,21 @@ assert.ok(c.indexOf("location.replace") > c.indexOf("contactForm').style.display
 const thanks = read("thank-you.html");
 assert.match(thanks, /noindex, nofollow/);
 assert.match(thanks, /event: 'sm_thank_you'/);
+assert.match(thanks, /q === 'contact' \|\| q === 'quote' \|\| q === 'appointment' \|\| q === 'shortlist'/);
 assert.match(thanks, /form_type: formType/);
+assert.match(thanks, /Placeholder — Arin to confirm/);
+
+const appt = home.slice(home.indexOf("async function submitAppointment()"), home.indexOf("// ==================== SUPABASE CONFIG"));
+assert.ok(appt.indexOf("event: 'sm_lead_submit'") < appt.indexOf("apptFormFields').style.display = 'none'"));
+assert.ok(appt.indexOf("apptSuccess').classList.add('show')") < appt.indexOf("location.replace('/thank-you?form=appointment')"));
+
+const listing = read("memorials.html");
+assert.match(listing, /id="shortlistEnquiryForm"/);
+assert.match(listing, /evt\.preventDefault/);
+const sl = listing.slice(listing.indexOf("async function submitShortlistEnquiry"), listing.indexOf("function saveShortlistToStorage"));
+assert.doesNotMatch(sl, /stopPropagation/);
+assert.ok(sl.indexOf("slEnqSuccess').style.display = 'block'") < sl.indexOf("location.replace('/thank-you?form=shortlist')"));
+assert.doesNotMatch(sl, /sm_lead_submit/, "shortlist must not also push the contact lead event");
 assert.match(thanks, /Thank you for getting in touch/);
 assert.match(thanks, /within one working day/);
 assert.match(thanks, /Placeholder — Arin to confirm/);
@@ -90,5 +106,6 @@ for (const f of pages) {
 }
 
 assert.match(read("docs/TRACKING.md"), /sm_thank_you/);
-assert.match(read("docs/TRACKING.md"), /Do not mark the new event as a GA4 key event/);
+assert.match(read("docs/TRACKING.md"), /do \*\*not\*\* add a GA4 `generate_lead` tag/);
+assert.match(read("docs/TRACKING.md"), /sm_lead_submit` stays the single lead event/);
 console.log("site-fixes: ok");

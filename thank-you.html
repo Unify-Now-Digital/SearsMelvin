@@ -97,14 +97,14 @@
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
     <script>
-      // Thank-you conversion hook. Existing sm_lead_submit / sm_quote_submit
-      // still fire on the form page before this redirect (docs/TRACKING.md).
-      // form_type is only contact or quote — nothing personal.
+      // Thank-you page view. Lead events already fired on the form page
+      // (docs/TRACKING.md). This push is not a second generate_lead.
+      // form_type is a label only — nothing personal.
       (function () {
         var formType = 'unknown';
         try {
           var q = new URLSearchParams(location.search).get('form');
-          if (q === 'contact' || q === 'quote') formType = q;
+          if (q === 'contact' || q === 'quote' || q === 'appointment' || q === 'shortlist') formType = q;
         } catch (e) {}
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({ event: 'sm_thank_you', form_type: formType });

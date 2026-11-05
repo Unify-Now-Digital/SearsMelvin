@@ -1441,6 +1441,8 @@
                     } catch (e) { /* tracking must never break the form */ }
                     document.getElementById('apptFormFields').style.display = 'none';
                     document.getElementById('apptSuccess').classList.add('show');
+                    // On-page message stays if this navigation does not run.
+                    try { window.location.replace('/thank-you?form=appointment'); } catch (e) {}
                 } else {
                     throw new Error(result.error || 'Failed to submit');
                 }
