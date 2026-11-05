@@ -105,10 +105,13 @@
          page path, so on /memorials/<slug> the browser requests
          /memorials/favicon.svg — which the Pages function treats as a product
          slug and runs a pointless products?slug=eq.favicon.svg query. -->
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.svg?v=sm-20261105" type="image/svg+xml">
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
     <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
@@ -742,7 +745,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261105a">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body class="has-mobile-bottom-bar memorial-page">
@@ -1281,7 +1284,7 @@
                         </div>
                         <div class="quote-form-group">
                             <label>Phone Number</label>
-                            <input type="tel" id="qPhone" placeholder="07123 456 789" autocomplete="tel" inputmode="tel">
+                            <input type="tel" id="qPhone" placeholder="Your phone number" autocomplete="tel" inputmode="tel">
                         </div>
                     </div>
                     <div class="quote-form-group">
@@ -1469,7 +1472,7 @@
                     const url = 'https://searsmelvin.co.uk/memorials/' + encodeURIComponent(product.slug || '');
                     const title = product.name + ' | Sears Melvin Memorials';
                     const desc = (product.description || 'Hand-finished memorial with a 30-year fixing guarantee.').slice(0, 200);
-                    const img = safeImageUrl(product.image_url) || 'https://searsmelvin.co.uk/sm-logo.svg';
+                    const img = safeImageUrl(product.image_url) || 'https://searsmelvin.co.uk/images/share/og-memorials.jpg';
                     function setMeta(selector, attr, value) {
                         const el = document.querySelector(selector);
                         if (el) el.setAttribute(attr, value);
@@ -1491,7 +1494,7 @@
                     var catName = product.product_categories?.name || 'Memorial';
                     var catSlug = product.product_categories?.slug || '';
                     var canonicalUrl = 'https://searsmelvin.co.uk/memorials/' + encodeURIComponent(product.slug || '');
-                    var productImage = product.image_url || 'https://searsmelvin.co.uk/sm-logo.svg';
+                    var productImage = product.image_url || 'https://searsmelvin.co.uk/images/share/og-memorials.jpg';
 
                     var productLd = {
                         '@context': 'https://schema.org',
@@ -2620,6 +2623,8 @@
                                 }
                             }
                         } catch (e) {}
+                        // The on-page message stays as the fallback if this navigation does not run.
+                        try { window.location.replace('/thank-you?form=quote'); } catch (e) {}
                     } else {
                         throw new Error(result.error || 'Submission failed');
                     }
@@ -2883,7 +2888,7 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261105" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=lt3" defer></script>
 </body>

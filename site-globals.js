@@ -6,14 +6,22 @@
         return window.innerWidth <= MOBILE_BREAKPOINT;
     }
 
-    function pickWidgetBottom() {
-        if (document.body.classList.contains('has-mobile-bottom-bar') && isMobile()) {
-            return 160;
-        }
+    function cookieBannerOpen() {
         var consent = document.getElementById('cookieConsent');
-        var consentVisible = consent && getComputedStyle(consent).display !== 'none';
-        if (consentVisible) return isMobile() ? 190 : 120;
-        return isMobile() ? 100 : 24;
+        if (!consent) return false;
+        try { return getComputedStyle(consent).display !== 'none'; } catch (_e) { return false; }
+    }
+
+    function pickWidgetBottom() {
+        var mobile = isMobile();
+        var consentVisible = cookieBannerOpen();
+        if (document.body.classList.contains('has-mobile-bottom-bar') && mobile) {
+            return consentVisible ? 230 : 160;
+        }
+        if (consentVisible) return mobile ? 190 : 120;
+        // Slim quote/call bar sits above the existing mobile nav.
+        if (mobile && document.body.classList.contains('sm-mobile-action-visible')) return 168;
+        return mobile ? 100 : 24;
     }
 
     function isChatWidgetEl(el) {
@@ -76,9 +84,13 @@
     }
 
     function watchChatWidget() {
-        applyWidgetPosition();
-        var observer = new MutationObserver(function () {
+        function pin() {
             applyWidgetPosition();
+            suppressChatGreeting(document.body, 0);
+        }
+        pin();
+        var observer = new MutationObserver(function () {
+            pin();
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         window.addEventListener('resize', applyWidgetPosition);
@@ -86,7 +98,7 @@
         // styles after our observer runs, so re-pin to win the last-write race.
         var ticks = 0;
         var poll = setInterval(function () {
-            applyWidgetPosition();
+            pin();
             if (++ticks >= 20) clearInterval(poll);
         }, 500);
     }
@@ -344,8 +356,135 @@
         document.body.insertBefore(link, document.body.firstChild);
     }
 
+    function barAllowed() {
+        if (!document.body || document.body.classList.contains('memorial-page')) return false;
+        var path = (location.pathname || '/').toLowerCase();
+        if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+        path = path.replace(/\.html$/, '');
+        if (/^\/memorials\/.+/.test(path)) return false;
+        if (path === '/admin' || path === '/admin-products' || path === '/track' || path === '/quote') return false;
+        return true;
+    }
+
+    function pastIntro() {
+        if (window.scrollY < 80) return false;
+        var hero = document.querySelector('.hero, .page-header');
+        if (!hero) return window.scrollY > 520;
+        return hero.getBoundingClientRect().bottom < 80;
+    }
+
+    function ensureMobileActionBar() {
+        if (!barAllowed() || document.getElementById('smMobileActionBar')) return;
+        var bar = document.createElement('div');
+        bar.id = 'smMobileActionBar';
+        bar.className = 'sm-mobile-action-bar';
+        bar.setAttribute('role', 'region');
+        bar.setAttribute('aria-label', 'Quote or call');
+        bar.innerHTML = '<a class="sm-mobile-action-quote" href="/contact">Get a quote</a>' +
+            '<a class="sm-mobile-action-call" href="tel:+442038352548">Call 020 3835 2548</a>';
+        document.body.appendChild(bar);
+
+        function update() {
+            var show = isMobile() && pastIntro() && !cookieBannerOpen();
+            bar.classList.toggle('is-shown', show);
+            document.body.classList.toggle('sm-mobile-action-visible', show);
+            applyWidgetPosition();
+        }
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        var consent = document.getElementById('cookieConsent');
+        if (consent && window.MutationObserver) {
+            new MutationObserver(update).observe(consent, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+        document.addEventListener('click', function () { setTimeout(update, 0); });
+    }
+
+    // The round launcher can stay. The proactive greeting card is what covers
+    // the homepage buttons. Hold it until shortly after the widget appears,
+    // or until the hero has been scrolled away. The widget itself still loads
+    // on a tap or at 10s (docs/TRACKING.md) — this only hides the greeting.
+    var chatWidgetSeenAt = 0;
+    var chatHoldStarted = 0;
+
+    function holdChatGreeting() {
+        if (!document.body) return;
+        chatHoldStarted = Date.now();
+        document.body.classList.add('sm-hold-chat-greeting');
+        var released = false;
+        function restore(root) {
+            if (!root || !root.querySelectorAll) return;
+            var held = root.querySelectorAll('[data-sm-greeting-held]');
+            for (var i = 0; i < held.length; i++) {
+                held[i].style.removeProperty('visibility');
+                held[i].style.removeProperty('pointer-events');
+                held[i].removeAttribute('data-sm-greeting-held');
+            }
+            var nodes = root.querySelectorAll('*');
+            for (var j = 0; j < nodes.length; j++) {
+                if (nodes[j].shadowRoot) restore(nodes[j].shadowRoot);
+            }
+        }
+        function release() {
+            if (released) return;
+            released = true;
+            document.body.classList.remove('sm-hold-chat-greeting');
+            restore(document);
+        }
+        function heroGone() {
+            var hero = document.querySelector('.hero');
+            if (!hero) return false;
+            return window.scrollY > 40 && hero.getBoundingClientRect().bottom < 80;
+        }
+        var timer = setInterval(function () {
+            if (released) { clearInterval(timer); return; }
+            var now = Date.now();
+            if (heroGone()) { release(); clearInterval(timer); return; }
+            // 8s after the widget is actually on the page, not 8s after load.
+            // The loader waits up to 10s, so a timer from load would expire first.
+            if (chatWidgetSeenAt && now - chatWidgetSeenAt > 8000) { release(); clearInterval(timer); return; }
+            if (now - chatHoldStarted > 22000) { release(); clearInterval(timer); }
+        }, 400);
+        document.addEventListener('pointerdown', function (ev) {
+            var t = ev.target;
+            if (!t || !t.closest) return;
+            if (t.closest('chat-widget, lc-chat-widget, #chat-widget-button, [data-widget-id]')) release();
+        }, true);
+    }
+
+    function suppressChatGreeting(root, depth) {
+        if (!document.body || !document.body.classList.contains('sm-hold-chat-greeting')) return;
+        if (!root || !root.children || depth > 8) return;
+        var nodes = root.children;
+        for (var i = 0; i < nodes.length; i++) {
+            var el = nodes[i];
+            if (!el || el.nodeType !== 1) continue;
+            var tag = el.tagName;
+            if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK') continue;
+            if (el.id === 'smMobileActionBar' || el.id === 'cookieConsent' || el.id === 'navbar') continue;
+            if (el.classList && (el.classList.contains('mobile-bottom-nav') || el.classList.contains('search-overlay') || el.classList.contains('search-modal') || el.classList.contains('sm-mobile-action-bar') || el.classList.contains('sm-skip-link'))) continue;
+            if (isChatWidgetEl(el) && !chatWidgetSeenAt) chatWidgetSeenAt = Date.now();
+            var hint = ((el.id || '') + ' ' + (el.className && el.className.toString ? el.className.toString() : '')).toLowerCase();
+            var wide = false;
+            try {
+                var cs = getComputedStyle(el);
+                wide = (cs.position === 'fixed' || cs.position === 'absolute') && el.offsetWidth >= 160 && el.offsetHeight >= 80 && el.offsetWidth < 560 && el.offsetHeight < 520;
+            } catch (_e) {}
+            var greeting = /greet|welcome-message|chat-prompt|prompt-message/.test(hint);
+            if (el.getAttribute('data-sm-greeting-held') !== '1' && (greeting || (wide && (isChatWidgetEl(el) || /chat|leadconnector|msgsndr/.test(hint))))) {
+                el.setAttribute('data-sm-greeting-held', '1');
+                el.style.setProperty('visibility', 'hidden', 'important');
+                el.style.setProperty('pointer-events', 'none', 'important');
+            }
+            if (el.shadowRoot) suppressChatGreeting(el.shadowRoot, depth + 1);
+            if (el.children && el.children.length) suppressChatGreeting(el, depth + 1);
+        }
+    }
+
     function init() {
+        holdChatGreeting();
         watchChatWidget();
+        ensureMobileActionBar();
         ensureShortlistBadge();
         updateShortlistBadge();
         ensureSkipLink();

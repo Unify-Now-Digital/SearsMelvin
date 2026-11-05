@@ -161,9 +161,10 @@ const PUBLIC_ROOT = new Set([
   "404.html", "about.html", "admin.html", "admin-products.html", "brochure.html",
   "care-guide.html", "contact.html", "faq.html", "index.html", "memorial.html",
   "memorials.html", "privacy.html", "quote.html", "resources.html", "terms.html",
-  "track.html", "accreditations.css", "chat-widget.css", "site-upgrades.css",
+  "track.html", "thank-you.html", "accreditations.css", "chat-widget.css", "site-upgrades.css",
   "site-config.js", "site-globals.js", "site-upgrades.js", "favicon.svg",
-  "sm-logo.svg", "robots.txt", "_headers", "_redirects", "_routes.json",
+  "favicon.ico", "favicon-32.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png",
+  "site.webmanifest", "sm-logo.svg", "robots.txt", "_headers", "_redirects", "_routes.json",
 ]);
 const PUBLIC_DIRS = ["assets/", "images/", "data/"];
 const tracked = execSync("git ls-files -z", { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);

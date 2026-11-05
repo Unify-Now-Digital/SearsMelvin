@@ -56,6 +56,19 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
     }
 }
 
+/* Slim mobile quote/call bar: lift the chat so it does not cover the bar. */
+@media (max-width: 768px) {
+    body.sm-mobile-action-visible iframe[src*="leadconnectorhq"],
+    body.sm-mobile-action-visible iframe[src*="msgsndr"],
+    body.sm-mobile-action-visible iframe[title*="hat"],
+    body.sm-mobile-action-visible #chat-widget-button,
+    body.sm-mobile-action-visible lc-chat-widget,
+    body.sm-mobile-action-visible chat-widget,
+    body.sm-mobile-action-visible [data-widget-id="69ff236b0d119858db377c07"] {
+        bottom: 168px !important;
+    }
+}
+
 /* memorial.html has an extra bottom bar on mobile */
 @media (max-width: 768px) {
     body.has-mobile-bottom-bar iframe[src*="leadconnectorhq"],

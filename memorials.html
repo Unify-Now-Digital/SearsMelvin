@@ -104,23 +104,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.svg?v=sm-20261105" type="image/svg+xml">
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
     <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Headstones, gravestones and memorials London">
     <meta property="og:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
-    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:image" content="https://searsmelvin.co.uk/images/share/og-memorials.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Headstones, gravestones and memorials London">
     <meta name="twitter:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
-    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/images/share/og-memorials.jpg">
     
     <!-- Supabase data loaded via REST API directly -->
     <style>
@@ -324,7 +330,7 @@
         .shortlist-enquiry { border-top: 1px solid var(--color-border); padding-top: 0.75rem; margin-top: 0.75rem; }
         .shortlist-enquiry-toggle { display: none; }
         .shortlist-enquiry h4 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--color-stone); }
-        .shortlist-enquiry-fields { }
+        .shortlist-enquiry-fields { margin: 0; }
         .shortlist-enquiry input, .shortlist-enquiry textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem; font-family: var(--font-body); margin-bottom: 0.5rem; box-sizing: border-box; }
         .shortlist-enquiry textarea { resize: vertical; min-height: 60px; }
         .shortlist-enquiry-btn { width: 100%; padding: 0.75rem; background: var(--color-stone); border: none; color: white; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
@@ -508,7 +514,7 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    <link rel="stylesheet" href="/chat-widget.css?v=3">
 
     <!-- Structured data: Business -->
     <script type="application/ld+json">
@@ -555,7 +561,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261105a">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body>
@@ -592,6 +598,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span id="shortlistNavCount">0</span>
         </button>
+        <a href="/contact" class="nav-quote-mobile">Get a quote</a>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
@@ -770,17 +777,17 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
                 <h4>Enquire about these memorials</h4>
-                <div class="shortlist-enquiry-fields">
+                <form class="shortlist-enquiry-fields" id="shortlistEnquiryForm" onsubmit="submitShortlistEnquiry(event)">
                     <input type="text" id="slEnqName" placeholder="Your name" required>
                     <input type="email" id="slEnqEmail" placeholder="Your email" required>
                     <input type="tel" id="slEnqPhone" placeholder="Phone (optional)">
                     <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
-                    <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
+                    <button class="shortlist-enquiry-btn" id="slEnqBtn" type="submit">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         <span>Send Enquiry</span>
                     </button>
                     <div class="shortlist-enquiry-success" id="slEnqSuccess">Thank you. We will be in touch soon.</div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1206,7 +1213,10 @@
             window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
         }
 
-        async function submitShortlistEnquiry() {
+        async function submitShortlistEnquiry(evt) {
+            // Let the submit event reach GTM (formSubmit → existing shortlist generate_lead).
+            // preventDefault only stops the browser navigating away before /api/submit answers.
+            if (evt && evt.preventDefault) evt.preventDefault();
             var name = document.getElementById('slEnqName').value.trim();
             var email = document.getElementById('slEnqEmail').value.trim();
             var phone = document.getElementById('slEnqPhone').value.trim();
@@ -1247,6 +1257,8 @@
                 if (result.ok) {
                     document.getElementById('slEnqSuccess').style.display = 'block';
                     btn.style.display = 'none';
+                    // On-page message stays if this navigation does not run.
+                    try { window.location.replace('/thank-you?form=shortlist'); } catch (err) {}
                 } else { throw new Error(result.error); }
             } catch (e) {
                 btn.disabled = false;
@@ -1558,7 +1570,7 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261105" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=lt3" defer></script>
 </body>

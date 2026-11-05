@@ -21,7 +21,7 @@
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
 
 const BASE = "https://searsmelvin.co.uk";
-const FALLBACK_IMAGE = `${BASE}/sm-logo.svg`;
+const FALLBACK_IMAGE = `${BASE}/images/share/og-memorials.jpg`;
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
 
 // Asset requests (favicon.svg, robots.txt, *.map …) can be resolved by the
