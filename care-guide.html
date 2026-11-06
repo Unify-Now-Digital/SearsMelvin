@@ -52,12 +52,14 @@
       (function(){
         var loaded = false;
         // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // Chat submission -> dataLayer, once per submission, no PII. The widget
-        // is a shadow-DOM web component whose beforeSubmit hook runs on this
-        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
-        // races the widget and missed most chats, so claim its guard flag here
-        // (the GTM loader above also sets it before gtm.js runs) to avoid double counting.
-        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
+        // Chat submission -> dataLayer, once per submission. The event stays free
+        // of personal details. Email and phone are stashed on window.__smChatEmail
+        // and window.__smChatPhone (same sanitising as clickIntentBody) so GTM
+        // enhanced conversions can read them: the LeadConnector widget is a closed
+        // shadow DOM. GTM's older fetch-hook listener (tag "GHL Chat Widget
+        // Listener") races the widget and missed most chats, so claim its guard
+        // flag here (the GTM loader above also sets it before gtm.js runs) to
+        // avoid double counting. GA4 "ghl_chat_submission" and Ads "Chat start"
         // trigger on sm_chat_submit.
         window.__smChatHook = true;
         var lastChatPush = 0;
@@ -66,7 +68,18 @@
             var now = Date.now();
             if (now - lastChatPush > 3000) {
               lastChatPush = now;
+              try {
+                var contact = data && (data.contact || data) || {};
+                var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+                var email = typeof contact.email === 'string' ? contact.email : nested.email;
+                var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+                email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+                phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+                if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
+                if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
+              } catch (e) {}
               window.dataLayer = window.dataLayer || [];
+              // No personal details in the event (docs/TRACKING.md golden rule 2).
               window.dataLayer.push({ event: 'sm_chat_submit' });
               window.dataLayer.push({ event: 'ghl_chat_submission' });
             }

@@ -76,8 +76,8 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(sync.contact_clicks(row), ({"gclid": "third"}, "custom_fields"))
 
     def test_intent_identity_and_unique_time_windows(self):
-        row = contact(email="a@example.com", source="Live Chat")
-        intents = [{"id": "i1", "email": "a@example.com", "kind": "chat",
+        row = contact(email="a@gmail.com", source="Live Chat")
+        intents = [{"id": "i1", "email": "a@gmail.com", "kind": "chat",
                     "created_at": "2026-10-20T11:30:00Z", "gclid": "x"}]
         self.assertEqual(sync.choose_click_intent(row, "chat", intents, [row])["id"], "i1")
         intents[0]["created_at"] = "2026-10-20T11:29:59Z"
@@ -91,7 +91,7 @@ class SyncTests(unittest.TestCase):
         self.assertFalse(sync.in_order_window("2026-10-21T12:00:01Z", centre))
 
     def test_contact_dry_run_has_no_mutating_request(self):
-        row = contact(source="Live Chat", email="a@example.com",
+        row = contact(source="Live Chat", email="a@gmail.com",
                       attributionSource={"gclid": "secret-click"})
         args = types.SimpleNamespace(apply=False, types={"chat", "call", "form"})
         calls = []
@@ -106,6 +106,7 @@ class SyncTests(unittest.TestCase):
              mock.patch.object(sync, "request_json", side_effect=fake_request):
             sync.process_contact(row, args, "token", "https://db.invalid", "key",
                                  "2026-10-21", [], [row], "2026-10-21T00:00:00Z")
+        self.assertIn("GET", calls)
         self.assertFalse({"PUT", "POST", "PATCH"}.intersection(calls))
 
     def test_google_ads_mirror_planned_in_dry_run(self):
@@ -199,6 +200,172 @@ class SyncTests(unittest.TestCase):
         self.assertNotIn("gclid", keys)
         self.assertEqual(sorted(keys), ["ad_source", "landing_page", "last_gclid", "lead_source", "utm_source"])
         self.assertNotIn("last_gclid", sync.mirror_keys(sync.mirror_updates({}, row)))
+
+    def _chat_with_native_gclid(self, contact_id="ghl-contact-1"):
+        return contact(id=contact_id, source="chat widget", email="a@gmail.com",
+                       dateAdded="2026-10-20T12:00:00Z",
+                       attributionSource={"gclid": "native-gclid", "medium": "chat"},
+                       customFields=[{"id": sync.GHL_FIELD_IDS["gclid"], "value": "native-gclid"}])
+
+    def _chat_intent(self):
+        return {"id": "i1", "email": "a@gmail.com", "kind": "chat",
+                "created_at": "2026-10-20T12:00:00Z", "gclid": "intent-gclid",
+                "matched_ghl_contact_id": None}
+
+    def test_choose_intent_even_when_native_clicks_present(self):
+        row = self._chat_with_native_gclid()
+        picked = sync.choose_click_intent(row, "chat", [self._chat_intent()], [row])
+        self.assertEqual(picked["id"], "i1")
+        self.assertEqual(sync.contact_clicks(row)[1], "attributionSource")
+
+    def test_process_contact_links_intent_when_native_gclid_exists(self):
+        row = self._chat_with_native_gclid()
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=True, types={"chat", "call", "form"}, exclusion={})
+        with mock.patch.object(sync, "get_contact", return_value=row), \
+             mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+             mock.patch.object(sync, "enquiry_exists", return_value=(False, None)), \
+             mock.patch.object(sync, "insert_enquiry", return_value="enq-1") as insert_enquiry, \
+             mock.patch.object(sync, "patch_row") as patch_row, \
+             mock.patch.object(sync, "apply_mirror", return_value={"planned": []}):
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+        self.assertNotIn("error", rec)
+        self.assertEqual(rec.get("matched_intent_id"), "i1")
+        self.assertTrue(rec.get("intent_matched"))
+        self.assertEqual(rec.get("click_source"), "attributionSource")
+        self.assertEqual(rec["enquiry"]["action"], "inserted")
+        self.assertEqual(insert_enquiry.call_args.args[0]["gclid"], "native-gclid")
+        patch_row.assert_called_once()
+        self.assertEqual(patch_row.call_args.args[2], "click_intents")
+        self.assertEqual(patch_row.call_args.args[3], "i1")
+        self.assertEqual(patch_row.call_args.args[5]["matched_ghl_contact_id"], row["id"])
+        self.assertEqual(patch_row.call_args.args[6]["matched_ghl_contact_id"], "is.null")
+        self.assertEqual(intents[0]["matched_ghl_contact_id"], row["id"])
+
+    def test_process_contact_dry_run_plans_intent_link_without_patch(self):
+        row = self._chat_with_native_gclid()
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=False, types={"chat"}, exclusion={})
+        with mock.patch.object(sync, "get_contact", return_value=row), \
+             mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+             mock.patch.object(sync, "enquiry_exists", return_value=(False, None)), \
+             mock.patch.object(sync, "patch_row") as patch_row:
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+        self.assertNotIn("error", rec)
+        self.assertEqual(rec.get("matched_intent_id"), "i1")
+        self.assertFalse(rec.get("intent_matched"))
+        self.assertEqual(rec.get("click_source"), "attributionSource")
+        self.assertEqual(rec["enquiry"]["action"], "plan_insert")
+        patch_row.assert_not_called()
+
+    def test_process_contact_uses_intent_clicks_when_native_empty(self):
+        row = contact(id="ghl-contact-1", source="Live Chat", email="a@gmail.com",
+                      dateAdded="2026-10-20T12:00:00Z",
+                      attributionSource={"medium": "chat"})
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+        verified = contact(**row, customFields=[{"id": sync.GHL_FIELD_IDS["gclid"], "value": "intent-gclid"}])
+        with mock.patch.object(sync, "get_contact", side_effect=[row, verified]), \
+             mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+             mock.patch.object(sync, "enquiry_exists", return_value=(False, None)), \
+             mock.patch.object(sync, "insert_enquiry", return_value="enq-1") as insert_enquiry, \
+             mock.patch.object(sync, "update_contact"), \
+             mock.patch.object(sync, "patch_row") as patch_row, \
+             mock.patch.object(sync, "apply_mirror", return_value={"planned": []}):
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+        self.assertNotIn("error", rec)
+        self.assertEqual(rec.get("click_source"), "click_intents")
+        self.assertTrue(rec.get("intent_matched"))
+        self.assertEqual(insert_enquiry.call_args.args[0]["gclid"], "intent-gclid")
+        self.assertEqual(patch_row.call_args.args[5]["matched_ghl_contact_id"], row["id"])
+
+    def test_process_contact_links_intent_when_person_missing(self):
+        row = self._chat_with_native_gclid()
+        args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+        with mock.patch.object(sync, "get_contact", return_value=row), \
+             mock.patch.object(sync, "find_person", return_value=({}, None)), \
+             mock.patch.object(sync, "patch_row") as patch_row, \
+             mock.patch.object(sync, "insert_enquiry") as insert_enquiry:
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", [self._chat_intent()], [row], "2026-10-21T00:00:00Z")
+        self.assertNotIn("error", rec)
+        self.assertEqual(rec["enquiry"]["reason"], "no_person")
+        self.assertTrue(rec.get("intent_matched"))
+        self.assertEqual(rec.get("click_source"), "attributionSource")
+        patch_row.assert_called_once()
+        insert_enquiry.assert_not_called()
+
+    def test_one_intent_is_linked_to_only_one_contact(self):
+        first = self._chat_with_native_gclid("ghl-1")
+        second = self._chat_with_native_gclid("ghl-2")
+        second["attributionSource"] = {"gclid": "native-2", "medium": "chat"}
+        second["customFields"] = [{"id": sync.GHL_FIELD_IDS["gclid"], "value": "native-2"}]
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+
+        def run(row):
+            with mock.patch.object(sync, "get_contact", return_value=row), \
+                 mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+                 mock.patch.object(sync, "enquiry_exists", return_value=(True, "existing_ghl_contact")), \
+                 mock.patch.object(sync, "existing_enquiry_row", return_value=None), \
+                 mock.patch.object(sync, "patch_row") as patch_row:
+                rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                           "2026-10-21", intents, [first, second], "2026-10-21T00:00:00Z")
+            return rec, patch_row
+
+        rec1, patch1 = run(first)
+        rec2, patch2 = run(second)
+        self.assertEqual(rec1.get("matched_intent_id"), "i1")
+        self.assertTrue(rec1.get("intent_matched"))
+        self.assertEqual(rec1.get("click_source"), "attributionSource")
+        patch1.assert_called_once()
+        self.assertIsNone(rec2.get("matched_intent_id"))
+        self.assertFalse(rec2.get("intent_matched"))
+        self.assertEqual(rec2.get("click_source"), "attributionSource")
+        patch2.assert_not_called()
+
+    def _chat_without_native_clicks(self):
+        return contact(id="ghl-contact-1", source="Live Chat", email="a@gmail.com",
+                       dateAdded="2026-10-20T12:00:00Z",
+                       attributionSource={"medium": "chat"})
+
+    def test_intent_only_unresolved_person_does_not_consume_intent(self):
+        cases = (({}, None, "no_person"), ({"a": {}, "b": {}}, "email", "ambiguous_person"))
+        for people, method, reason in cases:
+            with self.subTest(reason=reason):
+                row = self._chat_without_native_clicks()
+                intents = [self._chat_intent()]
+                args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+                with mock.patch.object(sync, "get_contact", return_value=row), \
+                     mock.patch.object(sync, "find_person", return_value=(people, method)), \
+                     mock.patch.object(sync, "patch_row") as patch_row:
+                    rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                               "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+                self.assertEqual(rec["enquiry"]["reason"], reason)
+                self.assertFalse(rec.get("intent_matched"))
+                self.assertEqual(rec.get("click_source"), "click_intents")
+                self.assertIsNone(intents[0].get("matched_ghl_contact_id"))
+                patch_row.assert_not_called()
+                self.assertEqual(sync.choose_click_intent(row, "chat", intents, [row])["id"], "i1")
+
+    def test_intent_only_ghl_update_failure_does_not_consume_intent(self):
+        row = self._chat_without_native_clicks()
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+        with mock.patch.object(sync, "get_contact", return_value=row), \
+             mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+             mock.patch.object(sync, "update_contact"), \
+             mock.patch.object(sync, "patch_row") as patch_row:
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+        self.assertEqual(rec["enquiry"]["reason"], "error")
+        self.assertFalse(rec.get("intent_matched"))
+        self.assertIsNone(intents[0].get("matched_ghl_contact_id"))
+        patch_row.assert_not_called()
+        self.assertEqual(sync.choose_click_intent(row, "chat", intents, [row])["id"], "i1")
 
 
 if __name__ == "__main__":
