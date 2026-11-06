@@ -52,39 +52,42 @@
       (function(){
         var loaded = false;
         // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // Chat submission -> dataLayer, once per submission. The event stays free
-        // of personal details. Email and phone are stashed on window.__smChatEmail
-        // and window.__smChatPhone (same sanitising as clickIntentBody) so GTM
-        // enhanced conversions can read them: the LeadConnector widget is a closed
-        // shadow DOM. GTM's older fetch-hook listener (tag "GHL Chat Widget
-        // Listener") races the widget and missed most chats, so claim its guard
-        // flag here (the GTM loader above also sets it before gtm.js runs) to
-        // avoid double counting. GA4 "ghl_chat_submission" and Ads "Chat start"
-        // trigger on sm_chat_submit.
+        // One chat per tab visit. A Turnstile retry can land many seconds later,
+        // so a short debounce double-counts. Email and phone are still refreshed
+        // on window.__smChatEmail and window.__smChatPhone (same sanitising as
+        // clickIntentBody). The dataLayer events stay free of personal details.
+        // GTM's older fetch-hook listener (tag "GHL Chat Widget Listener") races
+        // the widget and missed most chats, so claim its guard flag here (the
+        // GTM loader above also sets it before gtm.js runs). GA4
+        // "ghl_chat_submission" and Ads "Chat start" trigger on sm_chat_submit.
         window.__smChatHook = true;
-        var lastChatPush = 0;
+        var chatCounted = false;
+        var CHAT_VISIT_KEY = 'sm_chat_counted';
         function chatSubmitted(data){
           try {
-            var now = Date.now();
-            if (now - lastChatPush > 3000) {
-              lastChatPush = now;
-              try {
-                var contact = data && (data.contact || data) || {};
-                var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
-                var email = typeof contact.email === 'string' ? contact.email : nested.email;
-                var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
-                email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
-                phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
-                if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
-                if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
-              } catch (e) {}
-              window.dataLayer = window.dataLayer || [];
-              // No personal details in the event (docs/TRACKING.md golden rule 2).
-              window.dataLayer.push({ event: 'sm_chat_submit' });
-              window.dataLayer.push({ event: 'ghl_chat_submission' });
-            }
+            var contact = data && (data.contact || data) || {};
+            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+            var email = typeof contact.email === 'string' ? contact.email : nested.email;
+            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+            if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
+            if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
           } catch (e) {}
-          try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          try {
+            var counted = chatCounted;
+            if (!counted) {
+              try { counted = sessionStorage.getItem(CHAT_VISIT_KEY) === '1'; } catch (e) {}
+            }
+            if (counted) return true; // later attempts in this tab: globals only
+            chatCounted = true;
+            try { sessionStorage.setItem(CHAT_VISIT_KEY, '1'); } catch (e) {}
+            window.dataLayer = window.dataLayer || [];
+            // No personal details in the event (docs/TRACKING.md golden rule 2).
+            window.dataLayer.push({ event: 'sm_chat_submit' });
+            window.dataLayer.push({ event: 'ghl_chat_submission' });
+            try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          } catch (e) {}
           return true; // never block the chat
         }
         function hookChat(){
