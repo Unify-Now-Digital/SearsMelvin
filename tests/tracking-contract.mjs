@@ -46,6 +46,12 @@ for (const f of publicPages) {
   assert.match(hook, /phone\.trim\(\)\.replace\(\/\[\^\\d\+\]\/g, ''\)\.slice\(0, 20\)/, `${f}: chat phone sanitising must match clickIntentBody`);
   assert.match(hook, /delete window\.__smChatEmail/, `${f}: clear a stale chat email`);
   assert.match(hook, /delete window\.__smChatPhone/, `${f}: clear a stale chat phone`);
+  assert.match(s, /var CHAT_VISIT_KEY = 'sm_chat_counted';/, `${f}: tab-visit chat flag missing`);
+  assert.match(hook, /sessionStorage\.getItem\(CHAT_VISIT_KEY\) === '1'/, `${f}: must read the tab-visit flag`);
+  assert.ok(hook.indexOf("if (counted) return true") < hook.indexOf("dataLayer.push"), `${f}: a counted visit must not push`);
+  assert.ok(hook.indexOf("sessionStorage.setItem") < hook.indexOf("dataLayer.push"), `${f}: mark the visit before the push`);
+  assert.ok(hook.indexOf("SMUpgrades.clickIntent") > hook.indexOf("dataLayer.push"), `${f}: clickIntent only follows the counted push`);
+  assert.doesNotMatch(s, /lastChatPush/, `${f}: 3s debounce is not the visit guard`);
   const events = [...hook.matchAll(/dataLayer\.push\(\s*\{[^}]*\}\s*\)/g)].map((m) => m[0]);
   assert.deepEqual(events, [
     "dataLayer.push({ event: 'sm_chat_submit' })",
