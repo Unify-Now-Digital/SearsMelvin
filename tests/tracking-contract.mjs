@@ -29,11 +29,28 @@ const memorial = html("memorial.html");
 const qOk = memorial.slice(memorial.indexOf("if (result.ok) {", memorial.indexOf("channel:  'quote'")));
 assert.ok(qOk.includes("event: 'sm_quote_submit'"), "quote: sm_quote_submit push missing");
 assert.ok(qOk.indexOf("event: 'sm_quote_submit'") < qOk.indexOf("quoteForm').style.display = 'none'"), "quote: push before hiding the form");
+const clickIntentSrc = html("site-upgrades.js");
+assert.match(clickIntentSrc, /email\.trim\(\)\.toLowerCase\(\)\.slice\(0, 200\)/, "clickIntentBody email sanitising changed");
+assert.match(clickIntentSrc, /phone\.trim\(\)\.replace\(\/\[\^\\d\+\]\/g, ''\)\.slice\(0, 20\)/, "clickIntentBody phone sanitising changed");
 for (const f of publicPages) {
   const s = html(f);
   if (!s.includes("LeadConnector chat")) continue;
   assert.match(s, /event: 'sm_chat_submit'/, `${f}: sm_chat_submit push missing`);
   assert.match(s, /event: 'ghl_chat_submission'/, `${f}: ghl_chat_submission push missing`);
+  const hook = s.slice(s.indexOf("function chatSubmitted"), s.indexOf("function hookChat"));
+  const emailAt = hook.indexOf("window.__smChatEmail");
+  const phoneAt = hook.indexOf("window.__smChatPhone");
+  const pushAt = hook.indexOf("dataLayer.push");
+  assert.ok(emailAt >= 0 && phoneAt > emailAt && pushAt > phoneAt, `${f}: stash __smChatEmail/__smChatPhone before the dataLayer push`);
+  assert.match(hook, /email\.trim\(\)\.toLowerCase\(\)\.slice\(0, 200\)/, `${f}: chat email sanitising must match clickIntentBody`);
+  assert.match(hook, /phone\.trim\(\)\.replace\(\/\[\^\\d\+\]\/g, ''\)\.slice\(0, 20\)/, `${f}: chat phone sanitising must match clickIntentBody`);
+  assert.match(hook, /delete window\.__smChatEmail/, `${f}: clear a stale chat email`);
+  assert.match(hook, /delete window\.__smChatPhone/, `${f}: clear a stale chat phone`);
+  const events = [...hook.matchAll(/dataLayer\.push\(\s*\{[^}]*\}\s*\)/g)].map((m) => m[0]);
+  assert.deepEqual(events, [
+    "dataLayer.push({ event: 'sm_chat_submit' })",
+    "dataLayer.push({ event: 'ghl_chat_submission' })",
+  ], `${f}: chat dataLayer events must stay free of personal details`);
 }
 assert.match(html("site-upgrades.js"), /event: 'brochure_download'/, "brochure_download push missing");
 

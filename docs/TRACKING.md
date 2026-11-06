@@ -12,7 +12,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 ## Golden rules
 
 1. Push conversion events **only on a confirmed successful server response**, **first**, before the form is hidden, reset or redirected.
-2. **No personal details in `dataLayer`** (no name, email, phone, message, address). Enhanced conversions read the consent-gated form fields inside GTM instead.
+2. **No personal details in `dataLayer`** (no name, email, phone, message, address). Form enhanced conversions read the consent-gated fields inside GTM. Chat cannot: the LeadConnector widget is a closed shadow DOM, so at `sm_chat_submit` the hook stashes the sanitised email and phone on `window.__smChatEmail` and `window.__smChatPhone` for GTM's user-provided-data variables. Those names are the contract (GTM reads them first). They are not dataLayer fields, and a missing value is deleted so a later chat does not reuse it.
 3. GA4 lead/quote events use **`transport_type: beacon`** (set on the GTM tags) so they survive the page unloading.
 4. Every visible phone number is exactly **`020 3835 2548`** (the Google forwarding-number swap only matches this format). Every `tel:` link must show it as text. Schema JSON-LD keeps `+442038352548`. Exception (Oct 2026): ad visitors only (90-day `sm_ad` cookie) may see the dedicated Ads number from `SM_ADS_PHONE`, swapped at runtime by site-upgrades.js. The HTML always ships `020 3835 2548`.
 5. **No `utm_*` on internal links.** UTMs are only for inbound campaigns (and the outbound brochure email/PDF links in `functions/api/brochure.js` / the PDF).
@@ -26,7 +26,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 |---|---|---|---|
 | `sm_lead_submit` `{form_id:'contactForm', enquiry_type}` | `contact.html` | `/api/submit` returns `ok`, before the form is hidden | GA4 `generate_lead` (params form_name=contact_enquiry, value 400 GBP, beacon); Ads **generate_lead** `AW-16866941615/_M8_CK2IrYkcEK-15Oo-` (tag value 400); Ads user-provided data (`__awud`) |
 | `sm_quote_submit` `{form_id:'quoteForm'}` | `memorial.html` quote modal | `/api/submit` (channel quote) returns `ok`, before the form is hidden | GA4 `request_quote` (value = variable, GBP, beacon); Ads **request_quote** `AW-16866941615/l5TiCLCIrYkcEK-15Oo-` (value = variable). Moved to this event in GTM v21; the old `#quoteSuccessMsg` element-visibility trigger is **legacy** (the page still scrolls the message into view inside the modal). |
-| `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit` (fires once per submission, 3 s debounce) | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` |
+| `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit` (fires once per submission, 3 s debounce). Immediately before the push, the same sanitised email/phone that `clickIntentBody` stores are copied to `window.__smChatEmail` / `window.__smChatPhone`. The event object stays `{event:'sm_chat_submit'}` only. | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` (reads those two globals; GTM container change is separate from this repo) |
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
 | `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
@@ -116,6 +116,13 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   fill missing first-touch UTMs. Google Ads means any click ID, or
   `utm_source=google` unless the medium is organic (website submissions also
   exclude explicit referral).
+- The sync always identity-matches a `click_intents` row (email or phone, within
+  30 minutes before the contact and 10 minutes after), including when the GHL
+  contact already has a native click id. On `--apply` it sets
+  `matched_ghl_contact_id` and `matched_at` (only while the column is still
+  null) before enquiry creation, so a skipped enquiry still records the link.
+  Native clicks stay the click source. Intent clicks are used only when the
+  contact has none. One intent is claimed by one contact per run.
 
 ## Test leads
 

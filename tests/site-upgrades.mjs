@@ -108,13 +108,19 @@ for (const f of execSync("git ls-files '*.html'").toString().split("\n").filter(
 console.log("call-tracking numbers: ok");
 
 // Chat tracking: every page with the LeadConnector loader hooks beforeSubmit
-// and pushes sm_chat_submit (GTM trigger) + ghl_chat_submission, with no PII.
+// and pushes sm_chat_submit (GTM trigger) + ghl_chat_submission.
+// Personal details stay off the dataLayer event. Chat email/phone for GTM
+// enhanced conversions are window.__smChatEmail / window.__smChatPhone.
 for (const f of execSync("git grep -l 'LeadConnector chat' -- '*.html'").toString().split("\n").filter(Boolean)) {
   const html = readFileSync(f, "utf8");
   assert.match(html, /registerBeforeSubmit\(chatSubmitted\)/, `${f} hooks chat submit`);
   assert.match(html, /window\.__smChatHook = true;/, `${f} disables the GTM fetch hook`);
   const push = html.slice(html.indexOf("function chatSubmitted"), html.indexOf("function hookChat"));
-  assert.doesNotMatch(push, /email|phone|name|message/i, `${f}: no PII in chat push`);
+  assert.match(push, /window\.__smChatEmail/, `${f}: chat email global missing`);
+  assert.match(push, /window\.__smChatPhone/, `${f}: chat phone global missing`);
+  const events = [...push.matchAll(/dataLayer\.push\(\s*\{[^}]*\}\s*\)/g)].map((m) => m[0]);
+  assert.equal(events.length, 2, `${f}: expected two chat dataLayer pushes`);
+  for (const ev of events) assert.doesNotMatch(ev, /email|phone|name|message/i, `${f}: no PII in chat push`);
 }
 // No internal links carry UTMs (UTMs are for inbound campaigns only).
 const internalUtm = execSync("git grep -n -E \"href=[\\\"'](/|https?://(www\\.)?searsmelvin\\.co\\.uk)[^\\\"']*utm_\" -- '*.html' '*.js' ':!functions/api/brochure.js' || true").toString().trim();
