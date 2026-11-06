@@ -327,6 +327,46 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(rec2.get("click_source"), "attributionSource")
         patch2.assert_not_called()
 
+    def _chat_without_native_clicks(self):
+        return contact(id="ghl-contact-1", source="Live Chat", email="a@gmail.com",
+                       dateAdded="2026-10-20T12:00:00Z",
+                       attributionSource={"medium": "chat"})
+
+    def test_intent_only_unresolved_person_does_not_consume_intent(self):
+        cases = (({}, None, "no_person"), ({"a": {}, "b": {}}, "email", "ambiguous_person"))
+        for people, method, reason in cases:
+            with self.subTest(reason=reason):
+                row = self._chat_without_native_clicks()
+                intents = [self._chat_intent()]
+                args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+                with mock.patch.object(sync, "get_contact", return_value=row), \
+                     mock.patch.object(sync, "find_person", return_value=(people, method)), \
+                     mock.patch.object(sync, "patch_row") as patch_row:
+                    rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                               "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+                self.assertEqual(rec["enquiry"]["reason"], reason)
+                self.assertFalse(rec.get("intent_matched"))
+                self.assertEqual(rec.get("click_source"), "click_intents")
+                self.assertIsNone(intents[0].get("matched_ghl_contact_id"))
+                patch_row.assert_not_called()
+                self.assertEqual(sync.choose_click_intent(row, "chat", intents, [row])["id"], "i1")
+
+    def test_intent_only_ghl_update_failure_does_not_consume_intent(self):
+        row = self._chat_without_native_clicks()
+        intents = [self._chat_intent()]
+        args = types.SimpleNamespace(apply=True, types={"chat"}, exclusion={})
+        with mock.patch.object(sync, "get_contact", return_value=row), \
+             mock.patch.object(sync, "find_person", return_value=({"p1": {"id": "p1"}}, "email")), \
+             mock.patch.object(sync, "update_contact"), \
+             mock.patch.object(sync, "patch_row") as patch_row:
+            rec = sync.process_contact(row, args, "token", "https://db.invalid", "key",
+                                       "2026-10-21", intents, [row], "2026-10-21T00:00:00Z")
+        self.assertEqual(rec["enquiry"]["reason"], "error")
+        self.assertFalse(rec.get("intent_matched"))
+        self.assertIsNone(intents[0].get("matched_ghl_contact_id"))
+        patch_row.assert_not_called()
+        self.assertEqual(sync.choose_click_intent(row, "chat", intents, [row])["id"], "i1")
+
 
 if __name__ == "__main__":
     unittest.main()

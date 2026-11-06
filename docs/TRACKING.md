@@ -118,11 +118,15 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   exclude explicit referral).
 - The sync always identity-matches a `click_intents` row (email or phone, within
   30 minutes before the contact and 10 minutes after), including when the GHL
-  contact already has a native click id. On `--apply` it sets
-  `matched_ghl_contact_id` and `matched_at` (only while the column is still
-  null) before enquiry creation, so a skipped enquiry still records the link.
-  Native clicks stay the click source. Intent clicks are used only when the
-  contact has none. One intent is claimed by one contact per run.
+  contact already has a native click id. Native clicks stay the click source.
+  Intent clicks are used only when the contact has none. On `--apply` it sets
+  `matched_ghl_contact_id` and `matched_at` only while that column is still null.
+  When native clicks exist, the link is written immediately, so a later skip
+  still records it and a later run can still create the enquiry from those
+  clicks. When the intent is the only click source, the link waits until a
+  person is resolved and any GHL click-field update has succeeded, so
+  `no_person`, `ambiguous_person`, or a failed GHL update can retry next run
+  instead of losing the click ids. One intent is claimed by one contact per run.
 
 ## Test leads
 

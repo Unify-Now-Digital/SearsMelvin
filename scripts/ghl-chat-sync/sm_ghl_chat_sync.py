@@ -691,11 +691,8 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         clicks, click_source = contact_clicks(full_contact)
         # Always identity-match, even when GHL already stored a native click id.
         # Native clicks stay the click source; the intent supplies clicks only
-        # when native is empty. The link is written before enquiry creation so
-        # a later skip (no person, and so on) still sets matched_ghl_contact_id.
+        # when native is empty.
         used_intent = choose_click_intent(full_contact, kind, intents or [], all_contacts or [contact])
-        if used_intent and used_intent.get("id"):
-            used_intent["matched_ghl_contact_id"] = contact_id
         if not clicks and used_intent:
             clicks, click_source = clicks_from_mapping(used_intent), "click_intents"
         record["click_source"] = click_source
@@ -703,12 +700,26 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         record["native_click_keys_present"] = {
             name: redact_click(value) for name, value in clicks.items()
         }
-        if args.apply and used_intent and used_intent.get("id"):
-            patch_row("Supabase click intent update", supabase_base, "click_intents",
-                      used_intent["id"], supabase_key,
-                      {"matched_ghl_contact_id": contact_id, "matched_at": matched_at},
-                      {"matched_ghl_contact_id": "is.null"})
-            record["intent_matched"] = True
+
+        def commit_intent_link():
+            # Claim the row only once we are willing to give up a later retry.
+            # Native clicks are still on the contact, so that link can be written
+            # immediately. An intent that is the only click source is claimed
+            # later, after person resolution and a successful GHL field update.
+            if not used_intent or not used_intent.get("id"):
+                return
+            if used_intent.get("matched_ghl_contact_id"):
+                return
+            if args.apply:
+                patch_row("Supabase click intent update", supabase_base, "click_intents",
+                          used_intent["id"], supabase_key,
+                          {"matched_ghl_contact_id": contact_id, "matched_at": matched_at},
+                          {"matched_ghl_contact_id": "is.null"})
+                record["intent_matched"] = True
+            used_intent["matched_ghl_contact_id"] = contact_id
+
+        if click_source != "click_intents":
+            commit_intent_link()
         if not clicks:
             record["enquiry"]["reason"] = "no_click_id"
             return record
@@ -749,6 +760,7 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
                 raise ApiError("GHL contact update verification failed for: " + ",".join(failed))
             record["ghl_field_updates"]["applied"] = list(record["ghl_field_updates"]["planned"])
             record["ghl_field_updates"]["verified"] = True
+        commit_intent_link()
 
         if kind == "form":
             when = parse_time(full_contact.get("dateAdded"))
