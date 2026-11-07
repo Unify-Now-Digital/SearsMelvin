@@ -1678,10 +1678,9 @@
                 const primary = safeCssColour(c.hex_primary);
                 const highlight = safeCssColour(c.hex_secondary || c.hex_primary);
                 const price = c.is_premium ? surcharge : 0;
-                // image_url when set; preview map only while it is empty and only
-                // off the production host. A failed photo drops back to the gradient.
+                // image_url when it is a safe image URL. A failed photo drops back to the gradient.
                 const imageUrl = (typeof stoneColourImageUrl === 'function')
-                    ? stoneColourImageUrl(c, location.hostname)
+                    ? stoneColourImageUrl(c)
                     : safeImageUrl(c.image_url);
                 const photo = imageUrl
                     ? '<img class="colour-swatch-photo" src="' + esc(imageUrl) + '" alt="" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
