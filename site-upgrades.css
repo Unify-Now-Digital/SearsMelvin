@@ -291,3 +291,48 @@ html body main p { max-width: var(--sm-measure); }
 html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
 html body .floating-badge { background-color: var(--sm-accent-aa); }
 html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }
+
+/* ---- Header offset (responsive audit, Nov 2026) ----
+   One height for the fixed header, the trust bar, anchor jumps and the
+   mobile menu. /about, /brochure, /privacy and /terms were 98px at 1024 and
+   111px at 1440 because their article rule `ul { margin: 0.5rem 0 1rem 1.5rem }`
+   (and `ul li { margin-bottom }`) also styled ul.nav-links. The trust bar's
+   old 60px/56px offset then sat underneath that header. */
+:root { --header-height: 80px; }
+@media (max-width: 1024px) { :root { --header-height: 72px; } }
+@media (max-width: 768px) { :root { --header-height: 68px; } }
+html { scroll-padding-top: var(--header-height); }
+#navbar { min-height: var(--header-height); }
+#navbar .nav-links,
+#navbar .nav-links > li { margin: 0; }
+.site-trust-bar { margin-top: var(--header-height); }
+.mobile-nav { top: var(--header-height); }
+@media (max-width: 768px) {
+  .mobile-nav.active { max-height: calc(100dvh - var(--header-height)); overflow-y: auto; }
+}
+
+/* 44px tap targets named in the same audit. */
+#cookieConsent button {
+  min-height: 44px;
+  min-width: 44px;
+  box-sizing: border-box;
+}
+html body .faq-tab,
+html body .topic-tab,
+html body .faq-helpful-btn,
+html body .filters-clear,
+html body .mobile-filter-btn,
+html body #sortSelect,
+html body nav.toc .toc-list a,
+html body .showroom-banner-link {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+html body .filters-clear,
+html body .faq-helpful-btn { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+body.memorial-page .footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.35rem 0;
+}

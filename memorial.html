@@ -229,7 +229,7 @@
         .nav-cta-dark:hover { background-color: var(--color-stone); }
         /* Breadcrumb */
         .breadcrumb-bar { padding: 1rem 2rem 0.75rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); }
-        .breadcrumb { display: flex; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text-muted); max-width: 1400px; margin: 0 auto; }
+        .breadcrumb { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text-muted); max-width: 1400px; margin: 0 auto; }
         .breadcrumb a { color: var(--color-accent-dark); transition: color 0.2s; }
         .breadcrumb a:hover { color: var(--color-stone); }
 
@@ -340,7 +340,7 @@
         .colour-group-note { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--color-accent-dark); }
         .colour-swatch-row { display: flex; flex-wrap: wrap; gap: 1rem; }
         .colour-tier { flex-basis: 100%; border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
-        .colour-tier summary { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; list-style: none; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); }
+        .colour-tier summary { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; list-style: none; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); min-height: 44px; }
         .colour-tier summary::-webkit-details-marker { display: none; }
         .colour-tier summary::after { content: '+'; margin-left: auto; font-size: 1.1rem; line-height: 1; font-weight: 400; }
         .colour-tier[open] summary { margin-bottom: 0.9rem; }
@@ -473,8 +473,8 @@
             .product-gallery { position: relative; top: 0; }
             .price-summary { position: relative; margin: 2rem 0 0; }
             .price-summary-inner { flex-direction: column; align-items: stretch; }
-            .price-actions { justify-content: stretch; }
-            .price-actions .btn { flex: 1; }
+            .price-actions { justify-content: stretch; width: 100%; margin-left: 0; }
+            .price-actions .btn { flex: 1 1 auto; white-space: nowrap; }
         }
         @media (max-width: 768px) {
             nav { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
@@ -489,13 +489,15 @@
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
             .mobile-bottom-nav { display: none !important; }
-            .mobile-bottom-bar { display: none; }
+            .mobile-bottom-bar { display: none; padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)); gap: 0.5rem; }
             .mobile-bottom-bar.is-visible { display: flex; }
+            .mobile-bottom-bar .btn { flex: 1 1 0; min-height: 44px; padding: 0.55rem 0.7rem; font-size: 0.9rem; white-space: nowrap; }
+            .mobile-bottom-bar .mobile-bar-call { flex: 1.15 1 0; }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
             .stone-colour-preview-frame { width: 112px; height: 112px; }
             .stone-colour-preview-name { font-size: 1.25rem; }
-            body { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
+            body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
             .gallery-thumbs { gap: 0.5rem; }
             .gallery-thumb { width: 60px; height: 60px; }
             .product-info h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
@@ -578,8 +580,8 @@
             .quote-overlay { align-items: flex-start; overflow-y: auto; }
             .quote-modal { max-height: none; overflow: visible; margin: auto 0; }
             .quote-form-row { grid-template-columns: 1fr; }
-            .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; }
-            .breadcrumb { font-size: 0.78rem; gap: 0.35rem; }
+            .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; padding-top: calc(var(--header-height, 68px) + 0.4rem); }
+            .breadcrumb { font-size: 0.78rem; gap: 0.35rem; flex-wrap: wrap; overflow-wrap: anywhere; }
             .product-detail { padding: 0.5rem 0.75rem 1rem; }
             .product-container { gap: 1.25rem; }
             .gallery-main { aspect-ratio: 1/1; margin-bottom: 0.6rem; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
@@ -620,8 +622,8 @@
             body.memorial-page .footer-nav-secondary { display: none; }
             body.memorial-page .footer-meta { display: block; margin-top: 1rem; padding-top: 0.75rem; }
             body.memorial-page .footer-legal { margin-top: 0.5rem; text-align: left; }
-            .mobile-nav { top: 64px; }
-            .mobile-menu-btn { width: 44px; height: 44px; align-items: center; justify-content: center; }
+            .mobile-nav { top: var(--header-height, 68px); }
+            .mobile-menu-btn { width: 44px; height: 44px; margin-left: auto; align-items: center; justify-content: center; padding: 0; }
         }
 
         @media (min-width: 540px) and (max-width: 768px) {
@@ -635,13 +637,10 @@
         @media (max-width: 768px) {
             /* The product CTA repeats these guarantees at a readable size. */
             body.memorial-page .site-trust-bar { display: none; }
-        }
-
-        @media (max-width: 1024px) {
-            .nav-links { display: none; }
-            .mobile-menu-btn { display: flex; }
-            .nav-accred-label { display: none; }
-            .nav-accred { margin-left: auto; }
+            /* Trust bar is hidden here, so the breadcrumb has to clear the header itself. */
+            .breadcrumb-bar { padding-top: calc(var(--header-height, 68px) + 0.5rem); }
+            .breadcrumb { flex-wrap: wrap; }
+            body.memorial-page { overflow-x: clip; }
         }
 
         /* Search Button in Nav */
@@ -1251,16 +1250,8 @@
 
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
-        <div class="mobile-price">
-            <span id="mobilePriceTotal">—</span><span class="mobile-price-suffix">installed</span>
-            <span class="guide-price-note">Cemetery permit fees are extra and vary by cemetery.</span>
-        </div>
-        <div class="mobile-actions">
-            <button class="btn btn-secondary" onclick="saveMemorial()" style="padding:0.5rem;" aria-label="Save">
-                <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </button>
-            <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
-        </div>
+        <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Request a quote</button>
+        <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548">Call 020 3835 2548</a>
     </div>
 
     <!-- Save Toast Notification -->
@@ -2146,7 +2137,8 @@
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             const fmt   = formatGbp(total);
             document.getElementById('priceTotal').textContent = fmt;
-            document.getElementById('mobilePriceTotal').textContent = fmt;
+            var mobilePrice = document.getElementById('mobilePriceTotal');
+            if (mobilePrice) mobilePrice.textContent = fmt;
         }
 
         // ==================== GALLERY VIEWS ====================

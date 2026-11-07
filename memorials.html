@@ -286,7 +286,7 @@
         .product-card.hidden { display: none; }
         .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
         .product-card:hover .product-actions { opacity: 1; transform: translateX(0); }
-        .product-action { width: 36px; height: 36px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; }
+        .product-action { width: 44px; height: 44px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; }
         .product-action svg { width: 18px; height: 18px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; transition: all 0.2s; }
         .product-action:hover { transform: scale(1.1); }
         .product-action:hover svg { stroke: var(--color-accent); }
@@ -301,8 +301,9 @@
         .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.3rem; display: block; }
         .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
         .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
-        .product-colours { display: flex; gap: 0.25rem; }
-        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .product-colours { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex: 0 0 auto; }
+        .product-colour-more { font-size: 0.75rem; line-height: 1; color: var(--color-text-muted); margin-left: 0.15rem; white-space: nowrap; }
         .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
         .product-price strong { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); }
         .no-results { display: none; grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 2px dashed var(--color-border); }
@@ -421,7 +422,7 @@
             .product-price { font-size: 0.75rem; }
             .product-price strong { font-size: 0.9rem; }
             .product-badge { padding: 0.2rem 0.45rem; font-size: 0.6rem; top: 0.5rem; left: 0.5rem; }
-            .product-action { width: 30px; height: 30px; }
+            .product-action { width: 44px; height: 44px; }
             .product-action svg { width: 14px; height: 14px; }
             .product-actions { top: 0.5rem; right: 0.5rem; gap: 0.35rem; }
             .footer-container { flex-direction: column; text-align: center; }
@@ -986,9 +987,11 @@
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
-                const colourDots = state.colours.map(c =>
+                const colourShown = state.colours.slice(0, 8);
+                const colourExtra = state.colours.length - colourShown.length;
+                const colourDots = colourShown.map(c =>
                     '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
-                ).join('');
+                ).join('') + (colourExtra > 0 ? '<span class="product-colour-more">+' + colourExtra + '</span>' : '');
 
                 productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
             });
