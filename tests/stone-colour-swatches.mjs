@@ -4,7 +4,6 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const swatches = require("../data/stone-colour-swatches.js");
-const upgrades = require("../site-upgrades.js");
 
 const BLACK = {
   id: "d00e0d6c-ec8a-4008-b392-a176b02e9d1c",
@@ -12,56 +11,22 @@ const BLACK = {
   name: "Black",
   image_url: null,
 };
-const BLACK_PHOTO = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/black.webp";
-const REAL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/from-the-row.webp";
+const REAL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/black.webp";
+const source = readFileSync(new URL("../data/stone-colour-swatches.js", import.meta.url), "utf8");
 
-assert.equal(swatches.previewSwatchCount, 19);
-
-const hosts = [
-  "searsmelvin.co.uk",
-  "www.searsmelvin.co.uk",
-  "SEARSMELVIN.CO.UK.",
-  "searsmelvin.pages.dev",
-  "9fd844a7.searsmelvin.pages.dev",
-  "cursor-stone-colour-swatches-62d4.searsmelvin.pages.dev",
-  "localhost",
-  "127.0.0.1",
-  "preview.workers.dev",
-  "evil.example",
-  "",
-];
-for (const host of hosts) {
-  assert.equal(swatches.isProductionHost(host), upgrades.isProductionHost(host), host);
-}
-
-assert.equal(swatches.stoneColourImageUrl(BLACK, "searsmelvin.co.uk"), "", "production host ignores the preview map");
-assert.equal(swatches.stoneColourImageUrl(BLACK, "www.searsmelvin.co.uk"), "");
-assert.equal(swatches.stoneColourImageUrl(BLACK, "searsmelvin.pages.dev"), "", "apex pages.dev stays on the gradient");
-assert.equal(swatches.stoneColourImageUrl(BLACK, "not-a-preview.example"), "");
-assert.equal(swatches.stoneColourImageUrl(BLACK, ""), "");
-assert.equal(swatches.stoneColourImageUrl(BLACK, "9fd844a7.searsmelvin.pages.dev"), BLACK_PHOTO);
-assert.equal(swatches.stoneColourImageUrl(BLACK, "localhost"), BLACK_PHOTO);
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }, "searsmelvin.co.uk"), REAL, "a real image_url wins on production");
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }, "localhost"), REAL, "a real image_url wins over the preview map");
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, slug: "grey" }, "localhost"), "", "id/slug mismatch does not borrow a photo");
-assert.equal(swatches.stoneColourImageUrl({ id: "nope", slug: "black" }, "localhost"), "");
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }, "searsmelvin.co.uk"), "");
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }, "localhost"), BLACK_PHOTO);
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "/images/black.webp" }, "searsmelvin.co.uk"), "/images/black.webp");
-const BAHAMA = {
-  id: "b225f959-018e-45a7-91b8-50be78e240e8",
-  slug: "bahama-blue",
-  name: "Bahama Blue",
-  image_url: null,
-};
-const BAHAMA_PHOTO = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/bahama-blue.webp";
-assert.equal(swatches.stoneColourImageUrl(BAHAMA, "searsmelvin.co.uk"), "");
-assert.equal(swatches.stoneColourImageUrl(BAHAMA, "localhost"), BAHAMA_PHOTO);
-assert.equal(swatches.stoneColourImageUrl({ ...BAHAMA, slug: "bahama" }, "localhost"), "");
+assert.equal(swatches.stoneColourImageUrl(BLACK), "");
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }), REAL);
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }), "");
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "/images/black.webp" }), "/images/black.webp");
+assert.equal(swatches.isProductionHost, undefined);
+assert.equal(swatches.previewSwatchCount, undefined);
+assert.doesNotMatch(source, /PREVIEW_SWATCHES/);
+assert.doesNotMatch(source, /searsmelvin\.pages\.dev/);
 
 const memorial = readFileSync(new URL("../memorial.html", import.meta.url), "utf8");
 assert.match(memorial, /src="\/data\/stone-colour-swatches\.js"/);
-assert.match(memorial, /stoneColourImageUrl\(c,\s*location\.hostname\)/);
+assert.match(memorial, /stoneColourImageUrl\(c\)/);
+assert.doesNotMatch(memorial, /stoneColourImageUrl\(c,\s*location\.hostname\)/);
 assert.match(memorial, /id="stoneColourPreview"/);
 assert.match(memorial, /role="radiogroup"/);
 assert.match(memorial, /aria-labelledby="stoneColourLabel"/);
