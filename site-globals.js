@@ -299,7 +299,6 @@
     }
 
     function keepMobileMenuStateAccessible() {
-        if (document.body && document.body.classList.contains('memorial-page')) return;
         var button = document.querySelector('.mobile-menu-btn');
         var menu = document.getElementById('mobileNav');
         if (!button || !menu || button.getAttribute('data-sm-menu-state')) return;
@@ -309,10 +308,17 @@
         }
 
         sync();
+        if (window.MutationObserver) {
+            new MutationObserver(sync).observe(menu, { attributes: true, attributeFilter: ['class'] });
+        }
         button.addEventListener('click', function () {
             // The existing inline handler toggles the panel first; this keeps
             // its accessible state in step without rewriting every template.
             sync();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape' || !menu.classList.contains('active')) return;
+            if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
         });
         button.setAttribute('data-sm-menu-state', '1');
     }

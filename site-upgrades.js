@@ -489,9 +489,14 @@
     function watchFabOverlaps() {
         var doc = document, body = doc.body, queued = false;
         function shown(el) { return !!el && getComputedStyle(el).display !== 'none'; }
+        function footerCoversFab() {
+            var footer = doc.querySelector('footer');
+            if (!footer) return false;
+            return footer.getBoundingClientRect().top < root.innerHeight - 16;
+        }
         function sync() {
             queued = false;
-            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent'));
+            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent')) || footerCoversFab();
             body.classList.toggle('sm-fab-hidden', hide);
         }
         function queue() { if (!queued) { queued = true; (root.requestAnimationFrame || setTimeout)(sync); } }
@@ -499,6 +504,7 @@
             new MutationObserver(queue).observe(body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
         }
         root.addEventListener('resize', queue);
+        root.addEventListener('scroll', queue, { passive: true });
         sync();
     }
 

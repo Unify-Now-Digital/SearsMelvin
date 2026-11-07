@@ -60,9 +60,11 @@ async function fetchCatalogue(env) {
 
 function renderCards(products, colours) {
   const colourSlugs = colours.map((colour) => safeSlug(colour.slug)).filter(Boolean).join(",");
-  const colourDots = colours.map((colour) =>
+  const colourShown = colours.slice(0, 8);
+  const colourExtra = colours.length - colourShown.length;
+  const colourDots = colourShown.map((colour) =>
     `<span class="product-colour-dot" style="background:${safeHex(colour.hex_primary)};"></span>`
-  ).join("");
+  ).join("") + (colourExtra > 0 ? `<span class="product-colour-more">+${colourExtra}</span>` : "");
 
   return products.map((product, index) => {
     const id = safeId(product.id);
