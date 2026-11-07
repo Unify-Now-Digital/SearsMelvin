@@ -20,7 +20,7 @@ const EXACT = new Set([
   "/.gitignore",
 ]);
 
-const PREFIXES = ["/docs", "/tests", "/scripts", "/migrations", "/.github", "/.codex-out"];
+const PREFIXES = ["/docs", "/tests", "/scripts", "/migrations", "/sql", "/.github", "/.codex-out"];
 
 export function isInternalRepoPath(pathname) {
   let path;

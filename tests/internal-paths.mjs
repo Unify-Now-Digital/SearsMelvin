@@ -40,6 +40,8 @@ const INTERNAL = [
   "/README.md",
   "/SEARS-MELVIN-README.md",
   "/migrations/2026-08-26-fix-public-cemetery-read-and-audit-log.sql",
+  "/sql/NOT-APPLIED-stone-colour-image-urls.sql",
+  "/sql/NOT-APPLIED-stone-colour-image-urls-rollback.sql",
   "/.github/workflows/tests.yml",
   "/.codex-out/BUGS.md",
 ];

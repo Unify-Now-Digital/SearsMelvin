@@ -279,9 +279,21 @@
 
         /* Stone Colour Swatches */
         .colour-options { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .colour-option { cursor: pointer; text-align: center; transition: transform 0.2s; }
+        .colour-option { cursor: pointer; text-align: center; transition: transform 0.2s; position: relative; }
         .colour-option:hover { transform: scale(1.05); }
-        .colour-option input { display: none; }
+        /* Clipped, not display:none, so the radio stays in the tab order. */
+        .colour-option input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+        }
         .colour-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         .colour-swatch { 
             width: 52px; height: 52px; border-radius: 50%; 
@@ -289,17 +301,38 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
             transition: all 0.3s;
             position: relative;
+            overflow: hidden;
+        }
+        .colour-swatch-photo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+            display: block;
         }
         .colour-swatch::after {
             content: ''; position: absolute; inset: 0; border-radius: 50%;
             background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
         }
+        .colour-swatch.has-photo::after { content: none; }
         .colour-option input:checked + .colour-wrapper .colour-swatch { 
             border-color: var(--color-accent); 
             box-shadow: 0 0 0 3px white, 0 0 0 6px var(--color-accent);
             transform: scale(1.1);
         }
+        .colour-option input:focus-visible + .colour-wrapper .colour-swatch {
+            outline: 3px solid #1c1915;
+            outline-offset: 3px;
+        }
         .colour-name { font-size: 0.7rem; color: var(--color-text-muted); max-width: 65px; line-height: 1.3; }
+        .stone-colour-preview { display: flex; align-items: center; gap: 1rem; margin: 0 0 1.1rem; padding: 0.75rem; background: #fff; border: 1px solid var(--color-border); border-radius: 8px; }
+        .stone-colour-preview[hidden] { display: none; }
+        .stone-colour-preview-frame { width: 140px; height: 140px; border-radius: 12px; flex: 0 0 auto; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .stone-colour-preview-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .stone-colour-preview-kicker { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.3rem; }
+        .stone-colour-preview-name { margin: 0; font-family: var(--font-display); font-size: 1.45rem; line-height: 1.2; color: var(--color-stone); }
         .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
         .colour-group { flex-basis: 100%; }
         .colour-group-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.85rem; }
@@ -460,6 +493,8 @@
             .mobile-bottom-bar.is-visible { display: flex; }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
+            .stone-colour-preview-frame { width: 112px; height: 112px; }
+            .stone-colour-preview-name { font-size: 1.25rem; }
             body { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
             .gallery-thumbs { gap: 0.5rem; }
             .gallery-thumb { width: 60px; height: 60px; }
@@ -899,10 +934,17 @@
                 <!-- Stone Colour - Live Updates SVG -->
                 <div class="option-group">
                     <div class="option-header">
-                        <span class="option-label">Stone Colour</span>
+                        <span class="option-label" id="stoneColourLabel">Stone Colour</span>
                         <span class="option-value" id="selectedColourName">Black Galaxy</span>
                     </div>
-                    <div class="colour-options" id="stoneColourOptions">
+                    <div class="stone-colour-preview" id="stoneColourPreview" hidden>
+                        <div class="stone-colour-preview-frame" id="stoneColourPreviewFrame" aria-hidden="true"></div>
+                        <div class="stone-colour-preview-copy">
+                            <span class="stone-colour-preview-kicker">Selected colour</span>
+                            <p class="stone-colour-preview-name" id="stoneColourPreviewName" aria-live="polite"></p>
+                        </div>
+                    </div>
+                    <div class="colour-options" id="stoneColourOptions" role="radiogroup" aria-labelledby="stoneColourLabel">
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading colours...</span>
                     </div>
                 </div>
@@ -1328,6 +1370,7 @@
         </div>
     </div>
 
+<script src="/data/stone-colour-swatches.js"></script>
 <script src="/supabase-config"></script>
 <script>
         // ==================== SUPABASE ====================
@@ -1635,10 +1678,18 @@
                 const primary = safeCssColour(c.hex_primary);
                 const highlight = safeCssColour(c.hex_secondary || c.hex_primary);
                 const price = c.is_premium ? surcharge : 0;
+                // image_url when set; preview map only while it is empty and only
+                // off the production host. A failed photo drops back to the gradient.
+                const imageUrl = (typeof stoneColourImageUrl === 'function')
+                    ? stoneColourImageUrl(c, location.hostname)
+                    : safeImageUrl(c.image_url);
+                const photo = imageUrl
+                    ? '<img class="colour-swatch-photo" src="' + esc(imageUrl) + '" alt="" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                    : '';
                 return '<label class="colour-option">'
-                    + '<input type="radio" name="colour" value="' + esc(c.slug) + '" data-name="' + esc(c.name) + '" data-primary="' + primary + '" data-secondary="' + safeCssColour(c.hex_secondary) + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
+                    + '<input type="radio" name="colour" value="' + esc(c.slug) + '" data-name="' + esc(c.name) + '" data-primary="' + primary + '" data-secondary="' + safeCssColour(c.hex_secondary) + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (imageUrl ? ' data-image="' + esc(imageUrl) + '"' : '') + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
                     + '<div class="colour-wrapper">'
-                    + '<span class="colour-swatch" style="background: linear-gradient(145deg, ' + primary + ' 0%, ' + highlight + ' 50%, ' + primary + ' 100%);"></span>'
+                    + '<span class="colour-swatch' + (imageUrl ? ' has-photo' : '') + '" style="background: linear-gradient(145deg, ' + primary + ' 0%, ' + highlight + ' 50%, ' + primary + ' 100%);">' + photo + '</span>'
                     + '<span class="colour-name">' + esc(c.name) + '</span>'
                     + '</div></label>';
             }
@@ -1674,6 +1725,13 @@
                 html = colours.map(swatch).join('');
             }
             container.innerHTML = html;
+            if (!container.dataset.swatchFocusBound) {
+                container.dataset.swatchFocusBound = '1';
+                container.addEventListener('focusin', function (event) {
+                    var details = event.target.closest && event.target.closest('details');
+                    if (details) details.open = true;
+                });
+            }
             // Apply first colour
             var first = container.querySelector('input[name="colour"]');
             if (first) { updateColour(first); document.getElementById('selectedColourName').textContent = first.dataset.name; }
@@ -1824,12 +1882,36 @@
             thumb.classList.add('active');
         }
 
+        function showStoneColourPreview(input) {
+            var preview = document.getElementById('stoneColourPreview');
+            var frame = document.getElementById('stoneColourPreviewFrame');
+            var nameEl = document.getElementById('stoneColourPreviewName');
+            if (!preview || !frame || !nameEl || !input) return;
+            var primary = input.dataset.primary || '#777777';
+            var highlight = input.dataset.highlight || primary;
+            frame.style.background = 'linear-gradient(145deg, ' + primary + ' 0%, ' + highlight + ' 50%, ' + primary + ' 100%)';
+            frame.replaceChildren();
+            var url = input.dataset.image || '';
+            if (url) {
+                var img = document.createElement('img');
+                img.className = 'stone-colour-preview-photo';
+                img.alt = '';
+                img.decoding = 'async';
+                img.addEventListener('error', function () { img.remove(); });
+                img.src = url;
+                frame.appendChild(img);
+            }
+            nameEl.textContent = input.dataset.name || '';
+            preview.hidden = false;
+        }
+
         // ==================== COLOUR SELECTION ====================
         function updateColour(input) {
             const name = input.dataset.name;
             state.colour = input.value;
             state.colourPrice = parseInt(input.dataset.price) || 0;
             document.getElementById('selectedColourName').textContent = name;
+            showStoneColourPreview(input);
             const colourRow = document.getElementById('priceColourRow');
             if (state.colourPrice > 0) {
                 colourRow.style.display = 'flex';

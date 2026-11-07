@@ -25,6 +25,8 @@
     "/scripts/*",
     "/migrations",
     "/migrations/*",
+    "/sql",
+    "/sql/*",
     "/.github",
     "/.github/*",
     "/.codex-out",
