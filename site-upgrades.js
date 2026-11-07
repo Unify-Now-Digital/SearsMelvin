@@ -6,6 +6,9 @@
  *    "<N> pages · <X> MB" meta, and `brochure_download` tracking (GTM dataLayer,
  *    optional Google Ads conversion, first-party log via /api/brochure)
  *  - Meet-the-team rendering on /about ([data-sm-team])
+ *  - WhatsApp link clicks: push whatsapp_click {location} for a[data-wa-location].
+ *    No personal details. This does not touch tel: links, the call-number swap,
+ *    gclid capture, consent mode, or Google Ads conversions.
  * Pure helpers are exported on window.SMUpgrades and via module.exports for tests.
  */
 (function (root) {
@@ -32,6 +35,15 @@
         var rating = r.rating, count = r.count;
         return typeof rating === 'number' && isFinite(rating) && rating > 0 && rating <= 5 &&
             typeof count === 'number' && Number.isInteger(count) && count > 0;
+    }
+
+    // Locations the pages set on data-wa-location. Anything else is recorded as
+    // "unknown" so a mistyped value cannot put free text into the dataLayer.
+    var WA_LOCATIONS = { contact: 1, footer: 1, brochure: 1, home: 1, listing: 1, order: 1, permit: 1 };
+    function whatsappClickEvent(location) {
+        var loc = String(location || '').trim().toLowerCase();
+        if (!Object.prototype.hasOwnProperty.call(WA_LOCATIONS, loc)) loc = 'unknown';
+        return { event: 'whatsapp_click', location: loc };
     }
 
     function safeHttpUrl(u) {
@@ -288,7 +300,7 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, whatsappClickEvent: whatsappClickEvent, safeHttpUrl: safeHttpUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -349,6 +361,18 @@
             var node = event.target;
             var anchor = node && node.closest ? node.closest('a[href^="tel:"]') : null;
             if (anchor) api.clickIntent('call');
+        } catch (_e) {}
+    }, true);
+    // Separate from the tel: listener above. A WhatsApp click is not a call
+    // and must not be sent to /api/click-intent. GTM has no tag for this event
+    // yet; the push is what a GA4 Event tag would listen for. See docs/TRACKING.md.
+    document.addEventListener('click', function (event) {
+        try {
+            var node = event.target;
+            var anchor = node && node.closest ? node.closest('a[data-wa-location]') : null;
+            if (!anchor) return;
+            root.dataLayer = root.dataLayer || [];
+            root.dataLayer.push(whatsappClickEvent(anchor.getAttribute('data-wa-location')));
         } catch (_e) {}
     }, true);
 
