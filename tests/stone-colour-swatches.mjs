@@ -15,7 +15,7 @@ const BLACK = {
 const BLACK_PHOTO = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/black.webp";
 const REAL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/from-the-row.webp";
 
-assert.equal(swatches.previewSwatchCount, 10);
+assert.equal(swatches.previewSwatchCount, 19);
 
 const hosts = [
   "searsmelvin.co.uk",
@@ -48,6 +48,16 @@ assert.equal(swatches.stoneColourImageUrl({ id: "nope", slug: "black" }, "localh
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }, "searsmelvin.co.uk"), "");
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }, "localhost"), BLACK_PHOTO);
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "/images/black.webp" }, "searsmelvin.co.uk"), "/images/black.webp");
+const BAHAMA = {
+  id: "b225f959-018e-45a7-91b8-50be78e240e8",
+  slug: "bahama-blue",
+  name: "Bahama Blue",
+  image_url: null,
+};
+const BAHAMA_PHOTO = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/bahama-blue.webp";
+assert.equal(swatches.stoneColourImageUrl(BAHAMA, "searsmelvin.co.uk"), "");
+assert.equal(swatches.stoneColourImageUrl(BAHAMA, "localhost"), BAHAMA_PHOTO);
+assert.equal(swatches.stoneColourImageUrl({ ...BAHAMA, slug: "bahama" }, "localhost"), "");
 
 const memorial = readFileSync(new URL("../memorial.html", import.meta.url), "utf8");
 assert.match(memorial, /src="\/data\/stone-colour-swatches\.js"/);
@@ -73,8 +83,9 @@ const rollback = readFileSync(new URL("../sql/NOT-APPLIED-stone-colour-image-url
 assert.match(sql, /NOT APPLIED/);
 assert.match(rollback, /NOT APPLIED/);
 assert.match(sql, /SET image_url = v\.image_url/);
-assert.match(rollback, /SET image_url = NULL/);
-assert.equal((sql.match(/stone-colours\/[a-z0-9-]+\.webp/g) || []).length, 10);
-assert.equal((rollback.match(/stone-colours\/[a-z0-9-]+\.webp/g) || []).length, 10);
+assert.match(rollback, /previous_image_url/);
+assert.match(rollback, /NULL::text/);
+assert.equal((sql.match(/stone-colours\/[a-z0-9-]+\.webp/g) || []).length, 19);
+assert.equal((rollback.match(/stone-colours\/[a-z0-9-]+\.webp/g) || []).length, 19);
 
 console.log("stone-colour-swatches: ok");

@@ -30,7 +30,16 @@
         { id: '5cf29e51-4364-4198-92ec-761cb1d9eb95', slug: 'sa-dark-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/sa-dark-grey.webp' },
         { id: 'dba07948-49f8-4cdd-8563-e5b7c2110c8c', slug: 'karin-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/karin-grey.webp' },
         { id: '1a54c259-accf-4495-b0d9-96f2fe6332f0', slug: 'black-galaxy', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/black-galaxy.webp' },
-        { id: '01ad78e3-9701-4017-a5b6-877576c86fae', slug: 'yorkstone', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/yorkstone.webp' }
+        { id: '01ad78e3-9701-4017-a5b6-877576c86fae', slug: 'yorkstone', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/yorkstone.webp' },
+        { id: 'b225f959-018e-45a7-91b8-50be78e240e8', slug: 'bahama-blue', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/bahama-blue.webp' },
+        { id: 'ec529bc2-ec0a-4520-89ee-52a6761a881d', slug: 'cats-eye-brown', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/cats-eye-brown.webp' },
+        { id: '20343815-4daa-449e-bda7-dd05a3a22af0', slug: 'imperial-red', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/imperial-red.webp' },
+        { id: '72b21479-11a4-4c1b-abf7-b2005f7fc3bc', slug: 'cera-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/cera-grey.webp' },
+        { id: '0367edc2-9c20-4dc2-b9bf-551508c18ba0', slug: 'indian-light-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/indian-light-grey.webp' },
+        { id: '697212de-9d03-430e-ac37-2312094fb40c', slug: 'indian-dark-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/indian-dark-grey.webp' },
+        { id: '15bbb6c9-f58b-48a5-8529-35784ac33d6d', slug: 'china-pink', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/china-pink.webp' },
+        { id: 'f313d0ae-5183-4291-ae9d-08df8a1f6fd8', slug: 'crystal-white', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/crystal-white.webp' },
+        { id: 'd5d8cd20-bbfd-4c47-b0f9-ccbf0b6816e0', slug: 'avon-grey', url: 'https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/stone-colours/avon-grey.webp' }
     ];
 
     function isProductionHost(host) {
