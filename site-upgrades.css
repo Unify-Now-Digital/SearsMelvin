@@ -748,3 +748,143 @@ html body .product-action.save-btn.active svg {
     box-shadow: none;
   }
 }
+
+/* ==========================================================================
+   S4 — labels, prices, and stars.
+   Form fields, card frames, the header, and the footer keep their layout.
+   ========================================================================== */
+
+html body :is(
+  .section-label,
+  .hero-tagline,
+  .about-eyebrow,
+  .about-kicker,
+  .features-title,
+  .product-category
+) {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label);
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--sm-color-text);
+}
+
+html body .product-category {
+  font-size: var(--sm-text-xs) !important;
+  color: var(--sm-color-text-accent-on-panel);
+  letter-spacing: var(--sm-tracking-label-compact);
+}
+
+html body :is(.process-header, .timeline, .contact-cta) .section-label {
+  color: var(--sm-color-text-accent-inverse);
+  letter-spacing: var(--sm-tracking-label-compact);
+}
+
+html body :is(.product-price, .addon-price, .price-row, .mobile-price) {
+  font-family: var(--sm-font-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--sm-weight-body);
+  letter-spacing: 0;
+}
+
+html body .product-price {
+  font-size: var(--sm-text-sm);
+  line-height: 1.2;
+  color: var(--sm-color-text-muted);
+}
+
+html body .product-price strong,
+html body .addon-price {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-price);
+  font-weight: var(--sm-weight-body-strong);
+  font-variant-numeric: tabular-nums;
+  color: var(--sm-color-text);
+  letter-spacing: 0;
+}
+
+html body :is(.product-price, .price-summary) :is(s, del) {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body);
+  color: var(--sm-color-text-muted);
+  text-decoration: line-through;
+}
+
+html body .price-summary {
+  background: var(--sm-color-bg-inverse);
+  border-top-color: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-inverse);
+}
+
+html body .price-summary .price-row.total,
+html body .price-total-display,
+html body .mobile-price {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-price-lead);
+  font-weight: var(--sm-weight-body-strong);
+  font-variant-numeric: tabular-nums;
+  color: var(--sm-color-text-inverse);
+  letter-spacing: 0;
+}
+
+html body .mobile-price {
+  color: var(--sm-color-text);
+}
+
+html body .price-summary .price-row.total > span:first-child,
+html body .price-summary .guide-price-note {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label-compact);
+  text-transform: uppercase;
+  color: var(--sm-color-text-accent-inverse);
+}
+
+html body .price-summary .guide-price-note {
+  font-weight: var(--sm-weight-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html body .price-summary .btn-primary {
+  background: var(--sm-color-action-inverse-bg);
+  border-color: var(--sm-color-action-inverse-bg);
+  color: var(--sm-color-action-inverse-text) !important;
+}
+
+html body .price-summary .btn-primary:hover {
+  background: var(--sm-color-action-inverse-bg-hover);
+  border-color: var(--sm-color-action-inverse-bg-hover);
+  color: var(--sm-color-action-inverse-text) !important;
+}
+
+html body .price-summary .btn-secondary {
+  background: transparent !important;
+  border-color: var(--sm-color-text-accent-inverse) !important;
+  color: var(--sm-color-text-inverse) !important;
+}
+
+html body .price-summary .btn-secondary:hover {
+  background: var(--sm-color-action-inverse-bg-hover) !important;
+  border-color: var(--sm-color-action-inverse-bg-hover) !important;
+  color: var(--sm-color-text) !important;
+}
+
+html body .testimonial-stars,
+html body .sm-stars {
+  color: var(--sm-color-text-accent-on-panel);
+  gap: 3px;
+}
+
+html body .testimonial-stars svg,
+html body .sm-star svg,
+html body .sm-stars svg {
+  fill: var(--sm-color-text-accent-on-panel);
+  width: 16px;
+  height: 16px;
+}
