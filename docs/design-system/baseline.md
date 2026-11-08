@@ -33,27 +33,37 @@ Each width has its own folder.
 
 Each file is a full-page PNG.
 The tool is Playwright 1.56.1 with Chromium.
-`pngquant` saves each file as an 8-bit PNG when it is installed.
-The 24 files together are about 10.3 MB.
+`optipng -o1` shrinks each file without changing a pixel.
+The compare reads those pixels. It does not use a lossy quantiser.
 
 The capture does these things before it takes the shot.
 
 1. It sets `cookieConsent` to `accepted`, so the cookie bar stays hidden.
 2. It blocks the chat widget and analytics hosts, so those layers do not cover the page.
-3. It turns entrance animations off, so each section is visible.
-4. It scrolls the page once, so lazy images can load.
+3. It scrolls the full page, so lazy images start to load.
+4. It scrolls back to the top.
+5. It waits until every image with a src has loaded (`complete` and `naturalWidth > 0`).
+6. It waits for `document.fonts.ready`.
+7. It waits for the network to go idle.
+8. It turns animations and transitions off, and it hides the caret.
+9. It freezes the installations carousel at `translate3d(0,0,0)`.
 
-A fixed bar can appear once in the stitched image.
-On a product page, the guide-total bar can sit over the gallery.
-That overlap comes from the full-page stitch.
-Run the same script again if you need a matching file.
+Masks: none.
+The carousel is frozen. It is not masked.
+The family quotes are static text. They are not masked.
+No Cloudflare beacon and no live review widget is painted on these pages.
+
+Compare two capture folders with `node tests/visual/compare.mjs <actual-dir> [expected-dir]`.
+The default threshold is 0.1.
+The default `maxDiffPixels` is 0.
+Do not raise either value to hide a change.
 
 ## Run the screenshots again
 
 1. Open a terminal at the repo root.
 2. Run `npm --prefix tests/visual install`.
 3. Run `npx --prefix tests/visual playwright install chromium`.
-4. Install `pngquant` if you want the smaller PNG files.
+4. Install `optipng` if you want smaller PNG files. The pixels stay the same.
 5. Run `npm --prefix tests/visual run baseline`.
 6. The script reads `BASE_URL`. The default is `https://searsmelvin.co.uk`.
 7. The script writes the PNG files to `tests/visual/baseline/`.

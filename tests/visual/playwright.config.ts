@@ -5,7 +5,7 @@ const baseURL = (process.env.BASE_URL || "https://searsmelvin.co.uk").replace(/\
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
-  timeout: 180_000,
+  timeout: 240_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
