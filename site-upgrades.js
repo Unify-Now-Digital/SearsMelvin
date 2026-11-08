@@ -288,7 +288,186 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    // ---- Catalogue list tracking (docs/TRACKING.md) -------------------------
+    // Pushed on every host, same as sm_quote_submit and brochure_download.
+    // Preview and localhost are not dropped here: the site has no dataLayer
+    // host exclusion, and the committed GTM snapshot has no hostname exception.
+    var ITEM_LIST_ID = 'memorials';
+    var ITEM_LIST_NAME = 'Memorials';
+    var LIST_CONTEXT_KEY = 'sm_list_context';
+    var LIST_CONTEXT_TTL_MS = 12 * 60 * 60 * 1000;
+    var FILTER_NAMES = { type: 1, colour: 1, price: 1, clear: 1 };
+
+    function trackText(value, max) {
+        var s = String(value == null ? '' : value).replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (s.indexOf('@') !== -1) return '';
+        return s.slice(0, max || 120);
+    }
+    function trackId(value) {
+        var id = String(value == null ? '' : value);
+        return /^[a-zA-Z0-9_-]{1,80}$/.test(id) ? id : '';
+    }
+    function trackSlug(value) {
+        var s = String(value == null ? '' : value).toLowerCase();
+        return /^[a-z0-9-]{1,120}$/.test(s) ? s : '';
+    }
+    function catalogueItem(raw) {
+        var id = trackId(raw && raw.item_id);
+        var name = trackText(raw && raw.item_name, 120);
+        var position = raw && raw.index;
+        if (!id || !name || !Number.isInteger(position) || position < 1 || position > 500) return null;
+        var item = {
+            item_id: id,
+            item_name: name,
+            item_category: trackText(raw.item_category, 120) || 'Memorial',
+            index: position
+        };
+        var slug = trackSlug(raw.slug);
+        if (slug) item.slug = slug;
+        return item;
+    }
+    function catalogueMeta(meta) {
+        return {
+            item_list_id: ITEM_LIST_ID,
+            item_list_name: trackText(meta && meta.item_list_name, 120) || ITEM_LIST_NAME,
+            active_filter: trackText(meta && meta.active_filter, 300) || 'all'
+        };
+    }
+    function publicItem(item) {
+        return {
+            item_id: item.item_id,
+            item_name: item.item_name,
+            item_category: item.item_category,
+            index: item.index
+        };
+    }
+    function viewItemListEvent(items, meta) {
+        var list = catalogueMeta(meta);
+        var clean = [];
+        (items || []).forEach(function (raw) {
+            var item = catalogueItem(raw);
+            if (item) clean.push(publicItem(item));
+        });
+        return {
+            event: 'view_item_list',
+            item_list_id: list.item_list_id,
+            item_list_name: list.item_list_name,
+            active_filter: list.active_filter,
+            result_count: clean.length,
+            ecommerce: {
+                item_list_id: list.item_list_id,
+                item_list_name: list.item_list_name,
+                items: clean
+            }
+        };
+    }
+    function selectItemEvent(raw, meta) {
+        var item = catalogueItem(raw);
+        if (!item) return null;
+        var list = catalogueMeta(meta);
+        var pub = publicItem(item);
+        return {
+            event: 'select_item',
+            item_list_id: list.item_list_id,
+            item_list_name: list.item_list_name,
+            active_filter: list.active_filter,
+            item_id: pub.item_id,
+            item_name: pub.item_name,
+            item_category: pub.item_category,
+            index: pub.index,
+            ecommerce: {
+                item_list_id: list.item_list_id,
+                item_list_name: list.item_list_name,
+                items: [pub]
+            }
+        };
+    }
+    function filterSelectEvent(change, resultCount, meta) {
+        var name = trackSlug(change && change.filter_name);
+        if (!FILTER_NAMES[name]) return null;
+        var value = name === 'clear' ? 'all' : trackSlug(change.filter_value);
+        if (!value) return null;
+        var count = Number(resultCount);
+        if (!Number.isInteger(count) || count < 0 || count > 500) count = 0;
+        var list = catalogueMeta(meta);
+        return {
+            event: 'filter_select',
+            filter_name: name,
+            filter_value: value,
+            selected: !!(change && change.selected),
+            result_count: count,
+            item_list_id: list.item_list_id,
+            active_filter: list.active_filter
+        };
+    }
+    // One user action can call the grid update twice. Keep the last state for
+    // each filter control and drop the duplicate so one change emits one event.
+    function collapseFilterChanges(changes) {
+        var out = [];
+        var index = {};
+        (changes || []).forEach(function (change) {
+            if (!change || !change.filter_name) return;
+            var key = String(change.filter_name) + '\n' + String(change.filter_value == null ? '' : change.filter_value);
+            if (Object.prototype.hasOwnProperty.call(index, key)) out[index[key]] = change;
+            else { index[key] = out.length; out.push(change); }
+        });
+        return out;
+    }
+    function listContextRecord(raw, meta, now) {
+        var item = catalogueItem(raw);
+        if (!item || !item.slug || typeof now !== 'number') return null;
+        var list = catalogueMeta(meta);
+        return {
+            product_id: item.item_id,
+            slug: item.slug,
+            category: item.item_category,
+            list_position: item.index,
+            item_list_id: list.item_list_id,
+            active_filter: list.active_filter,
+            ts: now
+        };
+    }
+    function readListContext(raw, now) {
+        var stored = raw;
+        if (typeof raw === 'string') {
+            if (!raw) return null;
+            try { stored = JSON.parse(raw); } catch (e) { return null; }
+        }
+        if (!stored || typeof stored !== 'object' || typeof now !== 'number') return null;
+        if (typeof stored.ts !== 'number' || !isFinite(stored.ts)) return null;
+        if (now - stored.ts > LIST_CONTEXT_TTL_MS || stored.ts > now + 60000) return null;
+        var product_id = trackId(stored.product_id);
+        var slug = trackSlug(stored.slug);
+        var position = stored.list_position;
+        if (!product_id || !slug || !Number.isInteger(position) || position < 1 || position > 500) return null;
+        return {
+            product_id: product_id,
+            slug: slug,
+            category: trackText(stored.category, 120),
+            list_position: position,
+            item_list_id: ITEM_LIST_ID,
+            active_filter: trackText(stored.active_filter, 300) || 'all',
+            ts: stored.ts
+        };
+    }
+    // Copies list context onto the existing quote event when it belongs to this
+    // product. Returns the same object. Does not push a second event.
+    function applyListContext(event, storedRaw, product, now) {
+        if (!event || typeof event !== 'object') return event;
+        var stored = readListContext(storedRaw, now);
+        if (!stored) return event;
+        var id = trackId(product && (product.id || product.product_id));
+        var slug = trackSlug(product && product.slug);
+        if (!(id && stored.product_id === id) && !(slug && stored.slug === slug)) return event;
+        event.product_id = stored.product_id;
+        if (stored.category) event.category = stored.category;
+        event.list_position = stored.list_position;
+        event.item_list_id = stored.item_list_id;
+        if (stored.active_filter) event.active_filter = stored.active_filter;
+        return event;
+    }
+
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;

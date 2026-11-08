@@ -29,7 +29,16 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit`, **once per tab visit**. `sessionStorage.sm_chat_counted` (and an in-memory flag if storage throws) blocks a later attempt in that tab, including a Turnstile retry many seconds later. Every attempt still refreshes `window.__smChatEmail` / `window.__smChatPhone` with the same sanitising as `clickIntentBody`. The event object stays `{event:'sm_chat_submit'}` only. `/api/click-intent` is called only on the counted attempt. | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` (reads those two globals; GTM container change is separate from this repo) |
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
+| `view_item_list` | `memorials.html` grid, payload from `site-upgrades.js` | Once when the catalogue grid finishes rendering, and again after a filter or sort settles. 50ms debounce, so the first paint plus a `?type=` deep link is one event. | **Not wired in GTM yet.** Arin adds the tag. Must not trigger `request_quote` or `generate_lead`. |
+| `select_item` | `memorials.html` card click / auxclick | A memorial card tap, including middle-click and modified clicks. The handler does not call `preventDefault`. The same card is ignored for 700ms so click + auxclick cannot double count. | **Not wired in GTM yet.** |
+| `filter_select` | `memorials.html` type, colour, price, clear | One event per control change (`filter_name`, `filter_value`, `selected`, `result_count`). A repeated call for the same control collapses to one event. Landing on `?type=` does not count as a change. Sort updates `view_item_list` only. | **Not wired in GTM yet.** |
 | `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
+
+`sm_quote_submit` stays a single push on the confirmed quote response. When the open product matches `sessionStorage.sm_list_context` (written from the card, 12-hour tab life), that same object also gains `product_id`, `category`, `list_position`, `item_list_id` and `active_filter`. A direct product visit, or a card for a different memorial, leaves the event as `{event, form_id}` only. It does not push `sm_lead_submit` or a second `sm_quote_submit`. Contact `sm_lead_submit` is unchanged.
+
+Catalogue payloads are product id, product name, category name, 1-based visible grid index, list id `memorials`, list name `Memorials`, and the active filter string (`type:…|colour:…|price:…|sort:…`, or `all`). No customer, deceased, email, phone or inscription fields.
+
+These pushes are not dropped on preview or localhost. The site has never excluded those hosts from `dataLayer`, and the committed GTM snapshot has no hostname exception. GTM and GA4 still decide what is collected. Do not add a site-side host gate for these events.
 
 The GTM loader (and the chat loader) set `window.__smChatHook = true` before gtm.js can run. That disables the
 older GTM Custom HTML "GHL Chat Widget Listener" (fetch/XHR hook), which raced the widget
@@ -151,7 +160,8 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 
 ## Dedupe rules (summary)
 - Chat: one `sm_chat_submit` per tab visit (`sessionStorage` key `sm_chat_counted`, plus an in-memory flag when storage is blocked). A later submit in that tab, including a Turnstile retry, refreshes `window.__smChatEmail` / `window.__smChatPhone` and does not push or call `clickIntent`. GTM's GA4 chat tag is also once per page load. Legacy listener off.
-- Lead/quote: pushed once per confirmed response; GTM tags `once_per_event`.
+- Lead/quote: pushed once per confirmed response; GTM tags `once_per_event`. List context is fields on that one `sm_quote_submit` object, not a second conversion event.
+- Catalogue: one `view_item_list` per settled grid, one `filter_select` per changed control, one `select_item` per card activation.
 - `ghl_chat_submission` and `sm_chat_submit` must never both have triggers.
 - Offline: transactionId per order + ledger.
 
