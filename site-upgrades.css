@@ -1135,7 +1135,9 @@ html body .gallery-main img {
 }
 
 @media (max-width: 375px) {
-  html body .product-name {
+  /* The shared title rule uses :is(.product-name, .category-info h3),
+     so its specificity includes the h3. Match that, or 24px keeps winning. */
+  html body h3.product-name {
     font-size: var(--sm-text-lg);
   }
 }
