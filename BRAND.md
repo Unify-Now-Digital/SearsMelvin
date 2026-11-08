@@ -401,7 +401,7 @@ Chips (filters):
 
 ## 14. Header
 
-This is the target header. Do not put it on the live pages in this phase.
+This is the live header. The ground is linen and the logo is the stacked ink file.
 
 1. Ground is linen. Add a 1px sand rule under it.
 2. The stacked logo and the nav are ink. The logo is at least 240px wide. Use the logo with rules. On a 1× screen, switch to the no-rules file below 262px. On a 2× screen, switch below 131px.
@@ -417,7 +417,7 @@ Keep these live hooks when you later change the real header: `#navbar`, `.mobile
 ### Do
 
 1. Match the fascia: linen ground, ink logo.
-2. Show the approved stacked logo on `/styleguide` until the header phase.
+2. The live header uses the stacked ink logo. `/styleguide` keeps the clear-space sample.
 
 ### Don’t
 
@@ -476,7 +476,7 @@ The approved logo is the stacked lock-up. It is Cormorant Garamond 500, with the
 2. Use `/images/brand/logo/sears-melvin-stacked-soft-bronze.svg` on ink.
 3. Do not draw the stacked logo narrower than 240px. Check that the 500 weight still reads at that width.
 4. Leave clear space on all sides. The clear space is the cap height of the S.
-5. Show the logo on `/styleguide` only, until the header phase changes the live header.
+5. The live header uses the stacked ink logo. `/styleguide` still shows the clear-space sample.
 6. Do not redraw the logo in CSS.
 
 The no-rules files are the small-size fallback only: `sears-melvin-stacked-ink-no-rules.svg`, `sears-melvin-stacked-bronze-no-rules.svg`, and `sears-melvin-stacked-soft-bronze-no-rules.svg`, each with a 400px PNG and an 800px PNG. Switch to that file only where the rules would render thinner than about 1px or would fade.
@@ -492,7 +492,7 @@ Do not use a horizontal layout.
 
 The `source-exact` pack is an archive. Do not use it as the master.
 
-Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. The default is `favicon.svg`, the same artwork as `favicon-light.svg`, with `favicon-light-16.png` and `favicon-light-32.png`. The dark alternative is `favicon-dark.svg`, `favicon-dark-16.png` and `favicon-dark-32.png`. Also keep `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, and `site.webmanifest`. Show them on `/styleguide` only. Do not put them in the live page head, and do not replace the live `/favicon.svg`, until the header phase.
+Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. The default is `favicon.svg`, the same artwork as `favicon-light.svg`, with `favicon-light-16.png` and `favicon-light-32.png`. The dark alternative is `favicon-dark.svg`, `favicon-dark-16.png` and `favicon-dark-32.png`. Also keep `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, and `site.webmanifest`. The live pages link the default icon, the 32px PNG, and the Apple touch icon. `/styleguide` still shows the full set.
 
 ### Do
 
@@ -506,7 +506,7 @@ Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. T
 2. Do not use the no-rules file where the rules still read. That is 262px and above at 1×, and 131px and above at 2×.
 3. Do not use a horizontal layout.
 4. Do not put soft bronze on linen. It fails contrast.
-5. Do not put the logo or the new favicon in the live header in this phase.
+5. The live header uses the stacked ink logo, and the live pages use the brand favicons.
 
 ## 18. Photography
 
