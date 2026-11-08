@@ -448,10 +448,10 @@ Keep these live classes when you later change the real footer: `.footer-containe
 
 ## 17. Logo
 
-The approved logo is the stacked lock-up. It is Cormorant Garamond 500. It has no side rules. Arin approved it on 8 November 2026.
+The approved logo is the stacked lock-up. It is Cormorant Garamond 500. It has no side rules. Arin approved it on 8 November 2026. The master files are the weight-500 no-rules exports.
 
-1. Use the stacked ink file on linen, or the stacked bronze file on linen.
-2. Use the stacked soft-bronze file on ink.
+1. Use `/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg` on linen, or `/images/brand/logo/sears-melvin-stacked-bronze-no-rules.svg` on linen.
+2. Use `/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg` on ink.
 3. Do not draw the stacked logo narrower than 240px. Check that the 500 weight still reads at that width.
 4. Leave clear space on all sides. The clear space is the cap height of the S.
 5. Show the logo on `/styleguide` only, until the header phase changes the live header.
@@ -466,7 +466,7 @@ Do not use side rules. Rules are not approved.
 
 The `source-exact` pack is an archive. Do not use it as the master.
 
-Favicons and app icons belong with the logo. Show them on `/styleguide` only. Do not put them in the live page head, and do not replace the live favicon, until the header phase.
+Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. The default is `favicon.svg`, the same artwork as `favicon-light.svg`, with `favicon-light-16.png` and `favicon-light-32.png`. The dark alternative is `favicon-dark.svg`, `favicon-dark-16.png` and `favicon-dark-32.png`. Also keep `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, and `site.webmanifest`. Show them on `/styleguide` only. Do not put them in the live page head, and do not replace the live `/favicon.svg`, until the header phase.
 
 ### Do
 

@@ -1,0 +1,19 @@
+{
+  "name": "Sears Melvin Memorials",
+  "short_name": "Sears Melvin",
+  "icons": [
+    {
+      "src": "/images/brand/logo/favicon/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/brand/logo/favicon/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#FBF9F5",
+  "background_color": "#FBF9F5",
+  "display": "standalone"
+}

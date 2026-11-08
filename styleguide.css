@@ -435,6 +435,44 @@ body.sg-is-mobile .sg-frame {
   padding: var(--sm-space-5);
 }
 
+.sg-favicon-set {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sm-space-4);
+}
+
+.sg-favicon {
+  display: block;
+  height: auto;
+}
+
+.sg-favicon--16 {
+  width: 16px;
+}
+
+.sg-favicon--32 {
+  width: 32px;
+}
+
+.sg-favicon--zoom {
+  image-rendering: pixelated;
+  width: 64px;
+}
+
+.sg-favicon--svg {
+  width: 64px;
+}
+
+.sg-favicon--app {
+  width: 96px;
+}
+
+.sg-favicon-apps {
+  align-items: stretch;
+  margin-top: var(--sm-space-3);
+}
+
 .sg-desk {
   border: 1px solid var(--sm-color-border-control);
   border-radius: var(--sm-radius-sm);

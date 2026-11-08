@@ -29,7 +29,20 @@ assert.doesNotMatch(guide, /concept/i);
 assert.doesNotMatch(`${components}\n${guideCss}\n${guide}`, /arched|frame--arch|archway/i);
 assert.match(guide, /10am to 3pm \(days TBC\)/);
 assert.match(guide, /Showroom phone/);
-assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-ink\.svg/);
+assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-ink-no-rules\.svg/);
+assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-bronze-no-rules\.svg/);
+assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-soft-bronze-no-rules\.svg/);
+assert.doesNotMatch(guide, /sears-melvin-stacked-(?:ink|bronze|soft-bronze)\.svg/);
+assert.doesNotMatch(guide, /previous stacked files|not the weight-500 master|were not in the upload/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/favicon-light\.svg/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/favicon-dark\.svg/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/apple-touch-icon\.png/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/icon-192\.png/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/icon-512\.png/);
+assert.match(guide, /\/images\/brand\/logo\/favicon\/site\.webmanifest/);
+const guideHead = guide.slice(0, guide.indexOf("</head>"));
+assert.match(guideHead, /<link rel="icon" href="\/favicon\.svg">/);
+assert.doesNotMatch(guideHead, /images\/brand\/logo\/favicon|apple-touch-icon|rel="manifest"/);
 assert.match(guide, /\/images\/brand\/photo-standard\.png/);
 assert.match(guide, /4:5 frame on linen/);
 assert.doesNotMatch(guide, /existing sales line/);
@@ -65,6 +78,8 @@ for (const file of readdirSync(".").filter((name) => name.endsWith(".html") && n
   assert.equal(html.includes("tokens.css"), false, `${file} must not link tokens.css yet`);
   assert.equal(html.includes("components.css"), false, `${file} must not link components.css yet`);
   assert.equal(html.includes("styleguide.css"), false, `${file} must not link styleguide.css yet`);
+  assert.equal(html.includes("/images/brand/logo/"), false, `${file} must not use the style-guide logo yet`);
+  assert.match(html, /href="\/favicon\.svg/, `${file} must keep the live favicon`);
 }
 
 const sitemap = read("functions/sitemap.xml.js");
