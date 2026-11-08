@@ -118,12 +118,14 @@
     <meta name="description" content="Common questions about headstones answered: permit timescales, average costs, when you can install, materials and inscription rules. From working London masons.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
+    <link rel="icon" href="/images/brand/logo/favicon/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/images/brand/logo/favicon/favicon-light-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/faq">
-    <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <meta name="theme-color" content="#FBF9F5">
+    
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
@@ -138,19 +140,20 @@
     <meta name="twitter:description" content="Common questions about headstones answered: permit timescales, average costs, when you can install, materials and inscription rules. From working London masons.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
+    <link rel="stylesheet" href="/tokens.css">
     <style>
         :root {
-            --color-stone: #2B2A27;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #F7F4EE;
-            --color-warm: #E8E4DD;
-            --color-accent: #7A6449;
-            --color-accent-dark: #6B5840;
-            --color-accent-light: #A69070;
-            --color-text: #2B2A27;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
-            --color-success: #4A7C59;
+            --color-stone: var(--sm-color-text);
+            --color-stone-light: var(--sm-color-ink-hover);
+            --color-cream: var(--sm-color-bg);
+            --color-warm: var(--sm-color-bg-panel-quiet);
+            --color-accent: var(--sm-color-text-accent);
+            --color-accent-dark: var(--sm-color-text-accent-strong);
+            --color-accent-light: var(--sm-color-text-accent-inverse);
+            --color-text: var(--sm-color-text);
+            --color-text-muted: var(--sm-color-text-muted);
+            --color-border: var(--sm-color-border-decorative);
+            --color-success: var(--sm-color-success);
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
@@ -168,7 +171,7 @@
         .reveal.visible { opacity: 1; transform: translateY(0); }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -176,7 +179,7 @@
         .nav-links a { font-size: 1rem; color: var(--color-text); letter-spacing: 0; transition: color 0.3s; }
         .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 10%, transparent); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -187,7 +190,7 @@
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Showroom Banner */
         /* Mobile Bottom Navigation */
-        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
@@ -197,7 +200,7 @@
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
-        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         .nav-cta-dark { background-color: var(--color-text); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
@@ -213,11 +216,11 @@
             width: 100%; padding: 1rem 1.25rem 1rem 3.5rem; 
             border: 2px solid white; border-radius: 50px; 
             font-family: var(--font-body); font-size: 1rem;
-            background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            background: white; box-shadow: 0 4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent);
             transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .search-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 4px 30px rgba(0,0,0,0.12); }
-        .search-input::placeholder { color: #767676; }
+        .search-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 4px 30px color-mix(in srgb, var(--sm-color-text) 12%, transparent); }
+        .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-clear { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: var(--color-warm); border: none; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; transition: background 0.2s; }
         .search-clear.visible { display: flex; }
@@ -250,10 +253,10 @@
         /* Accordion */
         .faq-item { 
             background: white; border-radius: 8px; margin-bottom: 1rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 4%, transparent);
             overflow: hidden; transition: box-shadow 0.3s;
         }
-        .faq-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .faq-item:hover { box-shadow: 0 4px 16px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .faq-item.hidden { display: none; }
         .faq-question { 
             width: 100%; padding: 1.25rem 1.5rem; 
@@ -303,9 +306,9 @@
             background: var(--color-stone); border-radius: 12px; color: white;
         }
         .still-questions h3 { font-size: 1.75rem; color: white; margin-bottom: 0.75rem; }
-        .still-questions p { color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .still-questions p { color: var(--sm-color-text-inverse-muted); margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
         .still-questions .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: white; color: var(--color-stone); border-radius: 6px; font-weight: 500; transition: all 0.3s; }
-        .still-questions .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .still-questions .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px color-mix(in srgb, var(--sm-color-text) 30%, transparent); }
         .still-questions .btn svg { width: 20px; height: 20px; stroke: var(--color-accent); fill: none; stroke-width: 2; }
 
         /* Mobile */
@@ -322,16 +325,16 @@
 
         /* Mobile Bottom Nav */
         /* Footer */
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); }
         .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: var(--sm-color-text-inverse-muted); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
 
@@ -341,17 +344,17 @@
         .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
 
         /* Search Overlay */
-        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
         .search-overlay.active { opacity: 1; visibility: visible; }
 
         /* Search Modal */
-        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .search-modal.active { transform: translateY(0); }
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #767676; }
+        .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -582,15 +585,15 @@
 <body>
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    height="0" width="0" class="sm-gtm-noscript" ></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <nav id="navbar">
         <a href="/" class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
-            Sears Melvin <span>Memorials</span>
+            <picture>
+                <source media="(max-width: 768px) and (min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-ink.svg">
+                <source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg">
+                <img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66">
+            </picture>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
             <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
@@ -978,7 +981,7 @@
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a><br>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment
+                    North London — By appointment<span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">10am to 3pm</span>
                 </div>
             </div>
             <ul class="footer-links">
@@ -993,8 +996,8 @@
                 <li><a href="/privacy">Privacy</a></li>
             </ul>
             <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            <div class="sm-accred-ruled footer-accreditations" ><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
+            <p class="sm-footer-legal-inline footer-legal" >Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
         </div>
     </footer>
 
@@ -1015,7 +1018,7 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+            <button class="sm-bare-btn mobile-nav-item" onclick="openSearch()" >
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <span>Search</span>
             </button>
@@ -1162,12 +1165,12 @@
         });
     </script>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+<div id="cookieConsent" class="sm-cookie" >
+    <div class="sm-cookie-bar" >
+        <p class="sm-cookie-copy" >We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" class="sm-cookie-link" >privacy policy</a>.</p>
+        <div class="sm-cookie-actions" >
+            <button onclick="acceptCookies()" class="sm-cookie-btn" >Accept</button>
+            <button onclick="declineCookies()" class="sm-cookie-btn" >Decline</button>
         </div>
     </div>
 </div>

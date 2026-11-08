@@ -118,12 +118,14 @@
     <meta name="description" content="Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, UK-wide installation. Personalised quotes.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
+    <link rel="icon" href="/images/brand/logo/favicon/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/images/brand/logo/favicon/favicon-light-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/">
-    <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <meta name="theme-color" content="#FBF9F5">
+    
     <!-- Preload LCP hero image so the fetch starts before the parser hits the <img> tag -->
     <link rel="preload" as="image"
           href="/images/installed/gioiosa-family-kerb-set-900w.webp"
@@ -145,19 +147,20 @@
     <meta name="twitter:description" content="Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, UK-wide installation. Personalised quotes.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
     
+    <link rel="stylesheet" href="/tokens.css">
     <style>
         :root {
-            --color-stone: #2B2A27;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #F7F4EE;
-            --color-warm: #E8E4DD;
-            --color-accent: #7A6449;
-            --color-accent-dark: #6B5840;
-            --color-accent-light: #A69070;
-            --color-text: #2B2A27;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
-            --color-success: #4A7C59;
+            --color-stone: var(--sm-color-text);
+            --color-stone-light: var(--sm-color-ink-hover);
+            --color-cream: var(--sm-color-bg);
+            --color-warm: var(--sm-color-bg-panel-quiet);
+            --color-accent: var(--sm-color-text-accent);
+            --color-accent-dark: var(--sm-color-text-accent-strong);
+            --color-accent-light: var(--sm-color-text-accent-inverse);
+            --color-text: var(--sm-color-text);
+            --color-text-muted: var(--sm-color-text-muted);
+            --color-border: var(--sm-color-border-decorative);
+            --color-success: var(--sm-color-success);
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
@@ -210,7 +213,7 @@
         .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); transition: padding 0.3s; }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); transition: padding 0.3s; }
         nav.scrolled { padding: 0.75rem 2rem; }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
@@ -223,7 +226,7 @@
         .nav-cta-dark { background-color: var(--color-text); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         .nav-cta-dark:hover { background-color: var(--color-stone); }
         .nav-cta:hover { background-color: var(--color-stone-light); }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 10%, transparent); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -233,7 +236,7 @@
         .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Mobile Bottom Navigation */
-        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
@@ -243,7 +246,7 @@
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
-        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .trust-bar + .hero, .site-trust-bar + .hero { padding-top: 1.5rem; }
 
@@ -262,18 +265,18 @@
         .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; font-family: var(--font-body); font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s ease; border-radius: 3px; }
         .btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .btn-primary { background-color: var(--color-stone); color: var(--color-cream); }
-        .btn-primary:hover { background-color: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .btn-primary:hover { background-color: var(--color-stone-light); transform: translateY(-2px); box-shadow: 0 10px 30px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .btn-secondary { background-color: transparent; color: var(--color-stone); border: 1px solid var(--color-stone); }
         .btn-secondary:hover { background-color: var(--color-stone); color: var(--color-cream); }
         .btn-accent { background-color: var(--color-accent); color: white; }
         .btn-accent:hover { background-color: var(--color-stone); }
 
         .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
-        .hero-image { width: 100%; aspect-ratio: 15/16; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px rgba(60,50,40,0.12); position: relative; background: linear-gradient(145deg, #efeae2 0%, #d8d2c8 100%); }
+        .hero-image { width: 100%; aspect-ratio: 15/16; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px color-mix(in srgb, var(--sm-color-text) 12%, transparent); position: relative; background: linear-gradient(145deg, var(--sm-color-bg-panel-quiet) 0%, var(--sm-color-bg-panel) 100%); }
         .hero-image svg { width: 100%; height: 100%; object-fit: contain; }
         .hero-image img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
-        .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
-        .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: rgba(255,255,255,0.9); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
+        .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--sm-color-text) 30%, transparent) 100%); pointer-events: none; }
+        .hero-image-label { position: absolute; bottom: 2rem; left: 2rem; color: var(--sm-color-text-inverse); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 2; }
         .floating-badge { position: absolute; bottom: -30px; right: -30px; width: 140px; height: 140px; background-color: var(--color-accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; animation: float 4s ease-in-out infinite; z-index: 3; }
         .floating-badge span { font-family: var(--font-display); font-size: 2rem; font-weight: 300; }
         .floating-badge small { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
@@ -295,8 +298,8 @@
         .categories { padding: 6rem 2rem; }
         .categories-container { max-width: 1200px; margin: 0 auto; }
         .categories-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-        .category-card { border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; }
-        .category-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
+        .category-card { border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 8%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; }
+        .category-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px color-mix(in srgb, var(--sm-color-text) 12%, transparent); }
         .category-image { aspect-ratio: 1/1; overflow: hidden; background: white; }
         .category-image svg, .category-image img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s ease; }
         .category-card:hover .category-image svg, .category-card:hover .category-image img { transform: scale(1.05); }
@@ -308,13 +311,13 @@
         /* About Section */
         .about { padding: 6rem 2rem; background: linear-gradient(180deg, var(--color-warm) 0%, var(--color-cream) 100%); }
         .about-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; }
-        .about-image { aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); background: white; }
+        .about-image { aspect-ratio: 4/5; border-radius: 6px; overflow: hidden; box-shadow: 0 20px 60px color-mix(in srgb, var(--sm-color-text) 10%, transparent); background: white; }
         .about-image svg, .about-image img { width: 100%; height: 100%; object-fit: contain; }
         .about-content h2 { margin-bottom: 1.5rem; }
         .about-text { font-size: 1.1rem; line-height: 1.9; margin-bottom: 1.5rem; }
         .values-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem; }
         .value-item { padding: 1.25rem; background: white; border-radius: 6px; transition: transform 0.3s, box-shadow 0.3s; }
-        .value-item:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .value-item:hover { transform: translateY(-4px); box-shadow: 0 10px 30px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .value-item h3 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.25rem; }
         .value-item p { font-size: 0.9rem; }
 
@@ -324,38 +327,38 @@
         .process-header { text-align: center; margin-bottom: 3rem; }
         .process-header .section-label { color: var(--color-accent-light); }
         .process-header h2 { color: var(--color-cream); }
-        .process-header p { color: rgba(255,255,255,0.7); }
+        .process-header p { color: var(--sm-color-text-inverse-muted); }
 
         /* Timeline Calculator */
-        .timeline-calculator { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 2rem; margin-bottom: 3rem; text-align: center; }
+        .timeline-calculator { background: color-mix(in srgb, var(--sm-color-bg-surface) 8%, transparent); border-radius: 8px; padding: 2rem; margin-bottom: 3rem; text-align: center; }
         .timeline-calculator h3 { font-size: 1.3rem; color: var(--color-cream); margin-bottom: 0.5rem; }
-        .timeline-calculator p { color: rgba(255,255,255,0.6); margin-bottom: 1.5rem; font-size: 0.95rem; }
+        .timeline-calculator p { color: var(--sm-color-text-inverse-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
         .timeline-result { display: flex; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; }
         .timeline-date { display: flex; flex-direction: column; align-items: center; }
         .timeline-date .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent-light); margin-bottom: 0.25rem; }
         .timeline-date .date { font-family: var(--font-display); font-size: 1.5rem; color: white; }
         .timeline-arrow { width: 60px; height: 2px; background: var(--color-accent); position: relative; }
-        .timeline-arrow::after { content: '→'; position: absolute; right: -10px; top: -10px; color: var(--color-accent-dark); font-size: 1.2rem; }
+        .timeline-arrow::after { content: '→'; position: absolute; right: -10px; top: -10px; color: var(--sm-color-text-accent-inverse); font-size: 1.2rem; }
         .timeline-weeks { background: var(--color-accent); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; color: white; }
 
         /* Timeline Steps */
         .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
         .timeline::before { content: ''; position: absolute; top: 40px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%); }
         .timeline-step { text-align: center; padding: 0 1rem; cursor: pointer; }
-        .timeline-number { width: 80px; height: 80px; background: var(--color-stone); border: 2px solid var(--color-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-family: var(--font-display); font-size: 1.75rem; color: var(--color-accent-dark); position: relative; z-index: 1; transition: all 0.3s; }
+        .timeline-number { width: 80px; height: 80px; background: var(--color-stone); border: 2px solid var(--sm-color-text-accent-inverse); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-family: var(--font-display); font-size: 1.75rem; color: var(--sm-color-text-accent-inverse); position: relative; z-index: 1; transition: all 0.3s; }
         .timeline-step:hover .timeline-number, .timeline-step.active .timeline-number { background: var(--color-accent); color: white; transform: scale(1.1); }
         .timeline-step h4 { font-size: 1.1rem; color: var(--color-cream); margin-bottom: 0.5rem; }
-        .timeline-step p { font-size: 0.85rem; color: rgba(255,255,255,0.6); max-width: 200px; margin: 0 auto; }
-        .timeline-step .duration { display: inline-block; margin-top: 0.75rem; padding: 0.3rem 0.75rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.75rem; color: var(--color-accent-light); }
+        .timeline-step p { font-size: 0.85rem; color: var(--sm-color-text-inverse-muted); max-width: 200px; margin: 0 auto; }
+        .timeline-step .duration { display: inline-block; margin-top: 0.75rem; padding: 0.3rem 0.75rem; background: color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); border-radius: 20px; font-size: 0.75rem; color: var(--color-accent-light); }
 
         /* Timeline Detail Panel */
-        .timeline-detail { margin-top: 3rem; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 2rem; display: none; }
+        .timeline-detail { margin-top: 3rem; background: color-mix(in srgb, var(--sm-color-bg-surface) 5%, transparent); border-radius: 8px; padding: 2rem; display: none; }
         .timeline-detail.active { display: block; animation: fadeIn 0.4s ease; }
         .timeline-detail h4 { font-size: 1.3rem; color: var(--color-cream); margin-bottom: 1rem; }
         .timeline-detail-content { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
-        .timeline-detail p { color: rgba(255,255,255,0.7); line-height: 1.8; margin-bottom: 1rem; }
+        .timeline-detail p { color: var(--sm-color-text-inverse-muted); line-height: 1.8; margin-bottom: 1rem; }
         .timeline-detail ul { list-style: none; }
-        .timeline-detail li { color: rgba(255,255,255,0.7); padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+        .timeline-detail li { color: var(--sm-color-text-inverse-muted); padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
         .timeline-detail li::before { content: '✓'; position: absolute; left: 0; color: var(--color-accent-light); }
 
         /* Testimonials Section */
@@ -363,7 +366,7 @@
         .testimonials-container { max-width: 1100px; margin: 0 auto; }
         .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
         .testimonial-card { background: var(--color-cream); border-radius: 8px; padding: 2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .testimonial-stars { display: flex; gap: 2px; margin-bottom: 1rem; }
         .testimonial-quote { font-family: var(--font-display); font-size: 1.1rem; color: var(--color-stone); line-height: 1.6; font-style: italic; margin-bottom: 1.5rem; }
         .testimonial-author { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 1rem; }
@@ -378,9 +381,9 @@
         .faq-tab:hover { border-color: var(--color-accent); }
         .faq-tab.active { background: var(--color-accent); color: white; border-color: var(--color-accent); }
         .faq-list { display: flex; flex-direction: column; gap: 0.75rem; }
-        .faq-item { background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .faq-item { background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .faq-question { padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
-        .faq-question:hover { background: rgba(139,115,85,0.05); }
+        .faq-question:hover { background: color-mix(in srgb, var(--sm-color-text-accent) 5%, transparent); }
         .faq-question h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-stone); margin: 0; }
         .faq-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--color-warm); display: flex; align-items: center; justify-content: center; transition: transform 0.3s, background 0.3s; flex-shrink: 0; margin-left: 1rem; }
         .faq-icon svg { width: 12px; height: 12px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
@@ -392,8 +395,8 @@
 
         /* Memorial Care Guide Teaser */
         .care-guide { padding: 4rem 2rem; background: var(--color-warm); }
-        .care-guide-container { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 3rem; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
-        .care-guide-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .care-guide-container { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 3rem; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
+        .care-guide-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--sm-color-text-accent), var(--sm-color-text-accent-strong)); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .care-guide-icon svg { width: 36px; height: 36px; stroke: white; fill: none; stroke-width: 1.5; }
         .care-guide-content { flex: 1; }
         .care-guide-content h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
@@ -402,13 +405,13 @@
         .care-guide-btn:hover { background: var(--color-stone); }
 
         /* Grief Resources */
-        .grief-resources { padding: 5rem 2rem; background: linear-gradient(135deg, #f9f7f4 0%, #f5f2ed 100%); }
+        .grief-resources { padding: 5rem 2rem; background: linear-gradient(135deg, var(--sm-color-bg) 0%, var(--sm-color-bg) 100%); }
         .grief-container { max-width: 1000px; margin: 0 auto; text-align: center; }
         .grief-container h2 { margin-bottom: 1rem; font-size: 1.8rem; }
         .grief-container > p { max-width: 600px; margin: 0 auto 2rem; }
         .grief-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
         .grief-card { background: white; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
-        .grief-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .grief-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .grief-card svg { width: 40px; height: 40px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; margin-bottom: 1rem; }
         .grief-card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
         .grief-card p { font-size: 0.9rem; margin-bottom: 1rem; }
@@ -429,11 +432,11 @@
         .appt-group { display: flex; flex-direction: column; gap: 0.4rem; }
         .appt-group label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
         .appt-group input, .appt-group select, .appt-group textarea { padding: 0.8rem 1rem; border: 1.5px solid var(--color-border); border-radius: 8px; font-family: var(--font-body); font-size: 0.95rem; background: white; transition: border-color 0.3s; }
-        .appt-group input:focus, .appt-group select:focus, .appt-group textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(139,115,85,0.08); }
-        .appt-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; cursor: pointer; }
+        .appt-group input:focus, .appt-group select:focus, .appt-group textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sm-color-text-accent) 8%, transparent); }
+        .appt-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; cursor: pointer; }
         .appt-group textarea { min-height: 80px; resize: vertical; }
         .appt-submit { width: 100%; padding: 1rem; margin-top: 1rem; background: var(--color-accent); color: white; border: none; border-radius: 8px; font-family: var(--font-body); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .appt-submit:hover { background: var(--color-stone); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,44,44,0.2); }
+        .appt-submit:hover { background: var(--color-stone); transform: translateY(-2px); box-shadow: 0 6px 20px color-mix(in srgb, var(--sm-color-text) 20%, transparent); }
         .appt-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .appt-submit svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
         .appt-success { display: none; text-align: center; padding: 2rem; }
@@ -443,29 +446,29 @@
         @media (max-width: 768px) { .appt-row { grid-template-columns: 1fr; } }
 
         .contact-cta { padding: 6rem 2rem; background: var(--color-stone); text-align: center; position: relative; overflow: hidden; }
-        .contact-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(139,115,85,0.15) 0%, transparent 50%); }
+        .contact-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, color-mix(in srgb, var(--sm-color-text-accent) 15%, transparent) 0%, transparent 50%); }
         .contact-cta-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
         .contact-cta h2 { color: var(--color-cream); margin-bottom: 1rem; }
-        .contact-cta p { color: rgba(255,255,255,0.7); font-size: 1.1rem; margin-bottom: 2rem; }
+        .contact-cta p { color: var(--sm-color-text-inverse-muted); font-size: 1.1rem; margin-bottom: 2rem; }
         .contact-cta .btn { margin: 0 0.5rem; }
-        .contact-cta .gentle-message { margin-top: 2rem; font-size: 0.9rem; color: rgba(255,255,255,0.5); font-style: italic; }
+        .contact-cta .gentle-message { margin-top: 2rem; font-size: 0.9rem; color: var(--sm-color-text-inverse-muted); font-style: italic; }
 
         /* Footer */
-        footer { padding: 1.75rem 2rem 1.25rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
+        footer { padding: 1.75rem 2rem 1.25rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem 2rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-contact { font-size: 0.85rem; line-height: 1.5; margin-top: 0.4rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.6rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: var(--sm-color-text-inverse-muted); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
-        .footer-contact-sep { color: rgba(255,255,255,0.25); }
+        .footer-contact-sep { color: var(--sm-color-text-inverse-muted); }
         @media (hover: none) and (pointer: coarse) {
             .footer-contact a { display: inline-block; min-height: 44px; padding: 0.6rem 0; line-height: 1.2; }
         }
         .footer-links { display: flex; gap: 0.5rem 1rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; display: inline-flex; align-items: center; min-height: 32px; padding: 0 0.25rem; }
+        .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; transition: color 0.2s; display: inline-flex; align-items: center; min-height: 32px; padding: 0 0.25rem; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); }
         /* Recent Installations Marquee */
         .installations { padding: 5rem 0 6rem; background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-warm) 100%); overflow: hidden; position: relative; }
         .installations .section-header { padding: 0 2rem; }
@@ -474,16 +477,16 @@
         .installations-marquee.dragging { cursor: grabbing; }
         .installations-marquee:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; border-radius: 4px; }
         .installations-track { display: flex; gap: 1.5rem; width: max-content; will-change: transform; }
-        .install-card { flex: 0 0 320px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; }
-        .install-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.1); }
-        .install-image { aspect-ratio: 4/3; background: linear-gradient(180deg, #e8e4dd 0%, #d4cfc6 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .install-card { flex: 0 0 320px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; }
+        .install-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px color-mix(in srgb, var(--sm-color-text) 10%, transparent); }
+        .install-image { aspect-ratio: 4/3; background: linear-gradient(180deg, var(--sm-color-bg-panel-quiet) 0%, var(--sm-color-bg-panel) 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .install-image img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         .install-info { padding: 1.1rem 1.25rem 1.25rem; }
         .install-customer { font-family: var(--font-display); font-size: 1.15rem; color: var(--color-stone); margin-bottom: 0.25rem; }
         .install-cemetery { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-accent-dark); }
         .install-cemetery svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; flex-shrink: 0; }
-        .install-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.92); border: 1px solid var(--color-border); font-family: var(--font-display); font-size: 1.6rem; line-height: 1; color: var(--color-stone); cursor: pointer; z-index: 3; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.08); transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; padding: 0; }
-        .install-nav:hover { background: white; transform: translateY(-50%) scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .install-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--sm-color-bg-surface) 92%, transparent); border: 1px solid var(--color-border); font-family: var(--font-display); font-size: 1.6rem; line-height: 1; color: var(--color-stone); cursor: pointer; z-index: 3; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px color-mix(in srgb, var(--sm-color-text) 8%, transparent); transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; padding: 0; }
+        .install-nav:hover { background: white; transform: translateY(-50%) scale(1.05); box-shadow: 0 6px 20px color-mix(in srgb, var(--sm-color-text) 12%, transparent); }
         .install-nav:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
         .install-nav.prev { left: 0.5rem; }
         .install-nav.next { right: 0.5rem; }
@@ -491,7 +494,7 @@
         @media (prefers-reduced-motion: reduce) { .install-card { transition: none; } }
 
         /* Scroll to Top */
-        .scroll-top { position: fixed; bottom: 2rem; left: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .scroll-top { position: fixed; bottom: 2rem; left: 2rem; width: 48px; height: 48px; background: var(--color-stone); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s; z-index: 50; box-shadow: 0 4px 15px color-mix(in srgb, var(--sm-color-text) 20%, transparent); }
         .scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
         .scroll-top:hover { background: var(--color-accent); transform: translateY(-3px); }
         .scroll-top svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
@@ -557,17 +560,17 @@
         .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
 
         /* Search Overlay */
-        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
         .search-overlay.active { opacity: 1; visibility: visible; }
 
         /* Search Modal */
-        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .search-modal.active { transform: translateY(0); }
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #767676; }
+        .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -677,15 +680,15 @@
 <body class="page-transition">
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    height="0" width="0" class="sm-gtm-noscript" ></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <nav id="navbar">
         <a href="/" class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
-            Sears Melvin <span>Memorials</span>
+            <picture>
+                <source media="(max-width: 768px) and (min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-ink.svg">
+                <source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg">
+                <img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66">
+            </picture>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
             <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
@@ -1239,7 +1242,7 @@
             <p>Whether you're ready to start or just have questions, we're here to help. No pressure, no obligation—just honest guidance when you need it.</p>
             <div>
                 <a href="/contact" class="btn btn-accent">Request a Quote</a>
-                <a href="/memorials" class="btn btn-secondary" style="border-color: rgba(255,255,255,0.3); color: white;">Browse Memorials</a>
+                <a href="/memorials" class="sm-cta-on-ink btn btn-secondary" >Browse Memorials</a>
             </div>
             <p class="gentle-message">Take your time. We're here when you're ready.</p>
         </div>
@@ -1256,7 +1259,7 @@
                     <span class="footer-contact-sep" aria-hidden="true">·</span>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
                     <span class="footer-contact-sep" aria-hidden="true">·</span>
-                    <span>North London — By appointment</span>
+                    <span>North London — By appointment</span><span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">10am to 3pm</span>
                 </div>
             </div>
             <ul class="footer-links">
@@ -1273,9 +1276,9 @@
                 <li><a href="/privacy">Privacy</a></li>
             </ul>
             <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.5;width:100%;text-align:center;margin-top:0.4rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            <p class="sm-footer-legal-tight footer-legal" >Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
             <!-- Professional Memberships -->
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;width:100%;margin-top:0.75rem;"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
+            <div class="sm-accred-tight footer-accreditations" ><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
         </div>
     </footer>
 
@@ -1296,7 +1299,7 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+            <button class="sm-bare-btn mobile-nav-item" onclick="openSearch()" >
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <span>Search</span>
             </button>
@@ -1520,7 +1523,7 @@
                         var imageUrl = product ? homepageImageUrl(product.image_url) : '';
                         var imageHtml = imageUrl
                             ? '<img src="' + homepageEsc(imageUrl) + '" alt="' + homepageEsc(cat.name) + '" loading="lazy">'
-                            : '<div style="width:100%;height:100%;background:linear-gradient(145deg,#e8e4dd,#d4cfc6);"></div>';
+                            : '<div style="width:100%;height:100%;background:linear-gradient(145deg,var(--sm-color-bg-panel-quiet),var(--sm-color-bg-panel));"></div>';
                         var hasGuidePrice = Boolean(categoryMinPrice[cat.slug]);
                         var price = hasGuidePrice
                             ? 'From £' + Number(categoryMinPrice[cat.slug]).toLocaleString()
@@ -1752,12 +1755,12 @@
         });
     </script>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+<div id="cookieConsent" class="sm-cookie" >
+    <div class="sm-cookie-bar" >
+        <p class="sm-cookie-copy" >We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" class="sm-cookie-link" >privacy policy</a>.</p>
+        <div class="sm-cookie-actions" >
+            <button onclick="acceptCookies()" class="sm-cookie-btn" >Accept</button>
+            <button onclick="declineCookies()" class="sm-cookie-btn" >Decline</button>
         </div>
     </div>
 </div>

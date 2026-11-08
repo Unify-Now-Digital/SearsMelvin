@@ -12,6 +12,8 @@
 
 const EXACT = new Set([
   "/claude.md",
+  "/agents.md",
+  "/brand.md",
   "/seo-action-plan.md",
   "/readme.md",
   "/sears-melvin-readme.md",

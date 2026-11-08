@@ -6,7 +6,7 @@ import { pageProblems, parseGtm, requiredTagProblems, driftProblems, GTM_ID } fr
 
 const html = (f) => readFileSync(f, "utf8");
 const publicPages = execSync("git ls-files '*.html'").toString().split("\n").filter(Boolean)
-  .filter((f) => !["404.html", "admin.html", "admin-products.html"].includes(f));
+  .filter((f) => !["404.html", "admin.html", "admin-products.html", "styleguide.html"].includes(f));
 
 // 1. Every public page: GTM, chat hook, phone format, tel links show the number, no internal UTMs.
 for (const f of publicPages) {
