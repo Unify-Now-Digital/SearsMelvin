@@ -25,7 +25,7 @@
   </div>
 
   <div class="sg-frame">
-    <p class="sg-note"><strong>Public pages do not load these styles yet.</strong> The stacked logo is approved. Do not use a horizontal layout. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.</p>
+    <p class="sg-note"><strong>Public pages do not load these styles yet.</strong> The stacked logo with the side rules is the primary lock-up. Do not use a horizontal layout. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.</p>
 
     <div class="sg-intro" id="top">
       <span class="sm-label sm-label--accent">Design system · searsmelvin.co.uk</span>
@@ -347,28 +347,40 @@
       <p class="sg-lead">A linen header with an ink logo and menu. Ink is for the footer and the primary buttons. The live header does not change in this phase. The logo is shown here only.</p>
 
       <h3 class="sg-h3" id="logo">Stacked logo. Approved.</h3>
-      <p class="sg-lead">The approved lock-up is stacked, Cormorant 500, with no side rules. Do not use a horizontal layout. Do not draw it narrower than 240px. The dashed box is the clear space. It equals the cap height of the S, on all sides.</p>
+      <p class="sg-lead">Use the logo with rules by default, including the site header on desktop and tablet. It is stacked, Cormorant 500. Do not use a horizontal layout. Do not draw it narrower than 240px. Switch to the no-rules file only below 262px at 1× or below 131px at 2×, where the rules would be thinner than about 1px or would fade. At 375px the rules stay crisp at 1× and at 2×. The dashed box is the clear space. It equals the cap height of the S, on all sides.</p>
+      <div class="sg-scroll" id="logo-compare">
+        <div class="sg-row">
+          <div class="sg-lockup sm-surface--linen">
+            <img id="logo-rules-375" class="sg-logo-375" src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="375" height="95">
+            <span class="sg-cap">Use with rules</span>
+          </div>
+          <div class="sg-lockup sm-surface--linen">
+            <img class="sg-logo-375" src="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg" alt="Sears Melvin Memorials" width="375" height="95">
+            <span class="sg-cap">Fallback: no rules (small sizes only)</span>
+          </div>
+        </div>
+      </div>
       <div class="sg-scroll">
         <div class="sg-row">
           <div class="sg-lockup sm-surface--linen">
             <div class="sm-logo-clear sm-logo-clear--stacked">
-              <img id="logo-ink-240" class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+              <img id="logo-ink-240" class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="240" height="61">
             </div>
-            <span class="sg-cap">Ink on linen. Approved. Minimum width 240px.</span>
+            <span class="sg-cap">Ink on linen. Minimum width 240px. On a 1× screen this is below 262px, so use the no-rules file.</span>
           </div>
           <div class="sg-lockup sm-surface--linen">
-            <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-bronze-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
-            <span class="sg-cap">Bronze on linen. Approved.</span>
+            <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-bronze.svg" alt="Sears Melvin Memorials" width="240" height="61">
+            <span class="sg-cap">Bronze on linen. Use with rules at 262px and above on a 1× screen.</span>
           </div>
           <div class="sg-lockup sm-surface--ink">
             <div class="sm-logo-clear sm-logo-clear--stacked">
-              <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+              <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="240" height="61">
             </div>
             <span class="sg-cap">Soft bronze on ink. Use this on the footer. Do not put soft bronze on linen.</span>
           </div>
         </div>
       </div>
-      <p class="sg-cap">These are the weight-500 masters, with no side rules. PNG fallbacks at 400px and 800px sit beside each SVG.</p>
+      <p class="sg-cap">PNG fallbacks at 400px and 800px sit beside each SVG, for both the rules files and the no-rules files.</p>
 
       <h3 class="sg-h3" id="favicons">Favicons and app icons</h3>
       <p class="sg-lead">Ink on linen is the default. Soft bronze on ink is the dark alternative. These files are shown here only. Live pages still use <code>/favicon.svg</code>.</p>
@@ -416,7 +428,7 @@
         <h3 class="sg-h3">Header · desktop</h3>
         <div class="sg-scroll"><div class="sg-desk">
           <header class="sm-header">
-            <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+            <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="240" height="61">
             <ul class="sm-nav">
               <li><a href="#cards" aria-current="page">Memorials</a></li>
               <li><a href="#header">About</a></li>
@@ -430,13 +442,13 @@
             </div>
           </header>
         </div></div>
-        <span class="sg-cap">Linen ground and a 1px sand rule. The stacked logo stays at 240px. Nav is DM Sans 500, 15px, ink. The current page gets a bronze underline. Keep <code>#navbar</code>, <code>.nav-links</code> and <code>#shortlistNavBtn</code> on the live header.</span>
+        <span class="sg-cap">Linen ground and a 1px sand rule. The header uses the logo with rules, at the 240px minimum. Below 262px on a 1× screen, use the no-rules file. Nav is DM Sans 500, 15px, ink. The current page gets a bronze underline. Keep <code>#navbar</code>, <code>.nav-links</code> and <code>#shortlistNavBtn</code> on the live header.</span>
       </div>
       <p class="sg-cap sg-narrow-note">The wide header and footer are in the 1280 view. Below that, use the compact samples.</p>
 
       <h3 class="sg-h3">Header · narrow, with bottom bar</h3>
       <header class="sm-header sm-header--mobile">
-        <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+        <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="240" height="61">
         <span class="sg-spacer"></span>
         <button class="sm-iconbtn sm-iconbtn--plain" type="button" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
         <button class="sm-iconbtn" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
@@ -453,7 +465,7 @@
           <footer class="sm-footer">
             <div class="sm-footer__top">
               <div>
-                <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+                <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="240" height="61">
                 <p class="sg-footer-gap">Showroom phone <a href="tel:+442038352548">020 3835 2548</a></p>
                 <p><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a></p>
                 <p class="sm-muted">North London memorial mason</p>
@@ -493,7 +505,7 @@
         <footer class="sm-footer sm-footer--mobile">
           <div class="sm-footer__top">
             <div>
-              <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61">
+              <img class="sm-logo sm-logo--stacked" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="240" height="61">
               <p class="sg-footer-gap">Showroom phone <a href="tel:+442038352548">020 3835 2548</a></p>
               <p><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a></p>
             </div>

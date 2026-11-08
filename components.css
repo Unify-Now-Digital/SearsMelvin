@@ -886,7 +886,8 @@
   border: 7px solid var(--sm-color-success);
 }
 
-/* Logo files. Stacked only. Cormorant 500. No side rules. Do not redraw the logo in CSS.
+/* Logo files. Stacked only. Cormorant 500. Primary file has the side rules.
+   The no-rules file is the small-size fallback. Do not redraw the logo in CSS.
    -------------------------------------------------------------------------- */
 .sm-logo {
   display: block;

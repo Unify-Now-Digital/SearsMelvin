@@ -435,6 +435,12 @@ body.sg-is-mobile .sg-frame {
   padding: var(--sm-space-5);
 }
 
+.sg-logo-375 {
+  display: block;
+  height: auto;
+  width: 375px;
+}
+
 .sg-favicon-set {
   align-items: end;
   display: flex;

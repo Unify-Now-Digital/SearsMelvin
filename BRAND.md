@@ -77,7 +77,7 @@ The brand is warm, calm, and clear.
 3. Headings use Cormorant Garamond. Body, prices, and buttons use DM Sans.
 4. Corners are 2px.
 5. Buttons use sentence case.
-6. The stacked logo is approved. It is Cormorant Garamond 500, with no side rules. Show it on `/styleguide` only, until a later phase changes the live header. Do not use a horizontal layout.
+6. The stacked logo is approved. It is Cormorant Garamond 500, with the thin rules beside MEMORIALS. Use that file by default, including the site header on desktop and tablet. The no-rules file is only for small sizes where the rules fade. Show the logo on `/styleguide` only, until a later phase changes the live header. Do not use a horizontal layout.
 7. The shortlist heart is square.
 8. Do not use an arched photo frame.
 9. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.
@@ -382,7 +382,7 @@ Chips (filters):
 This is the target header. Do not put it on the live pages in this phase.
 
 1. Ground is linen. Add a 1px sand rule under it.
-2. The stacked logo and the nav are ink. The logo is at least 240px wide.
+2. The stacked logo and the nav are ink. The logo is at least 240px wide. Use the logo with rules. On a 1× screen, switch to the no-rules file below 262px. On a 2× screen, switch below 131px.
 3. Desktop height is 80px. Mobile height is 68px.
 4. Nav links are DM Sans 500 at 15px. Hover and the current page use a bronze underline.
 5. The phone action is `sm-btn--call`. “Get a quote” is the one primary button.
@@ -448,21 +448,25 @@ Keep these live classes when you later change the real footer: `.footer-containe
 
 ## 17. Logo
 
-The approved logo is the stacked lock-up. It is Cormorant Garamond 500. It has no side rules. Arin approved it on 8 November 2026. The master files are the weight-500 no-rules exports.
+The approved logo is the stacked lock-up. It is Cormorant Garamond 500, with the thin rules beside MEMORIALS. Arin approved the rules on 8 November 2026. Use this file by default, including the site header on desktop and tablet.
 
-1. Use `/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg` on linen, or `/images/brand/logo/sears-melvin-stacked-bronze-no-rules.svg` on linen.
-2. Use `/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg` on ink.
+1. Use `/images/brand/logo/sears-melvin-stacked-ink.svg` on linen, or `/images/brand/logo/sears-melvin-stacked-bronze.svg` on linen.
+2. Use `/images/brand/logo/sears-melvin-stacked-soft-bronze.svg` on ink.
 3. Do not draw the stacked logo narrower than 240px. Check that the 500 weight still reads at that width.
 4. Leave clear space on all sides. The clear space is the cap height of the S.
 5. Show the logo on `/styleguide` only, until the header phase changes the live header.
 6. Do not redraw the logo in CSS.
 
+The no-rules files are the small-size fallback only: `sears-melvin-stacked-ink-no-rules.svg`, `sears-melvin-stacked-bronze-no-rules.svg`, and `sears-melvin-stacked-soft-bronze-no-rules.svg`, each with a 400px PNG and an 800px PNG. Switch to that file only where the rules would render thinner than about 1px or would fade.
+
+The rules are a 1-by-42 unit stroke in a viewBox 261.742 units wide. Measured in headless Chrome on linen, by the ink coverage of the left rule in the rendered PNG: the rule is one full-ink device pixel at 262px wide on a 1× screen and at 131px wide on a 2× screen. Below those widths the darkest pixel falls to about half strength and the line fades. At 240px on a 1× screen the rule is about 0.9px and faded, so use the no-rules file even though 240px is still the minimum width. At 240px on a 2× screen the rule is about 1.8 device pixels and stays full ink, so keep the rules.
+
+At 375px the rules stay. They measure about 1.4 device pixels at 1× and about 2.9 device pixels at 2×, both at full ink. Keep the rules at that width, including a 375px mobile header when the logo itself is drawn at 375px.
+
 Do not use a horizontal layout.
 
 1. Do not add a horizontal logo file.
 2. Do not show a horizontal logo on a page or on `/styleguide`.
-
-Do not use side rules. Rules are not approved.
 
 The `source-exact` pack is an archive. Do not use it as the master.
 
@@ -477,7 +481,7 @@ Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. T
 ### Don’t
 
 1. Do not shrink the logo below 240px.
-2. Do not add side rules to the logo.
+2. Do not use the no-rules file where the rules still read. That is 262px and above at 1×, and 131px and above at 2×.
 3. Do not use a horizontal layout.
 4. Do not put soft bronze on linen. It fails contrast.
 5. Do not put the logo or the new favicon in the live header in this phase.
