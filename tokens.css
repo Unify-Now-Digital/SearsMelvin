@@ -13,8 +13,10 @@
    Arin, 8 November 2026:
    1. No arched photo frames.
    2. The shortlist heart is square (2px corners).
-   3. The wordmark is approved. Show it on /styleguide only for now.
-   4. Opening hours and the showroom phone are TBC. Do not invent them.
+   3. The stacked logo is approved. The horizontal logo is pending Arin.
+      Show the logo on /styleguide only for now.
+   4. Opening hours: 10am to 3pm (days TBC).
+      Showroom phone: 020 3835 2548. Keep that number as one unbroken string.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -167,6 +169,13 @@
   --sm-control-height: 48px;
   --sm-header-height: 80px;
   --sm-header-height-mobile: 68px;
+
+  /* Logo artwork. Minimum sizes. Do not draw the logo smaller than these. */
+  --sm-logo-min-stacked: 240px;
+  --sm-logo-min-horizontal: 320px;
+  /* Clear space is the cap height of the S, as a share of the logo width. */
+  --sm-logo-clear-stacked: 0.1325;
+  --sm-logo-clear-horizontal: 0.0873;
 }
 
 @media (min-width: 769px) {

@@ -18,7 +18,55 @@ Write in short sentences. Use the words in this book.
 8. The check reports raw colours in the old CSS. It does not fail on those files yet.
 9. Do not link `tokens.css` or `components.css` from an existing page until a later phase says so. The public pages must stay as they are.
 10. `/styleguide` is the visual reference. It is `noindex`. It does not load Tag Manager. It is not in the sitemap.
-11. Do not invent opening hours. Do not invent a showroom phone. Both are TBC.
+11. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548. Keep that number as one unbroken string.
+
+## Scope
+
+This book covers every Sears Melvin surface, brought in by phases.
+
+1. The public website.
+2. The customer portal.
+3. Quote PDFs.
+4. Emails.
+5. Ads.
+
+A later phase applies the book to each surface. Do not change a surface until that phase says so. This phase changes only the brand book, the tokens, the components, and `/styleguide`.
+
+## Approval
+
+1. Only Arin approves a brand change.
+2. A brand change updates this file in the same pull request.
+3. Do not ship a new colour, a new logo layout, or a new photography rule without that update.
+
+## Tone of voice
+
+Be calm and plain. Do not push a family.
+
+1. Write short sentences.
+2. Use the words a family already knows.
+3. Show the guide price. Say what it includes.
+4. Do not use an exclamation mark.
+5. Do not use hype.
+6. Do not make a claim you cannot prove.
+
+### Do
+
+1. Do write “Request a quote”.
+2. Do write “From £1,875, including lettering”.
+3. Do write “Time to choose, space to remember.”
+
+### Don’t
+
+1. Do not write “GET YOUR FREE QUOTE NOW!”.
+2. Do not write “Only £1,875 – amazing value!”.
+3. Do not write “Only 2 left” or “Hurry”.
+
+Words to avoid:
+
+1. deal
+2. hurry
+3. cheap
+4. best
 
 ## 2. The brand in one page
 
@@ -29,17 +77,10 @@ The brand is warm, calm, and clear.
 3. Headings use Cormorant Garamond. Body, prices, and buttons use DM Sans.
 4. Corners are 2px.
 5. Buttons use sentence case.
-6. The wordmark is approved. Show it on `/styleguide` only, until a later phase changes the live header.
+6. The stacked logo is approved. Show it on `/styleguide` only, until a later phase changes the live header. The horizontal logo is pending Arin.
 7. The shortlist heart is square.
 8. Do not use an arched photo frame.
-
-Tone:
-
-1. Be warm, patient, and clear.
-2. Do not rush a family.
-3. Do not use pressure. Do not write “Only 2 left” or “Hurry”.
-4. Show the guide price. Say what it includes, and what is extra.
-5. A sample line is “Time to choose, space to remember.”
+9. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.
 
 ## 3. Colours
 
@@ -119,7 +160,7 @@ Check contrast on the pairs you change. Record the result in the pull request.
 
 Load the faces once.
 
-1. Cormorant Garamond 500 and 600 for headings and the wordmark.
+1. Cormorant Garamond 500 and 600 for headings. The logo files are Cormorant 400.
 2. Cormorant Garamond italic 400 for a short quote.
 3. Cormorant Garamond 300 only at 32px or larger.
 4. DM Sans 400 for body text.
@@ -341,7 +382,7 @@ Chips (filters):
 This is the target header. Do not put it on the live pages in this phase.
 
 1. Ground is linen. Add a 1px sand rule under it.
-2. The wordmark and the nav are ink.
+2. The stacked logo and the nav are ink. The logo is at least 240px wide.
 3. Desktop height is 80px. Mobile height is 68px.
 4. Nav links are DM Sans 500 at 15px. Hover and the current page use a bronze underline.
 5. The phone action is `sm-btn--call`. “Get a quote” is the one primary button.
@@ -353,38 +394,38 @@ Keep these live hooks when you later change the real header: `#navbar`, `.mobile
 
 ### Do
 
-1. Match the fascia: linen ground, ink wordmark.
-2. Show the approved wordmark on `/styleguide` until the header phase.
+1. Match the fascia: linen ground, ink logo.
+2. Show the approved stacked logo on `/styleguide` until the header phase.
 
 ### Don’t
 
 1. Do not change the live header in a token or component pull request.
 2. Do not use an ink header. Ink is the footer and the primary button.
-3. Do not mark the wordmark as unfinished. It is approved.
+3. Do not use the horizontal logo until Arin approves it. Label it “Pending Arin”.
 
 ## 15. Footer
 
 1. Ground is ink. Text is linen.
 2. Secondary and legal text uses inverse muted, as a solid colour (8.2:1).
-3. The wordmark on ink is soft bronze.
+3. The stacked logo on ink is the soft-bronze file.
 4. Links are linen. Hover turns them soft bronze and adds an underline.
 5. Section headings are soft-bronze labels.
 6. You may show the showroom address: 1 The Market Place, Falloden Way, NW11 6LB.
-7. Opening hours are TBC. Write TBC. Do not guess a time.
-8. The showroom phone is TBC. Write TBC. Do not reuse another number as if it were the showroom line.
-9. The call number 020 3835 2548 is the existing sales line. It is not the showroom phone.
+7. Opening hours are 10am to 3pm (days TBC). Write that sentence. Do not invent the days.
+8. The showroom phone is 020 3835 2548. It is the active showroom landline. Write it as one unbroken string.
 
 Keep these live classes when you later change the real footer: `.footer-container`, `.footer-links`, `.footer-contact`, `.footer-legal`, `.footer-copy`.
 
 ### Do
 
 1. Use a solid muted colour for legal text.
-2. Leave hours and the showroom phone as TBC until Arin confirms them.
+2. Write the hours as 10am to 3pm (days TBC).
+3. Write the showroom phone as 020 3835 2548.
 
 ### Don’t
 
-1. Do not invent hours such as “9–5” or “by appointment” as if they were confirmed.
-2. Do not invent a showroom telephone number.
+1. Do not invent the days. The days stay TBC.
+2. Do not split the showroom phone into separate pieces.
 3. Do not set legal text in white at 45% opacity.
 
 ## 16. Quote panel
@@ -405,40 +446,66 @@ Keep these live classes when you later change the real footer: `.footer-containe
 1. Do not invent a family, a place, or a sentence.
 2. Do not colour the stars gold.
 
-## 17. Imagery and the logo
+## 17. Logo
 
-The approved logo is the stacked wordmark.
+Use the logo files in `/images/brand/logo/`. They are set in Cormorant Garamond 400. They have no side rules. Do not redraw the logo in CSS.
 
-1. “Sears Melvin” is Cormorant Garamond 600.
-2. “MEMORIALS” sits below, in DM Sans capitals, with wide letter-spacing.
-3. At about 200px wide and above, put a thin bronze rule on each side of “MEMORIALS”.
-4. Below about 200px, including a phone header, drop the rules.
-5. Do not draw the wordmark narrower than about 120px.
-6. On linen, the wordmark is ink and the rules are bronze.
-7. On ink, the wordmark and the rules are soft bronze.
-8. Show this wordmark on `/styleguide` only, until the header phase.
+The stacked layout is approved.
 
-Photos:
+1. On linen, use the ink file or the bronze file.
+2. On ink, use the soft-bronze file.
+3. Do not draw the stacked logo narrower than 240px.
+4. Leave clear space on all sides. The clear space is the cap height of the S.
+5. Show the logo on `/styleguide` only, until a later phase changes the live header.
 
-1. Put a memorial photo on white.
-2. Use `object-fit: contain`.
-3. Use 2px corners.
-4. Do not tint the stone.
-5. Do not use a curved or arched frame.
-6. Do not use a shopfront render as a live hero.
+The horizontal layout is pending Arin.
+
+1. Label it “Pending Arin” in this book and on `/styleguide`.
+2. Do not use it on a page until Arin approves it.
+3. Do not draw it narrower than 320px.
+4. Give it the same clear space: the cap height of the S, on all sides.
 
 ### Do
 
-1. Treat the wordmark as approved.
-2. Keep product photos faithful to the stone.
+1. Use the stacked ink logo on a linen header.
+2. Use the stacked soft-bronze logo on an ink footer.
+3. Keep the clear-space box visible on `/styleguide`.
 
 ### Don’t
 
-1. Do not add a label that calls the logo unfinished.
-2. Do not replace the wordmark with the old circular mark on the style guide.
-3. Do not put the new wordmark in the live header in this phase.
+1. Do not shrink the logo below 240px stacked or 320px horizontal.
+2. Do not add side rules to the logo.
+3. Do not put soft bronze on linen. It fails contrast.
+4. Do not put the logo in the live header in this phase.
 
-## 18. Motion and focus
+## 18. Photography
+
+DRAFT, pending Arin. Do not use this standard on a live page until Arin approves it.
+
+The reference image is `/images/brand/photo-standard.png`. Show that file on `/styleguide`.
+
+1. Use a 4:5 frame.
+2. The frame ground is linen. In CSS, use the token `--sm-color-bg`. Do not type the hex in a component.
+3. Centre the stone on a common baseline.
+4. Make the stone about 80% of the frame height.
+5. Add a soft ground shadow.
+6. Keep the whole memorial in the frame. A wide kerb set needs more side space.
+7. Keep the stone colour, the shape, and the surface detail.
+8. Clean the background only. Do not change the camera angle.
+9. Product cards keep the white photo well until this draft is approved.
+
+### Do
+
+1. Mark this section “DRAFT, pending Arin”.
+2. Keep the reference image uncropped.
+
+### Don’t
+
+1. Do not tint the stone.
+2. Do not crop a memorial with a curved top.
+3. Do not apply this frame to the live catalogue yet.
+
+## 19. Motion and focus
 
 1. Move colour and shadow. A hover lasts about 150ms. A card shadow lasts about 250ms.
 2. Do not lift a card.
@@ -447,7 +514,7 @@ Photos:
 5. The ring is bronze on linen, white, and sand. The ring is soft bronze on ink.
 6. Do not let a sticky bar cover a focused control.
 
-## 19. Names the tracking must keep
+## 20. Names the tracking must keep
 
 Visual work must not break measurement. When you add an `sm-` class, keep the old class beside it.
 
@@ -458,7 +525,7 @@ Visual work must not break measurement. When you add an `sm-` class, keep the ol
 5. Brochure links keep `data-brochure-source`. The brochure page keeps its email and download hooks.
 6. Do not load Tag Manager on `/styleguide`.
 
-## 20. How to change the system
+## 21. How to change the system
 
 Follow these steps.
 

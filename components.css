@@ -28,7 +28,9 @@
 .sm-select-wrap,
 .sm-textarea,
 .sm-check,
-.sm-wordmark,
+.sm-logo,
+.sm-logo-clear,
+.sm-photo-frame,
 .sm-header,
 .sm-nav,
 .sm-iconbtn,
@@ -884,105 +886,96 @@
   border: 7px solid var(--sm-color-success);
 }
 
-/* Wordmark. Approved. Rules drop under 200px.
+/* Logo files. Cormorant 400. No side rules. Do not redraw the logo in CSS.
    -------------------------------------------------------------------------- */
-.sm-wordmark {
-  align-items: center;
-  color: var(--sm-color-text);
-  display: inline-flex;
+.sm-logo {
+  display: block;
+  height: auto;
+}
+
+.sm-logo--stacked {
+  min-width: var(--sm-logo-min-stacked);
+  width: var(--sm-logo-min-stacked);
+}
+
+.sm-logo--horizontal {
+  min-width: var(--sm-logo-min-horizontal);
+  width: var(--sm-logo-min-horizontal);
+}
+
+.sm-logo-clear {
+  border: 1px dashed var(--sm-color-border-control);
+  box-sizing: border-box;
+  display: inline-block;
+}
+
+.sm-logo-clear--stacked {
+  padding: calc(var(--sm-logo-min-stacked) * var(--sm-logo-clear-stacked));
+}
+
+.sm-logo-clear--horizontal {
+  padding: calc(var(--sm-logo-min-horizontal) * var(--sm-logo-clear-horizontal));
+}
+
+.sm-surface--ink .sm-logo-clear {
+  border-color: var(--sm-color-focus-inverse);
+}
+
+/* Photography frame. Draft until Arin approves it.
+   -------------------------------------------------------------------------- */
+.sm-photo-frame {
+  aspect-ratio: 4 / 5;
+  background: var(--sm-color-bg);
+  box-sizing: border-box;
+  display: flex;
   flex-direction: column;
-  line-height: 1;
-  min-width: 120px;
-  text-decoration: none;
+  justify-content: flex-end;
+  overflow: hidden;
+  position: relative;
+  width: min(280px, 100%);
 }
 
-.sm-wordmark__name {
-  font-family: var(--sm-font-display);
-  font-size: 1.75rem;
-  font-weight: var(--sm-weight-display-strong);
-  letter-spacing: 0.01em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.sm-wordmark__sub {
-  align-items: center;
+.sm-photo-frame__stone {
+  align-items: flex-end;
+  align-self: center;
+  border: 1px solid var(--sm-color-border-control);
+  box-shadow: var(--sm-shadow-md);
+  box-sizing: border-box;
+  color: var(--sm-color-text-muted);
   display: flex;
   font-family: var(--sm-font-body);
-  font-size: 10px;
-  font-weight: var(--sm-weight-body-strong);
-  gap: 10px;
-  letter-spacing: 0.38em;
-  line-height: 1;
-  margin-top: 6px;
-  padding-left: 0.38em;
-  text-transform: uppercase;
-  width: 100%;
-}
-
-.sm-wordmark__sub::before,
-.sm-wordmark__sub::after {
-  background: var(--sm-color-rule-accent);
-  content: "";
-  flex: 1;
-  height: 1px;
-  min-width: 18px;
-}
-
-.sm-wordmark--compact .sm-wordmark__name {
-  font-size: 1.5rem;
-}
-
-.sm-wordmark--compact .sm-wordmark__sub {
-  font-size: 9px;
+  font-size: var(--sm-text-sm);
+  height: 80%;
   justify-content: center;
-  letter-spacing: 0.32em;
-  margin-top: var(--sm-space-1);
+  margin-bottom: var(--sm-space-4);
+  padding: var(--sm-space-3);
+  text-align: center;
+  width: 70%;
 }
 
-.sm-wordmark--compact .sm-wordmark__sub::before,
-.sm-wordmark--compact .sm-wordmark__sub::after {
-  display: none;
+.sm-photo-ref {
+  display: block;
+  height: auto;
+  max-width: 100%;
 }
 
-.sm-wordmark--inverse,
-.sm-footer a.sm-wordmark {
-  color: var(--sm-color-text-accent-inverse);
-}
-
-.sm-wordmark--inverse .sm-wordmark__sub::before,
-.sm-wordmark--inverse .sm-wordmark__sub::after {
-  background: var(--sm-color-rule-accent-inverse);
-}
-
-.sm-wordmark:focus-visible {
-  border-radius: var(--sm-radius-sm);
-  outline: var(--sm-focus-width) solid var(--sm-color-focus);
-  outline-offset: var(--sm-focus-offset);
-}
-
-.sm-surface--ink .sm-wordmark:focus-visible,
-.sm-footer .sm-wordmark:focus-visible {
-  outline-color: var(--sm-color-focus-inverse);
-}
-
-/* Header. Linen ground, ink wordmark and nav. Not on the live pages yet.
+/* Header. Linen ground, ink logo and nav. Not on the live pages yet.
    -------------------------------------------------------------------------- */
 .sm-header {
   align-items: center;
   background: var(--sm-color-bg);
   border-bottom: 1px solid var(--sm-color-border-decorative);
   display: flex;
-  gap: var(--sm-space-5);
-  height: var(--sm-header-height);
-  padding: 0 var(--sm-space-6);
+  flex-wrap: wrap;
+  gap: calc(var(--sm-logo-min-stacked) * var(--sm-logo-clear-stacked));
+  min-height: var(--sm-header-height);
+  padding: var(--sm-space-3) var(--sm-space-6);
   position: relative;
 }
 
 .sm-header--mobile {
-  gap: var(--sm-space-2);
-  height: var(--sm-header-height-mobile);
-  padding: 0 var(--sm-space-4);
+  min-height: var(--sm-header-height-mobile);
+  padding: var(--sm-space-3) var(--sm-space-4);
 }
 
 .sm-nav {
@@ -1119,12 +1112,6 @@
   color: var(--sm-color-link-inverse-hover);
   text-decoration: underline;
   text-underline-offset: 0.18em;
-}
-
-.sm-footer a.sm-wordmark,
-.sm-footer a.sm-wordmark:hover {
-  color: var(--sm-color-text-accent-inverse);
-  text-decoration: none;
 }
 
 .sm-footer .sm-muted {
