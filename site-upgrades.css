@@ -337,6 +337,19 @@ body.memorial-page .footer-contact a {
   padding: 0.35rem 0;
 }
 
+/* The named fallback in the type stack has no face of its own. A smaller
+   local serif keeps a heading on the same lines while Cormorant loads. */
+@font-face {
+  font-family: "Cormorant Fallback";
+  font-style: normal;
+  font-weight: 100 900;
+  src: local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times New Roman");
+  size-adjust: 95%;
+  ascent-override: 95%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
 /* ==========================================================================
    S2 — base type, sentence links, and focus.
    Header, footer, buttons, forms, cards, labels, prices and stars keep
@@ -459,7 +472,7 @@ html body a.nav-brochure {
   text-underline-offset: unset;
 }
 
-html body .nav-links a { color: var(--sm-color-text); }
+html body .nav-links a { color: var(--sm-color-text); padding-inline: 1px; }
 html body .nav-links a:hover,
 html body .nav-links a.active { color: var(--sm-color-text-accent-strong); }
 html body .nav-cta,
@@ -480,4 +493,22 @@ html body :is(a, button, input, select, textarea, summary, [tabindex]):focus-vis
 html body footer :is(a, button, input, select, textarea, summary):focus-visible,
 html body .save-toast :is(a, button):focus-visible {
   outline-color: var(--sm-color-focus-inverse) !important;
+}
+
+/* Component labels keep their size. The heading line-height was tightening the contact cards. */
+html body .contact-method-content h4,
+html body .reassurance h4 {
+  line-height: var(--sm-leading-body);
+}
+
+/* DM Sans 500 is a little narrower than the old 600 face. Keep the hit area. */
+html body .showroom-banner-link {
+  font-weight: var(--sm-weight-body-strong);
+  padding-inline: 2px;
+}
+@media (min-width: 769px) {
+  html body .nav-cta,
+  html body .nav-cta-dark {
+    padding-inline: calc(1.5rem + 2px);
+  }
 }

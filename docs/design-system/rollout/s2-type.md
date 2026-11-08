@@ -15,6 +15,7 @@ They load DM Sans 400 and 500.
 Both use `font-display: swap`.
 The pages already preconnect to the font hosts.
 DM Sans 600 is no longer requested. The brand does not use it.
+`Cormorant Fallback` is a local serif, scaled to 95%, so a heading keeps the same number of lines while Cormorant loads.
 
 ## Scale
 
@@ -42,3 +43,12 @@ The ring is bronze on a light ground (5.33:1 on linen, 3.72:1 on sand).
 The ring is soft bronze on ink (5.13:1).
 The outline does not change the box.
 A focused control keeps 8px of clear space under the sticky header.
+
+## Hit area
+
+DM Sans 500 is a little narrower than the old DM Sans 600 face.
+The showroom phone link gains 2px of horizontal padding.
+Desktop quote buttons gain 2px of horizontal padding.
+Nav links gain 1px of horizontal padding.
+The contact cards keep the body line-height on their titles, so the card does not get shorter.
+Header height stays within 8px of live.
