@@ -1,5 +1,5 @@
-// Design-system guards for Phase 2. The public pages must not load the new CSS.
-// /styleguide is noindex, has no Tag Manager, and is not in the sitemap.
+// Design-system guards. S1: public pages load tokens.css and no raw colour.
+// They do not load components.css. /styleguide is noindex and has no Tag Manager.
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { checkTokens, findRawColours, foreignComponentClasses } from "../scripts/check-tokens.mjs";
@@ -13,8 +13,10 @@ assert.deepEqual(foreignComponentClasses(".sm-btn { } .sg-frame { }"), ["sg-fram
 const result = checkTokens();
 assert.deepEqual(result.problems, [], result.problems.join("\n"));
 assert.equal(result.ok, true);
-assert.ok(result.legacyUnique > 0, "expected a legacy colour report");
-assert.ok(result.legacyHits >= result.legacyUnique);
+// Phase 2 required leftover hex (legacyUnique > 0). S1 removes it.
+// Zero is stricter. The link rule below is the only rule that flipped.
+assert.equal(result.legacyUnique, 0, "S1 leaves no raw colour outside tokens.css");
+assert.equal(result.legacyHits, 0);
 console.log(`check-tokens OK (legacy: ${result.legacyUnique} unique / ${result.legacyHits} hits in ${result.legacyFiles} files)`);
 
 const guide = read("styleguide.html");
@@ -83,7 +85,7 @@ assert.doesNotMatch(saveRule[0], /radius-round|radius-pill|50%|999px/);
 
 for (const file of readdirSync(".").filter((name) => name.endsWith(".html") && name !== "styleguide.html")) {
   const html = read(file);
-  assert.equal(html.includes("tokens.css"), false, `${file} must not link tokens.css yet`);
+  assert.match(html, /href="\/tokens\.css"/, `${file} must load tokens.css`);
   assert.equal(html.includes("components.css"), false, `${file} must not link components.css yet`);
   assert.equal(html.includes("styleguide.css"), false, `${file} must not link styleguide.css yet`);
   assert.equal(html.includes("/images/brand/logo/"), false, `${file} must not use the style-guide logo yet`);
@@ -129,6 +131,10 @@ const muted = token("--sm-ref-ink-muted");
 const inverse = token("--sm-ref-ink-inverse-muted");
 const error = token("--sm-ref-error");
 const success = token("--sm-ref-success");
+const warning = token("--sm-ref-warning");
+const warningSurface = token("--sm-ref-warning-surface");
+const successSurface = token("--sm-ref-success-surface");
+const errorSurface = token("--sm-ref-error-surface");
 
 const textPairs = [
   [ink, linen, 13.18],
@@ -149,6 +155,12 @@ const textPairs = [
   [error, white, 6.78],
   [success, linen, 5.62],
   [success, white, 5.91],
+  [warning, linen, 7.32],
+  [warning, white, 7.7],
+  [warning, sand, 5.12],
+  [warning, warningSurface, 6.68],
+  [success, successSurface, 5.15],
+  [error, errorSurface, 5.7],
 ];
 for (const [fg, bg, expected] of textPairs) {
   const got = ratio(fg, bg);

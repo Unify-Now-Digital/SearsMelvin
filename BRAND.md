@@ -15,8 +15,8 @@ Write in short sentences. Use the words in this book.
 5. You may write a colour’s hex in this book, so a person can read it. Do not copy that hex into any other file.
 6. Components use semantic tokens (`--sm-color-*`). They do not use primitives (`--sm-ref-*`).
 7. Run `node scripts/check-tokens.mjs` before you open a visual pull request. It must pass.
-8. The check reports raw colours in the old CSS. It does not fail on those files yet.
-9. Do not link `tokens.css` or `components.css` from an existing page until a later phase says so. The public pages must stay as they are.
+8. The check reports raw colours outside `tokens.css`. Stage S1 cleared the page CSS. The check does not fail on a leftover yet. That guard is a later stage.
+9. Public pages load `tokens.css` so the colour tokens resolve. Do not load `components.css` on a public page until a later stage.
 10. `/styleguide` is the visual reference. It is `noindex`. It does not load Tag Manager. It is not in the sitemap.
 11. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548. Keep that number as one unbroken string.
 
@@ -30,7 +30,7 @@ This book covers every Sears Melvin surface, brought in by phases.
 4. Emails.
 5. Ads.
 
-A later phase applies the book to each surface. Do not change a surface until that phase says so. This phase changes only the brand book, the tokens, the components, and `/styleguide`.
+Stage S1 maps colour on the public pages. Those pages load `tokens.css`. They do not load `components.css`. Later stages change type, buttons, and layout. Do not change a surface until its stage says so.
 
 ## Approval
 
@@ -101,8 +101,26 @@ Use these roles. Do not add a new colour without a change to this book and to `t
 | Quiet sand | #EFE8DE | A large quiet panel, when sand is too strong. |
 | Error | #9E3A2E | Form error only. |
 | Success | #3F6E4E | Form success only. |
+| Warning | #6B4E16 | Form and status warning text only. 7.32:1 on linen. 5.12:1 on sand. |
+| Error surface | #F8E8E6 | Error message ground. Error text on it is 5.70:1. |
+| Success surface | #E7F2EB | Success message ground. Success text on it is 5.15:1. |
+| Warning surface | #F8EED9 | Warning message ground. Warning text on it is 6.68:1. |
+| Ink hover | #463F37 | Hover for an ink fill, until the button stage. |
 
 Do not darken the brand bronze (#7A6449). Use dark bronze on sand instead.
+
+### Stone materials
+
+A stone swatch shows the granite or marble. It is not a brand colour. The hex lives on `--sm-color-material-*` in `tokens.css`. Use it only on a swatch. Do not use it for text, a button, or the page ground.
+
+### Third-party marks
+
+| Name | Hex | Token | Use |
+|---|---|---|---|
+| Google blue | #4285F4 | `--sm-color-mark-google` | The Google sign-in control only. |
+| RQMF navy | #292345 | `--sm-color-mark-rqmf` | The RQMF logo chip only. |
+
+These are not brand colours. Do not use them on a Sears Melvin button or heading.
 
 ### Do
 
@@ -145,6 +163,10 @@ Allowed text pairs:
 15. Ink muted on sand is 4.88:1.
 16. Error on linen is 6.45:1. Error on white is 6.78:1.
 17. Success on linen is 5.62:1. Success on white is 5.91:1.
+18. Warning on linen is 7.32:1. Warning on white is 7.70:1. Warning on sand is 5.12:1.
+19. Warning on the warning surface is 6.68:1.
+20. Success on the success surface is 5.15:1.
+21. Error on the error surface is 5.70:1.
 
 These pairs fail for small text. Do not use them for words:
 
