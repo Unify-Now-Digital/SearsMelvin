@@ -1,0 +1,207 @@
+/* ==========================================================================
+   Sears Melvin — Bronze & Linen (Version A) design tokens
+   Approved for the web, 8 November 2026. See BRAND.md.
+
+   This is the only file that may hold a raw colour value (hex, rgb, hsl).
+   Components use the semantic tokens (--sm-color-*), never the primitives
+   (--sm-ref-*) and never a raw colour.
+
+   Do not link this file from an existing page yet. The public pages must
+   stay as they are until a later phase. /styleguide is the only page that
+   loads it today.
+
+   Arin, 8 November 2026:
+   1. No arched photo frames.
+   2. The shortlist heart is square (2px corners).
+   3. The stacked logo is approved: Cormorant 500, with the side rules.
+      The no-rules file is only where those rules fade.
+      Do not use a horizontal layout. Show the logo on /styleguide only for now.
+   4. Opening hours: 10am to 3pm (days TBC).
+      Showroom phone: 020 3835 2548. Keep that number as one unbroken string.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tier 1 — Primitives. Brand values. Do not use these in components.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Brand palette */
+  --sm-ref-ink: #302C27;
+  --sm-ref-linen: #FBF9F5;
+  --sm-ref-bronze: #7A6449;
+  --sm-ref-sand: #DDD1C0;
+  --sm-ref-soft-bronze: #B19A7B;
+  --sm-ref-white: #FFFFFF;
+
+  /* Approved shades. Do not darken the brand bronze itself. */
+  --sm-ref-bronze-700: #6B5840; /* darker bronze, 6.45:1 on linen */
+  --sm-ref-bronze-800: #5A4A36; /* dark bronze: small text on sand, 5.66:1 */
+  --sm-ref-ink-muted: #5C554C; /* secondary text */
+  --sm-ref-ink-inverse-muted: #CFC6B8; /* secondary text on ink, 8.2:1 */
+  --sm-ref-sand-100: #EFE8DE; /* quiet large panel */
+  --sm-ref-ink-hover: #463F37; /* legacy ink hover only */
+
+  /* Form states only. Not brand colours. */
+  --sm-ref-error: #9E3A2E;
+  --sm-ref-success: #3F6E4E;
+
+  --sm-ref-font-serif: "Cormorant Garamond", "Cormorant Fallback", Georgia, "Times New Roman", serif;
+  --sm-ref-font-sans: "DM Sans", "DM Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Tier 2 — Semantic tokens. Use these in components and on the style guide.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --sm-color-bg: var(--sm-ref-linen);
+  --sm-color-bg-surface: var(--sm-ref-white);
+  --sm-color-bg-panel: var(--sm-ref-sand);
+  --sm-color-bg-panel-quiet: var(--sm-ref-sand-100);
+  --sm-color-bg-inverse: var(--sm-ref-ink);
+
+  /* Text */
+  --sm-color-text: var(--sm-ref-ink); /* 13.18 linen, 9.21 sand, 13.86 white */
+  --sm-color-text-muted: var(--sm-ref-ink-muted); /* 6.99 linen, 4.88 sand */
+  --sm-color-text-inverse: var(--sm-ref-linen); /* 13.18 on ink */
+  --sm-color-text-inverse-muted: var(--sm-ref-ink-inverse-muted); /* 8.2 on ink */
+  --sm-color-text-accent: var(--sm-ref-bronze); /* linen or white only: 5.33 / 5.61 */
+  --sm-color-text-accent-on-panel: var(--sm-ref-bronze-800); /* on sand: 5.66 */
+  --sm-color-text-accent-strong: var(--sm-ref-bronze-700); /* 6.45 on linen. Not the sand text colour. */
+  --sm-color-text-accent-inverse: var(--sm-ref-soft-bronze); /* on ink only: 5.13 */
+
+  /* Links */
+  --sm-color-link: var(--sm-ref-bronze);
+  --sm-color-link-hover: var(--sm-ref-ink);
+  --sm-color-link-on-panel: var(--sm-ref-bronze-800);
+  --sm-color-link-inverse: var(--sm-ref-linen);
+  --sm-color-link-inverse-hover: var(--sm-ref-soft-bronze);
+
+  /* Borders and rules */
+  --sm-color-border-decorative: var(--sm-ref-sand); /* dividers only, 1.43 on linen */
+  --sm-color-border-control: var(--sm-ref-bronze); /* inputs and outline buttons, 5.33 on linen */
+  --sm-color-border-strong: var(--sm-ref-ink);
+  --sm-color-border-inverse: color-mix(in srgb, var(--sm-ref-linen) 22%, var(--sm-ref-ink));
+  --sm-color-rule-accent: var(--sm-ref-bronze);
+  --sm-color-rule-accent-inverse: var(--sm-ref-soft-bronze);
+
+  /* Focus. Bronze fails on ink (2.47). Use soft bronze there. */
+  --sm-color-focus: var(--sm-ref-bronze);
+  --sm-color-focus-inverse: var(--sm-ref-soft-bronze);
+
+  /* Actions */
+  --sm-color-action-primary-bg: var(--sm-ref-ink);
+  --sm-color-action-primary-text: var(--sm-ref-linen); /* 13.18 */
+  --sm-color-action-primary-bg-hover: var(--sm-ref-bronze); /* linen text 5.33 */
+  --sm-color-action-secondary-border: var(--sm-ref-bronze);
+  --sm-color-action-secondary-text: var(--sm-ref-ink);
+  --sm-color-action-secondary-bg-hover: var(--sm-ref-sand); /* ink text 9.21 */
+  --sm-color-action-inverse-bg: var(--sm-ref-soft-bronze);
+  --sm-color-action-inverse-text: var(--sm-ref-ink); /* 5.13. Never linen (2.57). */
+  --sm-color-action-inverse-bg-hover: var(--sm-ref-linen);
+  --sm-color-action-disabled-bg: var(--sm-ref-sand);
+  --sm-color-action-disabled-text: var(--sm-ref-ink-muted); /* 4.88 on sand */
+
+  /* Status. Forms only. */
+  --sm-color-error: var(--sm-ref-error);
+  --sm-color-success: var(--sm-ref-success);
+
+  /* Typography */
+  --sm-font-display: var(--sm-ref-font-serif);
+  --sm-font-body: var(--sm-ref-font-sans);
+  --sm-weight-display-light: 300; /* 32px and larger only */
+  --sm-weight-display: 500;
+  --sm-weight-display-strong: 600;
+  --sm-weight-body: 400;
+  --sm-weight-body-strong: 500; /* buttons, prices, labels. Do not use 600 or 700. */
+
+  --sm-text-xs: 0.8125rem; /* 13px */
+  --sm-text-sm: 0.9375rem; /* 15px */
+  --sm-text-md: 1.0625rem; /* 17px body on small screens */
+  --sm-text-lg: 1.25rem; /* 20px */
+  --sm-text-card-title: 1.5rem; /* 24px */
+  --sm-text-quote: 1.375rem; /* 22px italic */
+  --sm-text-xl: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+  --sm-text-2xl: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+  --sm-text-3xl: clamp(2.25rem, 1.5rem + 3.2vw, 3.75rem);
+  --sm-text-price: 1.375rem;
+  --sm-text-price-lead: 1.75rem;
+  --sm-leading-tight: 1.15;
+  --sm-leading-snug: 1.35;
+  --sm-leading-body: 1.65;
+  --sm-measure: 68ch;
+  --sm-tracking-label: 0.25em;
+  --sm-tracking-label-compact: 0.14em;
+  --sm-tracking-heading: -0.01em;
+
+  /* Spacing. 4px base. */
+  --sm-space-1: 0.25rem;
+  --sm-space-2: 0.5rem;
+  --sm-space-3: 0.75rem;
+  --sm-space-4: 1rem;
+  --sm-space-5: 1.5rem;
+  --sm-space-6: 2rem;
+  --sm-space-7: 3rem;
+  --sm-space-8: 4rem;
+  --sm-space-9: 6rem;
+  --sm-gutter: clamp(1.25rem, 4vw, 4rem);
+
+  /* Corners are 2px. The shortlist heart is square. There is no arched frame. */
+  --sm-radius-none: 0;
+  --sm-radius-sm: 2px;
+  --sm-radius-md: 2px; /* cards use the same 2px corner */
+  --sm-radius: var(--sm-radius-sm);
+  --sm-radius-pill: 999px; /* not for new components */
+  --sm-radius-round: 50%; /* radio buttons only. Not the heart. Not photos. */
+
+  /* Shadows. Tinted with ink, not pure black. */
+  --sm-shadow-none: none;
+  --sm-shadow-sm: 0 1px 2px rgb(48 44 39 / 0.08);
+  --sm-shadow-md: 0 6px 20px rgb(48 44 39 / 0.10);
+  --sm-shadow-bar: 0 -2px 12px rgb(48 44 39 / 0.12);
+  --sm-shadow-press: inset 0 3px 0 rgb(48 44 39 / 0.28);
+
+  --sm-duration-fast: 150ms;
+  --sm-duration-base: 250ms;
+  --sm-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --sm-target-min: 44px;
+  --sm-focus-width: 2px;
+  --sm-focus-offset: 2px;
+  --sm-control-height: 48px;
+  --sm-header-height: 80px;
+  --sm-header-height-mobile: 68px;
+
+  /* Stacked logo only. Do not add a horizontal size. */
+  --sm-logo-min-stacked: 240px;
+  /* Clear space is the cap height of the S, as a share of the logo width. */
+  --sm-logo-clear-stacked: 0.1325;
+}
+
+@media (min-width: 769px) {
+  :root {
+    --sm-text-md: 1.125rem; /* 18px body on desktop */
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Legacy aliases. Not used by any page in this phase.
+   Do not link tokens.css from an existing page. These aliases would
+   recolour the live site. A later phase turns them on, on purpose.
+   -------------------------------------------------------------------------- */
+:root {
+  --color-stone: var(--sm-ref-ink);
+  --color-stone-light: var(--sm-ref-ink-hover);
+  --color-cream: var(--sm-ref-linen);
+  --color-warm: var(--sm-ref-sand);
+  --color-accent: var(--sm-ref-bronze);
+  --color-accent-dark: var(--sm-ref-bronze-700);
+  --color-accent-light: var(--sm-ref-soft-bronze);
+  --color-text: var(--sm-ref-ink);
+  --color-text-muted: var(--sm-ref-ink-muted);
+  --color-border: var(--sm-ref-sand);
+  --color-success: var(--sm-ref-success);
+  --font-display: var(--sm-ref-font-serif);
+  --font-body: var(--sm-ref-font-sans);
+  --sm-accent-aa: var(--sm-ref-bronze-700);
+  --sm-text-muted-aa: var(--sm-ref-ink-muted);
+}

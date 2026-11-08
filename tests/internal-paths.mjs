@@ -26,6 +26,8 @@ for (const [name, place, quote] of QUOTES) {
 
 const INTERNAL = [
   "/CLAUDE.md",
+  "/AGENTS.md",
+  "/BRAND.md",
   "/docs/TRACKING.md",
   "/docs/TOOLING-AUDIT.md",
   "/SEO-ACTION-PLAN.md",
@@ -163,7 +165,8 @@ const PUBLIC_ROOT = new Set([
   "404.html", "about.html", "admin.html", "admin-products.html", "brochure.html",
   "care-guide.html", "contact.html", "faq.html", "index.html", "memorial.html",
   "memorials.html", "privacy.html", "quote.html", "resources.html", "terms.html",
-  "track.html", "accreditations.css", "chat-widget.css", "site-upgrades.css",
+  "track.html", "styleguide.html", "accreditations.css", "chat-widget.css",
+  "components.css", "site-upgrades.css", "styleguide.css", "tokens.css",
   "site-config.js", "site-globals.js", "site-upgrades.js", "favicon.svg",
   "sm-logo.svg", "robots.txt", "_headers", "_redirects", "_routes.json",
 ]);
