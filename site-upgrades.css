@@ -1403,3 +1403,142 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     display: none;
   }
 }
+
+/* ==========================================================================
+   Decision mockups. These rules match only when brand-decisions.js adds
+   html.sm-mock-* for ?mock=. A page without that query is unchanged.
+   ========================================================================== */
+
+html.sm-mock-a2 footer .footer-logo img {
+  display: block;
+  width: 240px;
+  height: auto;
+}
+
+html.sm-mock-b2 .sm-mock-address {
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html.sm-mock-c2 .sm-mock-heading {
+  margin: 0 0 var(--sm-space-3);
+  color: var(--sm-color-text-accent-inverse);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label-compact);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  html.sm-mock-d2 body:not(.memorial-page) footer .sm-footer-secondary {
+    display: block !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html.sm-mock-e2 #navbar,
+  html.sm-mock-e3 #navbar {
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+  }
+
+  html.sm-mock-e2 #navbar .nav-links,
+  html.sm-mock-e3 #navbar .nav-links {
+    display: flex !important;
+    align-items: center;
+    gap: 0.4rem !important;
+    margin-left: auto;
+  }
+
+  html.sm-mock-e2 #navbar .nav-links > li:not(:has(.nav-cta)),
+  html.sm-mock-e3 #navbar .nav-links > li:not(:has(.nav-cta)) {
+    display: none !important;
+  }
+
+  html.sm-mock-e2 #navbar .nav-cta,
+  html.sm-mock-e3 #navbar .nav-cta {
+    min-height: var(--sm-control-height);
+    padding: 0.35rem 0.7rem !important;
+    font-size: var(--sm-text-xs);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  html.sm-mock-e2 #navbar .logo img {
+    width: 180px !important;
+  }
+
+  html.sm-mock-e3 #navbar .logo img {
+    width: 156px !important;
+  }
+
+  html.sm-mock-e3 .sm-mock-phone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--sm-target-min);
+    height: var(--sm-target-min);
+    flex: 0 0 var(--sm-target-min);
+    color: var(--sm-color-text);
+  }
+
+  html.sm-mock-e3 .sm-mock-phone svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+  }
+}
+
+html.sm-mock-f2 .mobile-bottom-nav {
+  display: none !important;
+}
+
+html.sm-mock-f2 .sm-mock-bar {
+  position: fixed;
+  top: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px var(--sm-space-4);
+  background: var(--sm-color-bg-inverse);
+  box-shadow: var(--sm-shadow-bar);
+}
+
+@media (max-width: 768px) {
+  html.sm-mock-f2 .sm-mock-bar {
+    display: grid;
+  }
+}
+
+html.sm-mock-f2 .sm-mock-call,
+html.sm-mock-f2 .sm-mock-quote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sm-control-height);
+  padding: 0 var(--sm-space-3);
+  border-radius: var(--sm-radius-sm);
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body-strong);
+  font-size: var(--sm-text-sm);
+  text-decoration: none;
+}
+
+html.sm-mock-f2 .sm-mock-call {
+  background: transparent;
+  border: 1px solid var(--sm-color-text-accent-inverse);
+  color: var(--sm-color-text-inverse);
+}
+
+html.sm-mock-f2 .sm-mock-quote {
+  background: var(--sm-color-action-inverse-bg);
+  border: 1px solid var(--sm-color-action-inverse-bg);
+  color: var(--sm-color-action-inverse-text);
+}

@@ -1903,6 +1903,15 @@ function declineCookies() {
     </script>
 
     <script src="/site-globals.js" defer></script>
+    <script>
+        (function () {
+            var mock = new URLSearchParams(location.search).get("mock");
+            if (!mock) return;
+            var s = document.createElement("script");
+            s.src = "/brand-decisions.js";
+            document.body.appendChild(s);
+        })();
+    </script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=lt3" defer></script>
 </body>
