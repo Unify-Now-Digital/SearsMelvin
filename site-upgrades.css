@@ -1403,3 +1403,30 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     display: none;
   }
 }
+
+/* ==========================================================================
+   S11 — footer decisions.
+   Soft-bronze logo, showroom address, and the two section labels.
+   The phone header and the bottom nav are not restyled here.
+   ========================================================================== */
+
+html body footer .footer-logo img {
+  display: block;
+  width: 240px;
+  height: auto;
+}
+
+html body .sm-footer-heading {
+  margin: 0.75rem 0 0.35rem;
+  color: var(--sm-color-text-accent-inverse);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label-compact);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+html body .sm-footer-address {
+  color: var(--sm-color-text-inverse-muted);
+}

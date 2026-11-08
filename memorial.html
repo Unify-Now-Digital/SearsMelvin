@@ -622,15 +622,10 @@
             body.memorial-page .footer-container { display: block !important; text-align: left; }
             body.memorial-page .footer-links { margin-top: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 1rem !important; }
             body.memorial-page .footer-links a { display: flex; align-items: center; min-height: 44px !important; padding: 0 !important; }
-            body.memorial-page .footer-nav-secondary { display: none; }
             body.memorial-page .footer-meta { display: block; margin-top: 1rem; padding-top: 0.75rem; }
             body.memorial-page .footer-legal { margin-top: 0.5rem; text-align: left; }
             .mobile-nav { top: var(--header-height, 68px); }
             .mobile-menu-btn { width: 44px; height: 44px; margin-left: auto; align-items: center; justify-content: center; padding: 0; }
-        }
-
-        @media (min-width: 540px) and (max-width: 768px) {
-            .footer-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 480px) {
@@ -769,11 +764,12 @@
         {"@type": "AdministrativeArea", "name": "Haringey"},
         {"@type": "AdministrativeArea", "name": "Enfield"}
       ],
+      "openingHours": "Mo-Fr 10:00-15:00",
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "17:00"
+        "opens": "10:00",
+        "closes": "15:00"
       }]
     }
     </script>
@@ -1268,13 +1264,15 @@
     <footer>
         <div class="footer-container">
             <div>
-                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+                <div class="footer-logo"><picture><source media="(min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg"><img src="/images/brand/logo/sears-melvin-stacked-soft-bronze-no-rules.svg" alt="Sears Melvin Memorials" width="240" height="61"></picture></div>
+                <p class="sm-footer-heading">Visit our Finchley showroom</p>
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a><br>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment<span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">10am to 3pm</span>
+                    North London — By appointment<span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">Monday to Friday, 10am to 3pm</span><span class="footer-contact-sep" aria-hidden="true">·</span><span class="sm-footer-address">1 The Market Place, Falloden Way, London NW11 6LB</span>
                 </div>
             </div>
+            <p class="sm-footer-heading">Explore</p>
             <ul class="footer-links">
                 <li class="footer-nav-secondary"><a href="/about">About</a></li>
                 <li class="footer-nav-secondary"><a href="/memorials">Memorials</a></li>
