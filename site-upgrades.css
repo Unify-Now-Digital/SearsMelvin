@@ -499,8 +499,21 @@ html body :is(a, button, input, select, textarea, summary, [tabindex]):focus-vis
   scroll-margin-top: calc(var(--header-height, 80px) + 8px);
 }
 
-html body footer :is(a, button, input, select, textarea, summary):focus-visible,
-html body .save-toast :is(a, button):focus-visible {
+/* Soft bronze only where the ring sits on ink. The shared rule above
+   puts [tabindex] inside :is(), which raises its specificity above a
+   plain footer selector. Repeating [tabindex] here, under the ink
+   ancestor, beats that rule on these bands and leaves light surfaces
+   on bronze. */
+html body :is(
+  footer,
+  .price-summary,
+  .save-toast,
+  .contact-cta,
+  .about-accred,
+  .cta-section,
+  .still-questions,
+  #cookieConsent
+) :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline-color: var(--sm-color-focus-inverse) !important;
 }
 
