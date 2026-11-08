@@ -521,3 +521,230 @@ html body .showroom-banner-link {
     padding-inline: calc(1.5rem + 2px);
   }
 }
+
+/* ==========================================================================
+   S3 — buttons.
+   One shape. Colour shows the action. Header, footer, cards, and form
+   fields keep their layout. Submit buttons take the button shape only.
+   ========================================================================== */
+
+html body :is(
+  .btn,
+  .nav-cta,
+  .nav-cta-dark,
+  .form-submit,
+  .quote-submit-btn,
+  .sm-btn,
+  .appt-submit,
+  .care-guide-btn,
+  .shortlist-enquiry-btn,
+  .btn-secondary,
+  .btn-outline,
+  .sm-btn-secondary,
+  .shortlist-btn-copy,
+  .shortlist-btn-email,
+  .btn-save
+),
+html body .email-lookup-form button,
+html body #lookupBtn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sm-space-2);
+  min-height: var(--sm-control-height);
+  padding: 0 var(--sm-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--sm-radius-sm);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--sm-duration-fast) var(--sm-ease), color var(--sm-duration-fast) var(--sm-ease), border-color var(--sm-duration-fast) var(--sm-ease);
+}
+
+html body :is(.form-submit, .quote-submit-btn, .appt-submit, .shortlist-enquiry-btn) {
+  width: 100%;
+}
+
+html body :is(
+  .btn-primary,
+  .nav-cta,
+  .nav-cta-dark,
+  .form-submit,
+  .quote-submit-btn,
+  .sm-btn-primary,
+  .appt-submit,
+  .care-guide-btn,
+  .shortlist-enquiry-btn,
+  .shortlist-btn-email,
+  .btn-save
+),
+html body .email-lookup-form button,
+html body #lookupBtn {
+  background: var(--sm-color-action-primary-bg);
+  border-color: var(--sm-color-action-primary-bg);
+  color: var(--sm-color-action-primary-text) !important;
+}
+
+html body :is(
+  .btn-primary,
+  .nav-cta,
+  .nav-cta-dark,
+  .form-submit,
+  .quote-submit-btn,
+  .sm-btn-primary,
+  .appt-submit,
+  .care-guide-btn,
+  .shortlist-enquiry-btn,
+  .shortlist-btn-email,
+  .btn-save
+):hover,
+html body .email-lookup-form button:hover,
+html body #lookupBtn:hover {
+  background: var(--sm-color-action-primary-bg-hover);
+  border-color: var(--sm-color-action-primary-bg-hover);
+  color: var(--sm-color-action-primary-text) !important;
+}
+
+html body :is(
+  .btn-primary,
+  .nav-cta,
+  .nav-cta-dark,
+  .form-submit,
+  .quote-submit-btn,
+  .sm-btn-primary,
+  .appt-submit,
+  .care-guide-btn,
+  .shortlist-enquiry-btn,
+  .shortlist-btn-email,
+  .btn-save
+):active,
+html body .email-lookup-form button:active,
+html body #lookupBtn:active {
+  background: var(--sm-color-action-primary-bg);
+  border-color: var(--sm-color-action-primary-bg);
+  box-shadow: var(--sm-shadow-press);
+}
+
+html body :is(.btn-secondary, .btn-outline, .sm-btn-secondary, .shortlist-btn-copy) {
+  background: transparent;
+  border-color: var(--sm-color-action-secondary-border);
+  color: var(--sm-color-action-secondary-text) !important;
+}
+
+html body :is(.btn-secondary, .btn-outline, .sm-btn-secondary, .shortlist-btn-copy):hover {
+  background: var(--sm-color-action-secondary-bg-hover);
+  border-color: var(--sm-color-action-secondary-border);
+  color: var(--sm-color-action-secondary-text) !important;
+}
+
+html body :is(.btn-secondary, .btn-outline, .sm-btn-secondary, .shortlist-btn-copy):active {
+  background: var(--sm-color-action-secondary-bg-hover);
+  border-color: var(--sm-color-border-strong);
+}
+
+/* On ink, the filled action is inverse and the second action is an outline. */
+html body :is(.contact-cta, .cta-buttons) :is(.btn-accent, .btn-primary) {
+  background: var(--sm-color-action-inverse-bg);
+  border-color: var(--sm-color-action-inverse-bg);
+  color: var(--sm-color-action-inverse-text) !important;
+}
+
+html body :is(.contact-cta, .cta-buttons) :is(.btn-accent, .btn-primary):hover {
+  background: var(--sm-color-action-inverse-bg-hover);
+  border-color: var(--sm-color-action-inverse-bg-hover);
+  color: var(--sm-color-action-inverse-text) !important;
+}
+
+html body :is(.contact-cta, .cta-buttons) .btn-secondary {
+  background: transparent !important;
+  border-color: var(--sm-color-text-accent-inverse) !important;
+  color: var(--sm-color-text-inverse) !important;
+}
+
+html body :is(.contact-cta, .cta-buttons) .btn-secondary:hover {
+  background: var(--sm-color-action-inverse-bg-hover) !important;
+  border-color: var(--sm-color-action-inverse-bg-hover) !important;
+  color: var(--sm-color-text) !important;
+}
+
+html body :is(
+  .btn,
+  .nav-cta,
+  .form-submit,
+  .quote-submit-btn,
+  .sm-btn,
+  .appt-submit,
+  .care-guide-btn,
+  .shortlist-enquiry-btn,
+  .btn-save
+):disabled,
+html body .email-lookup-form button:disabled,
+html body #lookupBtn:disabled {
+  background: var(--sm-color-action-disabled-bg);
+  border-color: var(--sm-color-action-disabled-bg);
+  box-shadow: none;
+  color: var(--sm-color-action-disabled-text) !important;
+  cursor: not-allowed;
+  opacity: 1;
+  transform: none;
+}
+
+/* Page rules with a class on the parent were beating the shared button size. */
+html body .hero-buttons .btn,
+html body .sm-cta-row :is(.btn, .sm-btn),
+html body .mobile-bottom-bar .btn,
+html body .contact-cta .btn,
+html body .cta-buttons .btn {
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: var(--sm-radius-sm);
+  min-height: var(--sm-control-height);
+}
+
+/* The shortlist heart is square. 44px, 2px corners. */
+html body .product-action.save-btn {
+  width: var(--sm-target-min);
+  height: var(--sm-target-min);
+  min-height: var(--sm-target-min);
+  padding: 0;
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  background: var(--sm-color-bg-surface);
+  color: var(--sm-color-text);
+}
+
+html body .product-action.save-btn:hover {
+  transform: none;
+  background: var(--sm-color-bg-panel);
+}
+
+html body .product-action.save-btn.active {
+  background: var(--sm-color-bg-inverse);
+  border-color: var(--sm-color-bg-inverse);
+}
+
+html body .product-action.save-btn.active svg {
+  fill: var(--sm-color-text-inverse);
+  stroke: var(--sm-color-text-inverse);
+}
+
+@media (min-width: 769px) {
+  html body .nav-cta,
+  html body .nav-cta-dark {
+    padding-inline: calc(var(--sm-space-5) + 4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body :is(.btn, .nav-cta, .form-submit, .sm-btn, .appt-submit):active {
+    box-shadow: none;
+  }
+}
