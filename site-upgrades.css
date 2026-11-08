@@ -1036,3 +1036,80 @@ html body .search-modal .search-input {
   background: transparent;
   font-size: 1.25rem;
 }
+
+/* ==========================================================================
+   S6 — cards.
+   The photo stays rectangular. The heart stays a separate 44px square.
+   ========================================================================== */
+
+html body :is(a.product-card, a.category-card) {
+  background: var(--sm-color-bg-panel);
+  border: 1px solid var(--sm-color-border-decorative);
+  border-radius: var(--sm-radius-sm);
+  box-shadow: var(--sm-shadow-sm);
+  overflow: hidden;
+}
+
+html body :is(a.product-card, a.category-card):hover {
+  transform: none;
+  box-shadow: var(--sm-shadow-md);
+}
+
+html body :is(.product-image, .category-image) {
+  background: var(--sm-color-bg-surface);
+  border-radius: 0;
+}
+
+html body :is(.product-image, .category-image) img,
+html body :is(.product-image, .category-image) svg {
+  object-fit: contain;
+  border-radius: 0;
+  transform: none;
+}
+
+html body :is(a.product-card, a.category-card):hover :is(img, svg) {
+  transform: none;
+}
+
+html body :is(.product-info, .category-info) {
+  background: var(--sm-color-bg-panel);
+  padding: var(--sm-space-4);
+}
+
+html body :is(.product-name, .category-info h3) {
+  font-family: var(--sm-font-display);
+  font-weight: var(--sm-weight-display);
+  font-size: var(--sm-text-card-title);
+  line-height: 1.2;
+  color: var(--sm-color-text);
+}
+
+html body .product-category {
+  color: var(--sm-color-text);
+}
+
+html body .category-info p {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-price);
+  font-weight: var(--sm-weight-body-strong);
+  font-variant-numeric: tabular-nums;
+  color: var(--sm-color-text);
+}
+
+html body .product-action.save-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--sm-radius-sm);
+  border: 1px solid var(--sm-color-border-control);
+  background: var(--sm-color-bg-surface);
+}
+
+html body .product-action.save-btn:hover {
+  transform: none;
+}
+
+html body .product-badge {
+  border-radius: var(--sm-radius-sm);
+}
