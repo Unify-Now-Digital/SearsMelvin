@@ -499,8 +499,21 @@ html body :is(a, button, input, select, textarea, summary, [tabindex]):focus-vis
   scroll-margin-top: calc(var(--header-height, 80px) + 8px);
 }
 
-html body footer :is(a, button, input, select, textarea, summary):focus-visible,
-html body .save-toast :is(a, button):focus-visible {
+/* Soft bronze only where the ring sits on ink. The shared rule above
+   puts [tabindex] inside :is(), which raises its specificity above a
+   plain footer selector. Repeating [tabindex] here, under the ink
+   ancestor, beats that rule on these bands and leaves light surfaces
+   on bronze. */
+html body :is(
+  footer,
+  .price-summary,
+  .save-toast,
+  .contact-cta,
+  .about-accred,
+  .cta-section,
+  .still-questions,
+  #cookieConsent
+) :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline-color: var(--sm-color-focus-inverse) !important;
 }
 
@@ -1112,4 +1125,32 @@ html body .product-action.save-btn:hover {
 
 html body .product-badge {
   border-radius: var(--sm-radius-sm);
+}
+
+/* ==========================================================================
+   S6b — photo frames.
+   Memorial cards and the product main image use a 4:5 linen well.
+   The stone stays contained and centred. At 375 the card title steps
+   down one size so most names sit on one line. Titles are not clipped.
+   ========================================================================== */
+
+html body .product-image,
+html body .gallery-main {
+  background: var(--sm-color-bg);
+  aspect-ratio: 4 / 5;
+}
+
+html body .product-image img,
+html body .product-image svg,
+html body .gallery-main img {
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 375px) {
+  /* The shared title rule uses :is(.product-name, .category-info h3),
+     so its specificity includes the h3. Match that, or 24px keeps winning. */
+  html body h3.product-name {
+    font-size: var(--sm-text-lg);
+  }
 }
