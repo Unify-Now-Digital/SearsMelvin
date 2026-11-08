@@ -336,3 +336,138 @@ body.memorial-page .footer-contact a {
   min-height: 44px;
   padding: 0.35rem 0;
 }
+
+/* ==========================================================================
+   S2 — base type, sentence links, and focus.
+   Header, footer, buttons, forms, cards, labels, prices and stars keep
+   their current shape. Later stages own those.
+   ========================================================================== */
+
+html body {
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body);
+  font-size: var(--sm-text-md);
+  line-height: var(--sm-leading-body);
+}
+
+html body h1,
+html body .product-info h1 {
+  font-family: var(--sm-font-display);
+  font-weight: var(--sm-weight-display-strong);
+  font-size: var(--sm-text-3xl);
+  line-height: 1.1;
+  letter-spacing: var(--sm-tracking-heading);
+}
+
+html body h2 {
+  font-family: var(--sm-font-display);
+  font-weight: var(--sm-weight-display);
+  font-size: var(--sm-text-2xl);
+  line-height: var(--sm-leading-tight);
+  letter-spacing: var(--sm-tracking-heading);
+}
+
+html body h3 {
+  font-family: var(--sm-font-display);
+  font-weight: var(--sm-weight-display);
+  font-size: var(--sm-text-xl);
+  line-height: var(--sm-leading-tight);
+  letter-spacing: var(--sm-tracking-heading);
+}
+
+html body h4 {
+  font-family: var(--sm-font-display);
+  font-weight: var(--sm-weight-display-strong);
+  font-size: var(--sm-text-lg);
+  line-height: 1.25;
+  letter-spacing: var(--sm-tracking-heading);
+}
+
+html body p {
+  font-size: var(--sm-text-md);
+  line-height: var(--sm-leading-body);
+  max-width: var(--sm-measure);
+}
+
+html body .hero-description,
+html body .hero-lead,
+html body footer p,
+html body nav p,
+html body .product-card p,
+html body .showroom-banner p {
+  max-width: none;
+}
+
+/* Prices and buttons use DM Sans 500. Size and shape stay. */
+html body button,
+html body .btn,
+html body .nav-cta,
+html body .nav-cta-dark,
+html body .form-submit,
+html body .sm-btn,
+html body .quote-submit-btn,
+html body .product-price,
+html body .product-price strong {
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body-strong);
+}
+
+html body .nav-links a.active { font-weight: var(--sm-weight-body-strong); }
+
+/* Sentence links. Menus, the footer, and whole-card links stay as they are. */
+html body p a,
+html body li a {
+  color: var(--sm-color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+html body p a:hover,
+html body li a:hover {
+  color: var(--sm-color-link-hover);
+  text-decoration-thickness: 2px;
+}
+
+html body .nav-links a,
+html body .mobile-nav a,
+html body .mobile-bottom-nav a,
+html body .mobile-nav-item,
+html body footer a,
+html body .footer-links a,
+html body .footer-contact a,
+html body .showroom-banner a,
+html body a.product-card,
+html body .product-card a,
+html body a.btn,
+html body a.nav-cta,
+html body a.nav-cta-dark,
+html body a.sm-btn,
+html body a.nav-brochure {
+  color: inherit;
+  text-decoration: none;
+  text-underline-offset: unset;
+}
+
+html body .nav-links a { color: var(--sm-color-text); }
+html body .nav-links a:hover,
+html body .nav-links a.active { color: var(--sm-color-text-accent-strong); }
+html body .nav-cta,
+html body .nav-cta-dark { color: var(--sm-color-text-inverse) !important; }
+html body footer a,
+html body .footer-links a,
+html body .footer-contact a { color: var(--sm-color-text-inverse-muted); }
+
+/* Focus ring. Outline does not change the box. */
+html body :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus) !important;
+  outline-offset: var(--sm-focus-offset) !important;
+  /* A button's "transition: all" was fading the ring in from 0. */
+  transition: background-color var(--sm-duration-fast), color var(--sm-duration-fast), border-color var(--sm-duration-fast), box-shadow var(--sm-duration-fast);
+  scroll-margin-top: calc(var(--header-height, 80px) + 8px);
+}
+
+html body footer :is(a, button, input, select, textarea, summary):focus-visible,
+html body .save-toast :is(a, button):focus-visible {
+  outline-color: var(--sm-color-focus-inverse) !important;
+}
