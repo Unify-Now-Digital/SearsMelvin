@@ -472,7 +472,8 @@ html body a.nav-brochure {
   text-underline-offset: unset;
 }
 
-html body .nav-links a { color: var(--sm-color-text); padding-inline: 1px; }
+html body .nav-links a { color: var(--sm-color-text); }
+html body .nav-links a:not(.nav-cta):not(.nav-cta-dark):not(.nav-brochure) { padding-inline: 2px; }
 html body .nav-links a:hover,
 html body .nav-links a.active { color: var(--sm-color-text-accent-strong); }
 html body .nav-cta,

@@ -49,6 +49,6 @@ A focused control keeps 8px of clear space under the sticky header.
 DM Sans 500 is a little narrower than the old DM Sans 600 face.
 The showroom phone link gains 2px of horizontal padding.
 Desktop quote buttons gain 2px of horizontal padding.
-Nav links gain 1px of horizontal padding.
+Nav links gain 2px of horizontal padding. The quote button is excluded, and keeps its own padding.
 The contact cards keep the body line-height on their titles, so the card does not get shorter.
 Header height stays within 8px of live.
