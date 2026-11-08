@@ -1214,3 +1214,85 @@ html body .footer-accreditations .accred-label {
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
+
+html body .footer-hours {
+  color: var(--sm-color-text-inverse-muted);
+}
+
+/* ==========================================================================
+   S8 — header.
+   Linen ground, 1px sand rule, stacked ink logo. The phone text and
+   the quote button stay. The menu button and the bottom-nav phone
+   are not restyled here.
+   ========================================================================== */
+
+html body #navbar {
+  background: var(--sm-color-bg);
+  border-bottom: 1px solid var(--sm-color-border-decorative);
+  box-shadow: none;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+html body #navbar .logo {
+  display: flex;
+  align-items: center;
+  line-height: 0;
+}
+
+html body #navbar .logo img {
+  width: 262px;
+  height: auto;
+  display: block;
+}
+
+html body #navbar .nav-links a:not(.nav-cta):not(.nav-cta-dark):not(.nav-brochure) {
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body-strong);
+  font-size: var(--sm-text-sm);
+  color: var(--sm-color-text);
+}
+
+html body #navbar .nav-links a:not(.nav-cta):not(.nav-cta-dark):not(.nav-brochure):hover,
+html body #navbar .nav-links a:not(.nav-cta):not(.nav-cta-dark):not(.nav-brochure).active {
+  color: var(--sm-color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--sm-color-text-accent);
+  text-underline-offset: 0.18em;
+}
+
+/* Keep the showroom number readable. The older rule swapped it for a glyph. */
+html body #navbar .nav-links a[href^="tel:"] {
+  width: auto;
+  overflow: visible;
+  font-size: var(--sm-text-sm);
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body-strong);
+  color: var(--sm-color-text);
+}
+
+html body #navbar .nav-links a[href^="tel:"]::before {
+  content: none;
+}
+
+@media (max-width: 768px) {
+  html body nav#navbar {
+    min-height: 68px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  html body #navbar .logo img {
+    width: 240px;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 600px) {
+  html body #navbar .nav-links {
+    display: flex !important;
+    align-items: center;
+    gap: 0.4rem !important;
+  }
+  html body #navbar .nav-links > li:not(:has(.nav-cta)):not(:has(a[href^="tel:"])) {
+    display: none;
+  }
+}

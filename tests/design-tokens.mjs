@@ -88,8 +88,11 @@ for (const file of readdirSync(".").filter((name) => name.endsWith(".html") && n
   assert.match(html, /href="\/tokens\.css"/, `${file} must load tokens.css`);
   assert.equal(html.includes("components.css"), false, `${file} must not link components.css yet`);
   assert.equal(html.includes("styleguide.css"), false, `${file} must not link styleguide.css yet`);
-  assert.equal(html.includes("/images/brand/logo/"), false, `${file} must not use the style-guide logo yet`);
-  assert.match(html, /href="\/favicon\.svg/, `${file} must keep the live favicon`);
+  assert.doesNotMatch(html, /sears-melvin-stacked-(?:bronze|soft-bronze)|source-exact/, `${file} must not use a bronze or archive logo`);
+  if (html.includes('id="navbar"')) {
+    assert.match(html, /\/images\/brand\/logo\/sears-melvin-stacked-ink(?:-no-rules)?\.svg/, `${file} must use the stacked ink header logo`);
+  }
+  assert.match(html, /href="\/favicon\.svg|href="\/images\/brand\/logo\/favicon\//, `${file} must keep a favicon`);
 }
 
 const sitemap = read("functions/sitemap.xml.js");
