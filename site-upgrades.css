@@ -351,6 +351,8 @@ html body {
 }
 
 html body h1,
+html body .hero h1,
+html body .page-header h1,
 html body .product-info h1 {
   font-family: var(--sm-font-display);
   font-weight: var(--sm-weight-display-strong);
@@ -359,7 +361,15 @@ html body .product-info h1 {
   letter-spacing: var(--sm-tracking-heading);
 }
 
-html body h2 {
+html body h2,
+html body .about-page h2,
+html body .contact-intro h2,
+html body .email-lookup h2,
+html body .grief-container h2,
+html body .content-section h2,
+html body .faq-group-header h2,
+html body .intro-message h2,
+html body .section-heading h2 {
   font-family: var(--sm-font-display);
   font-weight: var(--sm-weight-display);
   font-size: var(--sm-text-2xl);

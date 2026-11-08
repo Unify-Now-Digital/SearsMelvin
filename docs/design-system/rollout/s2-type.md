@@ -20,8 +20,8 @@ DM Sans 600 is no longer requested. The brand does not use it.
 
 | Role | Before | After |
 |---|---|---|
-| H1 | Cormorant 400. `clamp(2.5rem, 6vw, 4.5rem)`. Line-height 1.2. Tracking −0.02em. | Cormorant 600. `--sm-text-3xl`. Line-height 1.1. Tracking −0.01em. |
-| H2 | Cormorant 400. `clamp(2rem, 4vw, 3rem)`. Line-height 1.2. | Cormorant 500. `--sm-text-2xl`. Line-height 1.15. |
+| H1 | Cormorant 400. `clamp(2.5rem, 6vw, 4.5rem)`, or a smaller class size on a page header. Line-height 1.2. Tracking −0.02em. | Cormorant 600. `--sm-text-3xl`. Line-height 1.1. Tracking −0.01em. The same scale wins on `.hero h1`, `.page-header h1`, and `.product-info h1`. |
+| H2 | Cormorant 400. `clamp(2rem, 4vw, 3rem)`, or a class size on a section. Line-height 1.2. | Cormorant 500. `--sm-text-2xl`. Line-height 1.15. Section headings on the home, about, contact, quote, FAQ, resources, and care pages use this scale. |
 | H3 | Cormorant 400. `clamp(1.25rem, 2vw, 1.5rem)`. Line-height 1.2. | Cormorant 500. `--sm-text-xl`. Line-height 1.15. |
 | H4 | Cormorant 400. No size of its own. Line-height 1.2. | Cormorant 600. `--sm-text-lg` (20px). Line-height 1.25. |
 | Body | DM Sans. 16px on most text, 1rem on paragraphs. Line-height 1.6. | DM Sans 400. `--sm-text-md` (17px, 18px from 769px). Line-height 1.65. Measure 68ch. |
