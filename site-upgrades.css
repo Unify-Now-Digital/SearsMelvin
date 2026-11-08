@@ -1220,6 +1220,104 @@ html body .footer-hours {
 }
 
 /* ==========================================================================
+   S9 — inline styles.
+   Repeated style attributes move onto classes. The declarations match
+   the old attributes, so the picture does not change.
+   ========================================================================== */
+
+html body .sm-gtm-noscript {
+  display: none;
+  visibility: hidden;
+}
+
+html body #cookieConsent {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-inverse-muted);
+  padding: 1rem 1.5rem;
+  font-family: -apple-system, sans-serif;
+  font-size: 0.85rem;
+  box-shadow: 0 -2px 10px color-mix(in srgb, var(--sm-color-text) 15%, transparent);
+}
+
+html body .sm-cookie-bar {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+html body .sm-cookie-bar p {
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html body .sm-cookie-bar a {
+  color: var(--sm-color-text-accent-inverse);
+  text-decoration: underline;
+}
+
+html body .sm-cookie-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+html body .sm-cookie-btn {
+  background: transparent;
+  color: var(--sm-color-text-inverse);
+  border: 1px solid var(--sm-color-text-inverse-muted);
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+html body button.mobile-nav-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+html body .footer-legal {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  width: 100%;
+  text-align: center;
+  margin-top: 0.75rem;
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html body .footer-accreditations {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--sm-color-text-accent-inverse) 25%, transparent);
+}
+
+html body .footer-accreditations.sm-accred-tight {
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* ==========================================================================
    S8 — header.
    Linen ground, 1px sand rule, stacked ink logo. The phone text and
    the quote button stay. The menu button and the bottom-nav phone
