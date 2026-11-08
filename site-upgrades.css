@@ -1183,9 +1183,6 @@ html body footer .footer-links a,
 html body footer .footer-contact a {
   color: var(--sm-color-text-inverse);
   text-decoration: none;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
 }
 
 html body footer .footer-links a:hover,
@@ -1197,9 +1194,15 @@ html body footer .footer-contact a:hover {
 }
 
 html body .footer-copy,
-html body .footer-legal,
-html body .footer-contact-sep {
+html body .footer-legal {
   color: var(--sm-color-text-inverse-muted);
+  opacity: 1;
+}
+
+/* The compact-footer script sets this dot to 25% white. A solid muted
+   colour has to win that !important. */
+html body .footer-contact-sep {
+  color: var(--sm-color-text-inverse-muted) !important;
   opacity: 1;
 }
 
