@@ -210,3 +210,11 @@ Type, spacing, corners, selectors, classes, and ids are unchanged.
 | `#666666` | `var(--sm-color-text-muted)` | track.html (1) | 1 |
 
 Total rows: 186. Total replacements: 952.
+
+## Contrast fixes in the same stage
+
+These were colour-only. Element sizes did not change.
+
+1. Home timeline numbers sat in deeper bronze on ink (2.04:1). They are now soft bronze on ink (5.13:1). The circle edge uses the same soft bronze.
+2. The shortlist toast link was deeper bronze on ink. It is now soft bronze.
+3. The showroom banner divider was sand at 40% opacity (1.24:1). It is now solid ink muted.

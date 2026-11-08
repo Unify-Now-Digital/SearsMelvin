@@ -105,7 +105,7 @@ nav .logo { white-space: nowrap; }
 /* Showroom banner on /quote: was unstyled and flush to the left edge */
 .showroom-banner { background: var(--color-warm, var(--sm-color-bg-panel-quiet)); border-bottom: 1px solid var(--color-border, var(--sm-color-border-decorative)); padding: 0.55rem 1.5rem; font-size: 0.85rem; color: var(--color-stone, var(--sm-color-text)); }
 .showroom-banner-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.25rem 0.75rem; text-align: center; }
-.showroom-banner .banner-divider { color: var(--color-border, var(--sm-color-bg-panel)); }
+.showroom-banner .banner-divider { color: var(--sm-color-text-muted); opacity: 1; }
 .showroom-banner-link { color: var(--color-accent-dark, var(--sm-color-text-accent-strong)); text-decoration: none; font-weight: 600; }
 @media (max-width: 600px) { .showroom-banner { padding: 0.5rem 1rem; font-size: 0.8rem; } .showroom-banner .banner-divider { display: none; } }
 /* Footer small print: readable on the dark footer (AA) */
