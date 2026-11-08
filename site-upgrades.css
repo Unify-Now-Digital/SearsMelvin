@@ -1289,12 +1289,21 @@ html body button.mobile-nav-item {
   cursor: pointer;
 }
 
-html body .footer-legal {
+html body .sm-footer-legal-inline {
   font-size: 0.75rem;
   line-height: 1.6;
   width: 100%;
   text-align: center;
   margin-top: 0.75rem;
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html body .sm-footer-legal-tight {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  width: 100%;
+  text-align: center;
+  margin-top: 0.4rem;
   color: var(--sm-color-text-inverse-muted);
 }
 
