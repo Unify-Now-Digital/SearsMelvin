@@ -888,3 +888,151 @@ html body .sm-stars svg {
   width: 16px;
   height: 16px;
 }
+
+/* ==========================================================================
+   S5 — forms.
+   Search, filters' native boxes, radios, and hidden fields keep their behaviour.
+   Submit buttons stay on the S3 button rules.
+   ========================================================================== */
+
+html body :is(
+  .form-group label,
+  .quote-form-group label,
+  .appt-group label,
+  .sm-brochure-email label
+) {
+  display: block;
+  margin-bottom: var(--sm-space-2);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+  color: var(--sm-color-text);
+}
+
+html body :is(
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .email-lookup-form input,
+  .sm-brochure-email input,
+  .appt-group input,
+  .appt-group select,
+  .appt-group textarea
+),
+html body .quote-form-group input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),
+html body .quote-form-group textarea,
+html body :is(#lookupEmail, #brochureEmail, #shareLink, #slEnqName, #slEnqEmail, #slEnqPhone, #slEnqNote) {
+  box-sizing: border-box;
+  min-height: var(--sm-control-height);
+  padding: 0.65rem var(--sm-space-4);
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  background: var(--sm-color-bg-surface);
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-md);
+  font-weight: var(--sm-weight-body);
+  line-height: 1.4;
+  transition: background-color var(--sm-duration-fast), color var(--sm-duration-fast);
+}
+
+html body :is(.form-input, .form-select, .form-textarea, .sm-brochure-email input, .quote-form-group input:not([type="radio"]), .quote-form-group textarea, #slEnqName, #slEnqEmail, #slEnqPhone, #slEnqNote, #shareLink) {
+  width: 100%;
+}
+
+html body :is(.form-textarea, .quote-form-group textarea, #slEnqNote, .appt-group textarea) {
+  min-height: 8rem;
+  padding-top: var(--sm-space-3);
+  resize: vertical;
+}
+
+html body :is(
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .email-lookup-form input,
+  .sm-brochure-email input,
+  .appt-group input,
+  .appt-group select,
+  .appt-group textarea,
+  .quote-form-group input,
+  .quote-form-group textarea,
+  #lookupEmail,
+  #brochureEmail
+)::placeholder {
+  color: var(--sm-color-text-muted);
+  opacity: 1;
+}
+
+html body :is(
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .email-lookup-form input,
+  .sm-brochure-email input,
+  .appt-group input,
+  .appt-group select,
+  .appt-group textarea
+):focus,
+html body .quote-form-group input:not([type="radio"]):focus,
+html body .quote-form-group textarea:focus,
+html body :is(#lookupEmail, #brochureEmail, #slEnqName, #slEnqEmail, #slEnqPhone, #slEnqNote):focus {
+  border-color: var(--sm-color-text) !important;
+  background: var(--sm-color-bg-surface);
+}
+
+html body :is(
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .email-lookup-form input,
+  .quote-form-group input,
+  .appt-group input,
+  .appt-group select
+):user-invalid {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--sm-color-error) !important;
+  transition: none;
+}
+
+html body :is(#quoteError, .form-msg.error, .form-group label .required) {
+  color: var(--sm-color-error);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+}
+
+html body :is(#lookupError, [data-brochure-email-status]) {
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+}
+
+html body .form-success.active,
+html body #quoteSuccess {
+  border: 2px solid var(--sm-color-success);
+  border-radius: var(--sm-radius-sm);
+}
+
+html body .filter-option {
+  min-height: var(--sm-target-min);
+  align-items: center;
+}
+
+html body .checkmark {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--sm-radius-sm);
+  border-color: var(--sm-color-border-control);
+}
+
+html body .search-modal .search-input {
+  min-height: 0;
+  padding: 1rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-size: 1.25rem;
+}
