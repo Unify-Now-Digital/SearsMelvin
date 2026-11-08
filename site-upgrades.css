@@ -363,6 +363,14 @@ html body {
   line-height: var(--sm-leading-body);
 }
 
+/* The catalogue title wraps to two lines once Cormorant loads.
+   Reserve that height so the grid does not jump. */
+@media (max-width: 824px) {
+  html body:has(.catalogue) .page-header h1 {
+    min-height: 2.2em;
+  }
+}
+
 html body h1,
 html body .hero h1,
 html body .page-header h1,

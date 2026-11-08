@@ -16,6 +16,7 @@ Both use `font-display: swap`.
 The pages already preconnect to the font hosts.
 DM Sans 600 is no longer requested. The brand does not use it.
 `Cormorant Fallback` is a local serif, scaled to 95%, so a heading keeps the same number of lines while Cormorant loads.
+The catalogue title still wraps to two lines only after Cormorant arrives, below 825px, so that heading reserves two lines.
 
 ## Scale
 
