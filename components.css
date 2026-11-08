@@ -1,0 +1,1218 @@
+/* ==========================================================================
+   Sears Melvin components. Classes start with sm-.
+   Colours, type, space, corners and shadows come from tokens.css.
+   This file has no raw colour value. See BRAND.md.
+   Do not link this file from an existing page yet.
+   ========================================================================== */
+
+.sm-h1,
+.sm-h2,
+.sm-h3,
+.sm-h4,
+.sm-display,
+.sm-body,
+.sm-small,
+.sm-label,
+.sm-quote,
+.sm-btn,
+.sm-link,
+.sm-badge,
+.sm-chip,
+.sm-price,
+.sm-card,
+.sm-card-wrap,
+.sm-save,
+.sm-field,
+.sm-input,
+.sm-select,
+.sm-select-wrap,
+.sm-textarea,
+.sm-check,
+.sm-wordmark,
+.sm-header,
+.sm-nav,
+.sm-iconbtn,
+.sm-bottom-bar,
+.sm-footer,
+.sm-testimonial,
+.sm-frame,
+.sm-price-panel,
+.sm-surface,
+.sm-tbc,
+.sm-msg,
+.sm-help {
+  box-sizing: border-box;
+}
+
+/* Type
+   -------------------------------------------------------------------------- */
+.sm-h1,
+.sm-h2,
+.sm-h3,
+.sm-h4,
+.sm-display,
+.sm-quote {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-display);
+  letter-spacing: var(--sm-tracking-heading);
+  margin: 0;
+}
+
+.sm-h1 {
+  font-size: var(--sm-text-3xl);
+  font-weight: var(--sm-weight-display-strong);
+  line-height: 1.1;
+}
+
+.sm-h2 {
+  font-size: var(--sm-text-2xl);
+  font-weight: var(--sm-weight-display);
+  line-height: var(--sm-leading-tight);
+}
+
+.sm-h3 {
+  font-size: var(--sm-text-xl);
+  font-weight: var(--sm-weight-display);
+  line-height: var(--sm-leading-snug);
+}
+
+.sm-h4 {
+  font-size: var(--sm-text-lg);
+  font-weight: var(--sm-weight-display-strong);
+  line-height: var(--sm-leading-snug);
+}
+
+.sm-display {
+  font-size: 3rem;
+  font-weight: var(--sm-weight-display-light);
+  line-height: 1.05;
+}
+
+.sm-body {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-md);
+  font-weight: var(--sm-weight-body);
+  line-height: var(--sm-leading-body);
+  margin: 0;
+  max-width: var(--sm-measure);
+}
+
+.sm-small,
+.sm-help {
+  color: var(--sm-color-text-muted);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.sm-help {
+  font-size: var(--sm-text-xs);
+  line-height: 1.45;
+}
+
+.sm-label {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.sm-label--accent {
+  color: var(--sm-color-text-accent);
+}
+
+.sm-label--inverse {
+  color: var(--sm-color-text-accent-inverse);
+}
+
+.sm-quote {
+  font-size: var(--sm-text-quote);
+  font-style: italic;
+  font-weight: var(--sm-weight-body);
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+/* Surfaces
+   -------------------------------------------------------------------------- */
+.sm-surface--linen {
+  background: var(--sm-color-bg);
+  color: var(--sm-color-text);
+}
+
+.sm-surface--sand {
+  background: var(--sm-color-bg-panel);
+  color: var(--sm-color-text);
+}
+
+.sm-surface--ink {
+  background: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-inverse);
+}
+
+/* Buttons. One shape. Colour shows priority. Sentence case.
+   -------------------------------------------------------------------------- */
+.sm-btn {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  gap: var(--sm-space-2);
+  justify-content: center;
+  line-height: 1.2;
+  min-height: var(--sm-control-height);
+  padding: 0 var(--sm-space-5);
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  transition: background-color var(--sm-duration-fast) var(--sm-ease), color var(--sm-duration-fast) var(--sm-ease), border-color var(--sm-duration-fast) var(--sm-ease);
+  white-space: nowrap;
+}
+
+.sm-btn svg {
+  fill: none;
+  flex: none;
+  height: 18px;
+  stroke: currentColor;
+  width: 18px;
+}
+
+.sm-btn:focus-visible,
+.sm-btn.sm-is-focus {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-surface--ink .sm-btn:focus-visible,
+.sm-surface--ink .sm-btn.sm-is-focus {
+  outline-color: var(--sm-color-focus-inverse);
+}
+
+.sm-btn--primary {
+  background: var(--sm-color-action-primary-bg);
+  border-color: var(--sm-color-action-primary-bg);
+  color: var(--sm-color-action-primary-text);
+}
+
+.sm-btn--primary:hover,
+.sm-btn--primary.sm-is-hover {
+  background: var(--sm-color-action-primary-bg-hover);
+  border-color: var(--sm-color-action-primary-bg-hover);
+  color: var(--sm-color-action-primary-text);
+}
+
+.sm-btn--primary:active,
+.sm-btn--primary.sm-is-active {
+  background: var(--sm-color-action-primary-bg);
+  border-color: var(--sm-color-action-primary-bg);
+  box-shadow: var(--sm-shadow-press);
+  transform: translateY(1px);
+}
+
+.sm-btn--secondary,
+.sm-btn--call {
+  background: transparent;
+  border-color: var(--sm-color-action-secondary-border);
+  color: var(--sm-color-action-secondary-text);
+}
+
+.sm-btn--secondary:hover,
+.sm-btn--secondary.sm-is-hover,
+.sm-btn--call:hover,
+.sm-btn--call.sm-is-hover {
+  background: var(--sm-color-action-secondary-bg-hover);
+  color: var(--sm-color-action-secondary-text);
+}
+
+.sm-btn--secondary:active,
+.sm-btn--secondary.sm-is-active,
+.sm-btn--call:active,
+.sm-btn--call.sm-is-active {
+  background: var(--sm-color-action-secondary-bg-hover);
+  border-color: var(--sm-color-border-strong);
+  transform: translateY(1px);
+}
+
+.sm-btn--call svg {
+  stroke: var(--sm-color-text-accent);
+}
+
+.sm-btn--text {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sm-color-link);
+  min-height: var(--sm-target-min);
+  padding: 0 var(--sm-space-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.sm-btn--text:hover,
+.sm-btn--text.sm-is-hover,
+.sm-btn--text:active,
+.sm-btn--text.sm-is-active {
+  background: transparent;
+  color: var(--sm-color-link-hover);
+  text-decoration-thickness: 2px;
+}
+
+.sm-btn--inverse {
+  background: var(--sm-color-action-inverse-bg);
+  border-color: var(--sm-color-action-inverse-bg);
+  color: var(--sm-color-action-inverse-text);
+}
+
+.sm-btn--inverse:hover,
+.sm-btn--inverse.sm-is-hover,
+.sm-btn--inverse:active,
+.sm-btn--inverse.sm-is-active {
+  background: var(--sm-color-action-inverse-bg-hover);
+  border-color: var(--sm-color-action-inverse-bg-hover);
+  color: var(--sm-color-action-inverse-text);
+}
+
+.sm-btn--inverse:active,
+.sm-btn--inverse.sm-is-active {
+  box-shadow: var(--sm-shadow-press);
+  transform: translateY(1px);
+}
+
+.sm-btn--call-inverse {
+  background: transparent;
+  border-color: var(--sm-color-text-accent-inverse);
+  color: var(--sm-color-text-inverse);
+}
+
+.sm-btn--call-inverse svg {
+  stroke: var(--sm-color-text-accent-inverse);
+}
+
+.sm-btn--call-inverse:hover,
+.sm-btn--call-inverse.sm-is-hover {
+  background: var(--sm-color-action-inverse-bg-hover);
+  border-color: var(--sm-color-action-inverse-bg-hover);
+  color: var(--sm-color-text);
+}
+
+.sm-btn--call-inverse:hover svg,
+.sm-btn--call-inverse.sm-is-hover svg {
+  stroke: var(--sm-color-text-accent);
+}
+
+.sm-btn:disabled,
+.sm-btn.sm-is-disabled,
+.sm-btn:disabled:hover,
+.sm-btn.sm-is-disabled:hover {
+  background: var(--sm-color-action-disabled-bg);
+  border-color: var(--sm-color-action-disabled-bg);
+  box-shadow: none;
+  color: var(--sm-color-action-disabled-text);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sm-btn--text:disabled,
+.sm-btn--text.sm-is-disabled,
+.sm-btn--text:disabled:hover,
+.sm-btn--text.sm-is-disabled:hover {
+  background: transparent;
+  border-color: transparent;
+  text-decoration: none;
+}
+
+.sm-btn--call:disabled svg,
+.sm-btn--call.sm-is-disabled svg,
+.sm-btn--call-inverse:disabled svg,
+.sm-btn--call-inverse.sm-is-disabled svg {
+  stroke: var(--sm-color-action-disabled-text);
+}
+
+.sm-btn.sm-is-loading {
+  pointer-events: none;
+}
+
+.sm-btn.sm-is-loading::before {
+  animation: sm-spin 0.7s linear infinite;
+  border: 2px solid currentColor;
+  border-radius: var(--sm-radius-round);
+  border-right-color: transparent;
+  content: "";
+  height: 14px;
+  width: 14px;
+}
+
+@keyframes sm-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Links. Underline is the cue, not colour alone.
+   -------------------------------------------------------------------------- */
+.sm-link {
+  color: var(--sm-color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.sm-link:hover,
+.sm-link.sm-is-hover {
+  color: var(--sm-color-link-hover);
+  text-decoration-thickness: 2px;
+}
+
+.sm-link:focus-visible,
+.sm-link.sm-is-focus {
+  border-radius: var(--sm-radius-sm);
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-surface--sand .sm-link {
+  color: var(--sm-color-link-on-panel);
+}
+
+.sm-surface--sand .sm-link:hover,
+.sm-surface--sand .sm-link.sm-is-hover {
+  color: var(--sm-color-link-hover);
+}
+
+.sm-surface--ink .sm-link,
+.sm-footer a.sm-link {
+  color: var(--sm-color-link-inverse);
+}
+
+.sm-surface--ink .sm-link:hover,
+.sm-surface--ink .sm-link.sm-is-hover,
+.sm-footer a.sm-link:hover,
+.sm-footer a.sm-link.sm-is-hover {
+  color: var(--sm-color-link-inverse-hover);
+}
+
+.sm-surface--ink .sm-link:focus-visible,
+.sm-surface--ink .sm-link.sm-is-focus,
+.sm-footer a:focus-visible {
+  outline-color: var(--sm-color-focus-inverse);
+}
+
+/* Labels, badges, chips. 2px corners. No pressure copy.
+   -------------------------------------------------------------------------- */
+.sm-badge {
+  align-items: center;
+  background: var(--sm-color-bg-panel);
+  border: 1px solid transparent;
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  display: inline-flex;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  gap: var(--sm-space-2);
+  line-height: 1.2;
+  padding: 5px var(--sm-space-3);
+}
+
+.sm-badge svg {
+  height: 14px;
+  stroke: currentColor;
+  width: 14px;
+}
+
+.sm-badge--ink {
+  background: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-accent-inverse);
+}
+
+.sm-badge--outline {
+  background: transparent;
+  border-color: var(--sm-color-border-control);
+  color: var(--sm-color-text);
+}
+
+.sm-chip {
+  align-items: center;
+  background: var(--sm-color-bg-surface);
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  gap: var(--sm-space-2);
+  min-height: var(--sm-target-min);
+  padding: 0 var(--sm-space-4);
+  text-transform: none;
+}
+
+.sm-chip:hover,
+.sm-chip.sm-is-hover {
+  background: var(--sm-color-bg-panel);
+}
+
+.sm-chip[aria-pressed="true"] {
+  background: var(--sm-color-bg-inverse);
+  border-color: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-inverse);
+}
+
+.sm-chip:focus-visible,
+.sm-chip.sm-is-focus {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-tbc {
+  border: 1px dashed var(--sm-color-text-accent-inverse);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text-accent-inverse);
+  display: inline-block;
+  font-family: var(--sm-font-body);
+  font-size: 11px;
+  font-weight: var(--sm-weight-body-strong);
+  line-height: 1;
+  margin-left: var(--sm-space-1);
+  padding: 3px 6px;
+  vertical-align: middle;
+}
+
+/* Price
+   -------------------------------------------------------------------------- */
+.sm-price {
+  align-items: baseline;
+  display: flex;
+  gap: var(--sm-space-2);
+  margin: 0;
+}
+
+.sm-price__from {
+  color: var(--sm-color-text-muted);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body);
+  line-height: 1;
+}
+
+.sm-price__value {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-price);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--sm-weight-body-strong);
+  line-height: 1.1;
+}
+
+.sm-price--lead .sm-price__value {
+  font-size: var(--sm-text-price-lead);
+}
+
+.sm-price-note {
+  color: var(--sm-color-text-muted);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body);
+  line-height: 1.45;
+  margin: var(--sm-space-2) 0 0;
+}
+
+.sm-price-panel {
+  background: var(--sm-color-bg-inverse);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text-inverse);
+  padding: var(--sm-space-5);
+}
+
+.sm-price-panel .sm-label {
+  color: var(--sm-color-text-accent-inverse);
+}
+
+.sm-price-panel .sm-price__from,
+.sm-price-panel .sm-price-note {
+  color: var(--sm-color-text-inverse-muted);
+}
+
+.sm-price-panel .sm-price__value {
+  color: var(--sm-color-text-inverse);
+}
+
+/* Cards. The whole card is one link. The heart sits outside that link.
+   -------------------------------------------------------------------------- */
+.sm-card-wrap {
+  position: relative;
+}
+
+.sm-card {
+  background: var(--sm-color-bg-panel);
+  border: 1px solid var(--sm-color-border-decorative);
+  border-radius: var(--sm-radius-sm);
+  box-shadow: var(--sm-shadow-sm);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+  transition: box-shadow var(--sm-duration-base) var(--sm-ease);
+}
+
+.sm-card:hover,
+.sm-card.sm-is-hover {
+  box-shadow: var(--sm-shadow-md);
+}
+
+.sm-card:focus-visible {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: 3px;
+}
+
+.sm-card__photo {
+  aspect-ratio: 1 / 1;
+  background: var(--sm-color-bg-surface);
+  position: relative;
+}
+
+.sm-card__photo img {
+  display: block;
+  height: calc(100% - 36px);
+  left: 18px;
+  object-fit: contain;
+  position: absolute;
+  top: 18px;
+  width: calc(100% - 36px);
+}
+
+.sm-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sm-space-2);
+  padding: var(--sm-space-4) 18px 18px;
+}
+
+.sm-card__title {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-display);
+  font-size: var(--sm-text-card-title);
+  font-weight: var(--sm-weight-display);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.sm-card .sm-price__from,
+.sm-card .sm-price-note {
+  color: var(--sm-color-text-muted);
+}
+
+.sm-card__more {
+  color: var(--sm-color-link-on-panel);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  margin-top: var(--sm-space-1);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Square shortlist heart. 44px. 2px corners. Not a circle.
+   -------------------------------------------------------------------------- */
+.sm-save {
+  align-items: center;
+  appearance: none;
+  background: var(--sm-color-bg-surface);
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  cursor: pointer;
+  display: flex;
+  height: var(--sm-target-min);
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: var(--sm-space-3);
+  top: var(--sm-space-3);
+  width: var(--sm-target-min);
+  z-index: 2;
+}
+
+.sm-save svg {
+  fill: none;
+  height: 20px;
+  stroke: var(--sm-color-text);
+  stroke-width: 1.8;
+  width: 20px;
+}
+
+.sm-save:hover {
+  background: var(--sm-color-bg-panel);
+}
+
+.sm-save:focus-visible,
+.sm-save.sm-is-focus {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-save[aria-pressed="true"] {
+  background: var(--sm-color-bg-inverse);
+  border-color: var(--sm-color-bg-inverse);
+}
+
+.sm-save[aria-pressed="true"] svg {
+  fill: var(--sm-color-text-inverse);
+  stroke: var(--sm-color-text-inverse);
+}
+
+/* Photo frame. Square corners. Do not add a curved top.
+   -------------------------------------------------------------------------- */
+.sm-frame {
+  align-items: flex-end;
+  background: var(--sm-color-bg-surface);
+  border: 1px solid var(--sm-color-border-decorative);
+  border-radius: var(--sm-radius-sm);
+  display: flex;
+  height: 340px;
+  justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 28px 22px 18px;
+  width: 260px;
+}
+
+.sm-frame img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Fields. 17px text so phones do not zoom. Sentence-case labels.
+   -------------------------------------------------------------------------- */
+.sm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sm-field label,
+.sm-check {
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  line-height: 1.3;
+}
+
+.sm-input,
+.sm-select,
+.sm-textarea {
+  background: var(--sm-color-bg-surface);
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: 1.0625rem;
+  font-weight: var(--sm-weight-body);
+  line-height: 1.4;
+  min-height: var(--sm-control-height);
+  padding: 11px 14px;
+  width: 100%;
+}
+
+.sm-textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.sm-select-wrap {
+  position: relative;
+}
+
+.sm-select-wrap::after {
+  border-bottom: 1.5px solid var(--sm-color-text);
+  border-right: 1.5px solid var(--sm-color-text);
+  content: "";
+  height: 8px;
+  pointer-events: none;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-70%) rotate(45deg);
+  width: 8px;
+}
+
+.sm-select {
+  appearance: none;
+  padding-right: 40px;
+}
+
+.sm-input::placeholder,
+.sm-textarea::placeholder {
+  color: var(--sm-color-text-muted);
+  opacity: 1;
+}
+
+.sm-input:focus-visible,
+.sm-select:focus-visible,
+.sm-textarea:focus-visible,
+.sm-field.sm-is-focus > .sm-input,
+.sm-field.sm-is-focus .sm-select,
+.sm-field.sm-is-focus > .sm-textarea {
+  border-color: var(--sm-color-border-strong);
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-field.sm-is-error > .sm-input,
+.sm-field.sm-is-error .sm-select,
+.sm-field.sm-is-error > .sm-textarea {
+  border: 2px solid var(--sm-color-error);
+  padding: 10px 13px;
+}
+
+.sm-field.sm-is-success > .sm-input,
+.sm-field.sm-is-success .sm-select,
+.sm-field.sm-is-success > .sm-textarea {
+  border: 2px solid var(--sm-color-success);
+  padding: 10px 13px;
+}
+
+.sm-msg {
+  align-items: flex-start;
+  display: flex;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  gap: 6px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.sm-msg svg {
+  flex: none;
+  height: 15px;
+  margin-top: 2px;
+  width: 15px;
+}
+
+.sm-msg--error {
+  color: var(--sm-color-error);
+}
+
+.sm-msg--success {
+  color: var(--sm-color-success);
+}
+
+.sm-check {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  font-size: 1.0625rem;
+  font-weight: var(--sm-weight-body);
+  gap: var(--sm-space-3);
+  line-height: 1.4;
+  min-height: var(--sm-target-min);
+  padding: 10px 0;
+}
+
+.sm-check input {
+  appearance: none;
+  background: var(--sm-color-bg-surface);
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  cursor: pointer;
+  display: grid;
+  flex: none;
+  height: 22px;
+  margin: 1px 0 0;
+  place-content: center;
+  width: 22px;
+}
+
+.sm-check input[type="radio"] {
+  border-radius: var(--sm-radius-round);
+}
+
+.sm-check input:checked {
+  background: var(--sm-color-bg-inverse);
+  border-color: var(--sm-color-bg-inverse);
+}
+
+.sm-check input[type="checkbox"]:checked::after {
+  border: 2px solid var(--sm-color-text-inverse);
+  border-right: 0;
+  border-top: 0;
+  content: "";
+  height: 6px;
+  transform: rotate(-45deg) translate(1px, -1px);
+  width: 11px;
+}
+
+.sm-check input[type="radio"]:checked {
+  background: var(--sm-color-bg-surface);
+  border: 7px solid var(--sm-color-border-strong);
+}
+
+.sm-check input:focus-visible,
+.sm-check.sm-is-focus input {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-check.sm-is-error input {
+  border: 2px solid var(--sm-color-error);
+}
+
+.sm-check.sm-is-success input:checked {
+  background: var(--sm-color-success);
+  border-color: var(--sm-color-success);
+}
+
+.sm-check.sm-is-success input[type="radio"]:checked {
+  background: var(--sm-color-bg-surface);
+  border: 7px solid var(--sm-color-success);
+}
+
+/* Wordmark. Approved. Rules drop under 200px.
+   -------------------------------------------------------------------------- */
+.sm-wordmark {
+  align-items: center;
+  color: var(--sm-color-text);
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1;
+  min-width: 120px;
+  text-decoration: none;
+}
+
+.sm-wordmark__name {
+  font-family: var(--sm-font-display);
+  font-size: 1.75rem;
+  font-weight: var(--sm-weight-display-strong);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sm-wordmark__sub {
+  align-items: center;
+  display: flex;
+  font-family: var(--sm-font-body);
+  font-size: 10px;
+  font-weight: var(--sm-weight-body-strong);
+  gap: 10px;
+  letter-spacing: 0.38em;
+  line-height: 1;
+  margin-top: 6px;
+  padding-left: 0.38em;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.sm-wordmark__sub::before,
+.sm-wordmark__sub::after {
+  background: var(--sm-color-rule-accent);
+  content: "";
+  flex: 1;
+  height: 1px;
+  min-width: 18px;
+}
+
+.sm-wordmark--compact .sm-wordmark__name {
+  font-size: 1.5rem;
+}
+
+.sm-wordmark--compact .sm-wordmark__sub {
+  font-size: 9px;
+  justify-content: center;
+  letter-spacing: 0.32em;
+  margin-top: var(--sm-space-1);
+}
+
+.sm-wordmark--compact .sm-wordmark__sub::before,
+.sm-wordmark--compact .sm-wordmark__sub::after {
+  display: none;
+}
+
+.sm-wordmark--inverse,
+.sm-footer a.sm-wordmark {
+  color: var(--sm-color-text-accent-inverse);
+}
+
+.sm-wordmark--inverse .sm-wordmark__sub::before,
+.sm-wordmark--inverse .sm-wordmark__sub::after {
+  background: var(--sm-color-rule-accent-inverse);
+}
+
+.sm-wordmark:focus-visible {
+  border-radius: var(--sm-radius-sm);
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-surface--ink .sm-wordmark:focus-visible,
+.sm-footer .sm-wordmark:focus-visible {
+  outline-color: var(--sm-color-focus-inverse);
+}
+
+/* Header. Linen ground, ink wordmark and nav. Not on the live pages yet.
+   -------------------------------------------------------------------------- */
+.sm-header {
+  align-items: center;
+  background: var(--sm-color-bg);
+  border-bottom: 1px solid var(--sm-color-border-decorative);
+  display: flex;
+  gap: var(--sm-space-5);
+  height: var(--sm-header-height);
+  padding: 0 var(--sm-space-6);
+  position: relative;
+}
+
+.sm-header--mobile {
+  gap: var(--sm-space-2);
+  height: var(--sm-header-height-mobile);
+  padding: 0 var(--sm-space-4);
+}
+
+.sm-nav {
+  display: flex;
+  gap: 26px;
+  list-style: none;
+  margin: 0 0 0 auto;
+  padding: 0;
+}
+
+.sm-nav a {
+  border-bottom: 1px solid transparent;
+  color: var(--sm-color-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  line-height: 1;
+  padding: 10px 0;
+  text-decoration: none;
+}
+
+.sm-nav a:hover,
+.sm-nav a[aria-current="page"] {
+  border-bottom-color: var(--sm-color-border-control);
+}
+
+.sm-nav a:focus-visible {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-header__actions {
+  align-items: center;
+  display: flex;
+  gap: var(--sm-space-3);
+}
+
+.sm-iconbtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: var(--sm-target-min);
+  justify-content: center;
+  padding: 0;
+  width: var(--sm-target-min);
+}
+
+.sm-iconbtn svg {
+  fill: none;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  width: 20px;
+}
+
+.sm-iconbtn--plain {
+  border-color: transparent;
+}
+
+.sm-iconbtn:focus-visible {
+  outline: var(--sm-focus-width) solid var(--sm-color-focus);
+  outline-offset: var(--sm-focus-offset);
+}
+
+.sm-bottom-bar {
+  background: var(--sm-color-bg-inverse);
+  box-shadow: var(--sm-shadow-bar);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  padding: 10px var(--sm-space-4);
+}
+
+.sm-bottom-bar .sm-btn {
+  min-height: var(--sm-control-height);
+  padding: 0 var(--sm-space-3);
+}
+
+/* Footer. Ink ground. Muted text is a solid colour, not faded white.
+   -------------------------------------------------------------------------- */
+.sm-footer {
+  background: var(--sm-color-bg-inverse);
+  color: var(--sm-color-text-inverse);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  line-height: 1.6;
+  padding: var(--sm-space-7) var(--sm-space-6) var(--sm-space-5);
+}
+
+.sm-footer__top {
+  border-bottom: 1px solid var(--sm-color-border-inverse);
+  display: grid;
+  gap: var(--sm-space-6);
+  grid-template-columns: 1.3fr 1fr 1fr;
+  padding-bottom: var(--sm-space-5);
+}
+
+.sm-footer h4,
+.sm-footer .sm-label {
+  color: var(--sm-color-text-accent-inverse);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: var(--sm-tracking-label);
+  line-height: 1.2;
+  margin: 0 0 var(--sm-space-3);
+  text-transform: uppercase;
+}
+
+.sm-footer ul {
+  column-gap: var(--sm-space-4);
+  columns: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sm-footer li a {
+  display: inline-block;
+  padding: var(--sm-space-1) 0;
+}
+
+.sm-footer a {
+  color: var(--sm-color-text-inverse);
+  text-decoration: none;
+}
+
+.sm-footer a:hover,
+.sm-footer a.sm-is-hover {
+  color: var(--sm-color-link-inverse-hover);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.sm-footer a.sm-wordmark,
+.sm-footer a.sm-wordmark:hover {
+  color: var(--sm-color-text-accent-inverse);
+  text-decoration: none;
+}
+
+.sm-footer .sm-muted {
+  color: var(--sm-color-text-inverse-muted);
+}
+
+.sm-footer__legal {
+  color: var(--sm-color-text-inverse-muted);
+  font-size: var(--sm-text-xs);
+  line-height: 1.6;
+  padding-top: var(--sm-space-4);
+}
+
+.sm-footer__legal p {
+  margin: 0 0 6px;
+}
+
+.sm-footer__legal a {
+  text-decoration: underline;
+}
+
+.sm-footer--stacked .sm-footer__top,
+.sm-footer--mobile .sm-footer__top {
+  grid-template-columns: 1fr;
+}
+
+/* Quote panel
+   -------------------------------------------------------------------------- */
+.sm-testimonial {
+  background: var(--sm-color-bg-panel);
+  border-left: 3px solid var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+  max-width: 620px;
+  padding: var(--sm-space-6);
+}
+
+.sm-testimonial .sm-quote {
+  color: var(--sm-color-text);
+}
+
+.sm-stars {
+  color: var(--sm-color-text-accent-on-panel);
+  display: flex;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.sm-stars svg {
+  fill: currentColor;
+  height: 16px;
+  width: 16px;
+}
+
+.sm-testimonial footer {
+  align-items: baseline;
+  display: flex;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  gap: 10px;
+  margin-top: var(--sm-space-4);
+}
+
+.sm-testimonial .sm-name {
+  color: var(--sm-color-text);
+  font-weight: var(--sm-weight-body-strong);
+}
+
+.sm-testimonial .sm-loc {
+  color: var(--sm-color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm-btn,
+  .sm-card,
+  .sm-chip,
+  .sm-save {
+    transition: none;
+  }
+
+  .sm-btn:active,
+  .sm-btn.sm-is-active,
+  .sm-btn--primary:active,
+  .sm-btn--inverse:active,
+  .sm-btn--inverse.sm-is-active {
+    transform: none;
+  }
+
+  .sm-btn.sm-is-loading::before {
+    animation: none;
+  }
+}

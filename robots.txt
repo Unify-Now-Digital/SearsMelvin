@@ -15,6 +15,10 @@ Disallow: /partner.html
 Disallow: /track
 Disallow: /track.html
 
+# Design-system reference. noindex as well (see _headers).
+Disallow: /styleguide
+Disallow: /styleguide.html
+
 # API endpoints — never indexable
 Disallow: /api/
 

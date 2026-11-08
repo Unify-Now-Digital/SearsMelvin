@@ -11,7 +11,8 @@ const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
 
 // Static, hand-maintained set. Customer-facing only — never list /admin,
-// /track, /quote (noindex or login-gated). /partner 301s off-site.
+// /track, /quote (noindex or login-gated), or /styleguide (design reference).
+// /partner 301s off-site.
 const STATIC_PAGES = [
   { path: "/",                priority: "1.0",  changefreq: "weekly"  },
   { path: "/memorials",       priority: "0.9",  changefreq: "weekly"  },

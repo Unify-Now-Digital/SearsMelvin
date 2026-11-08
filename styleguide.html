@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Style guide — Sears Melvin Memorials</title>
+  <meta name="description" content="Bronze and Linen style guide. Reference only. Not part of the public site.">
+  <link rel="icon" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400&amp;family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500&amp;display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/components.css">
+  <link rel="stylesheet" href="/styleguide.css">
+</head>
+<body>
+  <div class="sg-bar" role="region" aria-label="Style guide controls">
+    <strong>Sears Melvin · Bronze &amp; Linen style guide</strong>
+    <span>8 Nov 2026 · Reference only</span>
+    <div class="sg-toggle" role="group" aria-label="Preview width">
+      <button type="button" id="vDesk" aria-pressed="true">Desktop 1280</button>
+      <button type="button" id="vMob" aria-pressed="false">Mobile 375</button>
+    </div>
+  </div>
+
+  <div class="sg-frame">
+    <p class="sg-note"><strong>Public pages do not load these styles yet.</strong> The wordmark on this page is approved. Opening hours and the showroom phone are TBC.</p>
+
+    <div class="sg-intro" id="top">
+      <span class="sm-label sm-label--accent">Design system · searsmelvin.co.uk</span>
+      <h1 class="sm-h1 sg-mt-3">Every element, before we build.</h1>
+      <p class="sm-body sg-mt-3">One file, <code>tokens.css</code>, feeds every element below. Components use <code>sm-</code> classes and semantic tokens. This page is not in the sitemap and it does not load Tag Manager.</p>
+    </div>
+
+    <section class="sg-sec" id="colour">
+      <span class="sg-num">01</span>
+      <h2>Colour palette</h2>
+      <p class="sg-lead">Five brand colours, plus approved shades for text and form states. Components use <code>--sm-color-*</code>. They do not use a raw value.</p>
+
+      <h3 class="sg-h3">Brand primitives</h3>
+      <div class="sg-grid">
+        <div class="sg-swatch sg-swatch--ink"><i></i><div><b>Ink</b><code>--sm-ref-ink</code><br>#302C27<span class="sg-cap">Text, footer, primary button</span></div></div>
+        <div class="sg-swatch sg-swatch--linen"><i></i><div><b>Linen</b><code>--sm-ref-linen</code><br>#FBF9F5<span class="sg-cap">Page and header background</span></div></div>
+        <div class="sg-swatch sg-swatch--bronze"><i></i><div><b>Bronze</b><code>--sm-ref-bronze</code><br>#7A6449<span class="sg-cap">Links, accents, rules, borders</span></div></div>
+        <div class="sg-swatch sg-swatch--sand"><i></i><div><b>Sand</b><code>--sm-ref-sand</code><br>#DDD1C0<span class="sg-cap">Cards, panels, dividers</span></div></div>
+        <div class="sg-swatch sg-swatch--soft"><i></i><div><b>Soft bronze</b><code>--sm-ref-soft-bronze</code><br>#B19A7B<span class="sg-cap">Text on ink only. Fills take ink text.</span></div></div>
+        <div class="sg-swatch sg-swatch--white"><i></i><div><b>White</b><code>--sm-ref-white</code><br>#FFFFFF<span class="sg-cap">Photo wells and inputs</span></div></div>
+      </div>
+
+      <h3 class="sg-h3">Approved shades and form-state colours</h3>
+      <div class="sg-grid">
+        <div class="sg-swatch sg-swatch--dark"><i></i><div><b>Dark bronze</b><code>--sm-ref-bronze-800</code><br>#5A4A36<span class="sg-cap">Small links and text on sand</span></div></div>
+        <div class="sg-swatch sg-swatch--deeper"><i></i><div><b>Deeper bronze</b><code>--sm-ref-bronze-700</code><br>#6B5840<span class="sg-cap">6.45:1 on linen. Not the sand text colour.</span></div></div>
+        <div class="sg-swatch sg-swatch--muted"><i></i><div><b>Ink muted</b><code>--sm-ref-ink-muted</code><br>#5C554C<span class="sg-cap">Secondary text and notes</span></div></div>
+        <div class="sg-swatch sg-swatch--inverse-muted"><i></i><div><b>Ink inverse muted</b><code>--sm-ref-ink-inverse-muted</code><br>#CFC6B8<span class="sg-cap">Legal text on ink</span></div></div>
+        <div class="sg-swatch sg-swatch--quiet"><i></i><div><b>Quiet sand</b><code>--sm-ref-sand-100</code><br>#EFE8DE<span class="sg-cap">Large quiet panels</span></div></div>
+        <div class="sg-swatch sg-swatch--error"><i></i><div><b>Error red</b><code>--sm-ref-error</code><br>#9E3A2E<span class="sg-cap">Form states only</span></div></div>
+        <div class="sg-swatch sg-swatch--success"><i></i><div><b>Success green</b><code>--sm-ref-success</code><br>#3F6E4E<span class="sg-cap">Form states only</span></div></div>
+      </div>
+
+      <h3 class="sg-h3">Semantic roles</h3>
+      <div class="sg-scroll">
+        <table class="sg-table">
+          <tr><th>Token</th><th>Maps to</th><th>Use</th></tr>
+          <tr><td><code>--sm-color-bg</code></td><td>linen #FBF9F5</td><td>Page and header background</td></tr>
+          <tr><td><code>--sm-color-bg-surface</code></td><td>white #FFFFFF</td><td>Photo wells, inputs</td></tr>
+          <tr><td><code>--sm-color-bg-panel</code></td><td>sand #DDD1C0</td><td>Cards, quote panel, info panels</td></tr>
+          <tr><td><code>--sm-color-bg-inverse</code></td><td>ink #302C27</td><td>Footer, price panel, mobile bottom bar</td></tr>
+          <tr><td><code>--sm-color-text</code></td><td>ink</td><td>Body text and headings</td></tr>
+          <tr><td><code>--sm-color-text-muted</code></td><td>ink muted</td><td>Secondary text</td></tr>
+          <tr><td><code>--sm-color-text-accent</code></td><td>bronze #7A6449</td><td>Accent text on linen or white only</td></tr>
+          <tr><td><code>--sm-color-text-accent-on-panel</code></td><td>dark bronze #5A4A36</td><td>Accent text and links on sand</td></tr>
+          <tr><td><code>--sm-color-text-accent-inverse</code></td><td>soft bronze #B19A7B</td><td>Accent text on ink only</td></tr>
+          <tr><td><code>--sm-color-action-primary-bg</code></td><td>ink, bronze on hover</td><td>Primary button</td></tr>
+          <tr><td><code>--sm-color-border-control</code></td><td>bronze #7A6449</td><td>Inputs and outline buttons</td></tr>
+          <tr><td><code>--sm-color-border-decorative</code></td><td>sand #DDD1C0</td><td>Dividers only. Never a control.</td></tr>
+          <tr><td><code>--sm-color-focus</code></td><td>bronze / soft bronze</td><td>2px focus ring, 2px offset</td></tr>
+        </table>
+      </div>
+
+      <h3 class="sg-h3">Contrast: allowed pairs (WCAG 2.2 AA)</h3>
+      <div class="sg-scroll">
+        <table class="sg-table">
+          <tr><th>Sample</th><th>Pair</th><th>Use</th><th>Ratio</th><th>Needs</th><th>Result</th></tr>
+          <tr><td><span class="sg-pair sg-pair--ink-linen" data-aa="text">Aa</span></td><td><code>ink</code> on <code>linen</code><br><small>#302C27 / #FBF9F5</small></td><td>Body text, headings, header wordmark and nav</td><td class="sg-numcell">13.18:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--ink-white" data-aa="text">Aa</span></td><td><code>ink</code> on <code>white</code><br><small>#302C27 / #FFFFFF</small></td><td>Text on photo wells and inputs</td><td class="sg-numcell">13.86:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--ink-sand" data-aa="text">Aa</span></td><td><code>ink</code> on <code>sand</code><br><small>#302C27 / #DDD1C0</small></td><td>Text on cards and panels</td><td class="sg-numcell">9.21:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--linen-ink" data-aa="text">Aa</span></td><td><code>linen</code> on <code>ink</code><br><small>#FBF9F5 / #302C27</small></td><td>Footer text, primary button label</td><td class="sg-numcell">13.18:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--bronze-linen" data-aa="text">Aa</span></td><td><code>bronze</code> on <code>linen</code><br><small>#7A6449 / #FBF9F5</small></td><td>Links, accents, small labels</td><td class="sg-numcell">5.33:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--bronze-white" data-aa="text">Aa</span></td><td><code>bronze</code> on <code>white</code><br><small>#7A6449 / #FFFFFF</small></td><td>Links on white</td><td class="sg-numcell">5.61:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--dark-sand" data-aa="text">Aa</span></td><td><code>dark bronze</code> on <code>sand</code><br><small>#5A4A36 / #DDD1C0</small></td><td>Small links and text on sand</td><td class="sg-numcell">5.66:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--dark-linen" data-aa="text">Aa</span></td><td><code>dark bronze</code> on <code>linen</code><br><small>#5A4A36 / #FBF9F5</small></td><td>Dark bronze on linen</td><td class="sg-numcell">8.09:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--soft-ink" data-aa="text">Aa</span></td><td><code>soft bronze</code> on <code>ink</code><br><small>#B19A7B / #302C27</small></td><td>Footer wordmark, accents on ink only</td><td class="sg-numcell">5.13:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--ink-soft" data-aa="text">Aa</span></td><td><code>ink</code> on <code>soft bronze</code><br><small>#302C27 / #B19A7B</small></td><td>Any soft-bronze fill takes ink text</td><td class="sg-numcell">5.13:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--linen-bronze" data-aa="text">Aa</span></td><td><code>linen</code> on <code>bronze</code><br><small>#FBF9F5 / #7A6449</small></td><td>Primary button hover label</td><td class="sg-numcell">5.33:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--muted-linen" data-aa="text">Aa</span></td><td><code>ink muted</code> on <code>linen</code><br><small>#5C554C / #FBF9F5</small></td><td>Secondary text</td><td class="sg-numcell">6.99:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--muted-sand" data-aa="text">Aa</span></td><td><code>ink muted</code> on <code>sand</code><br><small>#5C554C / #DDD1C0</small></td><td>Secondary text on cards</td><td class="sg-numcell">4.88:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--inverse-ink" data-aa="text">Aa</span></td><td><code>inverse muted</code> on <code>ink</code><br><small>#CFC6B8 / #302C27</small></td><td>Footer legal text</td><td class="sg-numcell">8.20:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--error-linen" data-aa="text">Aa</span></td><td><code>error</code> on <code>linen</code><br><small>#9E3A2E / #FBF9F5</small></td><td>Error message (forms only)</td><td class="sg-numcell">6.45:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--error-white" data-aa="ui">Aa</span></td><td><code>error</code> on <code>white</code><br><small>#9E3A2E / #FFFFFF</small></td><td>Error border on an input</td><td class="sg-numcell">6.78:1</td><td>UI 3.0</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--success-linen" data-aa="text">Aa</span></td><td><code>success</code> on <code>linen</code><br><small>#3F6E4E / #FBF9F5</small></td><td>Success message (forms only)</td><td class="sg-numcell">5.62:1</td><td>Text 4.5</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--success-white" data-aa="ui">Aa</span></td><td><code>success</code> on <code>white</code><br><small>#3F6E4E / #FFFFFF</small></td><td>Success border on an input</td><td class="sg-numcell">5.91:1</td><td>UI 3.0</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--bronze-border" data-aa="ui">Aa</span></td><td><code>bronze</code> on <code>white</code><br><small>#7A6449 / #FFFFFF</small></td><td>Input border, outline button border</td><td class="sg-numcell">5.61:1</td><td>UI 3.0</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--focus-sand" data-aa="ui">Aa</span></td><td><code>bronze</code> on <code>sand</code><br><small>#7A6449 / #DDD1C0</small></td><td>Focus ring on sand (non-text)</td><td class="sg-numcell">3.72:1</td><td>UI 3.0</td><td class="sg-pass">Pass</td></tr>
+          <tr><td><span class="sg-pair sg-pair--focus-ink" data-aa="ui">Aa</span></td><td><code>soft bronze</code> on <code>ink</code><br><small>#B19A7B / #302C27</small></td><td>Focus ring on ink</td><td class="sg-numcell">5.13:1</td><td>UI 3.0</td><td class="sg-pass">Pass</td></tr>
+        </table>
+      </div>
+
+      <h3 class="sg-h3">Not allowed</h3>
+      <div class="sg-scroll">
+        <table class="sg-table">
+          <tr><th>Sample</th><th>Pair</th><th>Why it is listed</th><th>Ratio</th><th>Needs</th><th>Result</th></tr>
+          <tr><td><span class="sg-pair sg-pair--fail-bronze-ink" data-aa="fail">Aa</span></td><td><code>bronze</code> on <code>ink</code></td><td>Bronze text on ink</td><td class="sg-numcell">2.47:1</td><td>Text 4.5</td><td class="sg-fail">Fail</td></tr>
+          <tr><td><span class="sg-pair sg-pair--fail-soft-linen" data-aa="fail">Aa</span></td><td><code>soft bronze</code> on <code>linen</code></td><td>Soft bronze text on linen</td><td class="sg-numcell">2.57:1</td><td>Text 4.5</td><td class="sg-fail">Fail</td></tr>
+          <tr><td><span class="sg-pair sg-pair--fail-bronze-sand" data-aa="fail">Aa</span></td><td><code>bronze</code> on <code>sand</code></td><td>Brand bronze text on sand. Use dark bronze.</td><td class="sg-numcell">3.72:1</td><td>Text 4.5</td><td class="sg-fail">Fail</td></tr>
+          <tr><td><span class="sg-pair sg-pair--fail-linen-soft" data-aa="fail">Aa</span></td><td><code>linen</code> on <code>soft bronze</code></td><td>Linen text on a soft-bronze fill</td><td class="sg-numcell">2.57:1</td><td>Text 4.5</td><td class="sg-fail">Fail</td></tr>
+          <tr><td><span class="sg-pair sg-pair--fail-sand-linen" data-aa="fail">Aa</span></td><td><code>sand</code> on <code>linen</code></td><td>Sand text on linen</td><td class="sg-numcell">1.43:1</td><td>Text 4.5</td><td class="sg-fail">Fail</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="type">
+      <span class="sg-num">02</span>
+      <h2>Type scale</h2>
+      <p class="sg-lead">Cormorant Garamond for headings (500 and 600). DM Sans for body, prices and buttons (400 and 500). Italic Cormorant 400 is for short quotes. Weight 300 is only at 32px and above.</p>
+      <div class="sg-type-row"><span class="sg-cap"><b>H1</b><br>Cormorant 600 · <code>--sm-text-3xl</code> · line-height 1.1</span><p class="sm-h1">Memorials with care.</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>H2</b><br>Cormorant 500 · <code>--sm-text-2xl</code> · line-height 1.15</span><p class="sm-h2">Headstones, gravestones and memorials</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>H3</b><br>Cormorant 500 · <code>--sm-text-xl</code></span><p class="sm-h3">A simple, supportive process</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>H4</b><br>Cormorant 600 · <code>--sm-text-lg</code> 20px</span><p class="sm-h4">Step 2: Design and quote</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Body</b><br>DM Sans 400 · <code>--sm-text-md</code> 18px desktop, 17px mobile · max 68ch</span><p class="sm-body">We prepare a written quote that sets out every cost. Take the time you need. There is no pressure to decide quickly.</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Small</b><br>DM Sans 400 · <code>--sm-text-sm</code> 15px · ink muted</span><p class="sm-small">We reply within one working day.</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Label</b><br>DM Sans 500 · <code>--sm-text-xs</code> 13px · uppercase · 0.25em</span><span class="sm-label">Memorials</span></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Price</b><br>DM Sans 500 · <code>--sm-text-price</code> 22px · tabular figures</span><p class="sm-price"><span class="sm-price__from">From</span><span class="sm-price__value">£1,450</span></p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Quote</b><br>Cormorant 400 italic · 22px · short quotes only</span><p class="sm-quote">“Time to choose, space to remember.”</p></div>
+      <div class="sg-type-row"><span class="sg-cap"><b>Display light</b><br>Cormorant 300 · 48px · only at 32px and above</span><p class="sm-display">A lasting tribute.</p></div>
+    </section>
+
+    <section class="sg-sec" id="buttons">
+      <span class="sg-num">03</span>
+      <h2>Buttons</h2>
+      <p class="sg-lead">Sentence case. DM Sans 500. 15px. 48px tall. 2px corners. One filled ink button in a view. The buttons also respond to a real pointer and keyboard.</p>
+      <div class="sg-scroll">
+        <div class="sg-btn-table">
+          <span class="sg-hd">Type</span><span class="sg-hd">Default</span><span class="sg-hd">Hover</span><span class="sg-hd">Focus</span><span class="sg-hd">Active</span><span class="sg-hd">Disabled</span>
+
+          <span class="sg-rh">Primary<span class="sg-cap">Ink ground, linen text (13.18:1). Hover bronze (5.33:1). <code>sm-btn--primary</code></span></span>
+          <div class="sg-state" data-state="Default"><button class="sm-btn sm-btn--primary" type="button">Request a quote</button></div>
+          <div class="sg-state" data-state="Hover"><span class="sm-btn sm-btn--primary sm-is-hover">Request a quote</span></div>
+          <div class="sg-state" data-state="Focus"><span class="sm-btn sm-btn--primary sm-is-focus">Request a quote</span></div>
+          <div class="sg-state" data-state="Active"><span class="sm-btn sm-btn--primary sm-is-active">Request a quote</span></div>
+          <div class="sg-state" data-state="Disabled"><button class="sm-btn sm-btn--primary" type="button" disabled>Request a quote</button></div>
+
+          <span class="sg-rh">Secondary<span class="sg-cap">1px bronze border, ink text. Hover sand. <code>sm-btn--secondary</code></span></span>
+          <div class="sg-state" data-state="Default"><button class="sm-btn sm-btn--secondary" type="button">Browse memorials</button></div>
+          <div class="sg-state" data-state="Hover"><span class="sm-btn sm-btn--secondary sm-is-hover">Browse memorials</span></div>
+          <div class="sg-state" data-state="Focus"><span class="sm-btn sm-btn--secondary sm-is-focus">Browse memorials</span></div>
+          <div class="sg-state" data-state="Active"><span class="sm-btn sm-btn--secondary sm-is-active">Browse memorials</span></div>
+          <div class="sg-state" data-state="Disabled"><button class="sm-btn sm-btn--secondary" type="button" disabled>Browse memorials</button></div>
+
+          <span class="sg-rh">Text<span class="sg-cap">Bronze, 1px underline. Hover ink. <code>sm-btn--text</code></span></span>
+          <div class="sg-state" data-state="Default"><a class="sm-btn sm-btn--text" href="#buttons" data-brochure-source="styleguide">Download our brochure</a></div>
+          <div class="sg-state" data-state="Hover"><span class="sm-btn sm-btn--text sm-is-hover">Download our brochure</span></div>
+          <div class="sg-state" data-state="Focus"><span class="sm-btn sm-btn--text sm-is-focus">Download our brochure</span></div>
+          <div class="sg-state" data-state="Active"><span class="sm-btn sm-btn--text sm-is-active">Download our brochure</span></div>
+          <div class="sg-state" data-state="Disabled"><button class="sm-btn sm-btn--text" type="button" disabled>Download our brochure</button></div>
+
+          <span class="sg-rh">Phone<span class="sg-cap">Real tel link. The number is one text node. <code>sm-btn--call</code></span></span>
+          <div class="sg-state" data-state="Default"><a class="sm-btn sm-btn--call" href="tel:+442038352548"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</a></div>
+          <div class="sg-state" data-state="Hover"><span class="sm-btn sm-btn--call sm-is-hover"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</span></div>
+          <div class="sg-state" data-state="Focus"><span class="sm-btn sm-btn--call sm-is-focus"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</span></div>
+          <div class="sg-state" data-state="Active"><span class="sm-btn sm-btn--call sm-is-active"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</span></div>
+          <div class="sg-state" data-state="Disabled"><button class="sm-btn sm-btn--call" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</button></div>
+        </div>
+      </div>
+
+      <div class="sm-surface--ink sg-panel sg-mt-4">
+        <span class="sm-label sm-label--inverse">On ink (footer and mobile bar)</span>
+        <div class="sg-row sg-mt-3">
+          <button class="sm-btn sm-btn--inverse" type="button">Request a quote</button>
+          <span class="sm-btn sm-btn--inverse sm-is-hover">Request a quote</span>
+          <span class="sm-btn sm-btn--inverse sm-is-focus">Request a quote</span>
+          <span class="sm-btn sm-btn--inverse sm-is-active">Request a quote</span>
+          <a class="sm-btn sm-btn--call-inverse" href="tel:+442038352548"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</a>
+        </div>
+        <span class="sg-cap">A soft-bronze fill takes ink text (5.13:1). Hover is a linen fill. The focus ring on ink is soft bronze. This call number is the existing sales line. It is not the showroom phone.</span>
+      </div>
+      <p class="sg-cap">Disabled uses a sand fill and ink-muted text (4.88:1). Active presses 1px, with an ink inner shadow. Focus is a 2px ring with a 2px offset.</p>
+      <div class="sg-row sg-mt-3">
+        <button class="sm-btn sm-btn--primary sm-is-loading" type="button">Sending…</button>
+        <span class="sg-cap">Loading keeps the width and adds “Sending…”.</span>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="links">
+      <span class="sg-num">04</span>
+      <h2>Links</h2>
+      <p class="sg-lead">Links in text are always underlined. Bronze and ink can look alike. Colour is not the only cue.</p>
+      <div class="sg-grid" style="--sg-min: 280px">
+        <div class="sg-panel sm-surface--linen">
+          <p>Read our <a class="sm-link" href="#links">care guide</a> for cleaning tips.</p>
+          <p>Hover: <a class="sm-link sm-is-hover" href="#links">care guide</a> · Focus: <a class="sm-link sm-is-focus" href="#links">care guide</a></p>
+          <span class="sg-cap">On linen or white · bronze (5.33:1) · hover ink</span>
+        </div>
+        <div class="sg-panel sm-surface--sand">
+          <p>Fees vary. <a class="sm-link" href="#links">See permit guidance</a>.</p>
+          <p>Hover: <a class="sm-link sm-is-hover" href="#links">guidance</a> · Focus: <a class="sm-link sm-is-focus" href="#links">guidance</a></p>
+          <span class="sg-cap">On sand · dark bronze (5.66:1) · hover ink</span>
+        </div>
+        <div class="sg-panel sm-surface--ink">
+          <p><a class="sm-link" href="#links">Terms</a> · <a class="sm-link" href="#links">Privacy</a> · <a class="sm-link" href="#links">Track order</a></p>
+          <p>Hover: <a class="sm-link sm-is-hover" href="#links">Privacy</a> · Focus: <a class="sm-link sm-is-focus" href="#links">Privacy</a></p>
+          <span class="sg-cap">On ink · linen (13.18:1) · hover soft bronze (5.13:1)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="labels">
+      <span class="sg-num">05</span>
+      <h2>Labels, badges and chips</h2>
+      <p class="sg-lead">Spaced capitals are for small labels only. Badges state facts. Do not use them for pressure.</p>
+      <div class="sg-grid" style="--sg-min: 250px">
+        <div class="sg-spec"><span class="sm-label">Memorials</span><span class="sm-label sm-label--accent">Lawn headstones</span><span class="sg-cap">Label · DM Sans 500, 13px, capitals, 0.25em. Ink, or bronze on linen only.</span></div>
+        <div class="sg-spec"><span class="sm-badge">Guide price</span><span class="sg-cap">Neutral badge · sand ground, ink text (9.21:1) · 2px corners</span></div>
+        <div class="sg-spec"><span class="sm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Fixing included</span><span class="sm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>30-year fixing guarantee</span><span class="sg-cap">Trust chip. Keep the class <code>site-trust-chip</code> on the live pages.</span></div>
+        <div class="sg-spec"><span class="sm-badge sm-badge--ink">RQMF Registered · No. 2263</span><span class="sg-cap">Accent badge · ink ground, soft-bronze text (5.13:1)</span></div>
+        <div class="sg-spec"><span class="sm-badge sm-badge--outline">Recent installation</span><span class="sg-cap">Outline badge · bronze border, ink text</span></div>
+      </div>
+      <h3 class="sg-h3">Filter chips</h3>
+      <div class="sg-row">
+        <button class="sm-chip" type="button" aria-pressed="false">All</button>
+        <button class="sm-chip" type="button" aria-pressed="true">Lawn headstones</button>
+        <button class="sm-chip sm-is-hover" type="button" aria-pressed="false">Kerb sets</button>
+        <button class="sm-chip sm-is-focus" type="button" aria-pressed="false">Book memorials</button>
+      </div>
+      <span class="sg-cap">Default, selected, hover and focus. 44px tall. Sentence case. 2px corners.</span>
+    </section>
+
+    <section class="sg-sec" id="price">
+      <span class="sg-num">06</span>
+      <h2>Price display</h2>
+      <p class="sg-lead">Guide prices use DM Sans 500. Always say what is included or extra. Do not add a permit fee to the guide price.</p>
+      <div class="sg-grid" style="--sg-min: 280px">
+        <div class="sg-panel sm-surface--linen">
+          <p class="sm-price"><span class="sm-price__from">From</span><span class="sm-price__value">£1,450</span></p>
+          <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+          <span class="sg-cap">Card or list · 22px · note 13px ink muted</span>
+        </div>
+        <div class="sg-panel sm-surface--linen">
+          <p class="sm-price sm-price--lead"><span class="sm-price__from">From</span><span class="sm-price__value">£1,450</span></p>
+          <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+          <span class="sg-cap">Product page · <code>--sm-text-price-lead</code> 28px</span>
+        </div>
+        <div class="sm-price-panel">
+          <span class="sm-label">Guide price</span>
+          <p class="sm-price sm-price--lead sg-mt-3"><span class="sm-price__from">From</span><span class="sm-price__value">£1,450</span></p>
+          <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+          <span class="sg-cap">Ink ground, linen price, soft-bronze label</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="cards">
+      <span class="sg-num">07</span>
+      <h2>Product cards</h2>
+      <p class="sg-lead">The photo sits on white. Do not tint it. Details sit on sand. The whole card is one link. The shortlist heart is square, and it sits outside the link.</p>
+      <div class="sg-cards">
+        <div class="sm-card-wrap">
+          <button class="save-btn sm-save" type="button" aria-pressed="false" aria-label="Save The Castell to your shortlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+          <a class="product-card sm-card" href="#cards" data-id="the-castell" data-slug="the-castell" data-name="The Castell" data-price-value="1450" data-type="lawn-headstones">
+            <div class="sm-card__photo"><img src="/images/styleguide/the-castell.webp" alt="The Castell lawn headstone" width="640" height="640"></div>
+            <div class="sm-card__body">
+              <span class="sm-label">Lawn headstones</span>
+              <h3 class="sm-card__title">The Castell</h3>
+              <p class="sm-price"><span class="sm-price__from">From</span><span class="sm-price__value">£1,450</span></p>
+              <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+              <span class="sm-card__more">View details</span>
+            </div>
+          </a>
+          <span class="sg-cap">Heart not saved · white, bronze border, square 2px corners</span>
+        </div>
+        <div class="sm-card-wrap">
+          <button class="save-btn sm-save" type="button" aria-pressed="true" aria-label="Remove The Charnwood from your shortlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+          <a class="product-card sm-card sm-is-hover" href="#cards" data-id="the-charnwood" data-slug="the-charnwood" data-name="The Charnwood" data-price-value="3950" data-type="kerb-sets">
+            <div class="sm-card__photo"><img src="/images/styleguide/the-charnwood.webp" alt="The Charnwood kerb set" width="640" height="640"></div>
+            <div class="sm-card__body">
+              <span class="sm-label">Kerb sets</span>
+              <h3 class="sm-card__title">The Charnwood</h3>
+              <p class="sm-price"><span class="sm-price__from">From</span><span class="sm-price__value">£3,950</span></p>
+              <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+              <span class="sm-card__more">View details</span>
+            </div>
+          </a>
+          <span class="sg-cap">Heart saved · ink fill, linen heart · card in the hover state</span>
+        </div>
+        <div class="sm-card-wrap">
+          <button class="save-btn sm-save sm-is-focus" type="button" aria-pressed="false" aria-label="Save The Thirsk to your shortlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+          <a class="product-card sm-card" href="#cards" data-id="the-thirsk" data-slug="the-thirsk" data-name="The Thirsk" data-price-value="2400" data-type="book-memorials">
+            <div class="sm-card__photo"><img src="/images/styleguide/the-thirsk.webp" alt="The Thirsk book memorial" width="640" height="640"></div>
+            <div class="sm-card__body">
+              <span class="sm-label">Book memorials</span>
+              <h3 class="sm-card__title">The Thirsk</h3>
+              <p class="sm-price"><span class="sm-price__from">From</span><span class="sm-price__value">£2,400</span></p>
+              <p class="sm-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+              <span class="sm-card__more">View details</span>
+            </div>
+          </a>
+          <span class="sg-cap">Heart in keyboard focus · 44×44px · keep the class <code>save-btn</code></span>
+        </div>
+      </div>
+      <p class="sg-cap">Card: sand ground, 1px sand edge, 2px corners, small shadow. Title Cormorant 500, 24px, ink. “View details” is dark bronze on sand (5.66:1). Click a heart to toggle it.</p>
+    </section>
+
+    <section class="sg-sec" id="forms">
+      <span class="sg-num">08</span>
+      <h2>Form elements</h2>
+      <p class="sg-lead">White fields, 1px bronze border (5.61:1), 48px tall, 17px text so phones do not zoom. Labels sit above the field, in sentence case. Red and green appear only here. This page has no form.</p>
+      <div class="sg-form">
+        <div class="sg-state-hd">Default</div><div class="sg-state-hd">Focus</div><div class="sg-state-hd">Error</div><div class="sg-state-hd">Success</div>
+
+        <div class="sm-field" data-state="Default"><label for="sg-name">Your name</label><input class="sm-input" id="sg-name" type="text" placeholder="e.g. Sarah Mitchell" autocomplete="off"><p class="sm-help">As you would like us to address you.</p></div>
+        <div class="sm-field sm-is-focus" data-state="Focus"><label for="sg-email">Email</label><input class="sm-input" id="sg-email" type="text" value="sarah@" autocomplete="off"><p class="sm-help">We reply within one working day.</p></div>
+        <div class="sm-field sm-is-error" data-state="Error"><label for="sg-phone">Phone</label><input class="sm-input" id="sg-phone" type="text" value="020 383" autocomplete="off" aria-invalid="true" aria-describedby="sg-phone-error"><p class="sm-msg sm-msg--error" id="sg-phone-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16h.01"/></svg>Enter a full UK phone number, like 020 3835 2548.</p></div>
+        <div class="sm-field sm-is-success" data-state="Success"><label for="sg-postcode">Postcode</label><input class="sm-input" id="sg-postcode" type="text" value="NW11 6LB" autocomplete="off"><p class="sm-msg sm-msg--success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Thanks, that looks right.</p></div>
+
+        <div class="sm-field" data-state="Default"><label for="sg-type-a">Memorial type</label><div class="sm-select-wrap"><select class="sm-select" id="sg-type-a"><option>Choose a type</option><option>Lawn headstone</option><option>Kerb set</option></select></div><p class="sm-help">Not sure? Choose “Not sure yet”.</p></div>
+        <div class="sm-field sm-is-focus" data-state="Focus"><label for="sg-type-b">Memorial type</label><div class="sm-select-wrap"><select class="sm-select" id="sg-type-b"><option>Lawn headstone</option></select></div><p class="sm-help">Not sure? Choose “Not sure yet”.</p></div>
+        <div class="sm-field sm-is-error" data-state="Error"><label for="sg-type-c">Memorial type</label><div class="sm-select-wrap"><select class="sm-select" id="sg-type-c" aria-invalid="true" aria-describedby="sg-type-error"><option>Choose a type</option></select></div><p class="sm-msg sm-msg--error" id="sg-type-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16h.01"/></svg>Choose a memorial type.</p></div>
+        <div class="sm-field sm-is-success" data-state="Success"><label for="sg-type-d">Memorial type</label><div class="sm-select-wrap"><select class="sm-select" id="sg-type-d"><option>Kerb set</option></select></div><p class="sm-msg sm-msg--success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Saved.</p></div>
+
+        <div class="sm-field" data-state="Default"><label for="sg-note-a">Anything we should know? (optional)</label><textarea class="sm-textarea" id="sg-note-a" placeholder="Cemetery name, wording ideas…"></textarea></div>
+        <div class="sm-field sm-is-focus" data-state="Focus"><label for="sg-note-b">Anything we should know? (optional)</label><textarea class="sm-textarea" id="sg-note-b">Islington and St Pancras Cemetery</textarea></div>
+        <div class="sm-field sm-is-error" data-state="Error"><label for="sg-note-c">Inscription wording</label><textarea class="sm-textarea" id="sg-note-c" aria-invalid="true" aria-describedby="sg-note-error"></textarea><p class="sm-msg sm-msg--error" id="sg-note-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16h.01"/></svg>Add the wording, or tick “I’m not sure yet”.</p></div>
+        <div class="sm-field sm-is-success" data-state="Success"><label for="sg-note-d">Inscription wording</label><textarea class="sm-textarea" id="sg-note-d">In loving memory</textarea><p class="sm-msg sm-msg--success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>14 letters. 80 are included.</p></div>
+
+        <div data-state="Default"><label class="sm-check"><input type="checkbox">Send me the brochure</label><label class="sm-check"><input type="radio" name="sg-r1" checked>Phone call</label></div>
+        <div data-state="Focus"><label class="sm-check sm-is-focus"><input type="checkbox" checked>Send me the brochure</label><label class="sm-check sm-is-focus"><input type="radio" name="sg-r2">Showroom visit</label></div>
+        <div data-state="Error"><label class="sm-check sm-is-error"><input type="checkbox" aria-invalid="true" aria-describedby="sg-check-error">I agree to the privacy policy</label><p class="sm-msg sm-msg--error" id="sg-check-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16h.01"/></svg>Tick to agree so we can reply.</p><label class="sm-check sm-is-error"><input type="radio" name="sg-r3">Video call</label></div>
+        <div data-state="Success"><label class="sm-check sm-is-success"><input type="checkbox" checked>I agree to the privacy policy</label><label class="sm-check sm-is-success"><input type="radio" name="sg-r4" checked>Phone call</label></div>
+      </div>
+      <p class="sg-cap">Focus: 2px bronze ring, 2px offset, and the border turns ink. Error: 2px error border plus a message linked with <code>aria-describedby</code>. Success: 2px success border. Placeholder is ink muted. The live quote form keeps its id. Do not add a form on a memorials page. Checkbox and radio are 22px inside a 44px row. The radio stays round. The checkbox is square.</p>
+    </section>
+
+    <section class="sg-sec" id="header">
+      <span class="sg-num">09</span>
+      <h2>Header, footer and wordmark</h2>
+      <p class="sg-lead">A linen header with an ink wordmark and menu, matching the fascia. Ink is for the footer and the primary buttons. The live header does not change in this phase. The wordmark is shown here only.</p>
+
+      <h3 class="sg-h3" id="logo">Wordmark</h3>
+      <div class="sg-grid" style="--sg-min: 250px">
+        <div class="sg-lockup sm-surface--linen">
+          <a class="sm-wordmark sg-wm" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+          <span class="sg-cap">200px or wider: a thin bronze rule each side. Cormorant 600, ink.</span>
+        </div>
+        <div class="sg-lockup sm-surface--linen">
+          <a class="sm-wordmark sm-wordmark--compact sg-wm--compact" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+          <span class="sg-cap">Under 200px, including phones: drop the rules. Minimum about 120px. Shown at 132px.</span>
+        </div>
+        <div class="sg-lockup sm-surface--ink">
+          <a class="sm-wordmark sm-wordmark--inverse sg-wm" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+          <span class="sg-cap">On ink (footer): soft bronze (5.13:1).</span>
+        </div>
+      </div>
+
+      <div class="sg-desk-only">
+        <h3 class="sg-h3">Header · desktop</h3>
+        <div class="sg-scroll"><div class="sg-desk">
+          <header class="sm-header">
+            <a class="sm-wordmark sg-wm--mid" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+            <ul class="sm-nav">
+              <li><a href="#cards" aria-current="page">Memorials</a></li>
+              <li><a href="#header">About</a></li>
+              <li><a href="#header">Brochure</a></li>
+              <li><a href="#header">Support</a></li>
+              <li><a href="#header">FAQ</a></li>
+            </ul>
+            <div class="sm-header__actions">
+              <a class="sm-btn sm-btn--call nav-cta" href="tel:+442038352548"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</a>
+              <a class="sm-btn sm-btn--primary" href="#forms">Get a quote</a>
+            </div>
+          </header>
+        </div></div>
+        <span class="sg-cap">Linen ground, 1px sand rule, 80px tall. Nav is DM Sans 500, 15px, ink. The current page gets a bronze underline. Keep <code>#navbar</code>, <code>.nav-links</code> and <code>#shortlistNavBtn</code> on the live header.</span>
+      </div>
+      <p class="sg-cap sg-narrow-note">The wide header and footer are in the 1280 view. Below that, use the compact samples.</p>
+
+      <h3 class="sg-h3">Header · mobile, with bottom bar</h3>
+      <div class="sg-device">
+        <header class="sm-header sm-header--mobile">
+          <a class="sm-wordmark sm-wordmark--compact sg-wm--phone" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+          <span class="sg-spacer"></span>
+          <button class="sm-iconbtn sm-iconbtn--plain" type="button" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+          <button class="sm-iconbtn" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        </header>
+        <div class="sg-device-copy">
+          <span class="sm-label">Memorials</span>
+          <p class="sm-h3 sg-mt-2">Lawn headstones</p>
+        </div>
+        <nav class="sm-bottom-bar sm-surface--ink" aria-label="Quick actions">
+          <a class="sm-btn sm-btn--call-inverse mobile-bar-call" href="tel:+442038352548"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>020 3835 2548</a>
+          <a class="sm-btn sm-btn--inverse" href="#forms">Get a quote</a>
+        </nav>
+      </div>
+      <span class="sg-cap">68px tall. Compact wordmark at 128px, with the rules dropped. 44px icon buttons. The phone number in the ink bar is unbroken text. Keep the class <code>mobile-bar-call</code>.</span>
+
+      <div class="sg-desk-only">
+        <h3 class="sg-h3">Footer · desktop</h3>
+        <div class="sg-scroll"><div class="sg-desk">
+          <footer class="sm-footer">
+            <div class="sm-footer__top">
+              <div>
+                <a class="sm-wordmark sm-wordmark--inverse sg-wm--mid" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+                <p class="sg-footer-gap"><a href="tel:+442038352548">020 3835 2548</a> · <a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a></p>
+                <p class="sm-muted">North London memorial mason</p>
+              </div>
+              <div>
+                <h4>Explore</h4>
+                <ul>
+                  <li><a href="#header">About</a></li>
+                  <li><a class="sm-is-hover" href="#cards">Memorials</a></li>
+                  <li><a href="#header">Process</a></li>
+                  <li><a href="#header">FAQ</a></li>
+                  <li><a href="#header">Care guide</a></li>
+                  <li><a href="#header">Support</a></li>
+                  <li><a href="#header">Contact</a></li>
+                  <li><a href="#header">Track order</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4>Visit our Finchley showroom</h4>
+                <p>1 The Market Place, Falloden Way, NW11 6LB</p>
+                <p class="sm-muted sg-mt-2">Opening hours <span class="sm-tbc">TBC</span><br>Showroom phone <span class="sm-tbc">TBC</span></p>
+                <p class="sg-footer-gap-sm"><span class="sm-badge sm-badge--ink">RQMF Registered · No. 2263</span></p>
+              </div>
+            </div>
+            <div class="sm-footer__legal">
+              <p>Our fixers are NAMM-qualified and RQMF registered.</p>
+              <p>© 2026 Sears Melvin Memorials. All rights reserved. Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+              <p><a href="#header">Terms</a> · <a href="#header">Privacy</a></p>
+            </div>
+          </footer>
+        </div></div>
+        <span class="sg-cap">Ink ground. Links are linen. Hover is soft bronze plus an underline (“Memorials” is shown hovered). Legal text is solid inverse-muted (8.2:1). Do not fade white to 45%. Do not invent opening hours or a showroom phone. Keep <code>footer-links</code>, <code>footer-contact</code> and <code>footer-legal</code> on the live footer.</span>
+      </div>
+
+      <h3 class="sg-h3">Footer · narrow</h3>
+      <div class="sg-device">
+        <footer class="sm-footer sm-footer--mobile">
+          <div class="sm-footer__top">
+            <div>
+              <a class="sm-wordmark sm-wordmark--inverse sm-wordmark--compact sg-wm--footer" href="#logo"><span class="sm-wordmark__name">Sears Melvin</span><span class="sm-wordmark__sub">Memorials</span></a>
+              <p class="sg-footer-gap"><a href="tel:+442038352548">020 3835 2548</a></p>
+              <p><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a></p>
+            </div>
+            <div>
+              <h4>Explore</h4>
+              <ul>
+                <li><a href="#header">About</a></li>
+                <li><a href="#cards">Memorials</a></li>
+                <li><a href="#header">Process</a></li>
+                <li><a href="#header">FAQ</a></li>
+                <li><a href="#header">Care guide</a></li>
+                <li><a href="#header">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4>Finchley showroom</h4>
+              <p>1 The Market Place, Falloden Way, NW11 6LB</p>
+              <p class="sm-muted sg-mt-2">Hours <span class="sm-tbc">TBC</span> · Phone <span class="sm-tbc">TBC</span></p>
+            </div>
+          </div>
+          <div class="sm-footer__legal">
+            <p>© 2026 Sears Melvin Memorials. Sears Melvin Ltd, company no. 16191330.</p>
+            <p><a href="#header">Terms</a> · <a href="#header">Privacy</a></p>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="quote">
+      <span class="sg-num">10</span>
+      <h2>Quote panel</h2>
+      <p class="sg-lead">Copy a real family review word for word. Do not invent a review, and do not mark a real review as a sample.</p>
+      <figure class="sm-testimonial">
+        <div class="sm-stars" role="img" aria-label="5 out of 5">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <blockquote class="sm-quote">"From our first call, Sears Melvin made what felt like an overwhelming process feel simple and caring. The memorial is absolutely beautiful — exactly what we wanted."</blockquote>
+        <footer><span class="sm-name">Sarah M.</span><span class="sm-loc">Islington</span></footer>
+      </figure>
+      <span class="sg-cap">Sand panel, 3px bronze rule, 2px corners. Quote is Cormorant 400 italic, 22px, ink (9.21:1 on sand). Name is DM Sans 500. Place is ink muted. Stars are dark bronze, so they pass on sand.</span>
+    </section>
+
+    <section class="sg-sec" id="photos">
+      <span class="sg-num">11</span>
+      <h2>Photo frames</h2>
+      <p class="sg-lead">Memorial photos sit on white, with 2px corners. Do not tint the stone. Do not crop it with a curved top. Use <code>object-fit: contain</code>.</p>
+      <figure class="sm-frame">
+        <img src="/images/styleguide/the-thirsk.webp" alt="The Thirsk in a square photo frame" width="640" height="640">
+      </figure>
+      <span class="sg-cap">Square frame. 2px corners. White well. This is the only photo frame.</span>
+    </section>
+
+    <section class="sg-sec" id="space">
+      <span class="sg-num">12</span>
+      <h2>Spacing, corners and shadow</h2>
+      <p class="sg-lead">A 4px base. Nine spacing steps. One corner size, 2px. Three shadows, tinted with ink.</p>
+      <div class="sg-two">
+        <div>
+          <h3 class="sg-h3 sg-tight">Spacing</h3>
+          <div class="sg-scale"><code>--sm-space-1</code><span>4px</span><i class="sg-w-1"></i></div>
+          <div class="sg-scale"><code>--sm-space-2</code><span>8px</span><i class="sg-w-2"></i></div>
+          <div class="sg-scale"><code>--sm-space-3</code><span>12px</span><i class="sg-w-3"></i></div>
+          <div class="sg-scale"><code>--sm-space-4</code><span>16px</span><i class="sg-w-4"></i></div>
+          <div class="sg-scale"><code>--sm-space-5</code><span>24px</span><i class="sg-w-5"></i></div>
+          <div class="sg-scale"><code>--sm-space-6</code><span>32px</span><i class="sg-w-6"></i></div>
+          <div class="sg-scale"><code>--sm-space-7</code><span>48px</span><i class="sg-w-7"></i></div>
+          <div class="sg-scale"><code>--sm-space-8</code><span>64px</span><i class="sg-w-8"></i></div>
+          <div class="sg-scale"><code>--sm-space-9</code><span>96px</span><i class="sg-w-9"></i></div>
+          <span class="sg-cap">Page gutter <code>--sm-gutter</code> runs from 20px at 375 to 64px on a wide screen. Touch targets are at least 44px. Controls are 48px.</span>
+        </div>
+        <div>
+          <h3 class="sg-h3 sg-tight">Corners</h3>
+          <div class="sg-row">
+            <div class="sg-box sg-radius-0">0<br><code>--sm-radius-none</code></div>
+            <div class="sg-box sg-radius-2">2px<br><code>--sm-radius-sm</code></div>
+          </div>
+          <span class="sg-cap">2px on buttons, inputs, cards, badges, photos and the shortlist heart. The heart is square. Radio buttons stay round.</span>
+          <h3 class="sg-h3">Shadow</h3>
+          <div class="sg-row">
+            <div class="sg-box sg-shadow-sm">sm<br><code>--sm-shadow-sm</code></div>
+            <div class="sg-box sg-shadow-md">md<br><code>--sm-shadow-md</code></div>
+            <div class="sg-box sg-shadow-bar">bar<br><code>--sm-shadow-bar</code></div>
+          </div>
+          <h3 class="sg-h3">Focus ring</h3>
+          <div class="sg-row">
+            <span class="sm-btn sm-btn--secondary sm-is-focus">Focus</span>
+            <span class="sg-cap">2px solid, 2px offset. Bronze on light grounds. Soft bronze on ink.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-sec" id="hooks">
+      <span class="sg-num">13</span>
+      <h2>Tracking hooks</h2>
+      <p class="sg-lead">Keep these names on the live pages. Add an <code>sm-</code> class beside them. Do not rename them. This page does not load Tag Manager, and it has no form.</p>
+      <div class="sg-row">
+        <button class="shortlist-btn-copy sm-btn sm-btn--secondary" type="button">Copy link</button>
+        <button class="shortlist-btn-email sm-btn sm-btn--primary" type="button">Email</button>
+      </div>
+      <p class="sg-cap">Tag Manager reads any class that contains <code>shortlist-btn-</code>. The heart on a card keeps <code>save-btn</code>.</p>
+      <p class="sg-cap">Call links stay real <code>tel</code> links. The visible number stays one text node: 020 3835 2548. Do not split the digits. Do not put the number in a CSS <code>content</code> value.</p>
+      <p class="sg-cap">The live quote form keeps its id. Do not add a form on a memorials page. Brochure links keep <code>data-brochure-source</code>.</p>
+    </section>
+
+    <p class="sg-note">Style guide · 8 Nov 2026 · Not connected to Tag Manager. Opening hours and the showroom phone are TBC. The wordmark is approved and is shown on this page only.</p>
+  </div>
+
+  <script>
+    (function () {
+      var desk = document.getElementById("vDesk");
+      var mob = document.getElementById("vMob");
+      function setMobile(on) {
+        document.body.classList.toggle("sg-is-mobile", on);
+        desk.setAttribute("aria-pressed", on ? "false" : "true");
+        mob.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      desk.addEventListener("click", function () { setMobile(false); });
+      mob.addEventListener("click", function () { setMobile(true); });
+      document.querySelectorAll(".sm-save").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var on = btn.getAttribute("aria-pressed") === "true";
+          btn.setAttribute("aria-pressed", on ? "false" : "true");
+        });
+      });
+      document.querySelectorAll(".sm-chip").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var group = btn.parentElement;
+          group.querySelectorAll(".sm-chip").forEach(function (chip) {
+            chip.setAttribute("aria-pressed", "false");
+            chip.classList.remove("sm-is-hover", "sm-is-focus");
+          });
+          btn.setAttribute("aria-pressed", "true");
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
