@@ -90,13 +90,14 @@ This PR does not change the site to close them.
 
 1. GTM-KRDX4BQ5 loads. Pass. `gtm.js?id=GTM-KRDX4BQ5` returned HTTP 200 on the 8 pages and on `/brochure`.
 2. GA4 G-RF3LYJMFVE is configured. Pass. The home page configured that measurement id after cookie consent was accepted.
-3. `view_item_list` on `/memorials`. Fail. The product grid rendered. `dataLayer` did not receive `view_item_list`. The events seen were `gtm.js`, `consent_update`, `gtm.dom`, and `gtm.load`.
-4. `select_item` on a product card click. Fail. The test clicked a visible product card and blocked navigation. `dataLayer` received `gtm.click` and `gtm.linkClick`. It did not receive `select_item`.
-5. `filter_select` on a filter change. Fail. The test clicked the first memorial-type filter. `dataLayer` did not receive `filter_select`.
-6. `shortlist-btn-` classes. Pass. `/memorials` has `.shortlist-btn-copy` and `.shortlist-btn-email`.
-7. Tel links show `020 3835 2548` as unbroken text. Pass. Every `tel:` link on the checked pages uses `tel:+442038352548`. Each link has the full number in one text node. A span or paragraph around that node is still one text node.
-8. `#quoteForm` and the brochure hooks exist. Pass. `#quoteForm` is on the three product pages. The home page and `/memorials` have `data-brochure-source`. `/brochure` has `data-brochure-link` and `data-brochure-email-form`.
-9. `/memorials` has no form. Pass. The list has 0 `form` elements after the grid renders.
+3. Click-to-call value is 150. Pass. Live GTM v26 sends 150 for the Ads click-to-call tag and 150 GBP for the GA4 `click_to_call` event. The test did not click a tel link.
+4. `view_item_list` on `/memorials`. Fail. The product grid rendered. `dataLayer` did not receive `view_item_list`. The events seen were `gtm.js`, `consent_update`, `gtm.dom`, and `gtm.load`.
+5. `select_item` on a product card click. Fail. The test clicked a visible product card and blocked navigation. `dataLayer` received `gtm.click` and `gtm.linkClick`. It did not receive `select_item`.
+6. `filter_select` on a filter change. Fail. The test clicked the first memorial-type filter. `dataLayer` did not receive `filter_select`.
+7. `shortlist-btn-` classes. Pass. `/memorials` has `.shortlist-btn-copy` and `.shortlist-btn-email`.
+8. Tel links show `020 3835 2548` as unbroken text. Pass. Every `tel:` link on the checked pages uses `tel:+442038352548`. Each link has the full number in one text node. A span or paragraph around that node is still one text node.
+9. `#quoteForm` and the brochure hooks exist. Pass. `#quoteForm` is on the three product pages. The home page and `/memorials` have `data-brochure-source`. `/brochure` has `data-brochure-link` and `data-brochure-email-form`.
+10. `/memorials` has no form. Pass. The list has 0 `form` elements after the grid renders.
 
 `view_item_list`, `select_item`, and `filter_select` are not in the page source.
 They are not GTM tag ids.
@@ -109,12 +110,10 @@ Refresh it with `node scripts/gtm-baseline-diff.mjs`.
 That script does not change GTM.
 That script does not update `docs/gtm-snapshot.json`.
 
-The live container is version 26.
-The snapshot is version 23.
-Both have 29 tags.
-26 tags match.
-3 tags differ.
-
-1. The Google Ads click-to-call tag `okRkCPGTqJsdEK-15Oo-` uses value 150. The snapshot says 270.
-2. The GA4 `click_to_call` event sends value 150 GBP. The snapshot says 270 GBP.
-3. The Google Ads user-provided data tag now listens for `sm_quote_submit`. The snapshot does not have that trigger.
+1. On 8 November 2026 Arin confirmed the click-to-call value.
+2. The confirmed value is 150 GBP.
+3. The snapshot in `docs/gtm-snapshot.json` now matches live v26.
+4. The drift is resolved.
+5. The Google Ads click-to-call tag uses 150.
+6. The GA4 `click_to_call` event sends 150 GBP.
+7. The Ads user-provided data tag listens for `sm_quote_submit`.

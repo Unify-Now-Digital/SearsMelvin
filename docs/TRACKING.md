@@ -5,7 +5,7 @@ form, a page template, a phone number, a link or anything pushed to `dataLayer`,
 this first. CI (`tests/tracking-contract.mjs`, `.github/workflows/tests.yml`) fails a PR
 that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM daily.
 
-- GTM container: **GTM-KRDX4BQ5** (live version 21 at time of writing; snapshot in `docs/gtm-snapshot.json`)
+- GTM container: **GTM-KRDX4BQ5** (live version 26; snapshot in `docs/gtm-snapshot.json`)
 - GA4: **G-RF3LYJMFVE** (property 527695823)
 - Google Ads: **AW-16866941615** (customer 417-417-3541, manager 527-130-1935)
 
@@ -25,7 +25,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | Event | Pushed from | When | GTM tags that depend on it |
 |---|---|---|---|
 | `sm_lead_submit` `{form_id:'contactForm', enquiry_type}` | `contact.html` | `/api/submit` returns `ok`, before the form is hidden | GA4 `generate_lead` (params form_name=contact_enquiry, value 400 GBP, beacon); Ads **generate_lead** `AW-16866941615/_M8_CK2IrYkcEK-15Oo-` (tag value 400); Ads user-provided data (`__awud`) |
-| `sm_quote_submit` `{form_id:'quoteForm'}` | `memorial.html` quote modal | `/api/submit` (channel quote) returns `ok`, before the form is hidden | GA4 `request_quote` (value = variable, GBP, beacon); Ads **request_quote** `AW-16866941615/l5TiCLCIrYkcEK-15Oo-` (value = variable). Moved to this event in GTM v21; the old `#quoteSuccessMsg` element-visibility trigger is **legacy** (the page still scrolls the message into view inside the modal). |
+| `sm_quote_submit` `{form_id:'quoteForm'}` | `memorial.html` quote modal | `/api/submit` (channel quote) returns `ok`, before the form is hidden | GA4 `request_quote` (value = variable, GBP, beacon); Ads **request_quote** `AW-16866941615/l5TiCLCIrYkcEK-15Oo-` (value = variable); Ads user-provided data (`__awud`) also listens for this event (GTM v26). Moved to this event in GTM v21; the old `#quoteSuccessMsg` element-visibility trigger is **legacy** (the page still scrolls the message into view inside the modal). |
 | `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit`, **once per tab visit**. `sessionStorage.sm_chat_counted` (and an in-memory flag if storage throws) blocks a later attempt in that tab, including a Turnstile retry many seconds later. Every attempt still refreshes `window.__smChatEmail` / `window.__smChatPhone` with the same sanitising as `clickIntentBody`. The event object stays `{event:'sm_chat_submit'}` only. `/api/click-intent` is called only on the counted attempt. | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` (reads those two globals; GTM container change is separate from this repo) |
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
 | `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
@@ -39,7 +39,7 @@ and missed most chats. Do not remove the flag, or chats will be counted twice.
 GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **unless** the form is `quoteForm`
 (form_name=shortlist, value 400, beacon). It covers the shortlist enquiry form. Keep it.
 
-## GTM tags (live v21, from `docs/gtm-snapshot.json`)
+## GTM tags (live v26, from `docs/gtm-snapshot.json`)
 
 | Tag type | ID / label | Value | Trigger |
 |---|---|---|---|
@@ -49,7 +49,7 @@ GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **u
 | GA4 event | generate_lead (shortlist) | 400 GBP | formSubmit on /memorials, not `quoteForm` |
 | GA4 event | request_quote | variable | `sm_quote_submit` |
 | GA4 event | ghl_chat_submission | | `sm_chat_submit` (once per load) |
-| GA4 event | click_to_call | 270 GBP | link click on `tel:` |
+| GA4 event | click_to_call | 150 GBP | link click on `tel:` |
 | GA4 event | click_to_email | | link click on `mailto:` |
 | GA4 event | brochure_download | | `brochure_download` |
 | GA4 event | finder_start | | page path contains `finder` |
@@ -57,12 +57,14 @@ GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **u
 | Ads conversion | `_M8_CK2IrYkcEK-15Oo-` generate_lead | 400 | `sm_lead_submit` |
 | Ads conversion | `l5TiCLCIrYkcEK-15Oo-` request_quote | variable | `sm_quote_submit` |
 | Ads conversion | `MipOCNXwuLscEK-15Oo-` Chat start | 200 | `sm_chat_submit` |
-| Ads conversion | `okRkCPGTqJsdEK-15Oo-` SM Website click-to-call (tel link) | 270 | link click on `tel:` |
+| Ads conversion | `okRkCPGTqJsdEK-15Oo-` SM Website click-to-call (tel link) | 150 | link click on `tel:` |
 | Ads call conversion (`__awcc`) | `K1otCIWr1JodEK-15Oo-` SM Website call (GFN), number swap | | All pages |
-| Ads user-provided data, conversion linker, listeners | | | various |
+| Ads user-provided data, conversion linker, listeners | | | various, including `sm_quote_submit` |
 | Custom HTML | GHL Chat Widget Listener (legacy, neutralised by `__smChatHook`) | | All pages |
 
 The exact tag list with triggers and params is `docs/gtm-snapshot.json`.
+
+Arin confirmed the click-to-call value of 150 GBP on 8 November 2026. The GTM tags send 150. The Ads API defaults in the table below were read on 14 October 2026 and still show £270 for those call actions. Do not change GTM from this repo.
 
 ## Google Ads conversion actions (read from the Ads API, 14 Oct 2026)
 

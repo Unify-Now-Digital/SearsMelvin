@@ -9,7 +9,9 @@
 //   npm --prefix tests/visual run tracking
 //   BASE_URL=https://<preview> npm --prefix tests/visual run tracking
 
-import { writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { expect, test, type Page, type Response } from "@playwright/test";
 import { GA4_ID, GTM_ID, PAGES, PHONE_TEXT } from "./pages";
 
@@ -24,6 +26,40 @@ function phoneDigits(href: string): string {
 function phoneHrefOk(href: string): boolean {
   const digits = phoneDigits(href);
   return digits === "442038352548" || digits === "02038352548";
+}
+
+function parserPath(): string {
+  let dir = process.cwd();
+  for (let i = 0; i < 4; i++) {
+    const candidate = path.join(dir, "scripts", "tracking-check.mjs");
+    if (existsSync(candidate)) return candidate;
+    dir = path.dirname(dir);
+  }
+  throw new Error("scripts/tracking-check.mjs was not found");
+}
+
+function clickToCallValues(gtmJs: string): { version: string | null; ads: string | null; ga4: string | null; currency: string | null } {
+  const esm = `
+    import { readFileSync } from "node:fs";
+    import { parseGtm } from ${JSON.stringify(parserPath())};
+    const live = parseGtm(readFileSync(0, "utf8"));
+    const ads = live.tags.find((tag) => tag.function === "__awct" && tag.id === "okRkCPGTqJsdEK-15Oo-");
+    const ga4 = live.tags.find((tag) => tag.function === "__gaawe" && tag.id === "click_to_call");
+    process.stdout.write(JSON.stringify({
+      version: live.version,
+      ads: ads ? ads.value : null,
+      ga4: ga4 && ga4.params ? ga4.params.value : null,
+      currency: ga4 && ga4.params ? ga4.params.currency : null,
+    }));
+  `;
+  const result = spawnSync(process.execPath, ["--input-type=module", "-e", esm], {
+    input: gtmJs,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || "could not parse gtm.js").trim());
+  }
+  return JSON.parse(result.stdout);
 }
 
 test("tracking smoke checks", async ({ page }) => {
@@ -95,6 +131,7 @@ test("tracking smoke checks", async ({ page }) => {
   const gtmFailures: string[] = [];
   const telFailures: string[] = [];
   const quoteFormFailures: string[] = [];
+  let gtmSource = "";
   let ga4Detail = "";
   let ga4Pass = false;
   const seenGa4: string[] = [];
@@ -105,6 +142,13 @@ test("tracking smoke checks", async ({ page }) => {
       .catch(() => null);
     const response = await page.goto(path, { waitUntil: "domcontentloaded", timeout: 45_000 });
     const gtm = await gtmResponse;
+    if (gtm && gtm.status() === 200 && !gtmSource) {
+      try {
+        gtmSource = await gtm.text();
+      } catch (_e) {
+        gtmSource = "";
+      }
+    }
     const sourceHasId = (await page.content()).includes(GTM_ID);
     if (!sourceHasId || !gtm || gtm.status() !== 200) {
       gtmFailures.push(
@@ -240,6 +284,20 @@ test("tracking smoke checks", async ({ page }) => {
       : gtmFailures.join(" "),
   );
   record("GA4 G-RF3LYJMFVE is configured", ga4Pass, ga4Detail);
+  let callValuePass = false;
+  let callValueDetail = "The live gtm.js response was not captured.";
+  if (gtmSource) {
+    try {
+      const live = clickToCallValues(gtmSource);
+      callValuePass = live.ads === "150" && live.ga4 === "150" && live.currency === "GBP";
+      callValueDetail = callValuePass
+        ? `Live GTM v${live.version} sends 150 for the Ads click-to-call tag and 150 GBP for the GA4 click_to_call event. The test did not click a tel link.`
+        : `Ads click-to-call value is ${live.ads}. GA4 click_to_call value is ${live.ga4} ${live.currency}. Expected 150 GBP.`;
+    } catch (error) {
+      callValueDetail = error instanceof Error ? error.message : String(error);
+    }
+  }
+  record("click-to-call value is 150", callValuePass, callValueDetail);
   record(
     "view_item_list on /memorials",
     listPass,

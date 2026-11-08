@@ -12,50 +12,32 @@ The check is read-only.
 5. Leave the GTM container unchanged.
 6. Leave docs/gtm-snapshot.json unchanged.
 
+## Decision
+
+1. On 8 November 2026 Arin confirmed the click-to-call conversion value.
+2. The confirmed value is 150 GBP.
+3. The value matches live GTM v26.
+4. This check does not change GTM.
+
 ## Versions
 
-1. The snapshot version is 23.
+1. The snapshot version is 26.
 2. The live version is 26.
 3. The public gtm.js file serves only the live version.
-4. This diff is the net change from version 23 to version 26.
+4. The snapshot version and the live version are the same.
 5. The check date is 8 November 2026.
 
 ## Drift
 
-1. The snapshot has 29 tags.
-2. The live container has 29 tags.
-3. 26 tags match on kind, id, value, parameters, and triggers.
-4. The check found 3 differences.
-5. The parser in scripts/tracking-check.mjs reports 6 drift lines for the same pair of files.
-6. Each changed tag produces two parser lines. One line is the snapshot copy. One line is the live copy.
-
-### 1. Call conversion value on the Google Ads tag
-
-1. The tag is Google Ads conversion.
-2. The id is okRkCPGTqJsdEK-15Oo-.
-3. The snapshot value is 270.
-4. The live value is 150.
-5. The parameters are unchanged. They are {}.
-6. The triggers are unchanged.
-
-### 2. Ads user-provided data listens for sm_quote_submit
-
-1. The tag is Google Ads user-provided data.
-2. The id is none.
-3. The value is unchanged. It is none.
-4. The parameters are unchanged. They are {}.
-5. The live tag has these triggers, and the snapshot does not: if _eq({{__e}},sm_quote_submit).
-6. The shared triggers stay in place. Count: 5.
-
-### 3. Call value on the GA4 click_to_call tag
-
-1. The tag is GA4 event.
-2. The id is click_to_call.
-3. The value is unchanged. It is none.
-4. The snapshot parameters are {"value":"270","currency":"GBP"}.
-5. The live parameters are {"value":"150","currency":"GBP"}.
-6. The triggers are unchanged.
-
+1. The drift is resolved.
+2. The snapshot now matches live v26.
+3. The snapshot has 29 tags.
+4. The live container has 29 tags.
+5. 29 tags match on kind, id, value, parameters, and triggers.
+6. The check found 0 differences.
+7. The Google Ads click-to-call tag okRkCPGTqJsdEK-15Oo- uses value 150.
+8. The GA4 click_to_call event sends value 150 and currency GBP.
+9. The Ads user-provided data tag listens for sm_quote_submit.
 
 ## Custom HTML
 
@@ -86,15 +68,15 @@ Parameters use the snapshot shape. `{{variable}}` means the tag reads a GTM vari
 | Same | Google Ads conversion | _M8_CK2IrYkcEK-15Oo- | 400 | {} | if _eq({{__e}},sm_lead_submit) |
 | Same | Google Ads conversion | l5TiCLCIrYkcEK-15Oo- | {{variable}} | {} | if _eq({{__e}},sm_quote_submit) |
 | Same | Google Ads conversion | MipOCNXwuLscEK-15Oo- | 200 | {} | if _eq({{__e}},sm_chat_submit) |
-| Drift | Google Ads conversion | okRkCPGTqJsdEK-15Oo- | 150 | {} | if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_7($\|,)))) |
-| Drift | Google Ads user-provided data | none | none | {} | if _cn({{__v:gtm.elementClasses}},shortlist-btn-) && _eq({{__e}},gtm.click) \| if _eq({{__e}},gtm.elementVisibility) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_15($\|,)))) \| if _eq({{__e}},gtm.formSubmit) && _cn({{__u:PATH}},memorials) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_17($\|,)))) ; unless _eq({{__v:gtm.elementId}},quoteForm) \| if _eq({{__e}},sm_chat_submit) \| if _eq({{__e}},sm_lead_submit) \| if _eq({{__e}},sm_quote_submit) |
+| Same | Google Ads conversion | okRkCPGTqJsdEK-15Oo- | 150 | {} | if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_7($\|,)))) |
+| Same | Google Ads user-provided data | none | none | {} | if _cn({{__v:gtm.elementClasses}},shortlist-btn-) && _eq({{__e}},gtm.click) \| if _eq({{__e}},gtm.elementVisibility) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_15($\|,)))) \| if _eq({{__e}},gtm.formSubmit) && _cn({{__u:PATH}},memorials) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_17($\|,)))) ; unless _eq({{__v:gtm.elementId}},quoteForm) \| if _eq({{__e}},sm_chat_submit) \| if _eq({{__e}},sm_lead_submit) \| if _eq({{__e}},sm_quote_submit) |
 | Same | Click listener | none | none | {} | if _eq({{__e}},gtm.js) |
 | Same | Element visibility listener | none | none | {} | if _eq({{__e}},gtm.js) |
 | Same | Element visibility listener | none | none | {} | if _eq({{__e}},gtm.js) |
 | Same | Form submit listener | none | none | {} | if _eq({{__e}},gtm.js) |
 | Same | Form submit listener | none | none | {} | if _eq({{__e}},gtm.js) |
 | Same | GA4 event | brochure_download | none | {"source":"{{variable}}"} | if _eq({{__e}},brochure_download) |
-| Drift | GA4 event | click_to_call | none | {"value":"150","currency":"GBP"} | if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_7($\|,)))) |
+| Same | GA4 event | click_to_call | none | {"value":"150","currency":"GBP"} | if _cn({{__v:gtm.elementUrl}},tel:) && _eq({{__e}},gtm.linkClick) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_7($\|,)))) |
 | Same | GA4 event | click_to_email | none | {} | if _eq({{__e}},gtm.linkClick) && _cn({{__v:gtm.elementUrl}},mailto:) && _re({{__v:gtm.triggers}},(^$\|((^\|,)245755202_9($\|,)))) |
 | Same | GA4 event | finder_start | none | {} | if _cn({{__u:PATH}},finder) && _eq({{__e}},gtm.js) |
 | Same | GA4 event | generate_lead | none | {"form_name":"contact_enquiry","value":"400","currency":"GBP","transport_type":"beacon"} | if _eq({{__e}},sm_lead_submit) |
