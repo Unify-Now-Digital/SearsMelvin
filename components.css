@@ -886,7 +886,7 @@
   border: 7px solid var(--sm-color-success);
 }
 
-/* Logo files. Cormorant 400. No side rules. Do not redraw the logo in CSS.
+/* Logo files. Stacked only. Cormorant 500. No side rules. Do not redraw the logo in CSS.
    -------------------------------------------------------------------------- */
 .sm-logo {
   display: block;
@@ -896,11 +896,6 @@
 .sm-logo--stacked {
   min-width: var(--sm-logo-min-stacked);
   width: var(--sm-logo-min-stacked);
-}
-
-.sm-logo--horizontal {
-  min-width: var(--sm-logo-min-horizontal);
-  width: var(--sm-logo-min-horizontal);
 }
 
 .sm-logo-clear {
@@ -913,15 +908,11 @@
   padding: calc(var(--sm-logo-min-stacked) * var(--sm-logo-clear-stacked));
 }
 
-.sm-logo-clear--horizontal {
-  padding: calc(var(--sm-logo-min-horizontal) * var(--sm-logo-clear-horizontal));
-}
-
 .sm-surface--ink .sm-logo-clear {
   border-color: var(--sm-color-focus-inverse);
 }
 
-/* Photography frame. Draft until Arin approves it.
+/* Photography frame. Approved. A 4:5 frame on linen.
    -------------------------------------------------------------------------- */
 .sm-photo-frame {
   aspect-ratio: 4 / 5;

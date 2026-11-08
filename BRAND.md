@@ -77,7 +77,7 @@ The brand is warm, calm, and clear.
 3. Headings use Cormorant Garamond. Body, prices, and buttons use DM Sans.
 4. Corners are 2px.
 5. Buttons use sentence case.
-6. The stacked logo is approved. Show it on `/styleguide` only, until a later phase changes the live header. The horizontal logo is pending Arin.
+6. The stacked logo is approved. It is Cormorant Garamond 500, with no side rules. Show it on `/styleguide` only, until a later phase changes the live header. Do not use a horizontal layout.
 7. The shortlist heart is square.
 8. Do not use an arched photo frame.
 9. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.
@@ -160,7 +160,7 @@ Check contrast on the pairs you change. Record the result in the pull request.
 
 Load the faces once.
 
-1. Cormorant Garamond 500 and 600 for headings. The logo files are Cormorant 400.
+1. Cormorant Garamond 500 and 600 for headings. The logo lock-up is Cormorant Garamond 500.
 2. Cormorant Garamond italic 400 for a short quote.
 3. Cormorant Garamond 300 only at 32px or larger.
 4. DM Sans 400 for body text.
@@ -401,7 +401,7 @@ Keep these live hooks when you later change the real header: `#navbar`, `.mobile
 
 1. Do not change the live header in a token or component pull request.
 2. Do not use an ink header. Ink is the footer and the primary button.
-3. Do not use the horizontal logo until Arin approves it. Label it “Pending Arin”.
+3. Do not use a horizontal layout.
 
 ## 15. Footer
 
@@ -448,22 +448,25 @@ Keep these live classes when you later change the real footer: `.footer-containe
 
 ## 17. Logo
 
-Use the logo files in `/images/brand/logo/`. They are set in Cormorant Garamond 400. They have no side rules. Do not redraw the logo in CSS.
+The approved logo is the stacked lock-up. It is Cormorant Garamond 500. It has no side rules. Arin approved it on 8 November 2026.
 
-The stacked layout is approved.
-
-1. On linen, use the ink file or the bronze file.
-2. On ink, use the soft-bronze file.
-3. Do not draw the stacked logo narrower than 240px.
+1. Use the stacked ink file on linen, or the stacked bronze file on linen.
+2. Use the stacked soft-bronze file on ink.
+3. Do not draw the stacked logo narrower than 240px. Check that the 500 weight still reads at that width.
 4. Leave clear space on all sides. The clear space is the cap height of the S.
-5. Show the logo on `/styleguide` only, until a later phase changes the live header.
+5. Show the logo on `/styleguide` only, until the header phase changes the live header.
+6. Do not redraw the logo in CSS.
 
-The horizontal layout is pending Arin.
+Do not use a horizontal layout.
 
-1. Label it “Pending Arin” in this book and on `/styleguide`.
-2. Do not use it on a page until Arin approves it.
-3. Do not draw it narrower than 320px.
-4. Give it the same clear space: the cap height of the S, on all sides.
+1. Do not add a horizontal logo file.
+2. Do not show a horizontal logo on a page or on `/styleguide`.
+
+Do not use side rules. Rules are not approved.
+
+The `source-exact` pack is an archive. Do not use it as the master.
+
+Favicons and app icons belong with the logo. Show them on `/styleguide` only. Do not put them in the live page head, and do not replace the live favicon, until the header phase.
 
 ### Do
 
@@ -473,16 +476,17 @@ The horizontal layout is pending Arin.
 
 ### Don’t
 
-1. Do not shrink the logo below 240px stacked or 320px horizontal.
+1. Do not shrink the logo below 240px.
 2. Do not add side rules to the logo.
-3. Do not put soft bronze on linen. It fails contrast.
-4. Do not put the logo in the live header in this phase.
+3. Do not use a horizontal layout.
+4. Do not put soft bronze on linen. It fails contrast.
+5. Do not put the logo or the new favicon in the live header in this phase.
 
 ## 18. Photography
 
-DRAFT, pending Arin. Do not use this standard on a live page until Arin approves it.
+Arin approved this standard on 8 November 2026.
 
-The reference image is `/images/brand/photo-standard.png`. Show that file on `/styleguide`.
+The standard is a 4:5 frame on linen. The reference image is `/images/brand/photo-standard.png`. Show that file on `/styleguide`.
 
 1. Use a 4:5 frame.
 2. The frame ground is linen. In CSS, use the token `--sm-color-bg`. Do not type the hex in a component.
@@ -492,18 +496,18 @@ The reference image is `/images/brand/photo-standard.png`. Show that file on `/s
 6. Keep the whole memorial in the frame. A wide kerb set needs more side space.
 7. Keep the stone colour, the shape, and the surface detail.
 8. Clean the background only. Do not change the camera angle.
-9. Product cards keep the white photo well until this draft is approved.
+9. Product cards still use the white photo well. Move them to this frame in a later phase.
 
 ### Do
 
-1. Mark this section “DRAFT, pending Arin”.
-2. Keep the reference image uncropped.
+1. Keep the reference image uncropped.
+2. Use `--sm-color-bg` for the linen ground.
 
 ### Don’t
 
 1. Do not tint the stone.
 2. Do not crop a memorial with a curved top.
-3. Do not apply this frame to the live catalogue yet.
+3. Do not apply this frame to the live catalogue in this phase.
 
 ## 19. Motion and focus
 
