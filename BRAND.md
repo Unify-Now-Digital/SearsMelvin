@@ -240,7 +240,7 @@ Use 2px on buttons, inputs, cards, badges, chips, photo frames, and the shortlis
 ### Do
 
 1. Keep the shortlist heart square.
-2. Keep photo frames square.
+2. Memorial photo frames are 4:5. Homepage category wells stay square.
 3. Keep radio buttons round. A round radio is a control, not a photo frame.
 
 ### Don’t
@@ -354,10 +354,10 @@ Chips (filters):
 
 ## 12. Cards
 
-1. The photo well is white. Use `object-fit: contain`. Do not tint the memorial photo.
+1. A memorial card photo well is a 4:5 frame on linen (`--sm-color-bg`). Centre the stone and use `object-fit: contain`. Do not tint the memorial photo. A homepage category well stays a white square.
 2. The info panel is sand. Padding is `--sm-space-4`. The card corner is 2px.
 3. The edge is 1px sand. The shadow is `--sm-shadow-sm`. Hover uses `--sm-shadow-md`. Do not lift the card.
-4. The title is Cormorant 500, `--sm-text-card-title`, ink.
+4. The title is Cormorant 500, `--sm-text-card-title`, ink. At 375px the memorial card title uses the next smaller step, `--sm-text-lg`. Do not clip or truncate the name.
 5. The category label is ink on sand.
 6. “View details” is dark bronze on sand.
 7. The whole card is one link. Keep `href` and the data attributes `data-id`, `data-slug`, `data-name`, `data-price-value`, and `data-type`.
@@ -522,7 +522,7 @@ The standard is a 4:5 frame on linen. The reference image is `/images/brand/phot
 6. Keep the whole memorial in the frame. A wide kerb set needs more side space.
 7. Keep the stone colour, the shape, and the surface detail.
 8. Clean the background only. Do not change the camera angle.
-9. Product cards still use the white photo well. Move them to this frame in a later phase.
+9. Memorial cards and the product-page main image use this frame. Homepage category cards keep the white square well.
 
 ### Do
 
@@ -533,7 +533,7 @@ The standard is a 4:5 frame on linen. The reference image is `/images/brand/phot
 
 1. Do not tint the stone.
 2. Do not crop a memorial with a curved top.
-3. Do not apply this frame to the live catalogue in this phase.
+3. Do not apply this frame to a homepage category card.
 
 ## 19. Motion and focus
 
