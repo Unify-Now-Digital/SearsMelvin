@@ -510,7 +510,7 @@ function depositConfirmationEmail({ name, amountPaid, product, productUrl, cemet
     </td></tr>
 
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBB;">${BUSINESS_EMAIL}</a></span>
     </td></tr>
 
   </table>
@@ -545,7 +545,7 @@ function depositBusinessEmail({ name, email, amountPaid, product, productUrl, ce
       </table>
     </td></tr>
     <tr><td style="background:#F5F3F0;border-top:1px solid #E0DCD5;padding:12px 28px;text-align:center;">
-      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; ${BUSINESS_EMAIL}</span>
+      <span style="font-size:11px;color:#BBB;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
     </td></tr>
   </table>
   </td></tr>
