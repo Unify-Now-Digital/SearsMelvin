@@ -1,6 +1,6 @@
 {
   "container": "GTM-KRDX4BQ5",
-  "version": "27",
+  "version": "28",
   "tags": [
     {
       "function": "__awcc",
@@ -32,7 +32,7 @@
     {
       "function": "__awct",
       "id": "MipOCNXwuLscEK-15Oo-",
-      "value": "200",
+      "value": "150",
       "params": {},
       "triggers": [
         "if _eq({{__e}},sm_chat_submit)"
@@ -111,7 +111,7 @@
       "id": "brochure_download",
       "value": null,
       "params": {
-        "source": "{{variable}}"
+        "brochure_source": "{{variable}}"
       },
       "triggers": [
         "if _eq({{__e}},brochure_download)"
@@ -293,6 +293,15 @@
       "params": {},
       "triggers": [
         "if _eq({{__e}},gtm.init)"
+      ]
+    },
+    {
+      "function": "__html",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js) && _cn({{__u:URL}},sm_internal=)"
       ]
     },
     {
