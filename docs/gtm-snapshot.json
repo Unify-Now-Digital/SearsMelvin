@@ -1,6 +1,6 @@
 {
   "container": "GTM-KRDX4BQ5",
-  "version": "26",
+  "version": "27",
   "tags": [
     {
       "function": "__awcc",
@@ -140,6 +140,22 @@
     },
     {
       "function": "__gaawe",
+      "id": "filter_select",
+      "value": null,
+      "params": {
+        "filter_name": "{{variable}}",
+        "filter_value": "{{variable}}",
+        "selected": "{{variable}}",
+        "result_count": "{{variable}}",
+        "item_list_id": "{{variable}}",
+        "active_filter": "{{variable}}"
+      },
+      "triggers": [
+        "if _eq({{__e}},filter_select) ; unless _re({{__u:HOST}},\\.pages\\.dev$)"
+      ]
+    },
+    {
+      "function": "__gaawe",
       "id": "finder_start",
       "value": null,
       "params": {},
@@ -202,10 +218,29 @@
       "params": {
         "value": "{{variable}}",
         "currency": "GBP",
-        "transport_type": "beacon"
+        "transport_type": "beacon",
+        "product_id": "{{variable}}",
+        "category": "{{variable}}",
+        "list_position": "{{variable}}",
+        "item_list_id": "{{variable}}",
+        "active_filter": "{{variable}}"
       },
       "triggers": [
         "if _eq({{__e}},sm_quote_submit)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "select_item",
+      "value": null,
+      "params": {
+        "item_list_id": "{{variable}}",
+        "item_list_name": "{{variable}}",
+        "active_filter": "{{variable}}",
+        "result_count": "{{variable}}"
+      },
+      "triggers": [
+        "if _eq({{__e}},select_item) ; unless _re({{__u:HOST}},\\.pages\\.dev$)"
       ]
     },
     {
@@ -217,6 +252,20 @@
       },
       "triggers": [
         "if _cn({{__v:gtm.elementClasses}},shortlist-btn-) && _eq({{__e}},gtm.click)"
+      ]
+    },
+    {
+      "function": "__gaawe",
+      "id": "view_item_list",
+      "value": null,
+      "params": {
+        "item_list_id": "{{variable}}",
+        "item_list_name": "{{variable}}",
+        "active_filter": "{{variable}}",
+        "result_count": "{{variable}}"
+      },
+      "triggers": [
+        "if _eq({{__e}},view_item_list) ; unless _re({{__u:HOST}},\\.pages\\.dev$)"
       ]
     },
     {

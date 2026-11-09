@@ -2738,7 +2738,19 @@
                         // Confirmed submit: push first (no PII), before the form is hidden.
                         try {
                             window.dataLayer = window.dataLayer || [];
-                            window.dataLayer.push({ event: 'sm_quote_submit', form_id: 'quoteForm' });
+                            var quoteEvent = { event: 'sm_quote_submit', form_id: 'quoteForm' };
+                            try {
+                                var listRaw = null;
+                                var listKey = (window.SMUpgrades && window.SMUpgrades.LIST_CONTEXT_KEY) || 'sm_list_context';
+                                try { listRaw = sessionStorage.getItem(listKey); } catch (err) {}
+                                if (window.SMUpgrades && window.SMUpgrades.applyListContext) {
+                                    quoteEvent = window.SMUpgrades.applyListContext(quoteEvent, listRaw, {
+                                        id: productData && productData.id,
+                                        slug: productData && productData.slug
+                                    }, Date.now());
+                                }
+                            } catch (err) {}
+                            window.dataLayer.push(quoteEvent);
                         } catch (e) { /* tracking must never break the form */ }
                         document.getElementById('quoteForm').style.display = 'none';
                         document.getElementById('quoteSuccess').style.display = 'block';
@@ -3024,6 +3036,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=list1" defer></script>
 </body>
 </html>

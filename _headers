@@ -79,6 +79,16 @@
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
 
+# The brochure PDF and cover are replaced in place (same URL). Pages would
+# otherwise cache them for 4 hours. Links also carry ?v= so a new edition
+# is a new cache key. No stale-while-revalidate: do not keep serving the
+# previous file after max-age.
+/assets/sears-melvin-brochure.pdf
+  Cache-Control: public, max-age=300, must-revalidate
+
+/assets/sears-melvin-brochure-cover.jpg
+  Cache-Control: public, max-age=300, must-revalidate
+
 # HTML: short browser cache, longer SWR so edge can serve stale while
 # revalidating in the background. Ensures content updates propagate
 # within ~5 minutes while keeping repeat-visit latency near-zero.

@@ -945,7 +945,7 @@
             categoriesWithProducts.forEach(cat => {
                 const count = state.productsData.filter(p => p.category_id === cat.id).length;
                 const slug = safeSlug(cat.slug);
-                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
+                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters(this)"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
             });
             typeContainer.innerHTML = typeHTML;
 
@@ -955,7 +955,7 @@
                 const slug = safeSlug(colour.slug);
                 const primaryHex = safeHex(colour.hex_primary);
                 const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
-                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
+                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters(this)"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
             });
             colourContainer.innerHTML = colourHTML;
 
@@ -971,7 +971,7 @@
             priceRanges.forEach(range => {
                 const count = state.productsData.filter(range.test).length;
                 if (count > 0) {
-                    priceHTML += '<label class="filter-option"><input type="checkbox" data-filter="price" value="' + range.value + '" onchange="applyFilters()"><span class="checkmark"></span>' + range.label + '<span class="filter-count">(' + count + ')</span></label>';
+                    priceHTML += '<label class="filter-option"><input type="checkbox" data-filter="price" value="' + range.value + '" onchange="applyFilters(this)"><span class="checkmark"></span>' + range.label + '<span class="filter-count">(' + count + ')</span></label>';
                 }
             });
             priceContainer.innerHTML = priceHTML;
@@ -1067,6 +1067,7 @@
             document.getElementById('resultsCount').textContent = matched.length;
             const more = document.getElementById('catalogueMore');
             if (more) more.hidden = matched.length <= shown.length;
+            scheduleCatalogueTrack();
         }
 
         // ==================== STRUCTURED DATA ====================
@@ -1124,8 +1125,107 @@
         });
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
+        // ==================== CATALOGUE TRACKING ====================
+        // view_item_list, select_item and filter_select. Payloads are built in
+        // site-upgrades.js. One grid update pushes one list event; a repeated
+        // call for the same control collapses to one filter_select. Nothing
+        // here calls preventDefault, so middle-click and new-tab still navigate.
+        // Preview/localhost are not excluded: this site does not drop dataLayer
+        // events by host, and GTM has no hostname exception to copy.
+        var catalogueTimer = null;
+        var catalogueFilterQueue = [];
+        var lastCatalogueSelect = { key: '', at: 0 };
+
+        function scheduleCatalogueTrack(change) {
+            if (change && change.filter_name) catalogueFilterQueue.push(change);
+            clearTimeout(catalogueTimer);
+            catalogueTimer = setTimeout(flushCatalogueTrack, 50);
+        }
+        function catalogueMetaNow() {
+            var parts = [];
+            ['type', 'colour', 'price'].forEach(function (key) {
+                var values = (state.filters[key] || []).filter(function (v) { return /^[a-z0-9-]{1,80}$/.test(v); }).slice().sort();
+                if (values.length) parts.push(key + ':' + values.join(','));
+            });
+            var sortEl = document.getElementById('sortSelect');
+            var sort = sortEl ? sortEl.value : 'featured';
+            if (sort && sort !== 'featured' && /^[a-z0-9-]{1,40}$/.test(sort)) parts.push('sort:' + sort);
+            return { item_list_id: 'memorials', item_list_name: 'Memorials', active_filter: parts.length ? parts.join('|') : 'all' };
+        }
+        function catalogueCards() {
+            return Array.from(document.querySelectorAll('#productsGrid > a.product-card[data-id]')).filter(function (el) {
+                return !el.classList.contains('hidden');
+            });
+        }
+        function catalogueCardPayload(el, index) {
+            var catEl = el.querySelector('.product-category');
+            return {
+                item_id: el.dataset.id,
+                item_name: el.dataset.name,
+                item_category: catEl ? catEl.textContent : '',
+                slug: el.dataset.slug,
+                index: index
+            };
+        }
+        function writeCatalogueContext(payload, meta) {
+            var api = window.SMUpgrades;
+            if (!api || !api.listContextRecord) return;
+            var record = api.listContextRecord(payload, meta, Date.now());
+            if (!record) return;
+            try { sessionStorage.setItem(api.LIST_CONTEXT_KEY, JSON.stringify(record)); } catch (e) {}
+        }
+        function flushCatalogueTrack() {
+            catalogueTimer = null;
+            var api = window.SMUpgrades;
+            if (!api || !api.viewItemListEvent) return;
+            var queued = api.collapseFilterChanges(catalogueFilterQueue);
+            catalogueFilterQueue = [];
+            var meta = catalogueMetaNow();
+            var items = catalogueCards().map(function (el, i) { return catalogueCardPayload(el, i + 1); });
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
+            window.dataLayer.push(api.viewItemListEvent(items, meta));
+            queued.forEach(function (change) {
+                var filterEvent = api.filterSelectEvent(change, items.length, meta);
+                if (filterEvent) window.dataLayer.push(filterEvent);
+            });
+        }
+        function catalogueCardFromEvent(event) {
+            if (!event || !event.target || !event.target.closest) return null;
+            if (event.button != null && event.button !== 0 && event.button !== 1) return null;
+            var card = event.target.closest('#productsGrid > a.product-card[data-id]');
+            if (!card) return null;
+            if (event.target.closest('button, .save-btn')) return null;
+            var cards = catalogueCards();
+            var index = cards.indexOf(card);
+            if (index < 0) return null;
+            return catalogueCardPayload(card, index + 1);
+        }
+        function rememberCatalogueCard(event) {
+            var payload = catalogueCardFromEvent(event);
+            if (!payload) return;
+            writeCatalogueContext(payload, catalogueMetaNow());
+        }
+        function catalogueSelectFromEvent(event) {
+            var payload = catalogueCardFromEvent(event);
+            if (!payload) return;
+            var meta = catalogueMetaNow();
+            writeCatalogueContext(payload, meta);
+            var api = window.SMUpgrades;
+            if (!api || !api.selectItemEvent) return;
+            var now = Date.now();
+            var key = payload.item_id + ':' + payload.index;
+            if (lastCatalogueSelect.key === key && now - lastCatalogueSelect.at < 700) return;
+            lastCatalogueSelect = { key: key, at: now };
+            var selectEvent = api.selectItemEvent(payload, meta);
+            if (!selectEvent) return;
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
+            window.dataLayer.push(selectEvent);
+        }
+
         // ==================== FILTERS ====================
-        function applyFilters() {
+        function applyFilters(source) {
             state.filters = { type: [], colour: [], price: [] };
             document.querySelectorAll('input[data-filter]:checked').forEach(input => {
                 state.filters[input.dataset.filter].push(input.value);
@@ -1133,6 +1233,13 @@
             catalogueLimit = CATALOGUE_PAGE;
             renderProducts();
             updateActiveFiltersDisplay();
+            var change = null;
+            if (source && source.dataset && source.dataset.filter) {
+                change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
+            } else if (source && source.filter_name) {
+                change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
+            }
+            scheduleCatalogueTrack(change);
         }
 
         function updateActiveFiltersDisplay() {
@@ -1152,12 +1259,14 @@
 
         function removeFilter(type, value) {
             const checkbox = document.querySelector('input[data-filter="' + type + '"][value="' + value + '"]');
-            if (checkbox) { checkbox.checked = false; applyFilters(); }
+            if (checkbox) { checkbox.checked = false; applyFilters(checkbox); }
         }
 
         function clearAllFilters() {
+            var had = document.querySelector('input[data-filter]:checked');
+            if (!had) return;
             document.querySelectorAll('input[data-filter]').forEach(input => input.checked = false);
-            applyFilters();
+            applyFilters({ filter_name: 'clear', filter_value: 'all', selected: false });
         }
 
         // ==================== SORTING ====================
@@ -1428,6 +1537,14 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
+            var catalogueGrid = document.getElementById('productsGrid');
+            if (catalogueGrid) {
+                // pointerdown stores the card before a middle-click or new tab is created.
+                // click and auxclick push select_item and never call preventDefault.
+                catalogueGrid.addEventListener('pointerdown', rememberCatalogueCard, true);
+                catalogueGrid.addEventListener('click', catalogueSelectFromEvent, true);
+                catalogueGrid.addEventListener('auxclick', catalogueSelectFromEvent, true);
+            }
             // Loading timeout - show error if data doesn't load within 15s
             const loadingTimeout = setTimeout(() => {
                 const loadingEl = document.getElementById('productsLoading');
@@ -1683,6 +1800,6 @@ function declineCookies() {
 
     <script src="/site-globals.js" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=list1" defer></script>
 </body>
 </html>

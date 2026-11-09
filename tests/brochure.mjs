@@ -1,4 +1,4 @@
-// Brochure v5: config matches the real PDF, tracking payloads, and /api/brochure.
+// Brochure v10.1: config matches the real PDF, tracking payloads, and /api/brochure.
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";

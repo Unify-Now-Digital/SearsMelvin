@@ -519,6 +519,9 @@ def enquiry_payload(contact, person_id, clicks, today, kind="chat", used_intent=
         **{"last_" + key: last_utms.get(key) for key in UTM_KEYS},
         **{"last_" + key: last_clicks.get(key) for key in CLICK_KEYS},
         "created_at": contact.get("dateAdded"),
+        # Top-level GHL link columns (details.ghl_contact_id alone left ghl_contact_id NULL).
+        "ghl_contact_id": contact_id or None,
+        "ghl_synced_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "message": (
             f"{'Phone call' if kind == 'call' else 'Web chat'} lead (GHL contact {contact_id}). "
             f"Backfilled from GHL {kind} contact on {today}; no customer action needed."
