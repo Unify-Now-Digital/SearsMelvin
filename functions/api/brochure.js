@@ -26,7 +26,7 @@ import { adSourceCustomField, attributionCustomFields, cleanLastAttribution, der
 import { isTestSubmission } from "./_test-flags.js";
 
 const SITE = "https://searsmelvin.co.uk";
-const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=9";
+const PDF_PATH = "/assets/sears-melvin-brochure.pdf?v=10";
 const FROM = "Sears Melvin Memorials <info@searsmelvin.co.uk>";
 const PHONE = "020 3835 2548";
 export const SOURCES = ["header", "home", "product", "listing", "brochure_page"];
@@ -123,16 +123,16 @@ export async function logDownload(env, row) {
 }
 
 export function brochureLink(source) {
-  return `${SITE}${PDF_PATH}&utm_source=brochure_email&utm_medium=email&utm_campaign=brochure_v5&utm_content=${cleanSource(source)}`;
+  return `${SITE}${PDF_PATH}&utm_source=brochure_email&utm_medium=email&utm_campaign=brochure_v10&utm_content=${cleanSource(source)}`;
 }
 
 const LOGO_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/product-images/brand/sm-logo.png";
-const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=9`;
+const COVER_URL = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=10`;
 
 // Gmail-safe: tables, inline styles, no background images, explicit colours on
 // every text node so dark-mode inversion keeps contrast.
 export function brochureEmailHtml(link) {
-  const quote = `${SITE}/quote?utm_source=brochure_email&amp;utm_medium=email&amp;utm_campaign=brochure_v5`;
+  const quote = `${SITE}/quote?utm_source=brochure_email&amp;utm_medium=email&amp;utm_campaign=brochure_v10`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>Your Sears Melvin brochure</title></head>
 <body style="margin:0;padding:0;background:#F3EFE9;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F3EFE9">Your copy of the Sears Melvin memorial brochure: designs, guide prices and how ordering works.</div>
@@ -153,7 +153,7 @@ export function brochureEmailHtml(link) {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#2C2C2C" style="background:#2C2C2C;border-radius:3px;">
 <a href="${link}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:3px;">Download the brochure</a>
 </td></tr></table>
-<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 30 pages · 2.3 MB</p>
+<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B6B6B;">PDF · 30 pages · 2.4 MB</p>
 </td></tr>
 <tr><td style="padding:26px 32px 4px;font-family:Arial,Helvetica,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #E0DCD5;"><tr><td style="padding-top:20px;font-size:14px;line-height:1.65;color:#3D3D3D;">
