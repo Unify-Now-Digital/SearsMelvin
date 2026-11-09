@@ -201,8 +201,10 @@
     function compactFooter() {
         // The memorial product page has a purpose-built responsive footer.
         // Do not inject the generic footer rules over its mobile layout.
+        // Option B owns its own spacing. Leave that footer alone.
         if (document.body && document.body.classList.contains('memorial-page')) return;
         var footer = document.querySelector('footer');
+        if (footer && footer.classList.contains('footer-b')) return;
         if (footer) {
             var contact = footer.querySelector('.footer-contact');
             if (contact && !contact.getAttribute('data-sm-compact')) {
@@ -222,19 +224,19 @@
         var style = document.createElement('style');
         style.id = 'sm-footer-compact-style';
         style.textContent = [
-            'footer{padding:1.5rem 2rem 1.25rem!important;}',
-            '.footer-container{align-items:center!important;gap:1rem 2rem!important;}',
-            '.footer-contact{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 0.55rem!important;line-height:1.5!important;margin-top:0.35rem!important;}',
-            '.footer-contact a{display:inline!important;min-height:0!important;padding:0!important;line-height:1.5!important;}',
-            '.footer-contact-sep{color:rgba(255,255,255,0.25)!important;}',
-            '.footer-links{gap:0.4rem 1rem!important;}',
-            '.footer-links a{min-height:32px!important;padding:0 0.25rem!important;}',
-            '.footer-copy{margin-top:0.75rem!important;padding-top:0.85rem!important;}',
-            '.footer-legal{margin-top:0.35rem!important;line-height:1.5!important;}',
-            '.footer-accreditations{margin-top:0.6rem!important;padding-top:0!important;border-top:0!important;gap:0.6rem!important;}',
-            '.footer-accreditations .accred-badge{padding:0.2rem 0.6rem!important;font-size:0.72rem!important;}',
-            '@media (max-width:768px){.footer-contact{justify-content:center!important;}}',
-            '@media (hover:none) and (pointer:coarse){.footer-contact a{display:inline-block!important;min-height:44px!important;padding:0.55rem 0!important;line-height:1.2!important;}}'
+            'footer:not(.footer-b){padding:1.5rem 2rem 1.25rem!important;}',
+            'footer:not(.footer-b) .footer-container{align-items:center!important;gap:1rem 2rem!important;}',
+            'footer:not(.footer-b) .footer-contact{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 0.55rem!important;line-height:1.5!important;margin-top:0.35rem!important;}',
+            'footer:not(.footer-b) .footer-contact a{display:inline!important;min-height:0!important;padding:0!important;line-height:1.5!important;}',
+            'footer:not(.footer-b) .footer-contact-sep{color:rgba(255,255,255,0.25)!important;}',
+            'footer:not(.footer-b) .footer-links{gap:0.4rem 1rem!important;}',
+            'footer:not(.footer-b) .footer-links a{min-height:32px!important;padding:0 0.25rem!important;}',
+            'footer:not(.footer-b) .footer-copy{margin-top:0.75rem!important;padding-top:0.85rem!important;}',
+            'footer:not(.footer-b) .footer-legal{margin-top:0.35rem!important;line-height:1.5!important;}',
+            'footer:not(.footer-b) .footer-accreditations{margin-top:0.6rem!important;padding-top:0!important;border-top:0!important;gap:0.6rem!important;}',
+            'footer:not(.footer-b) .footer-accreditations .accred-badge{padding:0.2rem 0.6rem!important;font-size:0.72rem!important;}',
+            '@media (max-width:768px){footer:not(.footer-b) .footer-contact{justify-content:center!important;}}',
+            '@media (hover:none) and (pointer:coarse){footer:not(.footer-b) .footer-contact a{display:inline-block!important;min-height:44px!important;padding:0.55rem 0!important;line-height:1.2!important;}}'
         ].join('');
         document.head.appendChild(style);
     }
@@ -248,7 +250,7 @@
         if (document.body && document.body.classList.contains('memorial-page')) return;
 
         var footer = document.querySelector('footer');
-        if (footer) {
+        if (footer && !footer.classList.contains('footer-b')) {
             var links = footer.querySelectorAll('.footer-links a');
             for (var i = 0; i < links.length; i++) {
                 var link = links[i];
@@ -276,15 +278,15 @@
             '@media (max-width:768px){',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav){min-height:68px!important;padding:0.75rem 1rem!important;}',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .mobile-menu-btn{width:44px!important;height:44px!important;padding:8px!important;align-items:center!important;justify-content:center!important;}',
-            'body:not(.memorial-page) footer{padding:1.25rem 1rem 1rem!important;}',
-            'body:not(.memorial-page) footer .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b){padding:1.25rem 1rem 1rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
             'html,body{overflow-x:clip!important;}',
-            'body:not(.memorial-page) footer .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
-            'body:not(.memorial-page) footer .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
-            'body:not(.memorial-page) footer .sm-footer-secondary{display:none!important;}',
-            'body:not(.memorial-page) footer .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer .sm-footer-track{order:2!important;}body:not(.memorial-page) footer .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer .sm-footer-privacy{order:4!important;}',
-            'body:not(.memorial-page) footer .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
-            'body:not(.memorial-page) footer .footer-legal{font-size:0.875rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .sm-footer-secondary{display:none!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-track{order:2!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-privacy{order:4!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-legal{font-size:0.875rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',
             '}',
             '@media (max-width:480px){',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .nav-accred{display:none!important;}',
