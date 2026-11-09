@@ -197,7 +197,7 @@
         .animate-delay-3 { animation-delay: 0.3s; }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; min-height: 72px; padding: 1rem 2rem; display: flex; align-items: center; gap: 1.25rem; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; min-height: 72px; padding: 1rem 2rem; display: flex; align-items: center; gap: 1.25rem; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; flex: 0 0 auto; white-space: nowrap; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -266,11 +266,16 @@
         
 
         .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
-        .product-facts, .related-designs { margin: 0 0 1.5rem; }
-        .product-facts h2, .related-designs h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.35rem; margin: 0 0 0.5rem; }
+        .product-facts { margin: 0 0 1.5rem; }
+        .product-facts h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.35rem; margin: 0 0 0.5rem; }
         .product-facts p { margin: 0; }
-        .related-designs ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
-        .related-designs a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 0.18em; }
+        nav.related-designs { position: static; top: auto; right: auto; bottom: auto; left: auto; z-index: auto; display: block; min-height: auto; margin: 0 0 var(--sm-space-5); padding: 0; gap: normal; align-items: stretch; justify-content: flex-start; background-color: transparent; backdrop-filter: none; box-shadow: none; color: var(--sm-color-text); font-family: var(--sm-font-body); }
+        nav.related-designs h2 { font-family: var(--sm-font-display); font-weight: var(--sm-weight-display); font-size: var(--sm-text-lg); line-height: var(--sm-leading-snug); margin: 0 0 var(--sm-space-2); color: var(--sm-color-text); }
+        nav.related-designs ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--sm-space-2) var(--sm-space-4); }
+        nav.related-designs a { color: var(--sm-color-link); font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); line-height: var(--sm-leading-snug); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+        nav.related-designs a:visited { color: var(--sm-color-link); }
+        nav.related-designs a:hover { color: var(--sm-color-link-hover); text-decoration-thickness: 2px; }
+        nav.related-designs a:focus-visible { outline: var(--sm-focus-width) solid var(--sm-color-focus); outline-offset: var(--sm-focus-offset); border-radius: var(--sm-radius-sm); }
         .product-lead { font-size: 1.12rem; line-height: 1.6; color: var(--color-text); margin: 0 0 1.25rem; }
         .product-quote-intro { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 1.25rem 0; margin: 0 0 1.5rem; }
         .product-quote-intro .btn { width: 100%; }
@@ -486,7 +491,7 @@
             .price-actions .btn { flex: 1 1 auto; white-space: nowrap; }
         }
         @media (max-width: 768px) {
-            nav { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
+            nav#navbar { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
             .nav-links { display: none; }
             .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
             .logo span { display: none; }

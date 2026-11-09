@@ -60,7 +60,7 @@
 .sm-btn-primary { background: var(--color-stone, var(--sm-color-bg-inverse)); color: var(--color-cream, var(--sm-color-text-inverse)) !important; }
 .sm-btn-primary:hover { background: var(--color-stone-light, var(--sm-color-ink-hover)); }
 .sm-btn-secondary { border: 1px solid var(--color-stone, var(--sm-color-border-strong)); color: var(--color-stone, var(--sm-color-text)) !important; }
-nav .logo { white-space: nowrap; }
+nav#navbar .logo { white-space: nowrap; }
 @media (max-width: 1440px) { .nav-links { gap: 1.1rem !important; } .nav-accred-label { display: none; } }
 
 /* Keep the expanded desktop navigation on one line without removing links. */

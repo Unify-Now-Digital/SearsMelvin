@@ -180,7 +180,7 @@
         .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
         .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
         .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -361,8 +361,6 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .catalogue-index { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 1.5rem 0 0.5rem; }
-        .catalogue-index a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 0.18em; }
         .catalogue-more-wrap { margin: 1rem 0 0; }
         .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
         .form-status-error.is-visible { display: block; }
@@ -717,7 +715,6 @@
                         <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
-                <nav class="catalogue-index" id="catalogueIndex" aria-label="All memorials"></nav>
                 <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
@@ -919,7 +916,6 @@
                 state.productsData = productsData;
 
                 renderFilters();
-                ensureCatalogueIndex();
                 renderProducts();
                 injectItemListJsonLd(productsData);
                 applyUrlFilters();
@@ -1010,17 +1006,6 @@
         function showMoreMemorials() {
             catalogueLimit += CATALOGUE_PAGE;
             renderProducts();
-        }
-
-        function ensureCatalogueIndex() {
-            const nav = document.getElementById('catalogueIndex');
-            if (!nav || nav.querySelector('a')) return;
-            nav.innerHTML = state.productsData.map(function(product) {
-                const slug = safeSlug(product.slug);
-                const name = String(product.name || '').slice(0, 120);
-                if (!slug || !name) return '';
-                return '<a href="/memorials/' + slug + '">' + escapeHtml(name) + '</a>';
-            }).join('');
         }
 
         function renderProducts() {
