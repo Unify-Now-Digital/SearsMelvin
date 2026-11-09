@@ -281,7 +281,6 @@
             'html,body{overflow-x:clip!important;}',
             'body:not(.memorial-page) footer .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
             'body:not(.memorial-page) footer .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
-            'body:not(.memorial-page) footer .sm-footer-secondary{display:none!important;}',
             'body:not(.memorial-page) footer .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer .sm-footer-track{order:2!important;}body:not(.memorial-page) footer .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer .sm-footer-privacy{order:4!important;}',
             'body:not(.memorial-page) footer .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
             'body:not(.memorial-page) footer .footer-legal{font-size:0.875rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',

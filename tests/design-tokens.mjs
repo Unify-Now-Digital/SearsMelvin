@@ -29,7 +29,7 @@ assert.doesNotMatch(guide, /googletagmanager|google-analytics|GTM-|gtag\s*\(|dat
 assert.doesNotMatch(guide, /<form[\s>]/i);
 assert.doesNotMatch(guide, /concept/i);
 assert.doesNotMatch(`${components}\n${guideCss}\n${guide}`, /arched|frame--arch|archway/i);
-assert.match(guide, /10am to 3pm \(days TBC\)/);
+assert.match(guide, /Monday to Friday, 10am to 3pm/);
 assert.match(guide, /Showroom phone/);
 assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-ink\.svg/);
 assert.match(guide, /\/images\/brand\/logo\/sears-melvin-stacked-bronze\.svg/);
@@ -58,10 +58,10 @@ assert.doesNotMatch(guide, /sm-wordmark/);
 assert.match(guide, /Do not use a horizontal layout/);
 assert.doesNotMatch(guide, /sm-logo--horizontal|sears-melvin-horizontal/);
 assert.doesNotMatch(guide, /Pending Arin|DRAFT, pending Arin/);
-assert.match(tokens, /10am to 3pm \(days TBC\)/);
+assert.match(tokens, /Monday to Friday, 10am to 3pm/);
 assert.match(tokens, /--sm-logo-min-stacked:\s*240px/);
 assert.doesNotMatch(tokens, /logo-min-horizontal/);
-assert.match(read("BRAND.md"), /10am to 3pm \(days TBC\)/);
+assert.match(read("BRAND.md"), /Monday to Friday, 10am to 3pm/);
 assert.match(read("BRAND.md"), /Do not use a horizontal layout/);
 assert.match(read("BRAND.md"), /4:5 frame on linen/);
 assert.match(read("BRAND.md"), /Cormorant Garamond 500/);
@@ -88,7 +88,10 @@ for (const file of readdirSync(".").filter((name) => name.endsWith(".html") && n
   assert.match(html, /href="\/tokens\.css"/, `${file} must load tokens.css`);
   assert.equal(html.includes("components.css"), false, `${file} must not link components.css yet`);
   assert.equal(html.includes("styleguide.css"), false, `${file} must not link styleguide.css yet`);
-  assert.doesNotMatch(html, /sears-melvin-stacked-(?:bronze|soft-bronze)|source-exact/, `${file} must not use a bronze or archive logo`);
+  assert.doesNotMatch(html, /sears-melvin-stacked-bronze(?:-no-rules)?\.svg|source-exact/, `${file} must not use the bronze-on-linen or archive logo`);
+  if (html.includes('class="footer-logo"') && !file.startsWith("admin")) {
+    assert.match(html, /sears-melvin-stacked-soft-bronze(?:-no-rules)?\.svg/, `${file} footer must use the stacked soft-bronze logo`);
+  }
   if (html.includes('id="navbar"')) {
     assert.match(html, /\/images\/brand\/logo\/sears-melvin-stacked-ink(?:-no-rules)?\.svg/, `${file} must use the stacked ink header logo`);
   }
