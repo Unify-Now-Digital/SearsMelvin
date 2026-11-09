@@ -37,6 +37,13 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(payload["last_utm_term"], "term")
         self.assertEqual(payload["last_gbraid"], "last-braid")
 
+    def test_enquiry_payload_sets_top_level_ghl_contact_id(self):
+        row = contact(id="GHL-CONTACT-99", source="Live Chat")
+        payload = sync.enquiry_payload(row, "p1", {}, "2026-11-09")
+        self.assertEqual(payload["ghl_contact_id"], "GHL-CONTACT-99")
+        self.assertEqual(payload["details"]["ghl_contact_id"], "GHL-CONTACT-99")
+        self.assertTrue(isinstance(payload["ghl_synced_at"], str) and payload["ghl_synced_at"])
+
     def test_google_ads_detection(self):
         self.assertTrue(sync.is_google_ads({"wbraid": "x"}, {}))
         self.assertTrue(sync.is_google_ads({}, {"utm_source": "GoOgLe"}))
