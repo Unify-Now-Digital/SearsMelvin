@@ -67,16 +67,6 @@ async function fetchCatalogue(env) {
 
 const CARD_PAGE = 24;
 
-function renderIndex(products) {
-  const links = products.map((product) => {
-    const slug = safeSlug(product.slug);
-    const name = String(product.name || "").replace(/\s+/g, " ").trim().slice(0, 120);
-    if (!slug || !name) return "";
-    return `<a href="/memorials/${slug}">${escapeHtml(name)}</a>`;
-  }).filter(Boolean);
-  return links.join("");
-}
-
 function renderCards(products, colours) {
   const colourSlugs = colours.map((colour) => safeSlug(colour.slug)).filter(Boolean).join(",");
   const colourShown = colours.slice(0, 8);
@@ -111,18 +101,12 @@ export async function onRequestGet({ request, env }) {
     return shell;
   }
   if (!catalogue || catalogue.products.length === 0) return shell;
-  const index = renderIndex(catalogue.products);
-  let rewriter = new HTMLRewriter().on("#catalogueIndex", {
-    element(el) { el.setInnerContent(index, { html: true }); },
-  });
-  // Filtered URLs are applied in the browser. The full link list above stays
-  // in the HTML either way, so a crawler still sees every product URL.
-  if (!new URL(request.url).search) {
-    const cards = renderCards(catalogue.products.slice(0, CARD_PAGE), catalogue.colours);
-    const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
-    rewriter = rewriter.on("#productsGrid", {
-      element(el) { el.setInnerContent(grid, { html: true }); },
-    });
-  }
-  return rewriter.transform(shell);
+  // A filtered URL is applied in the browser. The unfiltered page renders
+  // the first page of cards only.
+  if (new URL(request.url).search) return shell;
+  const cards = renderCards(catalogue.products.slice(0, CARD_PAGE), catalogue.colours);
+  const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  return new HTMLRewriter().on("#productsGrid", {
+    element(el) { el.setInnerContent(grid, { html: true }); },
+  }).transform(shell);
 }
