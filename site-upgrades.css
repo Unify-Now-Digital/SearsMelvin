@@ -292,17 +292,27 @@ html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; 
 html body .floating-badge { background-color: var(--sm-accent-aa); }
 html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }
 
-/* ---- Header offset (responsive audit, Nov 2026) ----
+/* ---- Header offset ----
    One height for the fixed header, the trust bar, anchor jumps and the
-   mobile menu. /about, /brochure, /privacy and /terms were 98px at 1024 and
-   111px at 1440 because their article rule `ul { margin: 0.5rem 0 1rem 1.5rem }`
-   (and `ul li { margin-bottom }`) also styled ul.nav-links. The trust bar's
-   old 60px/56px offset then sat underneath that header. */
+   mobile menu. The bar's height is locked to --header-height. The trust
+   bar uses that same value as its top margin, so the two cannot drift.
+   The stacked logo (262×66, with the side rules) fits inside 80px.
+   It does not fit inside 72px, which is why that step is gone: the bar
+   was painting about 9px over the trust line from 769px to 1024px, and
+   about 1px over it on a wide desktop. Mobile stays 68px. */
 :root { --header-height: 80px; }
-@media (max-width: 1024px) { :root { --header-height: 72px; } }
 @media (max-width: 768px) { :root { --header-height: 68px; } }
 html { scroll-padding-top: var(--header-height); }
-#navbar { min-height: var(--header-height); }
+/* Keep the trust-bar margin inside the body after the homepage load
+   animation drops its transform. A transformed body holds the margin;
+   without a block formatting context the margin can collapse away. */
+body:has(#navbar) { display: flow-root; }
+#navbar {
+  box-sizing: border-box;
+  height: var(--header-height);
+  min-height: var(--header-height);
+  max-height: var(--header-height);
+}
 #navbar .nav-links,
 #navbar .nav-links > li { margin: 0; }
 .site-trust-bar { margin-top: var(--header-height); }
@@ -1337,19 +1347,40 @@ html body #navbar {
   background: var(--sm-color-bg);
   border-bottom: 1px solid var(--sm-color-border-decorative);
   box-shadow: none;
-  padding-top: 7px;
-  padding-bottom: 7px;
+  box-sizing: border-box;
+  height: var(--header-height);
+  min-height: var(--header-height);
+  max-height: var(--header-height);
+  align-items: center;
+  /* 6 + 66 + 6 + the 1px rule = 79, inside the 80px lock. */
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+html body #navbar.scrolled {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+html body #navbar > * {
+  min-height: 0;
 }
 
 html body #navbar .logo {
   display: flex;
   align-items: center;
   line-height: 0;
+  max-height: 100%;
 }
 
 html body #navbar .logo img {
+  /* 262px keeps the side rules on a 1× screen. The box is 66px, not the
+     SVG's 66.025, so subpixel rounding cannot push the bar past 80px. */
   width: 262px;
-  height: auto;
+  height: 66px;
+  max-height: calc(var(--header-height) - 13px);
+  object-fit: contain;
+  object-position: left center;
   display: block;
 }
 
@@ -1384,12 +1415,22 @@ html body #navbar .nav-links a[href^="tel:"]::before {
 
 @media (max-width: 768px) {
   html body nav#navbar {
-    min-height: 68px !important;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    box-sizing: border-box !important;
+    height: var(--header-height) !important;
+    min-height: var(--header-height) !important;
+    max-height: var(--header-height) !important;
+    /* 3 + 60 + 3 + the 1px rule = 67, inside the 68px lock. */
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+  }
+  html body nav#navbar.scrolled {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
   }
   html body #navbar .logo img {
     width: 240px;
+    height: 60px;
+    max-height: calc(var(--header-height) - 7px);
   }
 }
 
