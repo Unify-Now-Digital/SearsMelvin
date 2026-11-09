@@ -1520,8 +1520,7 @@ html body footer.footer-b .footer-accreditations .accred-logo--footer img {
 }
 
 html body footer.footer-b .footer-accreditations .accred-note::before {
-  content: "·";
-  margin-right: 0.45rem;
+  content: none;
 }
 
 @media (max-width: 900px) {
@@ -1608,7 +1607,7 @@ html body footer.footer-b .footer-accreditations .accred-note::before {
   }
 
   html body footer.footer-b .footer-contact a {
-    padding: 0 4px !important;
+    padding: 0 4px 0 0 !important;
   }
 
   html body footer.footer-b .footer-links a {
