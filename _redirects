@@ -25,8 +25,13 @@
 /permit-checker.html   /memorials  301
 /permit-checker/       /memorials  301
 
-# Area landing pages removed Oct 2026 (Arin approved 15 Oct) -> homepage.
-/areas        /  301
-/areas/       /  301
-/areas.html   /  301
-/areas/*      /  301
+# /index.html is the same document as /. Keep the query string (Pages
+# appends it when the target has none) so a tagged brochure landing
+# does not lose its UTMs. Brochure URLs themselves are not redirected.
+/index.html    /  301
+
+# Area landing pages removed Oct 2026. Send the six old URLs to the catalogue.
+/areas        /memorials  301
+/areas/       /memorials  301
+/areas.html   /memorials  301
+/areas/*      /memorials  301

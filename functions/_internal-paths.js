@@ -51,6 +51,9 @@ export function notFound() {
 }
 
 export async function onRequest(context) {
+  const { wwwToApexRedirect } = await import("./_public-redirects.js");
+  const www = wwwToApexRedirect(context.request);
+  if (www) return www;
   const path = new URL(context.request.url).pathname;
   if (isInternalRepoPath(path)) return notFound();
   return context.next();

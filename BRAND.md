@@ -492,7 +492,7 @@ Do not use a horizontal layout.
 
 The `source-exact` pack is an archive. Do not use it as the master.
 
-Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. The default is `favicon.svg`, the same artwork as `favicon-light.svg`, with `favicon-light-16.png` and `favicon-light-32.png`. The dark alternative is `favicon-dark.svg`, `favicon-dark-16.png` and `favicon-dark-32.png`. Also keep `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, and `site.webmanifest`. The live pages link the default icon, the 32px PNG, and the Apple touch icon. `/styleguide` still shows the full set.
+Favicons and app icons belong with the logo, in `/images/brand/logo/favicon/`. The mark is the SM monogram in Cormorant, ink on linen, in a square. The same files are copied to the site root as `/favicon.ico` (16, 32 and 48), `/favicon-48.png`, and `/favicon.svg`, because Google requests `/favicon.ico`. Also keep `favicon-light.svg`, `favicon-light-16.png`, `favicon-light-32.png`, the dark alternatives, `favicon-48.png`, `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, and `site.webmanifest`. Every page links the ico, the 48px PNG, and the SVG. The Apple touch icon stays on the public pages. `/styleguide` shows the full set and does not link the Apple touch icon or the manifest. The schema logo is the 512px PNG. The share image is separate.
 
 ### Do
 

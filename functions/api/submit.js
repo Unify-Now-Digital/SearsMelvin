@@ -966,7 +966,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
         <!-- Footer -->
         <tr>
           <td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
+            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
           </td>
         </tr>
 
@@ -1155,7 +1155,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
         <!-- Footer -->
         <tr>
           <td style="background-color:#1A1A1A;padding:16px 28px;text-align:center;border-radius:0 0 10px 10px;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; ${BUSINESS_EMAIL}</span>
           </td>
         </tr>
 
@@ -1256,7 +1256,7 @@ function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave
       ${enquiryPhotoGallery(photo_signed_urls)}
       <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
+        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
       </td></tr>
     </table>
   </td></tr>
@@ -1309,7 +1309,7 @@ function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave
         <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
       </td></tr>
       <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; UK-wide installation, based in London &middot; ${BUSINESS_EMAIL}</span>
       </td></tr>
     </table>
   </td></tr>

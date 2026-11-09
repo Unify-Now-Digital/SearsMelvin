@@ -49,6 +49,14 @@ for (const f of ["contact.html", "memorial.html"]) assert.match(read(f), /attrib
 // Conversion pushes.
 assert.match(read("contact.html"), /event: 'sm_lead_submit'/, "contact.html: sm_lead_submit missing");
 assert.match(read("memorial.html"), /event: 'sm_quote_submit'/, "memorial.html: sm_quote_submit missing");
+const memorialsPage = read("memorials.html");
+const shortlistFn = memorialsPage.slice(memorialsPage.indexOf("async function submitShortlistEnquiry"));
+assert.match(shortlistFn, /if \(result\.ok\) \{[\s\S]*event: 'sm_lead_submit'[\s\S]*form_id: 'shortlist'/, "shortlist sm_lead_submit must follow a successful /api/submit");
+assert.doesNotMatch(shortlistFn, /alert\(/, "shortlist errors stay on the page");
+const home = read("index.html");
+const apptFn = home.slice(home.indexOf("async function submitAppointment"));
+assert.match(apptFn, /event: 'sm_lead_submit'/, "home appointment sm_lead_submit missing");
+assert.doesNotMatch(apptFn, /alert\(/, "home appointment errors stay on the page");
 
 // Server-rendered product pages must not strip the tracking from memorial.html.
 const slugFn = read("functions/memorials/[slug].js");
