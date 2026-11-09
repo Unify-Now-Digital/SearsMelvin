@@ -180,7 +180,7 @@
         .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
         .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
         .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -361,8 +361,28 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .catalogue-index { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 1.5rem 0 0.5rem; }
-        .catalogue-index a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 0.18em; }
+        /* A–Z index. Links stay in the HTML. The closed state is the native
+           details element. Do not take the links out of view with display,
+           clipping, or a zero-size box. */
+        .catalogue-index-details { margin-top: var(--sm-space-6); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); background-color: var(--sm-color-bg); color: var(--sm-color-text); }
+        .catalogue-index-details > summary { display: flex; align-items: center; gap: var(--sm-space-3); min-height: var(--sm-control-height); padding: 0 var(--sm-space-4); border-radius: var(--sm-radius-sm); cursor: pointer; list-style: none; font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); line-height: var(--sm-leading-snug); letter-spacing: 0; text-transform: none; color: var(--sm-color-text); background-color: transparent; transition: background-color var(--sm-duration-fast) var(--sm-ease); }
+        /* Browser triangle only. The memorial links are not hidden. */
+        .catalogue-index-details > summary::-webkit-details-marker { display: none; }
+        .catalogue-index-details > summary:hover { background-color: var(--sm-color-bg-panel); }
+        .catalogue-index-details > summary:focus { outline: none; }
+        .catalogue-index-details > summary:focus-visible { outline: var(--sm-focus-width) solid var(--sm-color-focus); outline-offset: var(--sm-focus-offset); border-radius: var(--sm-radius-sm); }
+        .catalogue-index-details[open] > summary { border-bottom: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0; }
+        .catalogue-index-marker { flex: none; width: 0.625rem; height: 0.625rem; margin-top: -0.2rem; border-right: 2px solid var(--sm-color-text); border-bottom: 2px solid var(--sm-color-text); transform: rotate(-45deg); }
+        .catalogue-index-details[open] > summary .catalogue-index-marker { margin-top: 0.15rem; transform: rotate(45deg); }
+        nav.catalogue-index { position: static; top: auto; right: auto; left: auto; z-index: auto; display: block; justify-content: initial; align-items: initial; margin: 0; padding: var(--sm-space-4); column-count: 2; column-gap: var(--sm-space-4); background-color: transparent; backdrop-filter: none; box-shadow: none; font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); line-height: var(--sm-leading-snug); color: var(--sm-color-text); }
+        nav.catalogue-index a { display: block; break-inside: avoid; margin: 0 0 var(--sm-space-2); color: var(--sm-color-link); font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); line-height: var(--sm-leading-snug); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; overflow-wrap: break-word; }
+        nav.catalogue-index a:visited { color: var(--sm-color-link); }
+        nav.catalogue-index a:hover { color: var(--sm-color-link-hover); text-decoration-thickness: 2px; }
+        nav.catalogue-index a:focus { outline: none; }
+        nav.catalogue-index a:focus-visible { outline: var(--sm-focus-width) solid var(--sm-color-focus); outline-offset: var(--sm-focus-offset); border-radius: var(--sm-radius-sm); color: var(--sm-color-link); }
+        @media (min-width: 744px) { nav.catalogue-index { column-count: 3; column-gap: var(--sm-space-5); } }
+        @media (min-width: 1280px) { nav.catalogue-index { column-count: 4; } }
+        @media (prefers-reduced-motion: reduce) { .catalogue-index-details > summary { transition: none; } }
         .catalogue-more-wrap { margin: 1rem 0 0; }
         .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
         .form-status-error.is-visible { display: block; }
@@ -717,12 +737,15 @@
                         <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
-                <nav class="catalogue-index" id="catalogueIndex" aria-label="All memorials"></nav>
                 <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
                 </div>
+                <details class="catalogue-index-details">
+                    <summary><span class="catalogue-index-marker" aria-hidden="true"></span>All memorials, A to Z</summary>
+                    <nav class="catalogue-index" id="catalogueIndex" aria-label="All memorials"></nav>
+                </details>
             </main>
         </div>
     </section>
