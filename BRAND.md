@@ -18,7 +18,7 @@ Write in short sentences. Use the words in this book.
 8. The check reports raw colours outside `tokens.css`. Stage S1 cleared the page CSS. The check does not fail on a leftover yet. That guard is a later stage.
 9. Public pages load `tokens.css` so the colour tokens resolve. Do not load `components.css` on a public page until a later stage.
 10. `/styleguide` is the visual reference. It is `noindex`. It does not load Tag Manager. It is not in the sitemap.
-11. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548. Keep that number as one unbroken string.
+11. Opening hours are Monday to Friday, 10am to 3pm. The showroom phone is 020 3835 2548. Keep that number as one unbroken string.
 
 ## Scope
 
@@ -80,7 +80,7 @@ The brand is warm, calm, and clear.
 6. The stacked logo is approved. It is Cormorant Garamond 500, with the thin rules beside MEMORIALS. Use that file by default, including the site header on desktop and tablet. The no-rules file is only for small sizes where the rules fade. Show the logo on `/styleguide` only, until a later phase changes the live header. Do not use a horizontal layout.
 7. The shortlist heart is square.
 8. Do not use an arched photo frame.
-9. Opening hours are 10am to 3pm (days TBC). The showroom phone is 020 3835 2548.
+9. Opening hours are Monday to Friday, 10am to 3pm. The showroom phone is 020 3835 2548.
 
 ## 3. Colours
 
@@ -433,7 +433,7 @@ Keep these live hooks when you later change the real header: `#navbar`, `.mobile
 4. Links are linen. Hover turns them soft bronze and adds an underline.
 5. Section headings are soft-bronze labels.
 6. You may show the showroom address: 1 The Market Place, Falloden Way, NW11 6LB.
-7. Opening hours are 10am to 3pm (days TBC). Write that sentence. Do not invent the days.
+7. Opening hours are Monday to Friday, 10am to 3pm. Write that sentence.
 8. The showroom phone is 020 3835 2548. It is the active showroom landline. Write it as one unbroken string.
 
 Keep these live classes when you later change the real footer: `.footer-container`, `.footer-links`, `.footer-contact`, `.footer-legal`, `.footer-copy`.
@@ -441,12 +441,12 @@ Keep these live classes when you later change the real footer: `.footer-containe
 ### Do
 
 1. Use a solid muted colour for legal text.
-2. Write the hours as 10am to 3pm (days TBC).
+2. Write the hours as Monday to Friday, 10am to 3pm.
 3. Write the showroom phone as 020 3835 2548.
 
 ### Don’t
 
-1. Do not invent the days. The days stay TBC.
+1. Do not invent a different set of days. The showroom days are Monday to Friday.
 2. Do not split the showroom phone into separate pieces.
 3. Do not set legal text in white at 45% opacity.
 
