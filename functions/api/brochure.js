@@ -164,7 +164,7 @@ When you’re ready, we’re happy to help — call <a href="tel:+442038352548" 
 <p style="margin:0;font-size:12px;line-height:1.5;color:#6B6B6B;">Prices in the brochure are guide “from” prices and may change. Every memorial is bespoke — please ask for a personalised quote.</p>
 </td></tr>
 <tr><td align="center" bgcolor="#F3EFE9" style="background:#F3EFE9;padding:18px 24px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#6B6B6B;">
-Sears Melvin Memorials · North London · <a href="${SITE}" style="color:#6B5840;text-decoration:none;">searsmelvin.co.uk</a><br>RQMF Registered · No. 2263
+Sears Melvin Memorials · UK-wide installation, based in London · <a href="${SITE}" style="color:#6B5840;text-decoration:none;">searsmelvin.co.uk</a><br>RQMF Registered · No. 2263
 </td></tr>
 </table></td></tr></table></body></html>`;
 }

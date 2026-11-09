@@ -6,6 +6,7 @@
  */
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
+import { PAGE_LASTMOD } from "./_page-lastmod.js";
 
 const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
@@ -51,8 +52,8 @@ async function fetchProducts(env) {
   }
 }
 
-function todayIso() {
-  return new Date().toISOString().split("T")[0];
+function pageLastmod(path) {
+  return PAGE_LASTMOD[path] || "";
 }
 
 function urlEntry({ loc, lastmod, priority, changefreq }) {
@@ -68,12 +69,11 @@ function urlEntry({ loc, lastmod, priority, changefreq }) {
 
 export async function onRequestGet({ env }) {
   const products = await fetchProducts(env);
-  const today = todayIso();
 
   const staticEntries = STATIC_PAGES.map((p) =>
     urlEntry({
       loc: BASE + p.path,
-      lastmod: today,
+      lastmod: pageLastmod(p.path),
       priority: p.priority,
       changefreq: p.changefreq,
     }),
@@ -82,7 +82,7 @@ export async function onRequestGet({ env }) {
   const productEntries = products.map((p) =>
     urlEntry({
       loc: `${BASE}/memorials/${encodeURIComponent(p.slug)}`,
-      lastmod: (p.updated_at || p.created_at || today).split("T")[0],
+      lastmod: String(p.updated_at || p.created_at || "").split("T")[0],
       priority: "0.7",
       changefreq: "monthly",
     }),

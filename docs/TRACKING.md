@@ -46,7 +46,8 @@ and missed most chats. Do not remove the flag, or chats will be counted twice.
 
 ### generate_lead on quote/shortlist pages (keep)
 GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **unless** the form is `quoteForm`
-(form_name=shortlist, value 400, beacon). It covers the shortlist enquiry form. Keep it.
+(form_name=shortlist, value 400, beacon). Keep that tag. `/memorials` has no `<form>`, so the tag does not fire.
+The shortlist enquiry pushes `sm_lead_submit` with `form_id: 'shortlist'` only after `/api/submit` returns ok.
 
 ## GTM tags (live v26, from `docs/gtm-snapshot.json`)
 

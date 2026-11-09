@@ -120,6 +120,8 @@ const MUST_INVOKE = [
   "/memorials",
   "/memorials/hartwell",
   "/memorials.html",
+  "/memorial",
+  "/memorial.html",
   "/partner",
   "/partner/",
   "/partner.html",
@@ -167,7 +169,8 @@ const PUBLIC_ROOT = new Set([
   "memorials.html", "privacy.html", "quote.html", "resources.html", "terms.html",
   "track.html", "styleguide.html", "accreditations.css", "chat-widget.css",
   "components.css", "site-upgrades.css", "styleguide.css", "tokens.css",
-  "site-config.js", "site-globals.js", "site-upgrades.js", "favicon.svg",
+  "site-config.js", "site-globals.js", "site-upgrades.js", "product-copy.js", "favicon.svg",
+  "favicon.ico", "favicon-48.png",
   "sm-logo.svg", "robots.txt", "_headers", "_redirects", "_routes.json",
 ]);
 const PUBLIC_DIRS = ["assets/", "images/", "data/"];

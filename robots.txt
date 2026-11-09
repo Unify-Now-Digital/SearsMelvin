@@ -22,4 +22,10 @@ Disallow: /styleguide.html
 # API endpoints — never indexable
 Disallow: /api/
 
+# Supabase paths must not be crawled on this host. Catalogue calls use the
+# absolute Supabase origin. These rules cover any relative URL a crawler
+# still extracts from older HTML.
+Disallow: /rest/
+Disallow: /storage/
+
 Sitemap: https://searsmelvin.co.uk/sitemap.xml

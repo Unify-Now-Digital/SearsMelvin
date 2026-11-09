@@ -1,7 +1,7 @@
 # Sears Melvin Memorials — orientation for AI agents
 
-Static site + Cloudflare Pages Functions for a North London (NW11) memorial
-masonry business. Read this before changing anything; it records decisions that
+Static site + Cloudflare Pages Functions for a London memorial masonry
+business, with UK-wide installation. Read this before changing anything; it records decisions that
 are easy to undo by accident.
 
 Companion doc: `docs/TOOLING-AUDIT.md` — the standing audit register (open

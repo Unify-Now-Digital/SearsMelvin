@@ -135,7 +135,10 @@ assert.match(memorials, /catalogueGrid\.addEventListener\('auxclick', catalogueS
 assert.match(memorials, /catalogueGrid\.addEventListener\('pointerdown', rememberCatalogueCard, true\)/);
 assert.match(memorials, /onchange="applyFilters\(this\)"/);
 assert.match(memorials, /scheduleCatalogueTrack\(\)/);
-assert.equal((memorials.match(/event: 'sm_lead_submit'/g) || []).length, 0);
+const shortlistLeads = memorials.match(/event: 'sm_lead_submit'/g) || [];
+assert.equal(shortlistLeads.length, 1, "the shortlist is the only lead push on /memorials");
+const shortlistOk = memorials.slice(memorials.indexOf("if (result.ok) {", memorials.indexOf("channel: 'shortlist'")));
+assert.match(shortlistOk.slice(0, 500), /form_id: 'shortlist'/);
 
 const quotePushes = memorial.match(/event: 'sm_quote_submit'/g) || [];
 assert.equal(quotePushes.length, 1, "memorial.html pushes sm_quote_submit from one literal");

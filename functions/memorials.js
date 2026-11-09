@@ -28,15 +28,22 @@ function safeHex(value) {
 function safeImageUrl(value) {
   if (!value || String(value).length > 2048) return "";
   try {
-    const url = new URL(String(value), "https://searsmelvin.co.uk");
-    return url.protocol === "https:" && !url.username && !url.password ? url.href : "";
+    const supabase = publicSupabaseUrl({});
+    const url = new URL(String(value), supabase);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    if (url.pathname.startsWith("/storage/") || url.pathname.startsWith("/rest/")) {
+      const host = new URL(supabase);
+      url.protocol = host.protocol;
+      url.host = host.host;
+    }
+    return url.href;
   } catch {
     return "";
   }
 }
 
 function imageAttributes(url) {
-  if (!/\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(url)) {
+  if (!new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url)) {
     return `src="${escapeHtml(url)}"`;
   }
   const render = (width) => url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
@@ -56,6 +63,18 @@ async function fetchCatalogue(env) {
   if (!productsResponse.ok || !coloursResponse.ok) return null;
   const [products, colours] = await Promise.all([productsResponse.json(), coloursResponse.json()]);
   return Array.isArray(products) && Array.isArray(colours) ? { products, colours } : null;
+}
+
+const CARD_PAGE = 24;
+
+function renderIndex(products) {
+  const links = products.map((product) => {
+    const slug = safeSlug(product.slug);
+    const name = String(product.name || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (!slug || !name) return "";
+    return `<a href="/memorials/${slug}">${escapeHtml(name)}</a>`;
+  }).filter(Boolean);
+  return links.join("");
 }
 
 function renderCards(products, colours) {
@@ -85,7 +104,6 @@ function renderCards(products, colours) {
 
 export async function onRequestGet({ request, env }) {
   const shell = await env.ASSETS.fetch(new URL("/memorials.html", request.url));
-  if (new URL(request.url).search) return shell;
   let catalogue;
   try {
     catalogue = await fetchCatalogue(env);
@@ -93,10 +111,18 @@ export async function onRequestGet({ request, env }) {
     return shell;
   }
   if (!catalogue || catalogue.products.length === 0) return shell;
-  const cards = renderCards(catalogue.products, catalogue.colours);
-  if (!cards) return shell;
-  const fallback = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p></div>`;
-  return new HTMLRewriter().on("#productsGrid", {
-    element(el) { el.setInnerContent(fallback, { html: true }); },
-  }).transform(shell);
+  const index = renderIndex(catalogue.products);
+  let rewriter = new HTMLRewriter().on("#catalogueIndex", {
+    element(el) { el.setInnerContent(index, { html: true }); },
+  });
+  // Filtered URLs are applied in the browser. The full link list above stays
+  // in the HTML either way, so a crawler still sees every product URL.
+  if (!new URL(request.url).search) {
+    const cards = renderCards(catalogue.products.slice(0, CARD_PAGE), catalogue.colours);
+    const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+    rewriter = rewriter.on("#productsGrid", {
+      element(el) { el.setInnerContent(grid, { html: true }); },
+    });
+  }
+  return rewriter.transform(shell);
 }

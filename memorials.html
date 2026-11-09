@@ -120,8 +120,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
-    <link rel="icon" href="/images/brand/logo/favicon/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="/images/brand/logo/favicon/favicon-light-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="icon" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
     <meta name="theme-color" content="#FBF9F5">
@@ -132,13 +133,13 @@
     <meta property="og:title" content="Headstones, gravestones and memorials London">
     <meta property="og:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
-    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Headstones, gravestones and memorials London">
     <meta name="twitter:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
-    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
     <!-- Supabase data loaded via REST API directly -->
     <link rel="stylesheet" href="/tokens.css">
@@ -360,6 +361,11 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .catalogue-index { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 1.5rem 0 0.5rem; }
+        .catalogue-index a { color: var(--color-accent-dark); text-decoration: underline; text-underline-offset: 0.18em; }
+        .catalogue-more-wrap { margin: 1rem 0 0; }
+        .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
+        .form-status-error.is-visible { display: block; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
         .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; }
         .footer-links a:hover { color: white; }
@@ -538,9 +544,9 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "London-based memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and UK-wide installation.",
-      "image": "https://searsmelvin.co.uk/sm-logo.svg",
-      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and UK-wide installation, based in London.",
+      "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
+      "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
@@ -548,12 +554,7 @@
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
       "areaServed": [
         {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "City", "name": "London"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
@@ -713,9 +714,11 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
                         <h3>No memorials found</h3>
                         <p>Try adjusting your filters to find the right memorial.</p>
-                        <button onclick="clearAllFilters()">Clear All Filters</button>
+                        <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
+                <nav class="catalogue-index" id="catalogueIndex" aria-label="All memorials"></nav>
+                <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -751,7 +754,7 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials" class="search-quick-link">Browse memorials</a>
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
@@ -798,8 +801,9 @@
                     <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
                     <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        <span>Send Enquiry</span>
+                        <span>Send enquiry</span>
                     </button>
+                    <p class="form-status-error" id="slEnqError" role="alert"></p>
                     <div class="shortlist-enquiry-success" id="slEnqSuccess">Thank you. We will be in touch soon.</div>
                 </div>
             </div>
@@ -821,9 +825,9 @@
         // Resized product images via Supabase image transforms (originals untouched).
         // Falls back to the original file if the render URL fails.
         function smRender(url, w) {
-            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70&resize=contain';
+            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/')) + '?width=' + w + '&quality=70&resize=contain';
         }
-        function smIsBucketImg(url) { return /\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(String(url || '')); }
+        function smIsBucketImg(url) { return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(String(url || '')); }
         function smImgAttrs(url, sizes, escFn) {
             var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
             if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
@@ -839,13 +843,13 @@
         }
 
         function supabaseImgUrl(url, width) {
-            if (!url || !url.includes('/storage/v1/object/public/')) return url || '';
-            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+            if (!url || !url.includes(['','storage','v1','object','public',''].join('/'))) return url || '';
+            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/'))
                 + '?width=' + width + '&resize=contain&format=webp&quality=80';
         }
 
         async function supabaseFetch(table, params) {
-            const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
+            const url = new URL(SUPABASE_URL + ['','rest','v1',''].join('/') + table);
             Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
             const res = await fetch(url.toString(), { headers: SUPABASE_HEADERS });
             if (!res.ok) throw new Error('Supabase query failed: ' + res.status + ' ' + (await res.text()));
@@ -885,8 +889,15 @@
         function safeImageUrl(value) {
             if (!value || String(value).length > 2048) return '';
             try {
-                const url = new URL(String(value), window.location.origin);
+                const url = new URL(String(value), SUPABASE_URL || window.location.origin);
                 if (url.protocol !== 'https:' || url.username || url.password) return '';
+                const offHost = ['', 'storage', 'v1'].join('/');
+                const offRest = ['', 'rest', 'v1'].join('/');
+                if (url.pathname.indexOf(offHost) === 0 || url.pathname.indexOf(offRest) === 0) {
+                    const host = new URL(SUPABASE_URL);
+                    url.protocol = host.protocol;
+                    url.host = host.host;
+                }
                 return url.href;
             } catch (_) { return ''; }
         }
@@ -908,6 +919,7 @@
                 state.productsData = productsData;
 
                 renderFilters();
+                ensureCatalogueIndex();
                 renderProducts();
                 injectItemListJsonLd(productsData);
                 applyUrlFilters();
@@ -966,14 +978,61 @@
         }
 
         // ==================== RENDER PRODUCTS ====================
+        const CATALOGUE_PAGE = 24;
+        let catalogueLimit = CATALOGUE_PAGE;
+
+        function priceBand(price) {
+            if (price < 1000) return 'under-1000';
+            if (price < 1500) return '1000-1500';
+            if (price < 2000) return '1500-2000';
+            if (price < 3000) return '2000-3000';
+            return 'over-3000';
+        }
+
+        function catalogueMatches(product) {
+            const categorySlug = safeSlug(product.product_categories && product.product_categories.slug) || 'default';
+            const price = parseFloat(product.base_price);
+            const matchesType = state.filters.type.length === 0 || state.filters.type.includes(categorySlug);
+            const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(priceBand(price));
+            return matchesType && matchesPrice && Number.isFinite(price);
+        }
+
+        function sortedCatalogue() {
+            const list = state.productsData.filter(catalogueMatches);
+            const sortValue = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'featured';
+            const copy = list.slice();
+            if (sortValue === 'price-low') copy.sort((a, b) => parseFloat(a.base_price) - parseFloat(b.base_price));
+            else if (sortValue === 'price-high') copy.sort((a, b) => parseFloat(b.base_price) - parseFloat(a.base_price));
+            else if (sortValue === 'name-az') copy.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+            return copy;
+        }
+
+        function showMoreMemorials() {
+            catalogueLimit += CATALOGUE_PAGE;
+            renderProducts();
+        }
+
+        function ensureCatalogueIndex() {
+            const nav = document.getElementById('catalogueIndex');
+            if (!nav || nav.querySelector('a')) return;
+            nav.innerHTML = state.productsData.map(function(product) {
+                const slug = safeSlug(product.slug);
+                const name = String(product.name || '').slice(0, 120);
+                if (!slug || !name) return '';
+                return '<a href="/memorials/' + slug + '">' + escapeHtml(name) + '</a>';
+            }).join('');
+        }
+
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
             grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
+            const matched = sortedCatalogue();
+            const shown = matched.slice(0, catalogueLimit);
 
             let productsHTML = '';
-            state.productsData.forEach((product, index) => {
+            shown.forEach((product, index) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 if (!id || !slug) return;
@@ -984,6 +1043,7 @@
                 const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
+                const saved = state.shortlist.some(item => item.id === id);
                 const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
                 const productImage = imageUrl
                     ? '<img ' + smImgAttrs(imageUrl, '(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 300px', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
@@ -997,13 +1057,16 @@
                     '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
                 ).join('') + (colourExtra > 0 ? '<span class="product-colour-more">+' + colourExtra + '</span>' : '');
 
-                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn' + (saved ? ' active' : '') + '" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
             });
 
             const noResults = document.getElementById('noResults');
             noResults.insertAdjacentHTML('beforebegin', productsHTML);
+            noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
-            document.getElementById('resultsCount').textContent = products.length;
+            document.getElementById('resultsCount').textContent = matched.length;
+            const more = document.getElementById('catalogueMore');
+            if (more) more.hidden = matched.length <= shown.length;
             scheduleCatalogueTrack();
         }
 
@@ -1167,19 +1230,8 @@
             document.querySelectorAll('input[data-filter]:checked').forEach(input => {
                 state.filters[input.dataset.filter].push(input.value);
             });
-            let visibleCount = 0;
-            products.forEach(product => {
-                const type = product.dataset.type;
-                const colours = product.dataset.colours.split(',');
-                const price = product.dataset.price;
-                const matchesType = state.filters.type.length === 0 || state.filters.type.includes(type);
-                const matchesColour = state.filters.colour.length === 0 || state.filters.colour.some(c => colours.includes(c));
-                const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(price);
-                if (matchesType && matchesColour && matchesPrice) { product.classList.remove('hidden'); visibleCount++; }
-                else { product.classList.add('hidden'); }
-            });
-            document.getElementById('resultsCount').textContent = visibleCount;
-            document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+            catalogueLimit = CATALOGUE_PAGE;
+            renderProducts();
             updateActiveFiltersDisplay();
             var change = null;
             if (source && source.dataset && source.dataset.filter) {
@@ -1219,19 +1271,7 @@
 
         // ==================== SORTING ====================
         function sortProducts() {
-            const sortValue = document.getElementById('sortSelect').value;
-            const grid = document.getElementById('productsGrid');
-            const sorted = [...products].sort((a, b) => {
-                switch(sortValue) {
-                    case 'price-low': return parseFloat(a.dataset.priceValue) - parseFloat(b.dataset.priceValue);
-                    case 'price-high': return parseFloat(b.dataset.priceValue) - parseFloat(a.dataset.priceValue);
-                    case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
-                    default: return 0;
-                }
-            });
-            sorted.forEach(p => grid.appendChild(p));
-            grid.appendChild(document.getElementById('noResults'));
-            scheduleCatalogueTrack();
+            renderProducts();
         }
 
 
@@ -1387,7 +1427,17 @@
             var email = document.getElementById('slEnqEmail').value.trim();
             var phone = document.getElementById('slEnqPhone').value.trim();
             var note = document.getElementById('slEnqNote').value.trim();
-            if (!name || !email) return;
+            var errEl = document.getElementById('slEnqError');
+            function showShortlistError(message) {
+                if (!errEl) return;
+                errEl.textContent = message || '';
+                errEl.classList.toggle('is-visible', !!message);
+            }
+            if (!name || !email) {
+                showShortlistError('Please add your name and email.');
+                return;
+            }
+            showShortlistError('');
             var btn = document.getElementById('slEnqBtn');
             btn.disabled = true;
             btn.querySelector('span').textContent = 'Sending…';
@@ -1421,13 +1471,17 @@
                 });
                 var result = await res.json();
                 if (result.ok) {
+                    try {
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({ event: 'sm_lead_submit', form_id: 'shortlist' });
+                    } catch (trackErr) { /* tracking must never break the form */ }
                     document.getElementById('slEnqSuccess').style.display = 'block';
                     btn.style.display = 'none';
                 } else { throw new Error(result.error); }
             } catch (e) {
                 btn.disabled = false;
-                btn.querySelector('span').textContent = 'Send Enquiry';
-                alert('Sorry, something went wrong. Please try again.');
+                btn.querySelector('span').textContent = 'Send enquiry';
+                showShortlistError('Sorry, something went wrong. Please try again.');
             }
         }
 
@@ -1509,23 +1563,24 @@
                 const checkProducts = setInterval(() => {
                     checkCount++;
                     if (checkCount > 100) { clearInterval(checkProducts); return; }
-                    if (products.length > 0) {
+                    if (state.productsData.length > 0) {
                         clearInterval(checkProducts);
                         // Clear existing shortlist so shared link shows exactly what was shared
                         state.shortlist = [];
-                        document.querySelectorAll('.save-btn.active').forEach(btn => btn.classList.remove('active'));
                         shortlistIds.split(',').forEach(key => {
-                            // Match by slug or id
-                            const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
-                            if (card) {
-                                const id = card.dataset.id;
-                                if (!state.shortlist.some(s => s.id === id)) {
-                                    state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
-                                    const btn = card.querySelector('.save-btn');
-                                    if (btn) btn.classList.add('active');
-                                }
-                            }
+                            const product = state.productsData.find(item => item.slug === key || item.id === key);
+                            if (!product || state.shortlist.some(item => item.id === product.id)) return;
+                            const price = parseFloat(product.base_price);
+                            state.shortlist.push({
+                                id: product.id,
+                                slug: product.slug || '',
+                                name: product.name,
+                                price: Number.isFinite(price) ? ('£' + price.toLocaleString()) : '',
+                                type: (product.product_categories && product.product_categories.name) || '',
+                                image: safeImageUrl(product.image_url) || ''
+                            });
                         });
+                        renderProducts();
                         updateShortlistUI();
                         openShortlist();
                     }
@@ -1542,11 +1597,12 @@
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a><br>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment<span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">10am to 3pm</span>
+                    UK-wide installation, based in London<span class="footer-contact-sep" aria-hidden="true">·</span><span class="footer-hours">10am to 3pm</span>
                 </div>
             </div>
             <ul class="footer-links">
                 <li><a href="/about">About</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/care-guide">Care Guide</a></li>
@@ -1668,7 +1724,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1689,7 +1745,7 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + ['','rest','v1',''].join('/')+'products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
                         headers: window.SM_SUPABASE.headers()
                     }
