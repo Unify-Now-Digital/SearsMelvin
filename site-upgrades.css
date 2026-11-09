@@ -1593,11 +1593,15 @@ html body footer.footer-b .footer-accreditations .accred-note::before {
     box-sizing: border-box;
     min-height: 44px !important;
     min-width: 44px !important;
+  }
+
+  html body footer.footer-b .footer-contact a {
     padding: 0 4px !important;
   }
 
   html body footer.footer-b .footer-links a {
     width: 100%;
+    padding: 0 !important;
   }
 
   html body footer.footer-b .footer-nav-secondary,
