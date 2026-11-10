@@ -127,12 +127,31 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 
 ## Click-ID intents (chat/call)
 
-- Chat submissions and `tel:` clicks send the stored Google Ads click ID to
-  `/api/click-intent`; chat may also include a sanitised email/phone supplied by
-  the widget. Calls never include contact details.
+- Chat submissions and `tel:` clicks send a row to `/api/click-intent`.
+- **Personal data:** email, phone, and name. A chat may include a sanitised
+  email and phone supplied by the widget — the same two fields the
+  `click_intents` row already stores. Name is personal data and is not
+  collected. Calls never include contact details. The dataLayer events stay
+  free of personal details.
+- Attribution comes from `localStorage.sm_attr` (90-day first touch). When that
+  store has no click ID and no UTM, the payload reads `gclid`, `gbraid`, and
+  `wbraid` from the page URL, then fills a missing `gclid` from the Google
+  `_gcl_aw` cookie. The cookie value is `GCL.<unix seconds>.<gclid>` and is
+  ignored once it is older than 90 days. A saved click ID or UTM is left as it is.
+- A counted chat is written even when there is no click ID and no UTM, so an
+  empty store cannot drop the row. The chat sync still only uses a row that
+  has a click ID (`choose_click_intent` skips rows with none).
+- Transport: `navigator.sendBeacon` with the plain JSON string, then always a
+  `fetch` with `keepalive: true`. Both bodies carry the same client `event_id`.
+  The Worker stores that id in the existing `click_intents.id` primary key.
+  The second insert conflicts (HTTP 409) and is ignored, so the pair creates
+  one row. This needs no schema change: `id` is already `uuid primary key
+  default gen_random_uuid()`, and the click and UTM columns are already nullable.
 - The endpoint is same-origin, fail-soft, and writes service-role-only rows to
-  `click_intents` for a backend job to match to GHL contacts. Its draft migration
-  is unapplied, needs Arin's approval, and specifies 120-day retention.
+  `click_intents` for a backend job to match to GHL contacts. The table already
+  has those columns, including a uuid `id` primary key. This fix does not change
+  the schema. The create-table migration in this repo still records a 120-day
+  retention note.
 - The box cron `scripts/ghl-chat-sync/sm_ghl_chat_sync.py` creates chat enquiries
   with `details.source=ghl_chat_sync`. It carries all five first-touch UTMs and
   all five `last_utm_*` values plus last-touch click IDs; matched click intents
