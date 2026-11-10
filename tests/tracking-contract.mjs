@@ -76,7 +76,23 @@ for (const f of execSync("git ls-files '*.html' '*.js'").toString().split("\n").
 // 4. Committed GTM snapshot still satisfies the contract (live drift is checked by scripts/tracking-check.mjs).
 const snap = JSON.parse(html("docs/gtm-snapshot.json"));
 assert.equal(snap.container, GTM_ID);
+assert.equal(snap.version, "28", "snapshot must match live GTM v28");
 assert.deepEqual(requiredTagProblems(snap), []);
 assert.deepEqual(driftProblems(snap, snap), []);
-assert.ok(html("docs/TRACKING.md").includes("sm_quote_submit"));
+const chatStart = snap.tags.find((tag) => tag.function === "__awct" && tag.id === "MipOCNXwuLscEK-15Oo-");
+assert.equal(chatStart && chatStart.value, "150", "Ads Chat start value is 150 GBP");
+assert.ok(chatStart.triggers.some((rule) => rule.includes("sm_chat_submit")), "Chat start still fires on sm_chat_submit");
+const brochureTag = snap.tags.find((tag) => tag.function === "__gaawe" && tag.id === "brochure_download");
+assert.deepEqual(brochureTag && brochureTag.params, { brochure_source: "{{variable}}" }, "GA4 brochure param is brochure_source");
+const clickToCall = snap.tags.find((tag) => tag.function === "__awct" && tag.id === "okRkCPGTqJsdEK-15Oo-");
+assert.equal(clickToCall && clickToCall.value, "150", "click-to-call stays 150");
+const staffCookie = snap.tags.filter((tag) => tag.function === "__html" && tag.triggers.some((rule) => rule.includes("sm_internal=")));
+assert.equal(staffCookie.length, 1, "staff internal-cookie tag");
+const trackingDoc = html("docs/TRACKING.md");
+assert.ok(trackingDoc.includes("sm_quote_submit"));
+assert.match(trackingDoc, /live version 28/);
+assert.match(trackingDoc, /brochure_source/);
+assert.match(trackingDoc, /tag value 150/);
+assert.doesNotMatch(trackingDoc, /tag value 200/);
+assert.doesNotMatch(trackingDoc, /sends £200/);
 console.log("tracking-contract: ok");
