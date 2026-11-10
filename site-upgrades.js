@@ -170,8 +170,76 @@
         return Object.assign({ ts: now }, fresh);
     }
 
+    // Google's first-party _gcl_aw cookie is "GCL.<unix seconds>.<gclid>".
+    // Used only when the saved attribution store has no click ID and no UTM.
+    // A value older than the 90-day click window is ignored.
+    function readGclAwGclid(cookie, now) {
+        var parts = String(cookie || '').split(';');
+        for (var i = 0; i < parts.length; i++) {
+            var piece = parts[i].trim();
+            var eq = piece.indexOf('=');
+            if (eq < 1) continue;
+            if (piece.slice(0, eq).trim() !== '_gcl_aw') continue;
+            var raw = piece.slice(eq + 1).trim().replace(/^"|"$/g, '');
+            try { raw = decodeURIComponent(raw.replace(/\+/g, ' ')); } catch (_e) { continue; }
+            var match = /^GCL\.(\d{1,16})\.([\w\-.~]{1,200})$/.exec(raw);
+            if (!match) continue;
+            var seconds = Number(match[1]);
+            if (!isFinite(seconds)) continue;
+            if (typeof now === 'number') {
+                var age = now - seconds * 1000;
+                if (age < -86400000 || age >= ATTR_TTL_MS) continue;
+            }
+            return match[2];
+        }
+        return '';
+    }
+
+    function hasStoredAttribution(saved) {
+        if (!saved || typeof saved !== 'object') return false;
+        var click = CLICK_KEYS.some(function (k) {
+            return typeof saved[k] === 'string' && /^[\w\-.~]{1,200}$/.test(saved[k].trim());
+        });
+        if (click) return true;
+        return UTM_KEYS.some(function (k) { return typeof saved[k] === 'string' && !!saved[k].trim(); });
+    }
+
+    // Saved sm_attr wins. When it is empty, take click IDs and UTMs from the
+    // page URL, then fill a missing gclid from _gcl_aw. landing_page is kept.
+    function resolveClickIntentAttribution(saved, search, cookie, now) {
+        var base = saved && typeof saved === 'object' ? saved : {};
+        if (hasStoredAttribution(base)) return base;
+        var fresh = readAttribution(search);
+        var gclid = readGclAwGclid(cookie, now);
+        if (gclid && !fresh.gclid) fresh.gclid = gclid;
+        var out = {};
+        ATTR_KEYS.forEach(function (k) { if (fresh[k]) out[k] = fresh[k]; });
+        if (typeof base.landing_page === 'string' && base.landing_page) out.landing_page = base.landing_page;
+        return out;
+    }
+
+    function clickIntentEventId() {
+        var bytes = new Uint8Array(16);
+        try {
+            if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') {
+                var uuid = String(crypto.randomUUID()).toLowerCase();
+                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(uuid)) return uuid;
+            }
+            if (typeof crypto !== 'undefined' && crypto && typeof crypto.getRandomValues === 'function') crypto.getRandomValues(bytes);
+            else throw new Error('no crypto');
+        } catch (_e) {
+            for (var i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+        }
+        bytes[6] = (bytes[6] & 15) | 64;
+        bytes[8] = (bytes[8] & 63) | 128;
+        var hex = '';
+        for (var j = 0; j < 16; j++) hex += (bytes[j] < 16 ? '0' : '') + bytes[j].toString(16);
+        return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    }
+
     // Minimal, privacy-bounded payload linking an ad click to a chat/call intent.
     // Pure so the browser and Node tests exercise exactly the same sanitising.
+    // A counted chat is sent even when there is no click ID and no UTM.
     function clickIntentBody(kind, attribution, contact, now, page) {
         if (kind !== 'chat' && kind !== 'call') return null;
         attribution = attribution && typeof attribution === 'object' ? attribution : {};
@@ -180,8 +248,6 @@
             var v = typeof attribution[k] === 'string' ? attribution[k].trim().slice(0, 200) : '';
             if (v && /^[\w\-.~]+$/.test(v)) ids[k] = v;
         });
-        var hasUtm = UTM_KEYS.some(function (k) { return typeof attribution[k] === 'string' && !!attribution[k].trim(); });
-        if (kind === 'chat' && !Object.keys(ids).length && !hasUtm) return null;
         var body = { kind: kind };
         CLICK_KEYS.forEach(function (k) { if (ids[k]) body[k] = ids[k]; });
         UTM_KEYS.forEach(function (k) {
@@ -193,6 +259,9 @@
         var current = cleanPath(page);
         if (current) body.page = current;
         body.ts = now;
+        // Personal data: email, phone, and name. Chat sends only a sanitised
+        // email and phone — the same two fields the click_intents row already
+        // stores. Name is personal data and is not collected.
         if (kind === 'chat' && contact && typeof contact === 'object') {
             var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
             var email = typeof contact.email === 'string' ? contact.email : nested.email;
@@ -203,6 +272,28 @@
             if (phone) body.phone = phone;
         }
         return body;
+    }
+
+    function clickIntentPayload(kind, saved, search, cookie, contact, now, page) {
+        var body = clickIntentBody(kind, resolveClickIntentAttribution(saved, search, cookie, now), contact, now, page);
+        if (!body) return null;
+        body.event_id = clickIntentEventId();
+        return body;
+    }
+
+    // Beacon first, then always a keepalive fetch. Both carry the same body,
+    // including event_id, so the server can keep a single row.
+    function dispatchClickIntent(json, transport) {
+        var sendBeacon = transport && transport.sendBeacon;
+        var doFetch = transport && transport.fetch;
+        try {
+            if (typeof sendBeacon === 'function') sendBeacon('/api/click-intent', json);
+        } catch (_e) {}
+        try {
+            if (typeof doFetch !== 'function') return;
+            var sent = doFetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });
+            if (sent && typeof sent.catch === 'function') sent.catch(function () {});
+        } catch (_e) {}
     }
 
     // ---- First-touch landing page + ad-visitor phone (docs/TRACKING.md) ----
@@ -467,7 +558,7 @@
         return event;
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -510,17 +601,14 @@
         try {
             var now = Date.now();
             if (lastClickIntent[kind] && now - lastClickIntent[kind] < 3000) return;
-            var body = clickIntentBody(kind, api.getAttribution(), contact, now, location.pathname);
+            var cookie = '';
+            try { cookie = document.cookie || ''; } catch (_e) {}
+            var body = clickIntentPayload(kind, api.getAttribution(), location.search, cookie, contact, now, location.pathname);
             if (!body) return;
             lastClickIntent[kind] = now;
             var json = JSON.stringify(body);
-            try {
-                if (navigator.sendBeacon && navigator.sendBeacon('/api/click-intent', json)) return;
-            } catch (_e) {}
-            try {
-                var sent = fetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });
-                if (sent && typeof sent.catch === 'function') sent.catch(function () {});
-            } catch (_e) {}
+            var beacon = typeof navigator.sendBeacon === 'function' ? navigator.sendBeacon.bind(navigator) : null;
+            dispatchClickIntent(json, { sendBeacon: beacon, fetch: root.fetch.bind(root) });
         } catch (_e) {}
     };
     document.addEventListener('click', function (event) {
