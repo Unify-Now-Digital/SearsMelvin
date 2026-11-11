@@ -21,7 +21,7 @@
         var id = (el.id || '').toLowerCase();
         var cls = (el.className && el.className.toString ? el.className.toString() : '').toLowerCase();
         var tag = el.tagName ? el.tagName.toLowerCase() : '';
-        if (tag === 'lc-chat-widget') return true;
+        if (tag === 'chat-widget' || tag === 'lc-chat-widget') return true;
         if (id.indexOf('lc_') === 0 || id.indexOf('lc-') === 0) return true;
         if (cls.indexOf('lc-') === 0 || cls.indexOf('lc_') === 0) return true;
         if (cls.indexOf('leadconnector') !== -1) return true;
@@ -45,7 +45,7 @@
                 el.style.setProperty('right', '24px', 'important');
             }
         }
-        var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
+        var deeper = document.querySelectorAll('chat-widget, iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
         for (var j = 0; j < deeper.length; j++) {
             deeper[j].style.setProperty('bottom', bottom + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');

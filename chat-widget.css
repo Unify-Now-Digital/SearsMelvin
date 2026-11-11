@@ -4,6 +4,7 @@
    GHL beta widget renders varying wrappers (custom element, iframe, div).
    site-globals.js applies a JS-side fallback for any element it misses. */
 
+chat-widget,
 iframe[src*="leadconnectorhq"],
 iframe[src*="msgsndr"],
 iframe[title*="hat"],
@@ -20,6 +21,7 @@ lc-chat-widget,
 }
 
 @media (max-width: 768px) {
+    chat-widget,
     iframe[src*="leadconnectorhq"],
     iframe[src*="msgsndr"],
     iframe[title*="hat"],
@@ -35,7 +37,9 @@ lc-chat-widget,
     }
 }
 
-/* When the cookie consent banner is showing, lift higher so it stays usable */
+/* When the cookie consent banner is showing, lift higher so it stays usable.
+   The card sits bottom-left. chat-widget is included so the desktop bubble clears it. */
+body:has(#cookieConsent[style*="display: block"]) chat-widget,
 body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
 body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
 body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
@@ -46,6 +50,7 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
 }
 
 @media (max-width: 768px) {
+    body:has(#cookieConsent[style*="display: block"]) chat-widget,
     body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
     body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
     body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
@@ -58,6 +63,7 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
 
 /* memorial.html has an extra bottom bar on mobile */
 @media (max-width: 768px) {
+    body.has-mobile-bottom-bar chat-widget,
     body.has-mobile-bottom-bar iframe[src*="leadconnectorhq"],
     body.has-mobile-bottom-bar iframe[src*="msgsndr"],
     body.has-mobile-bottom-bar iframe[title*="hat"],

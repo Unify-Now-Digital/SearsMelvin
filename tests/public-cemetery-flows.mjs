@@ -17,7 +17,11 @@ assert.match(memorial, /matchMedia\('\(max-width: 600px\)'\)[\s\S]*setupMobilePl
 assert.match(memorial, /AutocompleteSuggestion\.fetchAutocompleteSuggestions\(\{[\s\S]*includedPrimaryTypes: \['cemetery'\]/);
 assert.match(memorial, /loading=async&callback=_onMapsReady/);
 assert.match(memorial, /if \(params\.get\('preview'\) === '1'\) \{[\s\S]*fetch\('\/api\/admin'/);
-assert.match(memorial, /if \(banner\) banner\.style\.display = 'none';[\s\S]*try \{ localStorage\.setItem\('cookieConsent'/);
+const cookie = await readFile(new URL("../cookie-consent.js", import.meta.url), "utf8");
+assert.match(cookie, /banner\.style\.display = 'none'/);
+assert.match(cookie, /localStorage\.setItem\(KEY, serialise\(choice\)\)/);
+assert.match(memorial, /id="cookieConsent"/);
+assert.match(memorial, /syncMobileQuoteBar/);
 assert.match(memorial, /organization_id=eq\./);
 assert.match(memorial, /is_test=eq\.false/);
 
