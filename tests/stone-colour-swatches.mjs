@@ -27,6 +27,16 @@ const memorial = readFileSync(new URL("../memorial.html", import.meta.url), "utf
 assert.match(memorial, /src="\/data\/stone-colour-swatches\.js"/);
 assert.match(memorial, /stoneColourImageUrl\(c\)/);
 assert.doesNotMatch(memorial, /stoneColourImageUrl\(c,\s*location\.hostname\)/);
+
+const listing = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+assert.match(listing, /src="\/data\/stone-colour-swatches\.js"/);
+assert.match(listing, /stoneColourImageUrl\(colour\)/);
+assert.doesNotMatch(listing, /stoneColourImageUrl\(colour,\s*location\.hostname\)/);
+assert.match(listing, /class="colour-swatch-photo"/);
+assert.match(listing, /object-fit:\s*cover/);
+assert.match(listing, /classList\.remove\(\\'has-photo\\'\);this\.remove\(\)/);
+assert.match(listing, /linear-gradient\(145deg, ' \+ primaryHex \+ ', ' \+ secondaryHex \+ '\)/);
+assert.doesNotMatch(listing, /stone-colours\/black\.webp/, "preview URLs stay in the swatch module");
 assert.match(memorial, /id="stoneColourPreview"/);
 assert.match(memorial, /role="radiogroup"/);
 assert.match(memorial, /aria-labelledby="stoneColourLabel"/);

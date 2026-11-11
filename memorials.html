@@ -229,9 +229,10 @@
         .floating-actions { position: fixed; bottom: 2rem; left: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
         .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.3s; }
         .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
-        .floating-btn.shortlist { background: white; border: 2px solid var(--color-border); }
-        .floating-btn.shortlist svg { stroke: var(--color-accent); }
-        .floating-btn.shortlist:hover { border-color: var(--color-accent); }
+        .floating-btn.shortlist { background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); color: var(--sm-color-text); }
+        .floating-btn.shortlist svg { stroke: var(--color-text-muted); }
+        .floating-btn.shortlist:hover { background: var(--sm-color-bg-panel); border-color: var(--sm-color-border-control); }
+        .floating-btn.shortlist:hover svg { stroke: var(--color-accent); }
         .floating-btn.scroll-top { background: var(--color-stone); opacity: 0; pointer-events: none; transform: translateY(20px); }
         .floating-btn.scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
         .floating-btn.scroll-top svg { stroke: white; }
@@ -255,26 +256,41 @@
         .filter-option input:checked + .checkmark::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
         .filter-count { font-size: 0.8rem; color: var(--color-text-muted); margin-left: auto; }
         .colour-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .colour-swatch { cursor: pointer; text-align: center; }
-        .colour-swatch input { display: none; }
+        .colour-swatch { cursor: pointer; text-align: center; position: relative; }
+        /* Clipped, not display:none, so the checkbox stays in the tab order. */
+        .colour-swatch input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+        }
         .swatch-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-        .swatch { width: 48px; height: 48px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 6px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.2s; position: relative; }
-        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, color-mix(in srgb, var(--sm-color-bg-surface) 20%, transparent), transparent 50%, color-mix(in srgb, var(--sm-color-text) 10%, transparent)); }
-        .colour-swatch:hover .swatch { transform: scale(1.1); }
-        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 5px var(--color-accent); transform: scale(1.05); }
-        .swatch-name { font-size: 0.65rem; color: var(--color-text-muted); line-height: 1.2; max-width: 60px; }
+        .swatch { width: 52px; height: 52px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.3s; position: relative; overflow: hidden; }
+        .colour-swatch-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, color-mix(in srgb, var(--sm-color-bg-surface) 20%, transparent) 0%, transparent 50%, color-mix(in srgb, var(--sm-color-text) 10%, transparent) 100%); }
+        .swatch.has-photo::after { content: none; }
+        .colour-swatch:hover .swatch { transform: scale(1.05); }
+        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--sm-color-bg-surface), 0 0 0 6px var(--color-accent); transform: scale(1.1); }
+        .colour-swatch input:focus-visible + .swatch-wrapper .swatch { outline: 3px solid var(--sm-color-border-strong); outline-offset: 3px; }
+        .swatch-name { font-size: 0.7rem; color: var(--color-text-muted); line-height: 1.3; max-width: 65px; }
         .colour-swatch input:checked + .swatch-wrapper .swatch-name { color: var(--color-stone); font-weight: 600; }
-        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: 6px; margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
+        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: var(--sm-radius-sm); margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
         .active-filters.has-filters { display: flex; }
         .active-filters-label { font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem; }
-        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: 20px; font-size: 0.8rem; color: var(--color-stone); }
+        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: var(--sm-radius-sm); font-size: 0.8rem; color: var(--color-stone); }
         .filter-tag button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; color: var(--color-text-muted); padding: 0; }
         .filter-tag button:hover { color: var(--color-stone); }
         .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
         .results-left { display: flex; align-items: center; gap: 1rem; }
         .results-count { font-size: 0.95rem; color: var(--color-text-muted); }
         .results-count span { font-weight: 600; color: var(--color-stone); }
-        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.875rem; cursor: pointer; }
+        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--sm-color-bg-surface); color: var(--sm-color-text); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-size: 0.875rem; cursor: pointer; }
         .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
         .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
         .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
@@ -416,7 +432,8 @@
             .results-header { position: sticky; top: 56px; z-index: 50; background: var(--color-cream); margin: 0 -0.75rem 1rem; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
             .results-left { gap: 0.6rem; flex: 1; min-width: 0; }
             .results-count { font-size: 0.8rem; }
-            .mobile-filter-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: 999px; box-shadow: 0 1px 4px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
+            .mobile-filter-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: var(--sm-radius-sm); box-shadow: 0 1px 4px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
+            .swatch { width: 44px; height: 44px; }
             .sort-dropdown select { padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: 0.8rem; max-width: 140px; }
         }
         @media (max-width: 600px) {
@@ -451,7 +468,7 @@
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
-        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; color: var(--sm-color-text); }
         .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
@@ -659,7 +676,7 @@
             <aside class="filters-sidebar reveal" id="filtersSidebar">
                 <div class="filters-header">
                     <h2>Filters</h2>
-                    <button class="filters-clear" onclick="clearAllFilters()">Clear All</button>
+                    <button class="filters-clear" onclick="clearAllFilters()">Clear all</button>
                 </div>
                 <div class="filter-group">
                     <h4 class="filter-title">Memorial Type</h4>
@@ -807,6 +824,7 @@
         </div>
     </div>
 
+<script src="/data/stone-colour-swatches.js"></script>
 <script src="/supabase-config"></script>
 <script>
         // ==================== SUPABASE CONFIG ====================
@@ -951,7 +969,14 @@
                 const slug = safeSlug(colour.slug);
                 const primaryHex = safeHex(colour.hex_primary);
                 const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
-                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters(this)"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
+                // image_url when it is a safe image URL. A failed photo drops back to the gradient.
+                const imageUrl = (typeof stoneColourImageUrl === 'function')
+                    ? stoneColourImageUrl(colour)
+                    : safeImageUrl(colour.image_url);
+                const photo = imageUrl
+                    ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                    : '';
+                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters(this)"><span class="swatch-wrapper"><span class="swatch' + (imageUrl ? ' has-photo' : '') + '" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');">' + photo + '</span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
             });
             colourContainer.innerHTML = colourHTML;
 
