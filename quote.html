@@ -988,8 +988,11 @@
                 }).join('')
                 + '</select></div>';
 
-            // Kerb Infill (only for kerb-set products)
-            if (product.type && product.type.toLowerCase().indexOf('kerb') !== -1) {
+            // Kerb infill is agreed when the quote is prepared, so the editor
+            // is not shown. The markup stays here for a later staff step.
+            // Saving still keeps infillType when the loaded quote already has one.
+            var showInfillEditor = false;
+            if (showInfillEditor && product.type && product.type.toLowerCase().indexOf('kerb') !== -1) {
                 var infillTypes = ['none', 'soil', 'coverslab', 'chippings'];
                 html += '<div class="edit-field"><label>Kerb Infill Type</label>'
                     + '<select id="editInfillType" onchange="toggleEditChippingsColour()">'

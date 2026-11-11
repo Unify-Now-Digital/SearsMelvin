@@ -65,7 +65,18 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.match(productRoute, /organization_id=eq\..*is_listed=eq\.true&category_id=not\.is\.null/);
 }
 
-// Kerb sets include the chosen infill even when the browser submits a stale total.
+const hartwell = {
+  ...catalogue,
+  product: {
+    ...catalogue.product,
+    name: "The Hartwell",
+    slug: "the-hartwell",
+    base_price: 4140,
+    product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
+  },
+};
+
+// A stored infill choice still prices, including when the browser total is stale.
 {
   const product = calculateCanonicalQuoteProduct({
     slug: "the-hartwell",
@@ -74,20 +85,54 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
     infillType: "chippings",
     infillColour: "black",
     price: "4140",
-  }, {
-    ...catalogue,
-    product: {
-      ...catalogue.product,
-      name: "The Hartwell",
-      slug: "the-hartwell",
-      base_price: 4140,
-      product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
-    },
-  });
+  }, hartwell);
   assert.equal(product.price, 4390);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "black");
   assert.deepEqual(product.addonLineItems, [
     { name: "Kerb Infill — Chippings (Black)", price: 250 },
   ]);
+}
+
+// A new kerb quote omits infill fields. The server still adds default white
+// chippings so the guide total matches the price on the page, and it does
+// not write infillType or infillColour back onto the quote.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+  }, charnwood);
+  assert.equal(product.price, 4200);
+  assert.equal(product.infillType, undefined);
+  assert.equal(product.infillColour, undefined);
+  assert.deepEqual(product.addonLineItems, [
+    { name: "Kerb Infill — Chippings (White)", price: 250 },
+  ]);
+}
+
+// An old quote that chose no infill stays at the base price.
+{
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-hartwell",
+    colour: "Black",
+    sizeCode: "standard",
+    infillType: "none",
+    price: "9999",
+  }, hartwell);
+  assert.equal(product.price, 4140);
+  assert.equal(product.infillType, "none");
+  assert.deepEqual(product.addonLineItems, []);
 }
 
 // Photo size is a stable code, not a shape name, so the label and price agree.
@@ -130,6 +175,11 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(html, /infillType:\s*'none'/);
   assert.match(html, /infillPrice:\s*0/);
+  assert.match(html, /state\.infillPrice = INFILL_PRICES\.chippings/);
+  assert.match(html, /#infillOptionGroup, #qsInfillRow \{ display: none !important; \}/);
+  assert.doesNotMatch(html, /infillType:\s*state\.infillType/);
+  assert.doesNotMatch(html, /infillColour:\s*state\.infillColour/);
+  assert.doesNotMatch(html, /value="extra-lettering"/);
   assert.match(html, /addonSlugs:\s*getSelectedAddonSlugs\(\)/);
   assert.match(html, /sizeCode:\s*state\.selectedSize/);
   assert.match(html, /PHOTO_SIZE_LABEL\s*=\s*\{\s*oval:\s*'Oval',\s*rectangle:\s*'Rectangle',\s*heart:\s*'Heart'\s*\}/);
@@ -149,6 +199,8 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   const memorialHtml = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(memorialHtml, /a\.slug !== 'flower-vase'/);
   assert.match(html, /Custom Motif'.*price: 120/);
+  assert.match(html, /var showInfillEditor = false/);
+  assert.match(html, /id="editInfillType"/);
 }
 
 console.log("pricing integrity tests passed");

@@ -152,13 +152,19 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
 
   let infillType;
   let infillColour;
+  // A stored choice (old quotes) is priced and kept. A new quote omits the
+  // fields. The guide total still includes default white chippings, because
+  // that is the price customers see, and the family agrees the infill later.
+  let infillSupplied = false;
   if (categorySlug === "kerb-sets") {
-    const requestedInfill = boundedText(rawProduct.infillType, 30).toLowerCase() || "chippings";
+    const supplied = boundedText(rawProduct.infillType, 30).toLowerCase();
+    const requestedInfill = supplied || "chippings";
     if (!Object.hasOwn(INFILL_PRICES, requestedInfill)) {
       throw new QuotePricingError("The selected kerb infill is unavailable");
     }
     infillType = requestedInfill;
-    infillColour = boundedText(rawProduct.infillColour, 40).toLowerCase() || "white";
+    infillColour = (supplied && boundedText(rawProduct.infillColour, 40).toLowerCase()) || "white";
+    infillSupplied = Boolean(supplied);
     const infillPrice = INFILL_PRICES[infillType];
     if (infillPrice) {
       const typeLabel = infillType.charAt(0).toUpperCase() + infillType.slice(1);
@@ -199,7 +205,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
     canonical.photoSize = photoCode;
   }
   if (gardenKerb) canonical.gardenKerb = true;
-  if (infillType) {
+  if (infillSupplied && infillType) {
     canonical.infillType = infillType;
     canonical.infillColour = infillColour;
   }

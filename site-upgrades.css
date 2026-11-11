@@ -1685,3 +1685,375 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     display: none;
   }
 }
+
+/* ==========================================================================
+   Phone footer, option A. Centred, with rules between the groups.
+   Body text is 14–16px. The accreditation line and the legal block are
+   separate. Desktop and tablet keep the three-column footer.
+   ========================================================================== */
+@media (max-width: 768px) {
+  html body footer.footer-b {
+    padding: 40px 24px 28px !important;
+    text-align: center;
+    font-size: 1rem;
+  }
+
+  html body footer.footer-b .footer-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    text-align: center !important;
+  }
+
+  html body footer.footer-b .footer-brand,
+  html body footer.footer-b .footer-explore,
+  html body footer.footer-b .footer-showroom,
+  html body footer.footer-b .footer-base {
+    width: 100%;
+    text-align: center;
+  }
+
+  html body footer.footer-b .footer-logo {
+    width: 262px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 24px;
+  }
+
+  html body footer.footer-b .footer-contact {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+  }
+
+  html body footer.footer-b .footer-contact a {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 44px !important;
+    padding: 0 4px !important;
+    color: var(--sm-color-text-inverse);
+    font-size: 1rem;
+  }
+
+  html body footer.footer-b .footer-contact a[href^="tel:"] {
+    font-family: var(--sm-font-body);
+    font-weight: var(--sm-weight-body-strong);
+    font-size: 1.375rem !important;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+
+  html body footer.footer-b .footer-contact a[href^="mailto:"] {
+    font-size: 1rem !important;
+    text-decoration: underline;
+    text-decoration-color: var(--sm-color-text-accent-inverse);
+    text-underline-offset: 4px;
+  }
+
+  html body footer.footer-b .footer-contact > span {
+    flex-basis: auto;
+    font-size: var(--sm-text-sm) !important;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--sm-color-text-inverse-muted);
+    padding: 0;
+  }
+
+  html body footer.footer-b .footer-explore,
+  html body footer.footer-b .footer-showroom {
+    border-top: 1px solid var(--sm-color-border-inverse);
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+
+  html body footer.footer-b .footer-heading {
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-weight-display);
+    font-size: var(--sm-text-card-title);
+    line-height: 1.2;
+    color: var(--sm-color-text-accent-inverse);
+    margin: 0 0 12px;
+  }
+
+  html body footer.footer-b .footer-links {
+    display: block !important;
+    columns: 2 !important;
+    column-gap: 16px !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  html body footer.footer-b .footer-links a {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px !important;
+    padding: 0 !important;
+    font-family: var(--sm-font-body);
+    font-size: 1rem !important;
+    font-weight: var(--sm-weight-body);
+    line-height: 1.3;
+    color: var(--sm-color-text-inverse);
+    text-align: center;
+  }
+
+  html body footer.footer-b .footer-showroom p {
+    font-size: 1rem !important;
+    line-height: 1.5;
+    color: var(--sm-color-text-inverse);
+    margin: 0 0 6px;
+  }
+
+  html body footer.footer-b .footer-showroom .footer-hours {
+    font-size: var(--sm-text-sm) !important;
+    color: var(--sm-color-text-inverse-muted);
+    margin: 0;
+  }
+
+  html body footer.footer-b .footer-base {
+    border-top: 0;
+    margin-top: 24px;
+    padding-top: 0;
+  }
+
+  html body footer.footer-b .footer-accreditations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 24px 0 0;
+    border: 0;
+    border-top: 1px solid var(--sm-color-border-inverse);
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-label {
+    display: none;
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-text {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-logo--footer img {
+    height: 56px;
+    width: auto;
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-logo--footer {
+    justify-content: center;
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-note {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 14px auto 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  html body footer.footer-b .footer-accreditations .accred-note::before {
+    content: none;
+    margin: 0;
+  }
+
+  html body footer.footer-b .footer-copy,
+  html body footer.footer-b .footer-legal {
+    font-size: 0.875rem !important;
+    line-height: 1.6 !important;
+    text-align: center;
+    color: var(--sm-color-text-inverse-muted);
+  }
+
+  html body footer.footer-b .footer-copy {
+    max-width: 330px;
+    margin: 24px auto 0 !important;
+    padding: 24px 0 0 !important;
+    border-top: 1px solid var(--sm-color-border-inverse) !important;
+  }
+
+  html body footer.footer-b .footer-legal {
+    max-width: 330px;
+    margin: 10px auto 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   Phone menu, option B. Linen panel, soft shadow, one row style.
+   The page behind the panel is dimmed. Quote and call are equal buttons.
+   ========================================================================== */
+@media (max-width: 768px) {
+  body.sm-menu-open::before {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--header-height, 68px);
+    background: color-mix(in srgb, var(--sm-color-text) 60%, transparent);
+    z-index: 98;
+  }
+
+  /* The bottom bar and the brochure button sit above the page. Drop them
+     under the dim while the menu is open, and leave the header clear. */
+  body.sm-menu-open .mobile-bottom-nav,
+  body.sm-menu-open .sm-brochure-fab {
+    z-index: 97;
+  }
+
+  html body #mobileNav.active {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 12px;
+    align-content: start;
+    top: var(--header-height, 68px);
+    z-index: 99;
+    max-height: calc(100dvh - var(--header-height, 68px)) !important;
+    overflow-y: auto;
+    padding: 8px 20px 20px !important;
+    background: var(--sm-color-bg) !important;
+    color: var(--sm-color-text);
+    border-top: 1px solid var(--sm-color-border-decorative);
+    border-radius: 0 0 var(--sm-radius-sm) var(--sm-radius-sm);
+    box-shadow:
+      0 16px 40px color-mix(in srgb, var(--sm-color-text) 35%, transparent),
+      0 2px 6px color-mix(in srgb, var(--sm-color-text) 15%, transparent);
+    font-family: var(--sm-font-body);
+  }
+
+  html body #mobileNav.active > a:not(.nav-cta):not([href^="tel:"]) {
+    grid-column: 1 / -1;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    width: auto !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--sm-color-border-decorative) !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    color: var(--sm-color-text) !important;
+    font-family: var(--sm-font-body);
+    font-weight: var(--sm-weight-body-strong);
+    font-size: var(--sm-text-md);
+    line-height: 1.2;
+    text-align: left !important;
+    text-decoration: none !important;
+  }
+
+  html body #mobileNav.active > a:not(.nav-brochure):not(.nav-cta):not([href^="tel:"])::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    margin-left: auto;
+    border-right: 1.6px solid var(--sm-color-text-accent);
+    border-bottom: 1.6px solid var(--sm-color-text-accent);
+    transform: rotate(-45deg);
+    flex: 0 0 auto;
+  }
+
+  html body #mobileNav.active a.nav-brochure {
+    justify-content: flex-start !important;
+  }
+
+  html body #mobileNav.active a.nav-brochure svg {
+    width: 20px;
+    height: 20px;
+    margin: 0 0 0 auto !important;
+    flex: 0 0 20px;
+    stroke: var(--sm-color-text-accent);
+    fill: none;
+    stroke-width: 1.6;
+    order: 3;
+  }
+
+  html body #mobileNav.active a.nav-brochure .sm-menu-note {
+    order: 2;
+    margin-left: 6px;
+    font-size: 0.875rem;
+    font-weight: var(--sm-weight-body);
+    color: var(--sm-color-text-muted);
+  }
+
+  html body #mobileNav.active > a.nav-cta,
+  html body #mobileNav.active > a[href^="tel:"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--sm-control-height);
+    min-height: var(--sm-control-height) !important;
+    margin: 20px 0 0 !important;
+    padding: 0 8px !important;
+    width: auto !important;
+    border-radius: var(--sm-radius-sm) !important;
+    font-family: var(--sm-font-body);
+    font-weight: var(--sm-weight-body-strong);
+    font-size: var(--sm-text-sm) !important;
+    line-height: 1;
+    text-align: center !important;
+    text-decoration: none !important;
+    text-transform: none;
+  }
+
+  html body #mobileNav.active > a.nav-cta {
+    background: var(--sm-color-action-primary-bg) !important;
+    color: var(--sm-color-action-primary-text) !important;
+    border: 1px solid var(--sm-color-action-primary-bg) !important;
+  }
+
+  html body #mobileNav.active > a[href^="tel:"] {
+    background: var(--sm-color-bg) !important;
+    color: var(--sm-color-text) !important;
+    border: 1px solid var(--sm-color-border-control) !important;
+    border-bottom: 1px solid var(--sm-color-border-control) !important;
+  }
+
+  html body #mobileNav.active a[href^="tel:"] .sm-menu-phone {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    stroke: var(--sm-color-text-accent);
+    fill: none;
+    stroke-width: 1.6;
+  }
+
+  html body #mobileNav.active .sm-menu-hours {
+    grid-column: 1 / -1;
+    margin: 14px 0 0;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--sm-color-text-muted);
+  }
+
+  html body #mobileNav.active a:focus-visible {
+    outline: var(--sm-focus-width) solid var(--sm-color-focus);
+    outline-offset: var(--sm-focus-offset);
+  }
+}
