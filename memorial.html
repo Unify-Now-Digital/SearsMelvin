@@ -539,6 +539,7 @@
             .mobile-bottom-bar.is-visible { display: flex; }
             .mobile-bar-price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; min-width: 0; }
             .mobile-bar-price[hidden] { display: none !important; }
+            #mobileBarFrom[hidden] { display: none !important; }
             .mobile-bar-from {
                 font-family: var(--sm-font-body);
                 font-size: var(--sm-text-sm);
@@ -1337,7 +1338,7 @@
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
         <p class="mobile-bar-price" id="mobileBarPrice" hidden>
-            <span class="mobile-bar-from">From <span id="mobileBarAmount"></span></span>
+            <span class="mobile-bar-from"><span id="mobileBarFrom">From </span><span id="mobileBarAmount"></span></span>
             <span class="mobile-bar-vat">Inc. VAT</span>
         </p>
         <div class="mobile-bar-actions">
@@ -1785,7 +1786,7 @@
 
                 updateAddonsTotal();
                 updateTotalPrice();
-                paintMobileGuidePrice();
+                settleMobileGuide();
                 checkIfSaved();
             } catch (err) {
                 console.error('Error loading product:', err);
@@ -2268,24 +2269,49 @@
             return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
         }
 
+        // The phone bar shows the same total as the summary, without trailing
+        // pence on a whole pound. £4,200.00 in the summary is £4,200 in the bar.
+        function formatBarPrice(amount) {
+            const n = Number(amount);
+            const safe = Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+            const whole = Math.round(safe * 100) % 100 === 0;
+            const digits = whole ? 0 : 2;
+            return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+        }
+
+        function sameMoney(a, b) {
+            return Math.round(Number(a) * 100) === Math.round(Number(b) * 100);
+        }
+
+        // The guide price is the summary after the page has finished its first
+        // setup, including a kerb set's included chippings. "From" stays only
+        // while the live total is still that figure.
+        var mobileGuideTotal = null;
+        var mobileGuideSettled = false;
+
+        function settleMobileGuide() {
+            mobileGuideSettled = true;
+        }
+
         function updateTotalPrice() {
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             const fmt   = formatGbp(total);
             document.getElementById('priceTotal').textContent = fmt;
+            paintMobileBar(total);
         }
 
-        // The phone bar keeps the guide total from page load. Picking options
-        // updates the desktop summary only.
-        function paintMobileGuidePrice() {
+        function paintMobileBar(total) {
             var slot = document.getElementById('mobileBarPrice');
             var amount = document.getElementById('mobileBarAmount');
+            var fromWord = document.getElementById('mobileBarFrom');
             if (!slot || !amount) return;
-            var total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             if (!(total > 0)) {
                 slot.hidden = true;
                 return;
             }
-            amount.textContent = formatGbp(total);
+            if (!mobileGuideSettled) mobileGuideTotal = total;
+            amount.textContent = formatBarPrice(total);
+            if (fromWord) fromWord.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
             slot.hidden = false;
         }
 

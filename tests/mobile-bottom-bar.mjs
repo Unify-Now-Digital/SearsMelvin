@@ -1,4 +1,4 @@
-// Memorial phone bar, option B. Price is the page-load guide total.
+// Memorial phone bar, option B. The price follows the desktop summary.
 // The call link keeps its tracking classes and the showroom number.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -11,7 +11,7 @@ assert.equal(bars.length, 1, "one phone bar, not a second bar");
 const bar = bars[0];
 
 assert.match(bar, /id="mobileBarPrice" hidden/, "price starts hidden when there is no guide total");
-assert.match(bar, /class="mobile-bar-from">From <span id="mobileBarAmount"><\/span>/, "the word From stays, and the amount is filled in later");
+assert.match(bar, /id="mobileBarFrom">From <\/span><span id="mobileBarAmount"><\/span>/, "From is its own node so a chosen total can drop it");
 assert.match(bar, /class="mobile-bar-vat">Inc\. VAT</, "Inc. VAT sits under the price");
 assert.doesNotMatch(bar, /£\d/, "the bar does not hard-code a price");
 
@@ -26,14 +26,20 @@ const quoteAt = bar.indexOf('onclick="openQuoteModal()">Get a quote</button>');
 assert.ok(quoteAt > bar.indexOf("mobile-bar-call"), "Get a quote follows Call and still opens the quote form");
 assert.match(bar, /<button type="button" class="btn btn-primary" onclick="openQuoteModal\(\)">Get a quote<\/button>/);
 
-const priceFn = html.slice(html.indexOf("function updateTotalPrice"), html.indexOf("function paintMobileGuidePrice"));
-assert.doesNotMatch(priceFn, /mobileBarAmount|mobileBarPrice|mobilePriceTotal/, "option changes do not rewrite the phone-bar price");
-const paint = html.slice(html.indexOf("function paintMobileGuidePrice"), html.indexOf("function paintMobileGuidePrice") + 700);
-assert.match(paint, /amount\.textContent = formatGbp\(total\)/, "the bar uses the same formatter as the desktop summary");
+const priceFn = html.slice(html.indexOf("function updateTotalPrice"), html.indexOf("function paintMobileBar"));
+assert.match(priceFn, /const total = state\.basePrice \+ state\.sizePrice \+ state\.colourPrice \+ state\.inscriptionPrice \+ state\.addonsPrice;/);
+assert.match(priceFn, /paintMobileBar\(total\)/, "the bar is painted from the summary update");
+assert.equal(priceFn.split("state.basePrice + state.sizePrice").length, 2, "the summary update calculates the total once");
+const paint = html.slice(html.indexOf("function paintMobileBar"), html.indexOf("function paintMobileBar") + 900);
+assert.doesNotMatch(paint, /state\.basePrice/, "the bar does not calculate a second total");
+assert.match(paint, /amount\.textContent = formatBarPrice\(total\)/);
+assert.match(paint, /fromWord\.hidden = mobileGuideSettled && !sameMoney\(total, mobileGuideTotal\)/, "From stays only for the settled guide price");
+const load = html.slice(html.indexOf("updateAddonsTotal();"), html.indexOf("updateAddonsTotal();") + 220);
+assert.match(load, /updateTotalPrice\(\);\s*settleMobileGuide\(\);/, "the guide price is the summary after first setup");
 assert.match(paint, /!\(total > 0\)/, "a missing guide total leaves the price hidden");
-const load = html.slice(html.indexOf("updateAddonsTotal();"), html.indexOf("updateAddonsTotal();") + 180);
-assert.match(load, /updateTotalPrice\(\);\s*paintMobileGuidePrice\(\);/, "the bar is painted once, after the first guide total");
-assert.equal(html.split("paintMobileGuidePrice()").length, 3, "paint runs from load only, plus its definition");
+const barFmt = html.slice(html.indexOf("function formatBarPrice"), html.indexOf("function sameMoney"));
+assert.match(barFmt, /whole \? 0 : 2/, "whole pounds drop the pence");
+assert.match(html.slice(html.indexOf("function formatGbp"), html.indexOf("function formatBarPrice")), /minimumFractionDigits: 2/, "the desktop summary still shows pence");
 
 const sync = html.slice(html.indexOf("function syncMobileQuoteBar"), html.indexOf("function setupMobileQuoteBar"));
 assert.match(sync, /cookieConsent/, "the bar stays hidden while the cookie card shows");

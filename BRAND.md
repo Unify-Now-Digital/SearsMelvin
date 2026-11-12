@@ -285,7 +285,7 @@ Shared rules:
 
 ### Product phone bar
 
-The memorial page phone bar (`.mobile-bottom-bar`) is linen, with a 1px sand rule on top and 2px corners. It shows at 768px and below only. The left side reads “From” plus the guide total from page load, with “Inc. VAT” under it in small DM Sans. That figure does not change when a family picks options. If the page has no guide total, the price is absent. The call control is a square outline button. “Get a quote” is the one ink button. The call link stays `tel:+442038352548` with the class `mobile-bar-call`. The showroom number stays one text node: 020 3835 2548.
+The memorial page phone bar (`.mobile-bottom-bar`) is linen, with a 1px sand rule on top and 2px corners. It shows at 768px and below only. The price uses the desktop summary total, in whole pounds, with “Inc. VAT” under it in small DM Sans. “From” stays while that total is the page-load guide price. A chosen total uses the summary’s wording. If the page has no guide total, the price is absent. The call control is a square outline button. “Get a quote” is the one ink button. The call link stays `tel:+442038352548` with the class `mobile-bar-call`. The showroom number stays one text node: 020 3835 2548.
 
 ## 9. Links
 
