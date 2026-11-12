@@ -256,7 +256,7 @@ One shape. Colour shows which action matters.
 
 1. Primary (`sm-btn--primary`). Ink ground, linen text. Hover turns the ground bronze and keeps linen text. Use one primary button in a view.
 2. Secondary (`sm-btn--secondary`). Transparent ground, ink text, 1px bronze border. Hover fills the ground with sand.
-3. Inverse (`sm-btn--inverse`). Soft-bronze ground, ink text. Use it on ink (footer, price panel, mobile bar). Hover fills the ground with linen.
+3. Inverse (`sm-btn--inverse`). Soft-bronze ground, ink text. Use it on ink (footer and the price panel). Hover fills the ground with linen.
 4. Text (`sm-btn--text`). Bronze text with an underline. Hover turns the text ink. Use it for a low-priority action.
 5. Call (`sm-btn--call` on linen, `sm-btn--call-inverse` on ink). The phone action.
 
@@ -282,6 +282,10 @@ Shared rules:
 2. Do not use a second filled ink button beside the primary.
 3. Do not put linen text on a soft-bronze button.
 4. Do not draw an empty box for a low-priority action. Use the text button.
+
+### Product phone bar
+
+The memorial page phone bar (`.mobile-bottom-bar`) is linen, with a 1px sand rule on top and 2px corners. It shows at 768px and below only. The left side reads “From” plus the guide total from page load, with “Inc. VAT” under it in small DM Sans. That figure does not change when a family picks options. If the page has no guide total, the price is absent. The call control is a square outline button. “Get a quote” is the one ink button. The call link stays `tel:+442038352548` with the class `mobile-bar-call`. The showroom number stays one text node: 020 3835 2548.
 
 ## 9. Links
 

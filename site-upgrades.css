@@ -2057,3 +2057,42 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     outline-offset: var(--sm-focus-offset);
   }
 }
+
+/* Memorial phone bar, option B. Linen ground, square outline call, ink quote.
+   Wins over the shared button padding so the call control stays square. */
+@media (max-width: 768px) {
+  html body .mobile-bottom-bar {
+    background: var(--sm-color-bg);
+    border-top: 1px solid var(--sm-color-border-decorative);
+    border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
+    box-shadow: none;
+    font-family: var(--sm-font-body);
+    color: var(--sm-color-text);
+  }
+
+  html body .mobile-bottom-bar .btn {
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--sm-control-height);
+    padding: 0 var(--sm-space-3);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  html body .mobile-bottom-bar .mobile-bar-call {
+    flex: 0 0 var(--sm-control-height);
+    width: var(--sm-control-height);
+    min-width: var(--sm-control-height);
+    height: var(--sm-control-height);
+    min-height: var(--sm-control-height);
+    padding: 0;
+    background: transparent;
+    border-color: var(--sm-color-border-control);
+    color: var(--sm-color-text) !important;
+  }
+
+  html body .mobile-bottom-bar .mobile-bar-call:hover {
+    background: var(--sm-color-action-secondary-bg-hover);
+    color: var(--sm-color-text) !important;
+  }
+}

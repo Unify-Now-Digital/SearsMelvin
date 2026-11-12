@@ -500,14 +500,8 @@
         .feature-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--color-stone); }
         .feature-item svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; flex-shrink: 0; }
 
-        /* Mobile Bottom Bar — single row: price on the left, actions on the right */
-        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); padding: 0.75rem 1rem; z-index: 90; box-shadow: 0 -6px 24px color-mix(in srgb, var(--sm-color-text) 10%, transparent); align-items: center; gap: 0.75rem; }
-        .mobile-price { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; color: var(--color-stone); line-height: 1; margin: 0; flex: 0 0 auto; white-space: nowrap; }
-        .mobile-price-suffix { font-size: 0.78rem !important; color: var(--color-text-muted) !important; font-family: var(--font-body); font-weight: 500; margin-left: 0.25rem; }
-        .mobile-actions { display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end; }
-        .mobile-actions .btn { padding: 0.85rem 1.25rem; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; min-height: 46px; }
-        .mobile-actions .btn-secondary { padding: 0.6rem; flex: 0 0 auto; min-width: 46px; }
-        .mobile-actions .btn-secondary svg { width: 22px; height: 22px; stroke-width: 2; }
+        /* Phone bar. Hidden until the 768px rules, and until the intro quote button has scrolled away. */
+        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; align-items: center; }
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -530,10 +524,72 @@
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
             .mobile-bottom-nav { display: none !important; }
-            .mobile-bottom-bar { display: none; padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)); gap: 0.5rem; }
+            .mobile-bottom-bar {
+                display: none;
+                align-items: center;
+                gap: var(--sm-space-2);
+                padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+                background: var(--sm-color-bg);
+                border-top: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
+                box-shadow: none;
+                font-family: var(--sm-font-body);
+                color: var(--sm-color-text);
+            }
             .mobile-bottom-bar.is-visible { display: flex; }
-            .mobile-bottom-bar .btn { flex: 1 1 0; min-height: 44px; padding: 0.55rem 0.7rem; font-size: 0.9rem; white-space: nowrap; }
-            .mobile-bottom-bar .mobile-bar-call { flex: 1.15 1 0; }
+            .mobile-bar-price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; min-width: 0; }
+            .mobile-bar-price[hidden] { display: none !important; }
+            .mobile-bar-from {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                font-variant-numeric: tabular-nums;
+                line-height: 1.15;
+                color: var(--sm-color-text);
+                white-space: nowrap;
+            }
+            .mobile-bar-vat {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-xs);
+                font-weight: var(--sm-weight-body);
+                line-height: 1.2;
+                color: var(--sm-color-text-muted);
+            }
+            .mobile-bar-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sm-space-2); margin-left: auto; flex: 0 0 auto; }
+            .mobile-bottom-bar .btn {
+                flex: 0 0 auto;
+                width: auto;
+                min-height: var(--sm-control-height);
+                height: var(--sm-control-height);
+                padding: 0 var(--sm-space-3);
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
+                white-space: nowrap;
+                border-radius: var(--sm-radius-sm);
+            }
+            .mobile-bottom-bar .mobile-bar-call {
+                position: relative;
+                flex: 0 0 var(--sm-control-height);
+                width: var(--sm-control-height);
+                min-width: var(--sm-control-height);
+                height: var(--sm-control-height);
+                min-height: var(--sm-control-height);
+                padding: 0;
+            }
+            .mobile-bar-call-number {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
             .stone-colour-preview-frame { width: 112px; height: 112px; }
@@ -818,7 +874,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261109i">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261112a">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -1280,8 +1336,14 @@
 
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
-        <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Request a quote</button>
-        <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548">Call 020 3835 2548</a>
+        <p class="mobile-bar-price" id="mobileBarPrice" hidden>
+            <span class="mobile-bar-from">From <span id="mobileBarAmount"></span></span>
+            <span class="mobile-bar-vat">Inc. VAT</span>
+        </p>
+        <div class="mobile-bar-actions">
+            <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548"><span class="mobile-bar-call-label">Call</span><span class="mobile-bar-call-number"> 020 3835 2548</span></a>
+            <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Get a quote</button>
+        </div>
     </div>
 
     <!-- Save Toast Notification -->
@@ -1723,6 +1785,7 @@
 
                 updateAddonsTotal();
                 updateTotalPrice();
+                paintMobileGuidePrice();
                 checkIfSaved();
             } catch (err) {
                 console.error('Error loading product:', err);
@@ -2209,8 +2272,21 @@
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             const fmt   = formatGbp(total);
             document.getElementById('priceTotal').textContent = fmt;
-            var mobilePrice = document.getElementById('mobilePriceTotal');
-            if (mobilePrice) mobilePrice.textContent = fmt;
+        }
+
+        // The phone bar keeps the guide total from page load. Picking options
+        // updates the desktop summary only.
+        function paintMobileGuidePrice() {
+            var slot = document.getElementById('mobileBarPrice');
+            var amount = document.getElementById('mobileBarAmount');
+            if (!slot || !amount) return;
+            var total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
+            if (!(total > 0)) {
+                slot.hidden = true;
+                return;
+            }
+            amount.textContent = formatGbp(total);
+            slot.hidden = false;
         }
 
         // ==================== GALLERY VIEWS ====================
