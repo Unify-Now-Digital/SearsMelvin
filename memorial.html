@@ -368,6 +368,7 @@
         .colour-group { flex-basis: 100%; }
         .colour-group-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.85rem; }
         .colour-group-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; border-radius: var(--sm-radius-sm); background: var(--color-accent); color: white; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; }
+        .colour-group-tag-short { display: none; }
         .colour-group-note { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--color-accent-dark); }
         .colour-swatch-row { display: flex; flex-wrap: wrap; gap: 1rem; }
         .colour-tier { flex-basis: 100%; border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
@@ -738,9 +739,147 @@
             .breadcrumb { font-size: 0.78rem; gap: 0.35rem; flex-wrap: wrap; overflow-wrap: anywhere; }
             .product-detail { padding: 0.5rem 0.75rem 1rem; }
             .product-container { gap: 1.25rem; }
-            .gallery-main { aspect-ratio: 1/1; margin-bottom: 0.6rem; box-shadow: 0 4px 16px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
+            .gallery-main { aspect-ratio: 4/3; margin-bottom: 0.6rem; box-shadow: 0 4px 16px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
             .gallery-main img { object-position: center; }
             .colour-options { justify-content: center; }
+        }
+
+        /* Phone colour strip. Desktop and tablet keep the picker below the description. */
+        @media (max-width: 768px) {
+            html body .gallery-main { aspect-ratio: 4 / 3; height: auto; max-height: none; }
+            html body .gallery-main img { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: center; }
+            .phone-colour-slot { margin: 0.65rem 0 0.35rem; }
+            .phone-colour-slot .stone-colour-preview {
+                margin: 0 0 0.75rem;
+                border-radius: var(--sm-radius-sm);
+            }
+            .phone-colour-slot .stone-colour-preview-frame { border-radius: var(--sm-radius-sm); }
+            .phone-colour-slot .colour-options {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: flex-end;
+                justify-content: flex-start;
+                gap: 0.7rem;
+                overflow-x: auto;
+                overflow-y: hidden;
+                overscroll-behavior-x: contain;
+                padding: 6px 0 0.55rem;
+                margin-right: -0.75rem;
+                width: calc(100% + 0.75rem);
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .phone-colour-slot .colour-options::-webkit-scrollbar { display: none; }
+            .phone-colour-slot .colour-group,
+            .phone-colour-slot .colour-tier {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: flex-end;
+                gap: 0.7rem;
+                flex: 0 0 auto;
+                border: 0;
+                padding: 0;
+                margin: 0;
+                background: none;
+            }
+            .phone-colour-slot .colour-swatch-row {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: flex-end;
+                gap: 0.7rem;
+                flex: 0 0 auto;
+            }
+            .phone-colour-slot .colour-group-label,
+            .phone-colour-slot .colour-tier summary {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                align-self: flex-start;
+                gap: 0.25rem;
+                flex: 0 0 auto;
+                height: 44px;
+                margin: 0;
+                padding: 0 0.15rem 0 0;
+                min-height: 0;
+                list-style: none;
+                cursor: default;
+                pointer-events: none;
+                font-family: var(--sm-font-body);
+                font-size: 0.72rem;
+                font-weight: 500;
+                letter-spacing: 0;
+                line-height: 1.2;
+                text-transform: none;
+                color: var(--sm-color-text-muted);
+                white-space: nowrap;
+            }
+            .phone-colour-slot .colour-tier summary::-webkit-details-marker { display: none; }
+            .phone-colour-slot .colour-tier summary::after { content: none; }
+            .phone-colour-slot .colour-group-tag {
+                display: inline;
+                padding: 0;
+                border-radius: 0;
+                background: none;
+                color: inherit;
+                font: inherit;
+                letter-spacing: 0;
+                text-transform: none;
+            }
+            .phone-colour-slot .colour-group-tag-full { display: none; }
+            .phone-colour-slot .colour-group-tag-short { display: inline; }
+            .phone-colour-slot .colour-group-note {
+                font: inherit;
+                letter-spacing: 0;
+                text-transform: none;
+                color: inherit;
+            }
+            .phone-colour-slot .colour-option {
+                flex: 0 0 auto;
+                min-width: 44px;
+                transform: none;
+            }
+            .phone-colour-slot .colour-option:hover { transform: none; }
+            .phone-colour-slot .colour-wrapper { gap: 0.35rem; }
+            .phone-colour-slot .colour-swatch {
+                width: 44px;
+                height: 44px;
+                border-radius: var(--sm-radius-sm);
+                border-width: 2px;
+            }
+            .phone-colour-slot .colour-swatch::after { border-radius: var(--sm-radius-sm); }
+            .phone-colour-slot .colour-name {
+                display: block;
+                max-width: 7.5rem;
+                min-width: 44px;
+                font-family: var(--sm-font-body);
+                font-size: 0.75rem;
+                font-weight: 400;
+                line-height: 1.25;
+                text-align: center;
+                word-break: normal;
+                overflow-wrap: normal;
+                hyphens: manual;
+            }
+            .phone-colour-slot .colour-option input:checked + .colour-wrapper .colour-swatch {
+                border-color: var(--sm-color-bg);
+                box-shadow: 0 0 0 2px var(--sm-color-border-control);
+                transform: none;
+            }
+            .phone-colour-slot .colour-option input:checked + .colour-wrapper .colour-name {
+                font-family: var(--sm-font-body);
+            }
+            #stoneColourGroup.is-phone-moved {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
         }
 
         /* Save Toast */
@@ -1029,6 +1168,8 @@
                     <span class="gallery-badge" id="galleryBadge" style="display:none;"></span>
                 </div>
 
+                <div class="phone-colour-slot" id="phoneColourSlot" hidden></div>
+
                 <div class="gallery-thumbs" id="galleryThumbs">
                 </div>
             </div>
@@ -1088,11 +1229,12 @@
                 </section>
 
                 <!-- Stone Colour - Live Updates SVG -->
-                <div class="option-group">
+                <div class="option-group" id="stoneColourGroup">
                     <div class="option-header">
                         <span class="option-label" id="stoneColourLabel">Stone Colour</span>
                         <span class="option-value" id="selectedColourName">Black Galaxy</span>
                     </div>
+                    <div id="stoneColourHome">
                     <div class="stone-colour-preview" id="stoneColourPreview" hidden>
                         <div class="stone-colour-preview-frame" id="stoneColourPreviewFrame" aria-hidden="true"></div>
                         <div class="stone-colour-preview-copy">
@@ -1102,6 +1244,7 @@
                     </div>
                     <div class="colour-options" id="stoneColourOptions" role="radiogroup" aria-labelledby="stoneColourLabel">
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">Loading colours...</span>
+                    </div>
                     </div>
                 </div>
 
@@ -1914,10 +2057,10 @@
                 return '<div class="colour-group"><span class="colour-group-label">' + label + '</span>' + row(list) + '</div>';
             }
             // Premium tiers share one surcharge; the tag carries the tier name.
-            function premiumGroup(tag, list) {
+            function premiumGroup(tag, shortTag, list) {
                 var open = window.matchMedia('(min-width: 769px)').matches ? ' open' : '';
                 return '<details class="colour-tier"' + open + '><summary>'
-                     + '<span class="colour-group-tag">' + tag + '</span>'
+                     + '<span class="colour-group-tag"><span class="colour-group-tag-full">' + tag + '</span><span class="colour-group-tag-short">' + shortTag + '</span></span>'
                      + '<span class="colour-group-note">+£' + surcharge + '</span>'
                      + '</summary>' + row(list) + '</details>';
             }
@@ -1926,8 +2069,8 @@
             if (standard.length && (premium.length || naturalStone.length)) {
                 html = '';
                 if (standard.length)     html += plainGroup('Standard', standard);
-                if (premium.length)      html += premiumGroup('Additional stone colours', premium);
-                if (naturalStone.length) html += premiumGroup('Natural stone', naturalStone);
+                if (premium.length)      html += premiumGroup('Additional stone colours', 'Additional', premium);
+                if (naturalStone.length) html += premiumGroup('Natural stone', 'Natural stone', naturalStone);
             } else {
                 // No premium colours yet (e.g. before the migration runs) — flat list.
                 html = colours.map(swatch).join('');
@@ -1937,12 +2080,81 @@
                 container.dataset.swatchFocusBound = '1';
                 container.addEventListener('focusin', function (event) {
                     var details = event.target.closest && event.target.closest('details');
-                    if (details) details.open = true;
+                    if (details && window.matchMedia('(min-width: 769px)').matches) details.open = true;
                 });
+                container.addEventListener('pointerdown', function (event) {
+                    if (!window.matchMedia('(max-width: 768px)').matches) return;
+                    var opt = event.target.closest && event.target.closest('.colour-option');
+                    if (!opt || !container.contains(opt)) return;
+                    colourTap = { x: event.clientX, y: event.clientY, yScroll: window.scrollY, dragged: false };
+                });
+                container.addEventListener('pointermove', function (event) {
+                    if (!colourTap || colourTap.dragged) return;
+                    if (Math.abs(event.clientX - colourTap.x) > 8 || Math.abs(event.clientY - colourTap.y) > 8) colourTap.dragged = true;
+                });
+                container.addEventListener('pointerup', function () {
+                    if (!colourTap || colourTap.dragged) { colourTap = null; return; }
+                    restoreColourPageScroll();
+                    setTimeout(function () { restoreColourPageScroll(); colourTap = null; }, 400);
+                });
+                container.addEventListener('pointercancel', function () { colourTap = null; });
+                window.addEventListener('scroll', restoreColourPageScroll);
             }
+            placeStoneColourControls();
             // Apply first colour
             var first = container.querySelector('input[name="colour"]');
             if (first) { updateColour(first); document.getElementById('selectedColourName').textContent = first.dataset.name; }
+        }
+
+        // A tap must not move the page. A drag still scrolls.
+        var colourTap = null;
+        function restoreColourPageScroll() {
+            if (!colourTap || colourTap.dragged) return;
+            if (window.scrollY !== colourTap.yScroll) window.scrollTo(window.scrollX, colourTap.yScroll);
+        }
+
+        function placeStoneColourControls() {
+            var slot = document.getElementById('phoneColourSlot');
+            var home = document.getElementById('stoneColourHome');
+            var group = document.getElementById('stoneColourGroup');
+            var preview = document.getElementById('stoneColourPreview');
+            var options = document.getElementById('stoneColourOptions');
+            if (!slot || !home || !preview || !options) return;
+            var phone = window.matchMedia('(max-width: 768px)').matches;
+            if (phone) {
+                options.querySelectorAll('details.colour-tier').forEach(function (details) { details.open = true; });
+                if (preview.parentElement !== slot) slot.appendChild(preview);
+                if (options.parentElement !== slot) slot.appendChild(options);
+                slot.hidden = false;
+                if (group) group.classList.add('is-phone-moved');
+            } else {
+                if (preview.parentElement !== home) home.appendChild(preview);
+                if (options.parentElement !== home) home.appendChild(options);
+                slot.hidden = true;
+                if (group) group.classList.remove('is-phone-moved');
+                var desktopOpen = window.matchMedia('(min-width: 769px)').matches;
+                options.querySelectorAll('details.colour-tier').forEach(function (details) { details.open = desktopOpen; });
+            }
+        }
+
+        // inline: nearest, on the strip only. The page scroll is put back.
+        function revealColourSwatch(input) {
+            if (!window.matchMedia('(max-width: 768px)').matches) return;
+            var strip = document.getElementById('stoneColourOptions');
+            var tile = input && input.closest ? input.closest('.colour-option') : null;
+            if (!strip || !tile || !strip.contains(tile)) return;
+            var pad = 4;
+            var pageX = window.scrollX;
+            var pageY = window.scrollY;
+            try { tile.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+            if (window.scrollX !== pageX || window.scrollY !== pageY) window.scrollTo(pageX, pageY);
+            var stripRect = strip.getBoundingClientRect();
+            var tileRect = tile.getBoundingClientRect();
+            var delta = 0;
+            if (tileRect.left < stripRect.left + pad) delta = tileRect.left - stripRect.left - pad;
+            else if (tileRect.right > stripRect.right - pad) delta = tileRect.right - stripRect.right + pad;
+            if (delta) strip.scrollLeft += delta;
+            restoreColourPageScroll();
         }
 
         function renderSizes(sizes) {
@@ -2126,6 +2338,7 @@
                 colourRow.style.display = 'none';
             }
             updateTotalPrice();
+            revealColourSwatch(input);
         }
 
         // ==================== LETTERING COLOUR ====================
@@ -2597,6 +2810,10 @@
             }, { threshold: 0.15 }).observe(intro);
             window.addEventListener('resize', syncMobileQuoteBar);
             syncMobileQuoteBar();
+            var colourLayout = window.matchMedia('(max-width: 768px)');
+            if (colourLayout.addEventListener) colourLayout.addEventListener('change', placeStoneColourControls);
+            else if (colourLayout.addListener) colourLayout.addListener(placeStoneColourControls);
+            placeStoneColourControls();
         }
 
         // ==================== INIT ====================
