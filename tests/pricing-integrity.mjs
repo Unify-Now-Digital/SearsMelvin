@@ -225,7 +225,7 @@ const hartwell = {
   assert.doesNotMatch(html, /Flower Vase/);
   const memorialHtml = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(memorialHtml, /a\.slug !== 'flower-vase'/);
-  assert.match(html, /Custom Motif'.*price: 120/);
+  assert.match(html, /Custom motif'.*price: 120/);
   assert.match(html, /var showInfillEditor = false/);
   assert.match(html, /id="editInfillType"/);
   assert.match(html, /addonItems\.forEach/);

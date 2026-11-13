@@ -256,8 +256,13 @@
         .catalogue { padding: 3rem 2rem; }
         .catalogue-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; gap: 3rem; }
         .filters-sidebar { position: sticky; top: 80px; height: fit-content; }
-        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
-        .filters-header h3 { font-family: var(--font-display); font-size: 1.5rem; }
+        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); gap: 0.75rem; }
+        .filters-header h2 { font-family: var(--font-display); font-size: 1.5rem; margin: 0; }
+        .filters-header-actions { display: flex; align-items: center; gap: 0.75rem; }
+        .filters-close { display: none; align-items: center; justify-content: center; width: var(--sm-target-min); height: var(--sm-target-min); padding: 0; border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); background: var(--sm-color-bg); color: var(--sm-color-text); cursor: pointer; }
+        .filters-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .filters-apply { display: none; }
+        .filters-show { width: 100%; min-height: var(--sm-control-height); border: 0; border-radius: var(--sm-radius-sm); background: var(--sm-color-action-primary-bg); color: var(--sm-color-action-primary-text); font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); cursor: pointer; }
         .filters-clear { background: none; border: none; color: var(--color-accent-dark); font-size: 0.875rem; cursor: pointer; }
         .filters-clear:hover { text-decoration: underline; }
         .filter-group { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
@@ -410,8 +415,12 @@
         @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 900px) {
             .catalogue-container { grid-template-columns: 1fr; gap: 1.5rem; }
-            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: var(--color-cream); z-index: 200; padding: 2rem; overflow-y: auto; transition: left 0.3s ease; }
+            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; height: 100dvh; background: var(--color-cream); z-index: 200; padding: 1.25rem 1.25rem 0; overflow: hidden; transition: left 0.3s ease; display: flex; flex-direction: column; }
             .filters-sidebar.open { left: 0; }
+            .filters-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; padding-bottom: 1rem; }
+            .filters-close { display: inline-flex; }
+            .filters-apply { display: block; flex: none; padding: 0.75rem 0 calc(0.75rem + 84px + env(safe-area-inset-bottom)); background: var(--color-cream); }
+            body:has(#cookieConsent[style*="display: block"]) .filters-apply { padding-bottom: calc(0.75rem + 84px + 210px + env(safe-area-inset-bottom)); }
             .mobile-filter-btn { display: flex; }
             .nav-links { display: none; }
             .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
@@ -699,8 +708,12 @@
             <aside class="filters-sidebar reveal" id="filtersSidebar">
                 <div class="filters-header">
                     <h2>Filters</h2>
-                    <button class="filters-clear" onclick="clearAllFilters()">Clear all</button>
+                    <div class="filters-header-actions">
+                        <button type="button" class="filters-clear" onclick="clearAllFilters()">Clear all</button>
+                        <button type="button" class="filters-close" onclick="closeFilters()" aria-label="Close filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                    </div>
                 </div>
+                <div class="filters-scroll">
                 <div class="filter-group">
                     <h4 class="filter-title">Memorial Type</h4>
                     <div class="filter-options" id="typeFilters">
@@ -718,6 +731,10 @@
                     <div class="filter-options" id="priceFilters">
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">All prices</span>
                     </div>
+                </div>
+                </div>
+                <div class="filters-apply">
+                    <button type="button" class="filters-show" id="filtersShow" onclick="closeFilters()">Show <span id="filtersShowCount">0</span> memorials</button>
                 </div>
             </aside>
 
@@ -967,7 +984,7 @@
                 if (loadingEl) {
                     loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--sm-color-error); fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: var(--sm-color-error);">Error loading memorials. Please refresh the page.</p>';
                 }
-                document.getElementById('resultsCount').textContent = '0';
+                setMemorialCount('0');
             }
             initScrollAnimations();
         }
@@ -1097,7 +1114,7 @@
             noResults.insertAdjacentHTML('beforebegin', productsHTML);
             noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
-            document.getElementById('resultsCount').textContent = matched.length;
+            setMemorialCount(matched.length);
             const more = document.getElementById('catalogueMore');
             if (more) more.hidden = matched.length <= shown.length;
             scheduleCatalogueTrack();
@@ -1554,6 +1571,17 @@
             document.getElementById('filtersSidebar').classList.remove('open');
             document.getElementById('filtersOverlay').classList.remove('active');
         }
+        function setMemorialCount(count) {
+            var shown = document.getElementById('resultsCount');
+            var buttonCount = document.getElementById('filtersShowCount');
+            if (shown) shown.textContent = count;
+            if (buttonCount) buttonCount.textContent = count;
+        }
+        document.addEventListener('keydown', function(event) {
+            if (event.key !== 'Escape') return;
+            var sidebar = document.getElementById('filtersSidebar');
+            if (sidebar && sidebar.classList.contains('open')) closeFilters();
+        });
 
         // ==================== URL PARAM FILTERS ====================
         function applyUrlFilters() {
@@ -1760,7 +1788,7 @@
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];

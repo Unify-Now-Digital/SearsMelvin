@@ -992,7 +992,7 @@
             var showInfillEditor = false;
             if (showInfillEditor && product.type && product.type.toLowerCase().indexOf('kerb') !== -1) {
                 var infillTypes = ['none', 'soil', 'coverslab', 'chippings'];
-                html += '<div class="edit-field"><label>Kerb Infill Type</label>'
+                html += '<div class="edit-field"><label>Kerb infill</label>'
                     + '<select id="editInfillType" onchange="toggleEditChippingsColour()">'
                     + infillTypes.map(function(t) {
                         return '<option value="' + t + '"' + (t === (product.infillType || 'chippings') ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + (t === 'coverslab' ? ' (+£950)' : t === 'chippings' ? ' (+£250)' : t === 'soil' ? ' (+£80)' : '') + '</option>';
@@ -1014,13 +1014,13 @@
             addonItems.forEach(function(a) {
                 var name = String(a.name || '');
                 var lower = name.toLowerCase();
-                if (lower.indexOf('photo plaque') !== -1) selectedAddons['Ceramic Photo Plaque'] = true;
-                else if (lower.indexOf('custom motif') !== -1) selectedAddons['Custom Motif'] = true;
+                if (lower.indexOf('photo plaque') !== -1) selectedAddons['Photo plaque'] = true;
+                else if (lower.indexOf('custom motif') !== -1) selectedAddons['Custom motif'] = true;
                 else if (lower.indexOf('garden kerb surround') !== -1) selectedAddons['Garden Kerb Surround'] = true;
             });
             var availableAddons = [
-                { name: 'Ceramic Photo Plaque', slug: 'photo-plaque', price: 160, desc: 'Ceramic photo plaque set into the memorial.' },
-                { name: 'Custom Motif', slug: '', price: 120, desc: 'A custom engraved design or motif.' }
+                { name: 'Photo plaque', slug: 'photo-plaque', price: 160, desc: 'Ceramic photo plaque set into the memorial.' },
+                { name: 'Custom motif', slug: '', price: 120, desc: 'A custom engraved design or motif.' }
             ];
             if (!product.type || (product.type.toLowerCase().indexOf('kerb') === -1 && product.type.toLowerCase().indexOf('cremation') === -1)) {
                 availableAddons.push({ name: 'Garden Kerb Surround', slug: 'garden-kerb', price: 350, desc: 'Granite kerb border with white chippings.' });
@@ -1222,7 +1222,7 @@
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];

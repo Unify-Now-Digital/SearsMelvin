@@ -139,3 +139,24 @@ body.sm-quote-open #chat-widget-button,
 body.sm-quote-open iframe[src*="leadconnectorhq"],
 body:has(.quote-overlay.active) chat-widget,
 body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
+
+/* Desktop only. The bubble waits, then sits in the corner, so it does not
+   cover the product title or the hero price badge on arrival. */
+@media (min-width: 769px) {
+    chat-widget,
+    iframe[src*="leadconnectorhq"],
+    iframe[src*="msgsndr"],
+    iframe[title*="hat"],
+    #chat-widget-button,
+    lc-chat-widget,
+    [data-widget-id="69f5bdefa4b26c5126799210"] {
+        bottom: 12px !important;
+        opacity: 0;
+        pointer-events: none;
+        animation: sm-chat-arrive 0.2s ease 6s forwards;
+    }
+}
+
+@keyframes sm-chat-arrive {
+    to { opacity: 1; pointer-events: auto; }
+}
