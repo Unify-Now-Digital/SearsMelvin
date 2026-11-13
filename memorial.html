@@ -500,23 +500,84 @@
         .feature-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--color-stone); }
         .feature-item svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; flex-shrink: 0; }
 
-        /* Mobile Bottom Bar — single row: price on the left, actions on the right */
-        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); padding: 0.75rem 1rem; z-index: 90; box-shadow: 0 -6px 24px color-mix(in srgb, var(--sm-color-text) 10%, transparent); align-items: center; gap: 0.75rem; }
-        .mobile-price { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; color: var(--color-stone); line-height: 1; margin: 0; flex: 0 0 auto; white-space: nowrap; }
-        .mobile-price-suffix { font-size: 0.78rem !important; color: var(--color-text-muted) !important; font-family: var(--font-body); font-weight: 500; margin-left: 0.25rem; }
-        .mobile-actions { display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end; }
-        .mobile-actions .btn { padding: 0.85rem 1.25rem; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; min-height: 46px; }
-        .mobile-actions .btn-secondary { padding: 0.6rem; flex: 0 0 auto; min-width: 46px; }
-        .mobile-actions .btn-secondary svg { width: 22px; height: 22px; stroke-width: 2; }
+        /* Phone bar. Hidden until it is eligible, and until 1024px. */
+        .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; align-items: center; }
 
         /* Responsive */
         @media (max-width: 1024px) {
             .product-container { grid-template-columns: 1fr; gap: 2rem; }
             .product-gallery { position: relative; top: 0; }
-            .price-summary { position: relative; margin: 2rem 0 0; }
-            .price-summary-inner { flex-direction: column; align-items: stretch; }
-            .price-actions { justify-content: stretch; width: 100%; margin-left: 0; }
-            .price-actions .btn { flex: 1 1 auto; white-space: nowrap; }
+            .price-summary { display: none; }
+            .mobile-bottom-nav { display: none !important; }
+            body.memorial-page { --sm-phone-bar-offset: calc(10px + var(--sm-control-height) + 10px); }
+            body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+            .mobile-bottom-bar {
+                display: none;
+                align-items: center;
+                gap: var(--sm-space-2);
+                padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+                background: var(--sm-color-bg);
+                border-top: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
+                box-shadow: none;
+                font-family: var(--sm-font-body);
+                color: var(--sm-color-text);
+            }
+            .mobile-bottom-bar.is-visible { display: flex; }
+            .mobile-bar-price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; min-width: 0; }
+            .mobile-bar-price[hidden] { display: none !important; }
+            #mobileBarFrom[hidden] { display: none !important; }
+            .mobile-bar-from {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                font-variant-numeric: tabular-nums;
+                line-height: 1.15;
+                color: var(--sm-color-text);
+                white-space: nowrap;
+            }
+            .mobile-bar-vat {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-xs);
+                font-weight: var(--sm-weight-body);
+                line-height: 1.2;
+                color: var(--sm-color-text-muted);
+            }
+            .mobile-bar-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sm-space-2); margin-left: auto; flex: 0 0 auto; }
+            .mobile-bottom-bar .btn {
+                flex: 0 0 auto;
+                width: auto;
+                min-height: var(--sm-control-height);
+                height: var(--sm-control-height);
+                padding: 0 var(--sm-space-3);
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
+                white-space: nowrap;
+                border-radius: var(--sm-radius-sm);
+            }
+            .mobile-bottom-bar .mobile-bar-call {
+                position: relative;
+                flex: 0 0 var(--sm-control-height);
+                width: var(--sm-control-height);
+                min-width: var(--sm-control-height);
+                height: var(--sm-control-height);
+                min-height: var(--sm-control-height);
+                padding: 0;
+            }
+            .mobile-bar-call-number {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
         }
         @media (max-width: 768px) {
             nav#navbar { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
@@ -530,15 +591,79 @@
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
             .mobile-bottom-nav { display: none !important; }
-            .mobile-bottom-bar { display: none; padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)); gap: 0.5rem; }
+            body.memorial-page { --sm-phone-bar-offset: calc(10px + var(--sm-control-height) + 10px); }
+            .mobile-bottom-bar {
+                display: none;
+                align-items: center;
+                gap: var(--sm-space-2);
+                padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+                background: var(--sm-color-bg);
+                border-top: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
+                box-shadow: none;
+                font-family: var(--sm-font-body);
+                color: var(--sm-color-text);
+            }
             .mobile-bottom-bar.is-visible { display: flex; }
-            .mobile-bottom-bar .btn { flex: 1 1 0; min-height: 44px; padding: 0.55rem 0.7rem; font-size: 0.9rem; white-space: nowrap; }
-            .mobile-bottom-bar .mobile-bar-call { flex: 1.15 1 0; }
+            .mobile-bar-price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; min-width: 0; }
+            .mobile-bar-price[hidden] { display: none !important; }
+            #mobileBarFrom[hidden] { display: none !important; }
+            .mobile-bar-from {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                font-variant-numeric: tabular-nums;
+                line-height: 1.15;
+                color: var(--sm-color-text);
+                white-space: nowrap;
+            }
+            .mobile-bar-vat {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-xs);
+                font-weight: var(--sm-weight-body);
+                line-height: 1.2;
+                color: var(--sm-color-text-muted);
+            }
+            .mobile-bar-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sm-space-2); margin-left: auto; flex: 0 0 auto; }
+            .mobile-bottom-bar .btn {
+                flex: 0 0 auto;
+                width: auto;
+                min-height: var(--sm-control-height);
+                height: var(--sm-control-height);
+                padding: 0 var(--sm-space-3);
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
+                white-space: nowrap;
+                border-radius: var(--sm-radius-sm);
+            }
+            .mobile-bottom-bar .mobile-bar-call {
+                position: relative;
+                flex: 0 0 var(--sm-control-height);
+                width: var(--sm-control-height);
+                min-width: var(--sm-control-height);
+                height: var(--sm-control-height);
+                min-height: var(--sm-control-height);
+                padding: 0;
+            }
+            .mobile-bar-call-number {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
             .colour-options { gap: 0.75rem; }
             .colour-swatch { width: 44px; height: 44px; }
             .stone-colour-preview-frame { width: 112px; height: 112px; }
             .stone-colour-preview-name { font-size: 1.25rem; }
-            body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+            body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
             .gallery-thumbs { gap: 0.5rem; }
             .gallery-thumb { width: 60px; height: 60px; }
             .product-info h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
@@ -818,7 +943,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261109i">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261112a">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -1280,8 +1405,14 @@
 
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
-        <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Request a quote</button>
-        <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548">Call 020 3835 2548</a>
+        <p class="mobile-bar-price" id="mobileBarPrice" hidden>
+            <span class="mobile-bar-from"><span id="mobileBarFrom">From </span><span id="mobileBarAmount"></span></span>
+            <span class="mobile-bar-vat">Inc. VAT</span>
+        </p>
+        <div class="mobile-bar-actions">
+            <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548"><span class="mobile-bar-call-label">Call</span><span class="mobile-bar-call-number"> 020 3835 2548</span></a>
+            <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Get a quote</button>
+        </div>
     </div>
 
     <!-- Save Toast Notification -->
@@ -1723,6 +1854,7 @@
 
                 updateAddonsTotal();
                 updateTotalPrice();
+                settleMobileGuide();
                 checkIfSaved();
             } catch (err) {
                 console.error('Error loading product:', err);
@@ -2205,12 +2337,48 @@
             return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
         }
 
+        // Display only. The bar rounds to the nearest pound. .50 rounds up.
+        // The summary and the quote total stay exact.
+        function formatBarPrice(amount) {
+            const n = Number(amount);
+            const safe = Number.isFinite(n) ? n : 0;
+            const rounded = Math.round(safe);
+            return '£' + rounded.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+        }
+
+        function sameMoney(a, b) {
+            return Math.round(Number(a) * 100) === Math.round(Number(b) * 100);
+        }
+
+        // The guide price is the summary after the page has finished its first
+        // setup. "From" stays only while the live total is still that figure.
+        var mobileGuideTotal = null;
+        var mobileGuideSettled = false;
+
+        function settleMobileGuide() {
+            mobileGuideSettled = true;
+        }
+
         function updateTotalPrice() {
             const total = state.basePrice + state.sizePrice + state.colourPrice + state.inscriptionPrice + state.addonsPrice;
             const fmt   = formatGbp(total);
             document.getElementById('priceTotal').textContent = fmt;
-            var mobilePrice = document.getElementById('mobilePriceTotal');
-            if (mobilePrice) mobilePrice.textContent = fmt;
+            paintMobileBar(total);
+        }
+
+        function paintMobileBar(total) {
+            var slot = document.getElementById('mobileBarPrice');
+            var amount = document.getElementById('mobileBarAmount');
+            var fromWord = document.getElementById('mobileBarFrom');
+            if (!slot || !amount) return;
+            if (!(total > 0)) {
+                slot.hidden = true;
+                return;
+            }
+            if (!mobileGuideSettled) mobileGuideTotal = total;
+            amount.textContent = formatBarPrice(total);
+            if (fromWord) fromWord.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
+            slot.hidden = false;
         }
 
         // ==================== GALLERY VIEWS ====================
@@ -2402,15 +2570,11 @@
         function syncMobileQuoteBar() {
             const bar = document.querySelector('.mobile-bottom-bar');
             const overlay = document.getElementById('quoteOverlay');
-            const cookieBanner = document.getElementById('cookieConsent');
             if (!bar) return;
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
             const modalOpen = overlay && overlay.classList.contains('active');
-            const cookieVisible = cookieBanner && getComputedStyle(cookieBanner).display !== 'none';
-            // Keep the quote action available through the end of the product
-            // journey. Hiding it when the footer appears left customers with
-            // no conversion action after they had reviewed every option.
-            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen && !cookieVisible));
+            // The cookie card sits above the bar. The bar stays visible.
+            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen));
         }
 
         function setupMobileQuoteBar() {

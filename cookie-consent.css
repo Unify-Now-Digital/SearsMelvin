@@ -366,6 +366,26 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
   }
 }
 
+/* Product pages under 1024px: a tighter card just above the phone bar.
+   Other pages keep the card above the bottom nav. */
+@media (max-width: 1024px) {
+  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent.sm-cookie:not(.is-manage) {
+    left: var(--sm-space-2);
+    right: var(--sm-space-2);
+    width: auto;
+    bottom: calc(var(--sm-phone-bar-offset, 68px) + var(--sm-space-2) + env(safe-area-inset-bottom));
+    padding: var(--sm-space-2) var(--sm-space-3);
+  }
+
+  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent .sm-cookie-lead {
+    margin-bottom: var(--sm-space-2);
+  }
+
+  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent .sm-cookie-actions {
+    gap: var(--sm-space-2);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html body #cookieConsent .sm-cookie-switch::after {
     transition: none;
