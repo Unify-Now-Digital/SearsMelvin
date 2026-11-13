@@ -306,6 +306,13 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
   }
 }
 
+/* The desktop card sits above the sticky guide total, so the price stays visible. */
+@media (min-width: 1025px) {
+  body.memorial-page:has(.price-summary) #cookieConsent.sm-cookie:not(.is-manage) {
+    bottom: 140px;
+  }
+}
+
 @media (max-width: 768px) {
   html body #cookieConsent.sm-cookie:not(.is-manage) {
     left: var(--sm-space-3);
