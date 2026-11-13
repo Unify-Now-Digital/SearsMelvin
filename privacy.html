@@ -14,11 +14,28 @@
       security_storage:     'granted',
       wait_for_update: 500
     });
+    // Advanced consent mode. Tags load either way. Denied storage sends a
+    // cookieless ping and must not write a Google cookie. Our own click-ID
+    // capture does not read this choice.
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', true);
     try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
+      var smConsentRaw = localStorage.getItem('cookieConsent');
+      var smConsentChoice = null;
+      if (smConsentRaw === 'accepted') smConsentChoice = { analytics: true, ads: true };
+      else if (smConsentRaw === 'declined') smConsentChoice = { analytics: false, ads: false };
+      else if (smConsentRaw && smConsentRaw.charAt(0) === '{') {
+        var smConsentParsed = JSON.parse(smConsentRaw);
+        if (smConsentParsed && typeof smConsentParsed.analytics === 'boolean' && typeof smConsentParsed.ads === 'boolean') {
+          smConsentChoice = smConsentParsed;
+        }
+      }
+      if (smConsentChoice) {
         gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
+          analytics_storage: smConsentChoice.analytics ? 'granted' : 'denied',
+          ad_storage: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_user_data: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_personalization: smConsentChoice.ads ? 'granted' : 'denied'
         });
       }
     } catch (_e) {}
@@ -369,7 +386,7 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=4">
+    <link rel="stylesheet" href="/chat-widget.css?v=5">
 
     <!-- Structured data: Business -->
     <script type="application/ld+json">
@@ -417,6 +434,7 @@
     }
     </script>
     <link rel="stylesheet" href="/site-upgrades.css?v=20261109i">
+    <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body>
@@ -517,7 +535,7 @@
     </header>
 
     <main class="content">
-        <p class="last-updated">Last updated: May 2026</p>
+        <p class="last-updated">Last updated: 11 November 2026</p>
 
         <h2>Who we are</h2>
         <p>Sears Melvin Ltd (trading as Sears Melvin Memorials) is the data controller for the personal data described in this policy. We are a memorial masonry business registered in England and Wales (company number <strong>16191330</strong>), with our registered office at Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Our website is <strong>searsmelvin.co.uk</strong>. You can contact us at <strong>info@searsmelvin.co.uk</strong> or by calling <strong>020 3835 2548</strong>.</p>
@@ -532,7 +550,7 @@
             <li>Photos you upload (for renovation or repair enquiries)</li>
         </ul>
         <p>If you place an order, we additionally collect details necessary to fulfil that order — for example, the cemetery, the deceased's name and dates for inscription, your delivery or installation address, and proof of grave-deed authority where required by the cemetery.</p>
-        <p>Card payments are processed by Stripe; we do not see or store your full card details. We use cookies solely for anonymous site analytics (via Google Tag Manager) to understand how visitors use our site. You can accept or decline cookies when you first visit. We do not use cookies for advertising or personalisation.</p>
+        <p>Card payments are processed by Stripe; we do not see or store your full card details. Essential cookies keep the site working, for example your shortlist and your cookie choice. We use Google Analytics and Google Ads cookies only if you agree. Analytics cookies tell us which pages help people. Ads cookies measure whether our adverts lead to enquiries. You can change this choice at any time with the Cookie settings link in the footer.</p>
 
         <h2>How we use your information</h2>
         <p>We use the information you provide solely to:</p>
@@ -551,7 +569,7 @@
             <li><strong>Contract</strong> (Art. 6(1)(b)) — to take steps at your request before entering into a contract (preparing a quote) and to perform a contract once you place an order, including cemetery permit applications and installation.</li>
             <li><strong>Legitimate interests</strong> (Art. 6(1)(f)) — to respond to general enquiries, to keep our internal records, and to operate, secure and improve the website. We have considered the impact on your rights and believe these processing activities are reasonable and expected.</li>
             <li><strong>Legal obligation</strong> (Art. 6(1)(c)) — to retain accounting and tax records for the periods required by HMRC and the Companies Act 2006.</li>
-            <li><strong>Consent</strong> (Art. 6(1)(a)) — for non-essential cookies and any optional marketing communications. You can withdraw consent at any time by clearing the consent cookie or contacting us.</li>
+            <li><strong>Consent</strong> (Art. 6(1)(a)) — for Google Analytics and Google Ads cookies, and for any optional marketing communications. You can change or withdraw that choice at any time with the Cookie settings link in the footer, or by contacting us.</li>
         </ul>
 
         <h2>Third-party services (data processors)</h2>
@@ -563,7 +581,7 @@
             <li><strong>Stripe</strong> — processes card payments. We do not see or store your full card details. Privacy policy: <a href="https://stripe.com/gb/privacy" target="_blank" rel="noopener">stripe.com/gb/privacy</a>.</li>
             <li><strong>ClickUp</strong> — used internally to log and track customer enquiries and orders. Privacy policy: <a href="https://clickup.com/privacy" target="_blank" rel="noopener">clickup.com/privacy</a>.</li>
             <li><strong>LeadConnector / HighLevel</strong> — powers the live chat widget on this site. Privacy policy: <a href="https://www.gohighlevel.com/privacy-policy" target="_blank" rel="noopener">gohighlevel.com/privacy-policy</a>.</li>
-            <li><strong>Google (Tag Manager &amp; Analytics)</strong> — provides anonymous traffic analytics (loaded only after you accept cookies). Privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</li>
+            <li><strong>Google (Tag Manager, Analytics and Ads)</strong> — measures how the site is used and whether adverts lead to enquiries. These cookies are used only if you agree. Privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</li>
         </ul>
 
         <h2>International data transfers</h2>
@@ -636,6 +654,7 @@
                 <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
                 <li><a href="/privacy">Privacy</a></li>
+                <li><a href="#cookie-settings" class="sm-cookie-settings">Cookie settings</a></li>
             </ul>
             </div>
             <div class="footer-showroom">
@@ -696,47 +715,61 @@
         }
     </script>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" class="sm-cookie" >
-    <div class="sm-cookie-bar" >
-        <p class="sm-cookie-copy" >We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" class="sm-cookie-link" >privacy policy</a>.</p>
-        <div class="sm-cookie-actions" >
-            <button onclick="acceptCookies()" class="sm-cookie-btn" >Accept</button>
-            <button onclick="declineCookies()" class="sm-cookie-btn" >Decline</button>
+<div id="cookieScrim" class="sm-cookie-scrim"></div>
+<div id="cookieConsent" class="sm-cookie" role="dialog" aria-modal="false" aria-labelledby="cookieTitle">
+    <div class="sm-cookie-choice">
+        <h2 class="sm-cookie-title" id="cookieTitle">Your cookie choices</h2>
+        <p class="sm-cookie-lead sm-cookie-lead--desk" id="cookieLeadDesk">We use essential cookies to run the site. With your permission, we also use analytics and ads cookies. <a href="/privacy">Privacy policy</a></p>
+        <p class="sm-cookie-lead sm-cookie-lead--phone" id="cookieLeadPhone">We use cookies for analytics and ads, only if you agree. <a href="/privacy">Privacy policy</a></p>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAccept">Accept</button>
+            <button type="button" class="sm-cookie-btn" id="cookieReject">Reject</button>
+        </div>
+        <button type="button" class="sm-cookie-manage" id="cookieManage">Manage choices</button>
+    </div>
+    <div class="sm-cookie-panel">
+        <h2 class="sm-cookie-title" id="cookieManageTitle" tabindex="-1">Manage cookie choices</h2>
+        <p class="sm-cookie-lead">Choose which cookies we can use. You can change this at any time from the footer.</p>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieEssentialName">Essential</p>
+                <p class="sm-cookie-desc">Keep the site working, for example your shortlist and this choice. Always on.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" role="switch" aria-checked="true" aria-labelledby="cookieEssentialName" disabled></button>
+                <span class="sm-cookie-switch-state">Always on</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAnalyticsName">Analytics</p>
+                <p class="sm-cookie-desc">Google Analytics. Tells us which pages help people, so we can improve them.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAnalytics" role="switch" aria-checked="false" aria-labelledby="cookieAnalyticsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAnalyticsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAdsName">Ads</p>
+                <p class="sm-cookie-desc">Google Ads. Measures whether our adverts lead to enquiries.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAds" role="switch" aria-checked="false" aria-labelledby="cookieAdsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAdsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAcceptAll">Accept all</button>
+            <button type="button" class="sm-cookie-btn" id="cookieRejectAll">Reject all</button>
+            <button type="button" class="sm-cookie-btn sm-cookie-btn--save" id="cookieSave">Save choices</button>
         </div>
     </div>
 </div>
 <script src="/supabase-config"></script>
+<script src="/cookie-consent.js"></script>
 <script>
-(function(){
-    var consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-        document.getElementById('cookieConsent').style.display = 'block';
-    } else if (consent === 'accepted') {
-        pushConsent(true);
-    }
-})();
-function pushConsent(granted) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'update', {
-        ad_storage:           granted ? 'granted' : 'denied',
-        analytics_storage:    granted ? 'granted' : 'denied',
-        ad_user_data:         granted ? 'granted' : 'denied',
-        ad_personalization:   granted ? 'granted' : 'denied'
-    });
-    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
-}
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(true);
-    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
-}
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(false);
-}
 
         // ==================== SITE SEARCH ====================
         const SUPABASE_URL = window.SM_SUPABASE.url;
@@ -844,7 +877,7 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261111" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=lt3" defer></script>
 </body>
