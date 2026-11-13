@@ -500,17 +500,84 @@
         .feature-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--color-stone); }
         .feature-item svg { width: 18px; height: 18px; stroke: var(--color-success); fill: none; stroke-width: 2; flex-shrink: 0; }
 
-        /* Phone bar. Hidden until the 768px rules, and until the intro quote button has scrolled away. */
+        /* Phone bar. Hidden until it is eligible, and until 1024px. */
         .mobile-bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; align-items: center; }
 
         /* Responsive */
         @media (max-width: 1024px) {
             .product-container { grid-template-columns: 1fr; gap: 2rem; }
             .product-gallery { position: relative; top: 0; }
-            .price-summary { position: relative; margin: 2rem 0 0; }
-            .price-summary-inner { flex-direction: column; align-items: stretch; }
-            .price-actions { justify-content: stretch; width: 100%; margin-left: 0; }
-            .price-actions .btn { flex: 1 1 auto; white-space: nowrap; }
+            .price-summary { display: none; }
+            .mobile-bottom-nav { display: none !important; }
+            body.memorial-page { --sm-phone-bar-offset: calc(10px + var(--sm-control-height) + 10px); }
+            body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+            .mobile-bottom-bar {
+                display: none;
+                align-items: center;
+                gap: var(--sm-space-2);
+                padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+                background: var(--sm-color-bg);
+                border-top: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
+                box-shadow: none;
+                font-family: var(--sm-font-body);
+                color: var(--sm-color-text);
+            }
+            .mobile-bottom-bar.is-visible { display: flex; }
+            .mobile-bar-price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; min-width: 0; }
+            .mobile-bar-price[hidden] { display: none !important; }
+            #mobileBarFrom[hidden] { display: none !important; }
+            .mobile-bar-from {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                font-variant-numeric: tabular-nums;
+                line-height: 1.15;
+                color: var(--sm-color-text);
+                white-space: nowrap;
+            }
+            .mobile-bar-vat {
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-xs);
+                font-weight: var(--sm-weight-body);
+                line-height: 1.2;
+                color: var(--sm-color-text-muted);
+            }
+            .mobile-bar-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sm-space-2); margin-left: auto; flex: 0 0 auto; }
+            .mobile-bottom-bar .btn {
+                flex: 0 0 auto;
+                width: auto;
+                min-height: var(--sm-control-height);
+                height: var(--sm-control-height);
+                padding: 0 var(--sm-space-3);
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-sm);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
+                white-space: nowrap;
+                border-radius: var(--sm-radius-sm);
+            }
+            .mobile-bottom-bar .mobile-bar-call {
+                position: relative;
+                flex: 0 0 var(--sm-control-height);
+                width: var(--sm-control-height);
+                min-width: var(--sm-control-height);
+                height: var(--sm-control-height);
+                min-height: var(--sm-control-height);
+                padding: 0;
+            }
+            .mobile-bar-call-number {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
         }
         @media (max-width: 768px) {
             nav#navbar { min-height: 64px; padding: 0.75rem 1rem; gap: 0.75rem; }
@@ -524,6 +591,7 @@
             .features-grid { grid-template-columns: 1fr; }
             .price-summary { display: none; }
             .mobile-bottom-nav { display: none !important; }
+            body.memorial-page { --sm-phone-bar-offset: calc(10px + var(--sm-control-height) + 10px); }
             .mobile-bottom-bar {
                 display: none;
                 align-items: center;
@@ -2269,14 +2337,13 @@
             return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
         }
 
-        // The phone bar shows the same total as the summary, without trailing
-        // pence on a whole pound. £4,200.00 in the summary is £4,200 in the bar.
+        // Display only. The bar rounds to the nearest pound. .50 rounds up.
+        // The summary and the quote total stay exact.
         function formatBarPrice(amount) {
             const n = Number(amount);
-            const safe = Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
-            const whole = Math.round(safe * 100) % 100 === 0;
-            const digits = whole ? 0 : 2;
-            return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+            const safe = Number.isFinite(n) ? n : 0;
+            const rounded = Math.round(safe);
+            return '£' + rounded.toLocaleString('en-GB', { maximumFractionDigits: 0 });
         }
 
         function sameMoney(a, b) {
@@ -2284,8 +2351,7 @@
         }
 
         // The guide price is the summary after the page has finished its first
-        // setup, including a kerb set's included chippings. "From" stays only
-        // while the live total is still that figure.
+        // setup. "From" stays only while the live total is still that figure.
         var mobileGuideTotal = null;
         var mobileGuideSettled = false;
 
@@ -2504,15 +2570,11 @@
         function syncMobileQuoteBar() {
             const bar = document.querySelector('.mobile-bottom-bar');
             const overlay = document.getElementById('quoteOverlay');
-            const cookieBanner = document.getElementById('cookieConsent');
             if (!bar) return;
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
             const modalOpen = overlay && overlay.classList.contains('active');
-            const cookieVisible = cookieBanner && getComputedStyle(cookieBanner).display !== 'none';
-            // Keep the quote action available through the end of the product
-            // journey. Hiding it when the footer appears left customers with
-            // no conversion action after they had reviewed every option.
-            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen && !cookieVisible));
+            // The cookie card sits above the bar. The bar stays visible.
+            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen));
         }
 
         function setupMobileQuoteBar() {

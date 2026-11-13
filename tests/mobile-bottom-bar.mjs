@@ -38,17 +38,26 @@ const load = html.slice(html.indexOf("updateAddonsTotal();"), html.indexOf("upda
 assert.match(load, /updateTotalPrice\(\);\s*settleMobileGuide\(\);/, "the guide price is the summary after first setup");
 assert.match(paint, /!\(total > 0\)/, "a missing guide total leaves the price hidden");
 const barFmt = html.slice(html.indexOf("function formatBarPrice"), html.indexOf("function sameMoney"));
-assert.match(barFmt, /whole \? 0 : 2/, "whole pounds drop the pence");
-assert.match(html.slice(html.indexOf("function formatGbp"), html.indexOf("function formatBarPrice")), /minimumFractionDigits: 2/, "the desktop summary still shows pence");
+assert.match(barFmt, /Math\.round\(safe\)/, "the bar rounds to the nearest pound");
+assert.doesNotMatch(barFmt, /minimumFractionDigits: 2/, "the bar does not keep pence");
+const formatBarPrice = new Function("amount", barFmt.slice(barFmt.indexOf("{") + 1, barFmt.lastIndexOf("}")));
+assert.equal(formatBarPrice(4238.4), "£4,238");
+assert.equal(formatBarPrice(4238.5), "£4,239");
+assert.equal(formatBarPrice(4200), "£4,200");
+assert.match(html.slice(html.indexOf("function formatGbp"), html.indexOf("function formatBarPrice")), /whole \? 0 : 2/, "the summary drops .00 and keeps real pence");
 
 const sync = html.slice(html.indexOf("function syncMobileQuoteBar"), html.indexOf("function setupMobileQuoteBar"));
-assert.match(sync, /cookieConsent/, "the bar stays hidden while the cookie card shows");
-assert.match(sync, /mobileQuoteCtaEligible && !modalOpen && !cookieVisible/, "show/hide logic is unchanged");
+assert.doesNotMatch(sync, /cookieVisible/, "the phone bar stays visible while the cookie card shows");
+assert.match(sync, /max-width: 1024px/);
+assert.match(sync, /mobileQuoteCtaEligible && !modalOpen\)/);
 assert.match(html, /getElementById\('quoteIntro'\)/, "the bar still waits for the intro quote button to scroll away");
 
-assert.match(html, /@media \(max-width: 768px\)[\s\S]*\.mobile-bottom-bar\.is-visible \{ display: flex; \}/);
+assert.match(html, /@media \(max-width: 1024px\)[\s\S]*\.mobile-bottom-bar\.is-visible \{ display: flex; \}/);
 assert.doesNotMatch(html, /@media \(min-width: 769px\)[\s\S]{0,400}\.mobile-bottom-bar\.is-visible/);
-assert.match(css, /@media \(max-width: 768px\) \{[\s\S]*html body \.mobile-bottom-bar \{[\s\S]*background: var\(--sm-color-bg\);[\s\S]*border-top: 1px solid var\(--sm-color-border-decorative\);/);
+assert.match(css, /@media \(max-width: 1024px\) \{[\s\S]*html body \.mobile-bottom-bar \{[\s\S]*background: var\(--sm-color-bg\);[\s\S]*border-top: 1px solid var\(--sm-color-border-decorative\);/);
+const cookieCss = readFileSync("cookie-consent.css", "utf8");
+assert.match(cookieCss, /body\.memorial-page:has\(\.mobile-bottom-bar\.is-visible\) #cookieConsent\.sm-cookie:not\(\.is-manage\)/);
+assert.match(cookieCss, /--sm-phone-bar-offset/);
 assert.match(css, /html body \.mobile-bottom-bar \.mobile-bar-call \{[\s\S]*width: var\(--sm-control-height\);[\s\S]*height: var\(--sm-control-height\);/);
 assert.doesNotMatch(css.slice(css.lastIndexOf("Memorial phone bar")), /#[0-9a-fA-F]{3,8}\b/, "the bar uses tokens, not a raw colour");
 

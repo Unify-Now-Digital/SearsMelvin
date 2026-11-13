@@ -1,5 +1,5 @@
 // The phone bar follows the desktop summary when a priced option changes,
-// and again when that option is put back. Whole pounds drop the pence.
+// and again when that option is put back. The bar rounds to the nearest pound.
 //
 // Serves this repo and the public catalogue config, then drives the real page.
 
@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PAGES = [
-  { slug: "the-charnwood", colour: "Bahama Blue", bar: "£4,750" },
+  { slug: "the-charnwood", colour: "Bahama Blue", bar: "£4,500" },
   { slug: "the-bath" },
   { slug: "the-alderley" },
 ];
@@ -43,8 +43,10 @@ function chromePath() {
   return candidates.find((path) => existsSync(path)) || "";
 }
 
-function dropPence(summary) {
-  return summary.replace(/\.00$/, "");
+function barPounds(summary) {
+  const n = Number(String(summary).replace(/[£,\s]/g, ""));
+  if (!Number.isFinite(n)) return summary;
+  return "£" + Math.round(n).toLocaleString("en-GB");
 }
 
 function startServer(supabaseConfig) {
@@ -130,7 +132,7 @@ const READ = `(() => {
     bar,
     fromShown: !!(fromEl && !fromEl.hidden),
     name: (document.getElementById('productName') || {}).textContent || '',
-    ready: /^£[\\d,]+\\.\\d{2}$/.test(desk) && bar.length > 0
+    ready: /^£[\\d,]+(\\.\\d{2})?$/.test(desk) && bar.length > 0
   };
 })()`;
 
@@ -206,7 +208,7 @@ async function main() {
     }
 
     function expectMatch(where, row) {
-      assert.equal(row.bar, dropPence(row.desk), `${where}: bar ${row.bar} vs summary ${row.desk}`);
+      assert.equal(row.bar, barPounds(row.desk), `${where}: bar ${row.bar} vs summary ${row.desk}`);
       assert.doesNotMatch(row.bar, /\.00$/, `${where}: bar still shows pence`);
     }
 

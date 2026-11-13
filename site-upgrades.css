@@ -2058,9 +2058,10 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   }
 }
 
-/* Memorial phone bar, option B. Linen ground, square outline call, ink quote.
-   Wins over the shared button padding so the call control stays square. */
-@media (max-width: 768px) {
+/* Memorial phone bar. Linen ground, square outline call, ink quote.
+   Wins over the shared button padding so the call control stays square.
+   Product pages show the bar under 1024px. */
+@media (max-width: 1024px) {
   html body .mobile-bottom-bar {
     background: var(--sm-color-bg);
     border-top: 1px solid var(--sm-color-border-decorative);
