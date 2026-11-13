@@ -471,7 +471,7 @@
         .price-summary-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
 
         .price-breakdown { flex: 0 1 auto; }
-        .price-row { display: none; }
+        .price-row { display: none; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
         .price-row.total { display: flex; align-items: baseline; justify-content: flex-start; gap: 0.85rem; font-size: 0.95rem; font-weight: 600; color: var(--color-stone); border-top: none; padding-top: 0; margin-top: 0; }
         .price-total-display { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-stone); }
 
@@ -1262,7 +1262,7 @@
                         <span>Guide total (installed)</span>
                         <span class="price-total-display" id="priceTotal">—</span>
                     </div>
-                    <p class="guide-price-note">Cemetery permit fees are extra and vary by cemetery.</p>
+                    <p class="guide-price-note">Excludes the cemetery permit fee, if one applies.</p>
                 </div>
                 <div class="price-actions">
                     <button class="btn btn-secondary" onclick="saveMemorial()">
@@ -1359,6 +1359,7 @@
                 <div class="quote-config-row" id="qsInfillRow" style="display:none"><span>Kerb Infill</span><span id="qsInfill">—</span></div>
                 <div id="qsExtrasContainer"></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
+                <p class="inscription-allowance">Excludes the cemetery permit fee, if one applies.</p>
             </div>
             <div class="quote-form-body">
                 <form id="quoteForm" novalidate>
@@ -1685,15 +1686,8 @@
                     if (kerbCard) kerbCard.style.display = 'none';
                 }
 
-                // Kerb sets keep default white chippings in the guide total.
-                // That is the price customers see today. The picker stays
-                // hidden: the family agrees the infill when the quote is prepared.
-                if (catSlug === 'kerb-sets') {
-                    state.infillType = 'chippings';
-                    state.infillColour = 'white';
-                    state.infillPrice = INFILL_PRICES.chippings;
-                    updateInfillLabel();
-                }
+                // Kerb sets start with no infill. The picker stays hidden.
+                // A family agrees the infill when the quote is prepared.
 
                 // Render features
                 renderFeatures(product.included_features || []);
@@ -2202,12 +2196,13 @@
         }
 
         // ==================== TOTAL PRICE ====================
-        // Guide totals can include fractional extra-lettering pounds. Always
-        // show two decimal places so £1,452.40 does not render as £1,452.4.
+        // Whole pounds drop the pence. £1,452.40 still shows the pence.
         function formatGbp(amount) {
             const n = Number(amount);
             const safe = Number.isFinite(n) ? n : 0;
-            return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const whole = Math.round(safe * 100) % 100 === 0;
+            const digits = whole ? 0 : 2;
+            return '£' + safe.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits });
         }
 
         function updateTotalPrice() {

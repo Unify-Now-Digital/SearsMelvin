@@ -152,25 +152,25 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
 
   let infillType;
   let infillColour;
-  // A stored choice (old quotes) is priced and kept. A new quote omits the
-  // fields. The guide total still includes default white chippings, because
-  // that is the price customers see, and the family agrees the infill later.
+  // A new quote omits infill. That adds no line and no price.
+  // A stored choice is priced and kept. INFILL_PRICES stays for that choice.
   let infillSupplied = false;
   if (categorySlug === "kerb-sets") {
     const supplied = boundedText(rawProduct.infillType, 30).toLowerCase();
-    const requestedInfill = supplied || "chippings";
-    if (!Object.hasOwn(INFILL_PRICES, requestedInfill)) {
-      throw new QuotePricingError("The selected kerb infill is unavailable");
-    }
-    infillType = requestedInfill;
-    infillColour = (supplied && boundedText(rawProduct.infillColour, 40).toLowerCase()) || "white";
-    infillSupplied = Boolean(supplied);
-    const infillPrice = INFILL_PRICES[infillType];
-    if (infillPrice) {
-      const typeLabel = infillType.charAt(0).toUpperCase() + infillType.slice(1);
-      const colourLabel = infillColour.charAt(0).toUpperCase() + infillColour.slice(1);
-      const suffix = infillType === "chippings" ? ` (${colourLabel})` : "";
-      lineItems.push({ name: `Kerb Infill — ${typeLabel}${suffix}`, price: infillPrice });
+    if (supplied) {
+      if (!Object.hasOwn(INFILL_PRICES, supplied)) {
+        throw new QuotePricingError("The selected kerb infill is unavailable");
+      }
+      infillSupplied = true;
+      infillType = supplied;
+      infillColour = boundedText(rawProduct.infillColour, 40).toLowerCase() || (supplied === "chippings" ? "white" : "");
+      const infillPrice = INFILL_PRICES[infillType];
+      if (infillPrice) {
+        const typeLabel = infillType.charAt(0).toUpperCase() + infillType.slice(1);
+        const colourLabel = infillColour ? infillColour.charAt(0).toUpperCase() + infillColour.slice(1) : "";
+        const suffix = infillType === "chippings" && colourLabel ? ` (${colourLabel})` : "";
+        lineItems.push({ name: `Kerb Infill — ${typeLabel}${suffix}`, price: infillPrice });
+      }
     }
   }
 

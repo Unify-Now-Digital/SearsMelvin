@@ -94,9 +94,8 @@ const hartwell = {
   ]);
 }
 
-// A new kerb quote omits infill fields. The server still adds default white
-// chippings so the guide total matches the price on the page, and it does
-// not write infillType or infillColour back onto the quote.
+// A new kerb quote omits infill fields. The server adds no infill line and
+// no £250, and it does not write infillType or infillColour onto the quote.
 {
   const charnwood = {
     ...hartwell,
@@ -113,12 +112,10 @@ const hartwell = {
     sizeCode: "standard",
     price: "1",
   }, charnwood);
-  assert.equal(product.price, 4200);
+  assert.equal(product.price, 3950);
   assert.equal(product.infillType, undefined);
   assert.equal(product.infillColour, undefined);
-  assert.deepEqual(product.addonLineItems, [
-    { name: "Kerb Infill — Chippings (White)", price: 250 },
-  ]);
+  assert.deepEqual(product.addonLineItems, []);
 }
 
 // An old quote that chose no infill stays at the base price.
@@ -175,7 +172,9 @@ const hartwell = {
   const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(html, /infillType:\s*'none'/);
   assert.match(html, /infillPrice:\s*0/);
-  assert.match(html, /state\.infillPrice = INFILL_PRICES\.chippings/);
+  assert.doesNotMatch(html, /state\.infillPrice = INFILL_PRICES\.chippings/);
+  assert.match(html, /Excludes the cemetery permit fee, if one applies\./);
+  assert.match(html, /whole \? 0 : 2/);
   assert.match(html, /#infillOptionGroup, #qsInfillRow \{ display: none !important; \}/);
   assert.doesNotMatch(html, /infillType:\s*state\.infillType/);
   assert.doesNotMatch(html, /infillColour:\s*state\.infillColour/);
@@ -201,6 +200,15 @@ const hartwell = {
   assert.match(html, /Custom Motif'.*price: 120/);
   assert.match(html, /var showInfillEditor = false/);
   assert.match(html, /id="editInfillType"/);
+  assert.match(html, /addonItems\.forEach/);
+  assert.match(html, /class="quote-permit-line">Excludes the cemetery permit fee, if one applies\./);
+  assert.doesNotMatch(html, /calculateCanonicalQuoteProduct|canonicaliseQuoteProduct/);
+  const submit = await readFile(new URL("../functions/api/submit.js", import.meta.url), "utf8");
+  assert.equal(
+    (submit.match(/Excludes the cemetery permit fee, if one applies\./g) || []).length,
+    2,
+    "both quote emails carry the permit line under the guide total",
+  );
 }
 
 console.log("pricing integrity tests passed");
