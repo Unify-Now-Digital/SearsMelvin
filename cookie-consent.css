@@ -293,6 +293,13 @@ body.sm-cookie-manage #cookieConsent.sm-cookie {
   z-index: 2147483000;
 }
 
+/* The quote form covers the page. Hide the card while it is open.
+   The stored choice is unchanged. The card returns when the form closes. */
+body:has(.quote-overlay.active) #cookieConsent.sm-cookie,
+body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
+  display: none !important;
+}
+
 @media (min-width: 769px) {
   html body #cookieConsent .sm-cookie-lead--phone {
     display: none;
