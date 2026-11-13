@@ -30,6 +30,34 @@ function boundedText(value, max = 1000) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+// An older saved quote can list "Kerb Infill — Chippings (White)" without
+// infillType. The type and colour come from that stored line.
+export function storedInfillChoice(rawProduct) {
+  if (!rawProduct || typeof rawProduct !== "object") return null;
+  const names = [];
+  if (Array.isArray(rawProduct.addonLineItems)) {
+    for (const item of rawProduct.addonLineItems) {
+      if (item && typeof item.name === "string") names.push(item.name);
+    }
+  }
+  if (Array.isArray(rawProduct.addons)) {
+    for (const name of rawProduct.addons) {
+      if (typeof name === "string") names.push(name);
+    }
+  }
+  for (const name of names) {
+    const match = name.match(/^Kerb Infill\s+[—–-]\s+([A-Za-z]+)(?:\s+\(([^)]+)\))?$/);
+    if (!match) continue;
+    const infillType = match[1].toLowerCase();
+    if (!Object.hasOwn(INFILL_PRICES, infillType) || infillType === "none") continue;
+    return {
+      infillType,
+      infillColour: match[2] ? match[2].trim().toLowerCase() : "",
+    };
+  }
+  return null;
+}
+
 function sameChoice(value, row) {
   const normalised = boundedText(value, 160).toLowerCase();
   return normalised && [row?.slug, row?.name].some(candidate => String(candidate || "").toLowerCase() === normalised);
@@ -152,19 +180,33 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
 
   let infillType;
   let infillColour;
+  // A new quote omits infill. That adds no line and no price.
+  // A stored choice is priced and kept. INFILL_PRICES stays for that choice.
+  let infillSupplied = false;
   if (categorySlug === "kerb-sets") {
-    const requestedInfill = boundedText(rawProduct.infillType, 30).toLowerCase() || "chippings";
-    if (!Object.hasOwn(INFILL_PRICES, requestedInfill)) {
-      throw new QuotePricingError("The selected kerb infill is unavailable");
+    let supplied = boundedText(rawProduct.infillType, 30).toLowerCase();
+    let suppliedColour = boundedText(rawProduct.infillColour, 40).toLowerCase();
+    if (!supplied) {
+      const inferred = storedInfillChoice(rawProduct);
+      if (inferred) {
+        supplied = inferred.infillType;
+        if (!suppliedColour) suppliedColour = inferred.infillColour;
+      }
     }
-    infillType = requestedInfill;
-    infillColour = boundedText(rawProduct.infillColour, 40).toLowerCase() || "white";
-    const infillPrice = INFILL_PRICES[infillType];
-    if (infillPrice) {
-      const typeLabel = infillType.charAt(0).toUpperCase() + infillType.slice(1);
-      const colourLabel = infillColour.charAt(0).toUpperCase() + infillColour.slice(1);
-      const suffix = infillType === "chippings" ? ` (${colourLabel})` : "";
-      lineItems.push({ name: `Kerb Infill — ${typeLabel}${suffix}`, price: infillPrice });
+    if (supplied) {
+      if (!Object.hasOwn(INFILL_PRICES, supplied)) {
+        throw new QuotePricingError("The selected kerb infill is unavailable");
+      }
+      infillSupplied = true;
+      infillType = supplied;
+      infillColour = suppliedColour || (supplied === "chippings" ? "white" : "");
+      const infillPrice = INFILL_PRICES[infillType];
+      if (infillPrice) {
+        const typeLabel = infillType.charAt(0).toUpperCase() + infillType.slice(1);
+        const colourLabel = infillColour ? infillColour.charAt(0).toUpperCase() + infillColour.slice(1) : "";
+        const suffix = infillType === "chippings" && colourLabel ? ` (${colourLabel})` : "";
+        lineItems.push({ name: `Kerb Infill — ${typeLabel}${suffix}`, price: infillPrice });
+      }
     }
   }
 
@@ -199,7 +241,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
     canonical.photoSize = photoCode;
   }
   if (gardenKerb) canonical.gardenKerb = true;
-  if (infillType) {
+  if (infillSupplied && infillType) {
     canonical.infillType = infillType;
     canonical.infillColour = infillColour;
   }

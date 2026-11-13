@@ -306,7 +306,9 @@
         if (!button || !menu || button.getAttribute('data-sm-menu-state')) return;
 
         function sync() {
-            button.setAttribute('aria-expanded', menu.classList.contains('active') ? 'true' : 'false');
+            var open = menu.classList.contains('active');
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.classList.toggle('sm-menu-open', open);
         }
 
         sync();
@@ -322,7 +324,47 @@
             if (e.key !== 'Escape' || !menu.classList.contains('active')) return;
             if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
         });
+        document.addEventListener('click', function (e) {
+            if (!menu.classList.contains('active')) return;
+            if (menu.contains(e.target) || button.contains(e.target)) return;
+            if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
+        });
         button.setAttribute('data-sm-menu-state', '1');
+    }
+
+    // Phone menu, option B. One row style, brochure as a normal row, and the
+    // quote and call actions as a pair. The number stays one text node.
+    function shapePhoneMenu() {
+        var menu = document.getElementById('mobileNav');
+        if (!menu || menu.getAttribute('data-sm-phone-menu')) return;
+
+        var brochure = menu.querySelector('a.nav-brochure');
+        if (brochure && !brochure.querySelector('.sm-menu-note')) {
+            var note = document.createElement('small');
+            note.className = 'sm-menu-note';
+            note.textContent = 'Free PDF';
+            brochure.appendChild(note);
+        }
+
+        var tel = menu.querySelector('a[href^="tel:"]');
+        if (tel && !tel.querySelector('svg')) {
+            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('class', 'sm-menu-phone');
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2');
+            svg.appendChild(path);
+            tel.insertBefore(svg, tel.firstChild);
+        }
+
+        if (!menu.querySelector('.sm-menu-hours')) {
+            var hours = document.createElement('p');
+            hours.className = 'sm-menu-hours';
+            hours.textContent = 'Showroom: Monday to Friday, 10am to 3pm';
+            menu.appendChild(hours);
+        }
+        menu.setAttribute('data-sm-phone-menu', '1');
     }
 
     function ensureSkipLink() {
@@ -361,6 +403,7 @@
         compactFooter();
         applyPublicResponsiveBaseline();
         keepMobileMenuStateAccessible();
+        shapePhoneMenu();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });

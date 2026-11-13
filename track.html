@@ -242,8 +242,9 @@
         .badge-change_requested { background: var(--sm-color-error-surface); color: var(--sm-color-error); }
 
         /* Quote card */
-        .quote-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-stone); margin: 0.75rem 0; }
+        .quote-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-stone); margin: 0.75rem 0 0.25rem; }
         .quote-price small { font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-body); }
+        .quote-permit-line { margin: 0 0 0.75rem; font-family: var(--sm-font-body); font-weight: var(--sm-weight-body); font-size: var(--sm-text-xs); line-height: 1.45; color: var(--sm-color-text-muted); }
         .quote-inscription { background: var(--color-cream); border-radius: 8px; padding: 1rem; margin: 0.75rem 0; }
         .quote-inscription-text { font-family: var(--font-display); font-size: 1.1rem; line-height: 1.5; color: var(--color-stone); white-space: pre-line; text-align: center; }
         .quote-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -509,6 +510,7 @@
                 html += '<div class="quote-price">&pound;' + Number(q.total || q.value).toLocaleString('en-GB');
                 if (q.permitCost) html += ' <small>(incl. &pound;' + Number(q.permitCost).toLocaleString('en-GB') + ' permit fee)</small>';
                 html += '</div>';
+                html += '<p class="quote-permit-line">Excludes the cemetery permit fee, if one applies.</p>';
             }
             if (q.inscription) {
                 html += '<div class="quote-inscription"><div class="quote-inscription-text" id="inscrDisplay_' + q.id + '">' + esc(q.inscription) + '</div></div>';

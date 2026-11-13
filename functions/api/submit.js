@@ -908,7 +908,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                     </tr>
 
                   </table>
-                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 10px 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
+                  <p style="margin:8px 10px 0;font-family:'DM Sans',Arial,sans-serif;font-size:13px;line-height:1.45;font-weight:400;color:#5C554C;">Excludes the cemetery permit fee, if one applies.</p>
 
                   ${inscription ? `<!-- Inscription -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
@@ -1129,7 +1129,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
                       <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${grandTotal.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
                   </table>
-                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 0 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
+                  <p style="margin:8px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:13px;line-height:1.45;font-weight:400;color:#5C554C;">Excludes the cemetery permit fee, if one applies.</p>
 
                 </td>
               </tr>

@@ -65,7 +65,18 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.match(productRoute, /organization_id=eq\..*is_listed=eq\.true&category_id=not\.is\.null/);
 }
 
-// Kerb sets include the chosen infill even when the browser submits a stale total.
+const hartwell = {
+  ...catalogue,
+  product: {
+    ...catalogue.product,
+    name: "The Hartwell",
+    slug: "the-hartwell",
+    base_price: 4140,
+    product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
+  },
+};
+
+// A stored infill choice still prices, including when the browser total is stale.
 {
   const product = calculateCanonicalQuoteProduct({
     slug: "the-hartwell",
@@ -74,20 +85,79 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
     infillType: "chippings",
     infillColour: "black",
     price: "4140",
-  }, {
-    ...catalogue,
-    product: {
-      ...catalogue.product,
-      name: "The Hartwell",
-      slug: "the-hartwell",
-      base_price: 4140,
-      product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
-    },
-  });
+  }, hartwell);
   assert.equal(product.price, 4390);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "black");
   assert.deepEqual(product.addonLineItems, [
     { name: "Kerb Infill — Chippings (Black)", price: 250 },
   ]);
+}
+
+// An old kerb quote stored the chippings line and never stored infillType.
+// Rebuilding the lines keeps that £250.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+    addonLineItems: [{ name: "Kerb Infill — Chippings (White)", price: 250 }],
+    addons: ["Kerb Infill — Chippings (White)"],
+  }, charnwood);
+  assert.equal(product.price, 4200);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "white");
+  assert.deepEqual(product.addonLineItems, [
+    { name: "Kerb Infill — Chippings (White)", price: 250 },
+  ]);
+}
+
+// A new kerb quote omits infill fields. The server adds no infill line and
+// no £250, and it does not write infillType or infillColour onto the quote.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+  }, charnwood);
+  assert.equal(product.price, 3950);
+  assert.equal(product.infillType, undefined);
+  assert.equal(product.infillColour, undefined);
+  assert.deepEqual(product.addonLineItems, []);
+}
+
+// An old quote that chose no infill stays at the base price.
+{
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-hartwell",
+    colour: "Black",
+    sizeCode: "standard",
+    infillType: "none",
+    price: "9999",
+  }, hartwell);
+  assert.equal(product.price, 4140);
+  assert.equal(product.infillType, "none");
+  assert.deepEqual(product.addonLineItems, []);
 }
 
 // Photo size is a stable code, not a shape name, so the label and price agree.
@@ -130,6 +200,13 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(html, /infillType:\s*'none'/);
   assert.match(html, /infillPrice:\s*0/);
+  assert.doesNotMatch(html, /state\.infillPrice = INFILL_PRICES\.chippings/);
+  assert.match(html, /Excludes the cemetery permit fee, if one applies\./);
+  assert.match(html, /whole \? 0 : 2/);
+  assert.match(html, /#infillOptionGroup, #qsInfillRow \{ display: none !important; \}/);
+  assert.doesNotMatch(html, /infillType:\s*state\.infillType/);
+  assert.doesNotMatch(html, /infillColour:\s*state\.infillColour/);
+  assert.doesNotMatch(html, /value="extra-lettering"/);
   assert.match(html, /addonSlugs:\s*getSelectedAddonSlugs\(\)/);
   assert.match(html, /sizeCode:\s*state\.selectedSize/);
   assert.match(html, /PHOTO_SIZE_LABEL\s*=\s*\{\s*oval:\s*'Oval',\s*rectangle:\s*'Rectangle',\s*heart:\s*'Heart'\s*\}/);
@@ -149,6 +226,17 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   const memorialHtml = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(memorialHtml, /a\.slug !== 'flower-vase'/);
   assert.match(html, /Custom Motif'.*price: 120/);
+  assert.match(html, /var showInfillEditor = false/);
+  assert.match(html, /id="editInfillType"/);
+  assert.match(html, /addonItems\.forEach/);
+  assert.match(html, /class="quote-permit-line">Excludes the cemetery permit fee, if one applies\./);
+  assert.doesNotMatch(html, /calculateCanonicalQuoteProduct|canonicaliseQuoteProduct/);
+  const submit = await readFile(new URL("../functions/api/submit.js", import.meta.url), "utf8");
+  assert.equal(
+    (submit.match(/Excludes the cemetery permit fee, if one applies\./g) || []).length,
+    2,
+    "both quote emails carry the permit line under the guide total",
+  );
 }
 
 console.log("pricing integrity tests passed");
