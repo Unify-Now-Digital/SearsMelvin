@@ -94,6 +94,34 @@ const hartwell = {
   ]);
 }
 
+// An old kerb quote stored the chippings line and never stored infillType.
+// Rebuilding the lines keeps that £250.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+    addonLineItems: [{ name: "Kerb Infill — Chippings (White)", price: 250 }],
+    addons: ["Kerb Infill — Chippings (White)"],
+  }, charnwood);
+  assert.equal(product.price, 4200);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "white");
+  assert.deepEqual(product.addonLineItems, [
+    { name: "Kerb Infill — Chippings (White)", price: 250 },
+  ]);
+}
+
 // A new kerb quote omits infill fields. The server adds no infill line and
 // no £250, and it does not write infillType or infillColour onto the quote.
 {
