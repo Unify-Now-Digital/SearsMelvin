@@ -260,7 +260,7 @@
 
         /* Gallery */
         .product-gallery { position: sticky; top: 80px; height: fit-content; }
-        .gallery-main { aspect-ratio: 4/5; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; position: relative; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 10%, transparent); background: white; }
+        .gallery-main { aspect-ratio: 4/5; border-radius: var(--sm-radius-sm); overflow: hidden; margin-bottom: 1rem; position: relative; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 10%, transparent); background: white; }
         .gallery-main img { width: 100%; height: 100%; object-fit: contain; }
         .gallery-badge { position: absolute; top: 1.5rem; left: 1.5rem; padding: 0.5rem 1rem; background: var(--color-accent); color: white; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 3px; }
         
@@ -271,7 +271,7 @@
 
         /* Thumbnails */
         .gallery-thumbs { display: flex; gap: 0.75rem; }
-        .gallery-thumb { width: 72px; height: 72px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; background: var(--color-warm); }
+        .gallery-thumb { width: 72px; height: 72px; border-radius: var(--sm-radius-sm); overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.6; transition: all 0.2s; background: var(--color-warm); }
         .gallery-thumb:hover { opacity: 0.9; transform: translateY(-2px); }
         .gallery-thumb.active { border-color: var(--color-accent); opacity: 1; }
         .gallery-thumb img, .gallery-thumb svg { width: 100%; height: 100%; object-fit: cover; }
@@ -367,7 +367,7 @@
         .colour-option input:checked + .colour-wrapper .colour-name { color: var(--color-stone); font-weight: 600; }
         .colour-group { flex-basis: 100%; }
         .colour-group-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.85rem; }
-        .colour-group-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; border-radius: 99px; background: var(--color-accent); color: white; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; }
+        .colour-group-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; border-radius: var(--sm-radius-sm); background: var(--color-accent); color: white; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; }
         .colour-group-note { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--color-accent-dark); }
         .colour-swatch-row { display: flex; flex-wrap: wrap; gap: 1rem; }
         .colour-tier { flex-basis: 100%; border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
@@ -424,11 +424,12 @@
         .inscription-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
         .char-counter { font-size: 0.8rem; color: var(--color-text-muted); }
         .char-counter.warning { color: var(--sm-color-warning); }
-        .char-counter.over { color: var(--sm-color-error); }
+        .char-counter.over { color: var(--sm-color-text-accent); }
+        .char-counter-cost { white-space: nowrap; }
         .char-bar { width: 150px; height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
         .char-bar-fill { height: 100%; background: var(--color-success); transition: width 0.3s, background 0.3s; border-radius: 3px; }
         .char-bar-fill.warning { background: var(--sm-color-warning); }
-        .char-bar-fill.over { background: var(--sm-color-error); }
+        .char-bar-fill.over { background: var(--sm-color-text-accent); }
 
         /* Optional personalisation keeps the quote path focused while making
            inscription and lettering easy to add when the customer is ready. */
@@ -474,6 +475,8 @@
         .price-row { display: none; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
         .price-row.total { display: flex; align-items: baseline; justify-content: flex-start; gap: 0.85rem; font-size: 0.95rem; font-weight: 600; color: var(--color-stone); border-top: none; padding-top: 0; margin-top: 0; }
         .price-total-display { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-stone); }
+        .price-total-wrap { display: flex; flex-direction: column; align-items: flex-start; }
+        .price-inc-vat { font-family: var(--sm-font-body); font-size: var(--sm-text-xs); font-weight: var(--sm-weight-body); line-height: 1.2; color: var(--sm-color-text-inverse-muted); }
 
         .price-actions { display: flex; gap: 1rem; margin-left: auto; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 1.75rem; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.03em; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
@@ -682,8 +685,8 @@
         /* Quote Modal */
         .quote-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 65%, transparent); z-index: 300; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
         .quote-overlay.active { display: flex; }
-        .quote-modal { background: white; border-radius: 12px; max-width: 580px; width: 100%; max-height: 92vh; overflow-y: auto; }
-        .quote-modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 1.75rem 1.25rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); border-radius: 12px 12px 0 0; }
+        .quote-modal { background: white; border-radius: var(--sm-radius-sm); max-width: 580px; width: 100%; max-height: 92vh; overflow-y: auto; }
+        .quote-modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 1.75rem 1.25rem; background: linear-gradient(135deg, var(--color-warm), var(--color-cream)); border-bottom: 1px solid var(--color-border); border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0; }
         .quote-modal-header h2 { font-size: 1.35rem; color: var(--color-stone); margin-bottom: 0.2rem; }
         .quote-modal-subtitle { font-size: 0.83rem; color: var(--color-text-muted); margin: 0; }
         .quote-modal-close { background: none; border: none; cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
@@ -991,7 +994,7 @@
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/><path d="M9.5 12.5l2 2 4-4"/></svg>
-                <span>Cemetery Checks</span>
+                <span>Cemetery checks</span>
             </div>
             <div class="site-trust-item">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1066,7 +1069,7 @@
                 <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
                     <ul class="product-reassurance">
-                        <li>Fully installed across England &amp; Wales</li>
+                        <li>Fully installed UK-wide</li>
                         <li>30-year fixing guarantee</li>
                         <li>10-year workmanship guarantee</li>
                     </ul>
@@ -1238,7 +1241,7 @@
                 <!-- Kerb Infill Type — only shown for kerb-set products -->
                 <div class="option-group" id="infillOptionGroup" style="display:none;">
                     <div class="option-header">
-                        <span class="option-label">Kerb Infill Type</span>
+                        <span class="option-label">Kerb infill</span>
                         <span class="option-value" id="selectedInfillName">Chippings — White</span>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem;" id="infillTypeGrid">
@@ -1339,7 +1342,7 @@
                         <svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                         <div class="trust-badge-text">
                             <strong>Fixing included</strong>
-                            <span>Anywhere in England & Wales</span>
+                            <span>UK-wide</span>
                         </div>
                     </div>
                     <div class="trust-badge">
@@ -1385,7 +1388,10 @@
                     </div>
                     <div class="price-row total">
                         <span>Guide total (installed)</span>
-                        <span class="price-total-display" id="priceTotal">—</span>
+                        <span class="price-total-wrap">
+                            <span class="price-total-display" id="priceTotal">—</span>
+                            <span class="price-inc-vat">Inc. VAT</span>
+                        </span>
                     </div>
                     <p class="guide-price-note">Excludes the cemetery permit fee, if one applies.</p>
                 </div>
@@ -1487,7 +1493,7 @@
                 <div class="quote-config-row" id="qsFontRow" style="display:none"><span>Font</span><span id="qsFont">—</span></div>
                 <div class="quote-config-row" id="qsLetterColourRow" style="display:none"><span>Lettering</span><span id="qsLetterColour">—</span></div>
                 <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
-                <div class="quote-config-row" id="qsInfillRow" style="display:none"><span>Kerb Infill</span><span id="qsInfill">—</span></div>
+                <div class="quote-config-row" id="qsInfillRow" style="display:none"><span>Kerb infill</span><span id="qsInfill">—</span></div>
                 <div id="qsExtrasContainer"></div>
                 <div class="quote-config-total"><span>Guide total (installed)</span><span id="qsTotal">—</span></div>
                 <p class="inscription-allowance">Excludes the cemetery permit fee, if one applies.</p>
@@ -1500,11 +1506,11 @@
                     </div>
                     <div class="quote-form-row">
                         <div class="quote-form-group">
-                            <label>Email Address</label>
+                            <label>Email address</label>
                             <input type="email" id="qEmail" placeholder="your@email.com" autocomplete="email">
                         </div>
                         <div class="quote-form-group">
-                            <label>Phone Number</label>
+                            <label>Phone number</label>
                             <input type="tel" id="qPhone" placeholder="07123 456 789" autocomplete="tel" inputmode="tel">
                         </div>
                     </div>
@@ -1966,14 +1972,19 @@
             addons = (addons || []).filter(function(a) { return a.slug !== 'flower-vase'; });
             const container = document.getElementById('addonsGrid');
             let html = '';
-            // Photo Plaque addon (special handling)
+            function addonDisplayName(name) {
+                if (name === 'Ceramic Photo Plaque') return 'Photo plaque';
+                if (name === 'Custom Motif') return 'Custom motif';
+                return name;
+            }
+            // Photo plaque addon (special handling)
             var photoAddon = addons.find(function(a) { return a.slug === 'photo-plaque'; });
             if (photoAddon) {
                 var photoPrice = parseFloat(photoAddon.price);
                 html += '<div class="addon-card" id="photoAddonCard" onclick="togglePhotoAddon(this)">'
                     + '<input type="checkbox" name="addon" value="photo" id="photoCheck" data-price="' + photoPrice + '">'
                     + '<div class="addon-header"><div>'
-                    + '<div class="addon-name">' + esc(photoAddon.name) + '</div>'
+                    + '<div class="addon-name">' + esc(addonDisplayName(photoAddon.name)) + '</div>'
                     + '<div class="addon-price" id="photoPriceLabel">+£' + photoPrice + '</div>'
                     + '</div><span class="addon-check"></span></div>'
                     + '<p class="addon-desc">' + esc(photoAddon.description) + '</p></div>';
@@ -1985,7 +1996,7 @@
                 html += '<div class="addon-card" onclick="toggleAddon(this)">'
                     + '<input type="checkbox" name="addon" value="' + esc(a.slug) + '" data-price="' + price + '">'
                     + '<div class="addon-header"><div>'
-                    + '<div class="addon-name">' + esc(a.name) + '</div>'
+                    + '<div class="addon-name">' + esc(addonDisplayName(a.name)) + '</div>'
                     + '<div class="addon-price">+£' + price.toLocaleString() + '</div>'
                     + '</div><span class="addon-check"></span></div>'
                     + '<p class="addon-desc">' + esc(a.description) + '</p></div>';
@@ -2166,7 +2177,7 @@
             if (charCount > charsIncluded) {
                 const extra = Math.max(0, charCount - charsIncluded);
                 const cost  = parseFloat((extra * pricePerChar).toFixed(2));
-                charCounter.textContent = `${extra} extra letters and numbers = +£${cost.toFixed(2)}`;
+                charCounter.innerHTML = extra + ' extra letters and numbers <span class="char-counter-cost">= + £' + cost.toFixed(2) + '</span>';
                 charBar.classList.add('over');
                 charCounter.classList.add('over');
                 state.inscriptionPrice = cost;
@@ -3123,7 +3134,7 @@
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
