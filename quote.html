@@ -434,7 +434,7 @@
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=5">
 
-    <!-- Structured data: Business -->
+    <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -442,7 +442,7 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and UK-wide installation, based in London.",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.",
       "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
       "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
@@ -450,14 +450,16 @@
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "geo": {"@type":"GeoCoordinates","latitude":51.58619,"longitude":-0.18362},
+      "hasMap": "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB",
       "areaServed": [
-        {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "AdministrativeArea", "name": "Greater London"},
+        {"@type": "AdministrativeArea", "name": "Hertfordshire"},
+        {"@type": "AdministrativeArea", "name": "Essex"},
+        {"@type": "AdministrativeArea", "name": "Kent"},
+        {"@type": "AdministrativeArea", "name": "Surrey"},
+        {"@type": "AdministrativeArea", "name": "Buckinghamshire"},
+        {"@type": "AdministrativeArea", "name": "Berkshire"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
@@ -547,7 +549,7 @@
     <!-- Top Banner -->
     <div class="showroom-banner">
         <div class="showroom-banner-inner">
-            <span><strong>Showroom visits, North London</strong> — Monday to Friday, 10am to 3pm</span>
+            <span><strong>Showroom visits, London</strong> — Monday to Friday, 10am to 3pm</span>
             <span class="banner-divider">|</span>
             <a href="tel:+442038352548" class="showroom-banner-link" style="display:inline-flex;align-items:center;gap:0.4rem;">
                 <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
@@ -633,7 +635,7 @@
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
-                    <span>North London</span>
+                    <span>London</span>
                 </div>
             </div>
             <div class="footer-explore">
@@ -642,6 +644,13 @@
                 <li><a href="/about">About</a></li>
                 <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/memorials/type/lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials/type/kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials/type/heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials/type/book-memorials">Book memorials</a></li>
+                <li><a href="/memorials/type/churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials/type/cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials/type/childrens-memorials">Children's memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/care-guide">Memorial Care</a></li>

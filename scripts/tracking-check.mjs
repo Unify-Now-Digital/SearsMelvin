@@ -140,7 +140,8 @@ async function main() {
         checked++;
         problems.push(...pageProblems(p, html));
         if (p === "/contact" && !/event: 'sm_lead_submit'/.test(html)) problems.push("/contact: sm_lead_submit push missing");
-        if (p.startsWith("/memorials/")) {
+        // Category pages live under /memorials/type/ and are not quote forms.
+        if (p.startsWith("/memorials/") && !p.startsWith("/memorials/type/")) {
           productPath ||= p;
           if (!/event: 'sm_quote_submit'/.test(html)) problems.push(`${p}: sm_quote_submit push missing`);
         }

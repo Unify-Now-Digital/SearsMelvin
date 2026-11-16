@@ -19,7 +19,7 @@ const TYPE_WORD = {
   "book-memorials": "book memorial",
 };
 
-const PLACE = "UK-wide installation, based in London.";
+const PLACE = "Installation across Greater London and surrounds.";
 const PERMITS = "We help with cemetery permits.";
 
 export function typeWord(categorySlug) {
@@ -58,6 +58,8 @@ const PADS = [
   "The stone and lettering are included.",
   "Lettering is included.",
   "Installation is included.",
+  "Stone included.",
+  "Lettering included.",
 ];
 
 export function productDescription(product) {
@@ -67,7 +69,7 @@ export function productDescription(product) {
   let text = coreDescription(name, type, price);
   if (text.length > 155) {
     const from = price ? `from ${price}` : "with a guide price on request";
-    text = `${name} is a ${type} ${from}. UK-wide installation from London. ${PERMITS}`;
+    text = `${name} is a ${type} ${from}. Across Greater London and surrounds. ${PERMITS}`;
   }
   if (text.length > 155) {
     const from = price ? `From ${price}` : "A guide price is available on request";
@@ -91,10 +93,24 @@ export function productDescription(product) {
   return text;
 }
 
+const STONE_STOP = /^(?:in|of|with|and|the|a|an|shown)\s+/;
+
 export function stonePhrase(product) {
   const text = `${product?.short_description || ""} ${product?.description || ""}`;
   const match = text.match(/\b((?:pale |dark |light |polished |honed )?(?:[a-z]+ ){0,3}(?:granite|marble|slate))\b/i);
-  return match ? match[1].replace(/\s+/g, " ").trim().toLowerCase() : "";
+  if (!match) return "";
+  let phrase = match[1].replace(/\s+/g, " ").trim().toLowerCase();
+  while (STONE_STOP.test(phrase)) phrase = phrase.replace(STONE_STOP, "");
+  return phrase;
+}
+
+// The required pattern, plus the plural and hyphenated spellings in the catalogue.
+const VASE_COPY = /\bflower vase\b|\bvase\b|\bvases\b|\bflower-vase\b|\bflower-vases\b/i;
+
+export function visibleFeatures(features) {
+  return (Array.isArray(features) ? features : [])
+    .map((item) => String(item).replace(/\s+/g, " ").trim())
+    .filter((item) => item && !VASE_COPY.test(item));
 }
 
 export function factsParagraph(product, sizes) {
@@ -109,13 +125,11 @@ export function factsParagraph(product, sizes) {
     .filter(Boolean)
     .slice(0, 4);
   const sizeBit = names.length ? ` Sizes include ${names.join(", ")}.` : "";
-  const features = Array.isArray(product?.included_features)
-    ? product.included_features.map((item) => String(item).replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 4)
-    : [];
+  const features = visibleFeatures(product?.included_features).slice(0, 4);
   const featureBit = features.length ? ` Included: ${features.join(", ")}.` : "";
   return `${name} is a ${type}${stoneBit}${priceBit}. ${PLACE} ${PERMITS}${sizeBit}${featureBit}`;
 }
 
 if (typeof window !== "undefined") {
-  window.SMProductCopy = { typeWord, guidePrice, productTitle, productDescription, stonePhrase, factsParagraph, SHARE_IMAGE };
+  window.SMProductCopy = { typeWord, guidePrice, productTitle, productDescription, stonePhrase, factsParagraph, visibleFeatures, SHARE_IMAGE };
 }

@@ -59,17 +59,18 @@ for (const file of pages) {
   for (const href of ["/about", "/brochure", "/contact", "/faq"]) {
     assert.ok(footer.includes(`href="${href}"`), `${file} footer missing ${href}`);
   }
-  if (file === "index.html") {
-    assert.equal(html.includes("North London"), false, `${file} keeps North London off the home page`);
-    assert.doesNotMatch(html, /<title>[^<]*North London/);
-    assert.doesNotMatch(html, /<meta name="description" content="[^"]*North London/);
-    assert.doesNotMatch(html, /<meta property="og:description" content="[^"]*North London/);
-    assert.doesNotMatch(html, /<meta name="twitter:description" content="[^"]*North London/);
-  } else {
-    assert.equal(html.includes("North London"), true, `${file} should restore North London`);
+  assert.equal(html.includes("North London"), false, `${file} still says North London`);
+  assert.equal(html.includes("UK-wide"), false, `${file} still says UK-wide`);
+  assert.ok(html.includes("Greater London and surrounds"), `${file} missing Greater London and surrounds`);
+  assert.doesNotMatch(html, /<title>[^<]*North London/);
+  assert.doesNotMatch(html, /<meta name="description" content="[^"]*North London/);
+  assert.doesNotMatch(html, /<meta property="og:description" content="[^"]*North London/);
+  assert.doesNotMatch(html, /<meta name="twitter:description" content="[^"]*North London/);
+  for (const area of ["Greater London", "Hertfordshire", "Essex", "Kent", "Surrey", "Buckinghamshire", "Berkshire"]) {
+    assert.ok(html.includes(`"name": "${area}"`), `${file} areaServed missing ${area}`);
   }
   for (const borough of ["Barnet", "Camden", "Brent", "Haringey", "Enfield"]) {
-    assert.ok(html.includes(`"name": "${borough}"`), `${file} areaServed missing ${borough}`);
+    assert.equal(html.includes(`"name": "${borough}"`), false, `${file} still serves ${borough}`);
   }
   assert.match(html, /"opens": "10:00"/, `${file} opening hours`);
   assert.match(html, /"closes": "15:00"/, `${file} opening hours`);
@@ -93,13 +94,15 @@ assert.doesNotMatch(home, /value="09:00"|value="09:30"|value="15:00"|value="15:3
 assert.match(home, /apptDateIsWeekday/);
 
 const aboutMeta = readFileSync(new URL("../about.html", import.meta.url), "utf8");
-assert.match(aboutMeta, /memorial masons in North London/);
+assert.match(aboutMeta, /memorial masons in London/);
+assert.doesNotMatch(aboutMeta, /North London/);
 const contactPage = readFileSync(new URL("../contact.html", import.meta.url), "utf8");
 assert.match(contactPage, /Monday to Friday, 10am to 3pm/);
 assert.doesNotMatch(contactPage, /9am–5pm|Sat by appointment|9:00 AM/);
 const about = readFileSync(new URL("../about.html", import.meta.url), "utf8");
-assert.match(about, /North London memorial masons/);
-assert.match(about, /is a North London memorial mason/);
+assert.match(about, /London memorial masons/);
+assert.match(about, /is a London memorial mason/);
+assert.doesNotMatch(about, /North London/);
 assert.doesNotMatch(about, /by appointment/);
 
 console.log("public-redirects: ok");

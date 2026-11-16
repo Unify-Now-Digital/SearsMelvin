@@ -1,6 +1,6 @@
 # Sears Melvin Memorials — orientation for AI agents
 
-Static site + Cloudflare Pages Functions for a North London (NW11) memorial
+Static site + Cloudflare Pages Functions for a London (NW11) memorial
 masonry business. Read this before changing anything; it records decisions that
 are easy to undo by accident.
 
@@ -16,7 +16,7 @@ it whenever you audit or fix something in that list.
   `/api/submit` (all public form submissions), `/api/brochure` (brochure download log + "email me a copy"; GHL tag `Brochure`), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
   `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
-  plus `/memorials/:slug` and `/sitemap.xml`. `/api/partner-auth` and
+  plus `/memorials/:slug`, `/memorials/type/:type` (category pages), and `/sitemap.xml`. `/areas*` still 301s to `/memorials`. `/api/partner-auth` and
   `/api/partner-orders` are retired stubs that return **410 Gone**. The
   partner desk is https://partner.searsmelvin.co.uk (other repo/Worker).
 - **Database** — Supabase project **Mason App** (`bfwohzcugtwbhhxdqgme`), shared
