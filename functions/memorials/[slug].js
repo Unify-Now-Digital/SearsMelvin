@@ -76,7 +76,7 @@ async function fetchRelated(env, product) {
   try {
     const res = await catalogueFetch(
       env,
-      `/rest/v1/products?organization_id=eq.${org}&category_id=eq.${encodeURIComponent(categoryId)}&slug=neq.${encodeURIComponent(product.slug)}&is_active=eq.true&is_listed=eq.true&select=name,slug&order=display_order.asc&limit=4`,
+      `/rest/v1/products?organization_id=eq.${org}&category_id=eq.${encodeURIComponent(categoryId)}&slug=neq.${encodeURIComponent(product.slug)}&is_active=eq.true&is_listed=eq.true&select=name,slug&order=display_order.asc&limit=8`,
     );
     if (!res.ok) return [];
     const rows = await res.json();
@@ -141,7 +141,7 @@ function buildSchema(product, canonicalUrl, description, imageUrl) {
       "@type": "ListItem",
       position: 3,
       name: catName,
-      item: `${BASE}/memorials?type=${encodeURIComponent(catSlug)}`,
+      item: `${BASE}/memorials/type/${encodeURIComponent(catSlug)}`,
     });
     crumbs.push({ "@type": "ListItem", position: 4, name: product.name, item: canonicalUrl });
   } else {
@@ -157,15 +157,31 @@ function factsHtml(product, sizes) {
   return `<p>${escapeHtml(factsParagraph(product, sizes))}</p>`;
 }
 
-function relatedHtml(related) {
+function breadcrumbHtml(product) {
+  const catSlug = safeSlug(product.product_categories?.slug);
+  const catName = String(product.product_categories?.name || "").replace(/\s+/g, " ").trim();
+  const typeLink = catSlug && catName
+    ? `<a href="/memorials/type/${catSlug}">${escapeHtml(catName)}</a><span>/</span>`
+    : "";
+  return `<a href="/">Home</a><span>/</span><a href="/memorials">Memorials</a><span>/</span>${typeLink}<span>${escapeHtml(product.name || "Memorial")}</span>`;
+}
+
+function relatedHtml(related, product) {
   const links = related.map((item) => {
     const slug = safeSlug(item.slug);
     const name = String(item.name || "").replace(/\s+/g, " ").trim();
     if (!slug || !name) return "";
     return `<li><a href="/memorials/${slug}">${escapeHtml(name)}</a></li>`;
   }).filter(Boolean);
-  if (!links.length) return "";
-  return `<h2>Related designs</h2><ul>${links.join("")}</ul>`;
+  const catSlug = safeSlug(product?.product_categories?.slug);
+  const catName = String(product?.product_categories?.name || "memorials").replace(/\s+/g, " ").trim();
+  const seeAll = catSlug
+    ? `<p><a href="/memorials/type/${catSlug}">See all ${escapeHtml(catName.toLowerCase())}</a></p>`
+    : "";
+  if (!links.length && !seeAll) return "";
+  const heading = links.length ? "<h2>Related designs</h2>" : "";
+  const list = links.length ? `<ul>${links.join("")}</ul>` : "";
+  return `${heading}${list}${seeAll}`;
 }
 
 function gone() {
@@ -263,7 +279,8 @@ export async function onRequestGet({ request, env, params }) {
     .on("#productLead", { element(el) { el.setInnerContent(lead, { html: false }); } })
     .on("#productDescription", { element(el) { el.setInnerContent(longDescription, { html: false }); } })
     .on("#productFacts", { element(el) { el.setInnerContent(factsHtml(product, sizes), { html: true }); } })
-    .on("#relatedDesigns", { element(el) { el.setInnerContent(relatedHtml(related), { html: true }); } })
+    .on("#breadcrumb", { element(el) { el.setInnerContent(breadcrumbHtml(product), { html: true }); } })
+    .on("#relatedDesigns", { element(el) { el.setInnerContent(relatedHtml(related, product), { html: true }); } })
     .on("#priceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#mobilePriceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#galleryMainImg", {

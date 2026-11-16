@@ -207,6 +207,7 @@
         a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
         /* Animations */
+        /* Opacity and transform only. Layout properties stay put so the intro does not shift. */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
         .animate-delay-1 { animation-delay: 0.1s; }
@@ -294,7 +295,7 @@
         nav.related-designs a:hover { color: var(--sm-color-link-hover); text-decoration-thickness: 2px; }
         nav.related-designs a:focus-visible { outline: var(--sm-focus-width) solid var(--sm-color-focus); outline-offset: var(--sm-focus-offset); border-radius: var(--sm-radius-sm); }
         .product-lead { font-size: 1.12rem; line-height: 1.6; color: var(--color-text); margin: 0 0 1.25rem; }
-        .product-quote-intro { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 1.25rem 0; margin: 0 0 1.5rem; }
+        .product-quote-intro { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 1.25rem 0; margin: 0 0 1.5rem; min-height: 8.75rem; }
         .product-quote-intro .btn { width: 100%; }
         .product-guarantees { margin: 1.5rem 0; padding: 1rem 1.25rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--sm-color-bg-surface); }
         .product-guarantees h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; margin: 0 0 0.6rem; }
@@ -749,6 +750,8 @@
             html body .gallery-main { aspect-ratio: 4 / 3; height: auto; max-height: none; }
             html body .gallery-main img { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: center; }
             .phone-colour-slot { margin: 0.65rem 0 0.35rem; }
+            /* Reserve the colour strip before it is moved here, so the intro below does not jump. */
+            #phoneColourSlot[hidden] { display: block !important; min-height: 19rem; }
             .phone-colour-slot .stone-colour-preview {
                 margin: 0 0 0.75rem;
                 border-radius: var(--sm-radius-sm);
@@ -1034,7 +1037,7 @@
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=5">
 
-    <!-- Structured data: Business -->
+    <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -1042,7 +1045,7 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and UK-wide installation, based in London.",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.",
       "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
       "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
@@ -1050,14 +1053,16 @@
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "geo": {"@type":"GeoCoordinates","latitude":51.58619,"longitude":-0.18362},
+      "hasMap": "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB",
       "areaServed": [
-        {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "AdministrativeArea", "name": "Greater London"},
+        {"@type": "AdministrativeArea", "name": "Hertfordshire"},
+        {"@type": "AdministrativeArea", "name": "Essex"},
+        {"@type": "AdministrativeArea", "name": "Kent"},
+        {"@type": "AdministrativeArea", "name": "Surrey"},
+        {"@type": "AdministrativeArea", "name": "Buckinghamshire"},
+        {"@type": "AdministrativeArea", "name": "Berkshire"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
@@ -1210,7 +1215,7 @@
                 <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
                     <ul class="product-reassurance">
-                        <li>Fully installed UK-wide</li>
+                        <li>Installed across Greater London and surrounds</li>
                         <li>30-year fixing guarantee</li>
                         <li>10-year workmanship guarantee</li>
                     </ul>
@@ -1485,7 +1490,7 @@
                         <svg viewBox="0 0 24 24"><rect x="1" y="6" width="15" height="10" rx="1"/><path d="M16 10h4l3 4v4h-7V10z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                         <div class="trust-badge-text">
                             <strong>Fixing included</strong>
-                            <span>UK-wide</span>
+                            <span>Greater London and surrounds</span>
                         </div>
                     </div>
                     <div class="trust-badge">
@@ -1579,7 +1584,7 @@
                 <div class="footer-contact">
                     <a href="tel:+442038352548">020 3835 2548</a>
                     <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
-                    <span>North London</span>
+                    <span>London</span>
                 </div>
             </div>
             <div class="footer-explore">
@@ -1589,6 +1594,13 @@
                 <li class="footer-nav-secondary"><a href="/brochure">Brochure</a></li>
                 <li class="footer-nav-secondary"><a href="/faq">FAQ</a></li>
                 <li class="footer-nav-secondary"><a href="/memorials">Memorials</a></li>
+                <li><a href="/memorials/type/lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials/type/kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials/type/heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials/type/book-memorials">Book memorials</a></li>
+                <li><a href="/memorials/type/churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials/type/cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials/type/childrens-memorials">Children's memorials</a></li>
                 <li class="footer-nav-secondary"><a href="/#process">Process</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
@@ -1912,7 +1924,7 @@
                         { '@type': 'ListItem', position: 2, name: 'Memorials', item: 'https://searsmelvin.co.uk/memorials' }
                     ];
                     if (catSlug) {
-                        crumbs.push({ '@type': 'ListItem', position: 3, name: catName, item: 'https://searsmelvin.co.uk/memorials?type=' + encodeURIComponent(catSlug) });
+                        crumbs.push({ '@type': 'ListItem', position: 3, name: catName, item: 'https://searsmelvin.co.uk/memorials/type/' + encodeURIComponent(catSlug) });
                         crumbs.push({ '@type': 'ListItem', position: 4, name: product.name, item: canonicalUrl });
                     } else {
                         crumbs.push({ '@type': 'ListItem', position: 3, name: product.name, item: canonicalUrl });
@@ -1928,25 +1940,27 @@
                 })();
                 var catName = product.product_categories?.name || 'Memorial';
                 var catSlug = product.product_categories?.slug || '';
-                document.getElementById('productCategory').textContent = catName;
-                document.getElementById('productName').textContent = product.name;
+                setTextIfChanged(document.getElementById('productCategory'), catName);
+                setTextIfChanged(document.getElementById('productName'), product.name);
                 var shortDescription = (product.short_description || '').trim();
                 var longDescription = (product.description || '').trim();
                 if (shortDescription && longDescription.indexOf(shortDescription) === 0) {
                     longDescription = longDescription.slice(shortDescription.length).trim();
                 }
-                document.getElementById('productLead').textContent = shortDescription || longDescription || 'Hand-finished memorial, professionally installed.';
-                document.getElementById('productDescription').textContent = longDescription;
-                document.getElementById('productDescription').style.display = longDescription ? '' : 'none';
+                setTextIfChanged(document.getElementById('productLead'), shortDescription || longDescription || 'Hand-finished memorial, professionally installed.');
+                var descEl = document.getElementById('productDescription');
+                setTextIfChanged(descEl, longDescription);
+                if (descEl && !descEl.textContent.trim()) descEl.style.display = 'none';
                 document.getElementById('priceBaseName').textContent = product.name;
                 document.getElementById('priceBase').textContent = '£' + state.basePrice.toLocaleString();
 
                 // Update breadcrumb
                 var bc = document.getElementById('breadcrumb');
-                bc.innerHTML = '<a href="/">Home</a><span>/</span>'
+                var nextBc = '<a href="/">Home</a><span>/</span>'
                     + '<a href="/memorials">Memorials</a><span>/</span>'
-                    + (catSlug ? '<a href="/memorials?type=' + encodeURIComponent(catSlug) + '">' + esc(catName) + '</a><span>/</span>' : '')
+                    + (catSlug ? '<a href="/memorials/type/' + encodeURIComponent(catSlug) + '">' + esc(catName) + '</a><span>/</span>' : '')
                     + '<span>' + esc(product.name) + '</span>';
+                if (bc && bc.textContent.replace(/\s+/g, ' ').trim() !== textOfHtml(nextBc)) bc.innerHTML = nextBc;
 
                 // Populate gallery with product image
                 renderGallery(product);
@@ -1985,14 +1999,17 @@
                         is_active: 'eq.true',
                         is_listed: 'eq.true',
                         order: 'display_order.asc',
-                        limit: '4'
+                        limit: '8'
                     }).then(function(rows) {
                         if (!Array.isArray(rows) || !rows.length) return;
+                        var seeAll = catSlug
+                            ? '<p><a href="/memorials/type/' + encodeURIComponent(catSlug) + '">See all ' + esc(String(catName || 'memorials').toLowerCase()) + '</a></p>'
+                            : '';
                         var html = '<h2>Related designs</h2><ul>' + rows.map(function(item) {
                             var slug = String(item.slug || '').toLowerCase();
                             if (!/^[a-z0-9-]{1,120}$/.test(slug)) return '';
                             return '<li><a href="/memorials/' + slug + '">' + esc(item.name || 'Memorial') + '</a></li>';
-                        }).join('') + '</ul>';
+                        }).join('') + '</ul>' + seeAll;
                         relatedNav.innerHTML = html;
                     }).catch(function() {});
                 }
@@ -2216,9 +2233,23 @@
             container.innerHTML = html;
         }
 
+        function setTextIfChanged(el, text) {
+            if (!el) return;
+            var next = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
+            if (el.textContent.replace(/\s+/g, ' ').trim() === next) return;
+            el.textContent = next;
+        }
+        function textOfHtml(html) {
+            var probe = document.createElement('div');
+            probe.innerHTML = html;
+            return probe.textContent.replace(/\s+/g, ' ').trim();
+        }
         function renderFeatures(features) {
             const container = document.getElementById('featuresGrid');
             const section = document.getElementById('featuresSection');
+            features = (features || []).filter(function(item) {
+                return !/\bflower vase\b|\bvase\b|\bvases\b|\bflower-vase\b|\bflower-vases\b/i.test(String(item || ''));
+            });
             if (!features || !features.length) {
                 if (section) section.hidden = true;
                 return;
