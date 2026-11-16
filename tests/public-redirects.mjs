@@ -9,6 +9,13 @@ assert.match(redirects, /^\/index\.html\s+\/\s+301/m);
 assert.match(redirects, /^\/areas\/\*\s+\/memorials\s+301/m);
 assert.doesNotMatch(redirects, /^\/areas\/\*\s+\/\s+301/m);
 
+// Typed quote URLs go straight to /contact. /contact/ is a separate 308,
+// so the target must be the slash-free path or the browser takes two hops.
+for (const source of ["/request-a-quote", "/request-a-quote/", "/request-quote", "/request-quote/"]) {
+  const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert.match(redirects, new RegExp(`^${escaped}\\s+/contact\\s+301\\s*$`, "m"), source);
+}
+
 const robots = readFileSync(new URL("../robots.txt", import.meta.url), "utf8");
 assert.match(robots, /^Disallow: \/rest\/$/m);
 assert.match(robots, /^Disallow: \/storage\/$/m);
