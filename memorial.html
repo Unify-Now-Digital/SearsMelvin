@@ -281,6 +281,20 @@
         .product-info { padding-top: 0.5rem; }
         .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.5rem; }
         .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
+        /* Tablet price under the title. The phone bar is the price at
+           1024px and below, but it stays hidden until the intro quote
+           button scrolls away, so a tall tablet can show the title with
+           no price. This line covers that gap up to 1023px, including
+           744px. It uses the phone bar's text, and it hides while the
+           bar is on screen so the price is never shown twice. Desktop
+           at 1024px and above keeps the summary. */
+        .product-title-price { display: none; margin: -0.35rem 0 0.85rem; font-family: var(--sm-font-body); font-size: var(--sm-text-price); font-weight: var(--sm-weight-body-strong); font-variant-numeric: tabular-nums; line-height: 1.15; color: var(--sm-color-text); }
+        .product-title-vat { font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); color: var(--sm-color-text-muted); }
+        #productTitleFrom[hidden] { display: none !important; }
+        @media (max-width: 1023px) {
+            .product-title-price:not([hidden]) { display: block; }
+            body:has(.mobile-bottom-bar.is-visible) .product-title-price { display: none !important; }
+        }
         
 
         .product-description { font-size: 1rem; line-height: 1.8; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
@@ -1090,7 +1104,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261112a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261116a">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -1211,6 +1225,9 @@
             <div class="product-info">
                 <span class="product-category animate-in" id="productCategory">Memorial</span>
                 <h1 class="animate-in animate-delay-1" id="productName">Memorial</h1>
+                <p class="product-title-price" id="productTitlePrice" hidden>
+                    <span id="productTitleFrom">From </span><span id="productTitleAmount"></span><span class="product-title-vat">, inc. VAT</span>
+                </p>
                 <p class="product-lead animate-in animate-delay-2" id="productLead">Hand-finished memorial, professionally installed.</p>
                 <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
@@ -2625,15 +2642,23 @@
             var slot = document.getElementById('mobileBarPrice');
             var amount = document.getElementById('mobileBarAmount');
             var fromWord = document.getElementById('mobileBarFrom');
+            var titleSlot = document.getElementById('productTitlePrice');
+            var titleAmount = document.getElementById('productTitleAmount');
+            var titleFrom = document.getElementById('productTitleFrom');
             if (!slot || !amount) return;
             if (!(total > 0)) {
                 slot.hidden = true;
+                if (titleSlot) titleSlot.hidden = true;
                 return;
             }
             if (!mobileGuideSettled) mobileGuideTotal = total;
             amount.textContent = formatBarPrice(total);
             if (fromWord) fromWord.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
             slot.hidden = false;
+            // Same painted figure. No second total.
+            if (titleAmount) titleAmount.textContent = amount.textContent;
+            if (titleFrom) titleFrom.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
+            if (titleSlot) titleSlot.hidden = false;
         }
 
         // ==================== GALLERY VIEWS ====================

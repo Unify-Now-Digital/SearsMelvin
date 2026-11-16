@@ -1715,6 +1715,49 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   }
 }
 
+/* At 1024px the full nav clips the showroom number to "020 38".
+   901–1024px only: the number's right edge sat near 1084px.
+   1100px and above already clears it. The logo stays at least 240px
+   wide so the side rules remain. The number and the tel link are unchanged. */
+@media (max-width: 1024px) and (min-width: 901px) {
+  html body #navbar {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  html body #navbar .logo img {
+    width: 240px;
+    height: 60px;
+  }
+  html body #navbar .nav-links {
+    gap: 0.15rem !important;
+  }
+  html body #navbar .nav-links a {
+    font-size: 0.8125rem;
+  }
+  html body #navbar .nav-links .nav-cta {
+    padding: 0.5rem 0.55rem !important;
+  }
+  html body #navbar .nav-accred {
+    font-size: 0.68rem;
+  }
+}
+
+/* One visible coverage line. Greater London only.
+   On /contact the page header is hidden at 768px, so the compact
+   copy in the form takes over and the header copy goes with the header. */
+html body p.service-area-line {
+  margin: 0.75rem 0 0;
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body);
+  line-height: 1.5;
+  color: var(--sm-color-text);
+}
+html body p.service-area-line-compact { display: none; }
+@media (max-width: 768px) {
+  html body .form-header p.service-area-line-compact { display: block; }
+}
+
 /* ==========================================================================
    Phone footer, option A. Centred, with rules between the groups.
    Body text is 14–16px. The accreditation line and the legal block are
