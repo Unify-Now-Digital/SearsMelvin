@@ -5,6 +5,8 @@
     "/memorials",
     "/memorials/*",
     "/memorials.html",
+    "/areas",
+    "/areas/*",
     "/memorial",
     "/memorial.html",
     "/partner",

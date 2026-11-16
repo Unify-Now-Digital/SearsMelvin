@@ -7,6 +7,7 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 import { PAGE_LASTMOD } from "./_page-lastmod.js";
+import { areaPaths } from "./_area-pages.js";
 
 const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
@@ -79,6 +80,15 @@ export async function onRequestGet({ env }) {
     }),
   );
 
+  const areaEntries = areaPaths().map((path) =>
+    urlEntry({
+      loc: BASE + path,
+      lastmod: pageLastmod(path) || pageLastmod("/areas"),
+      priority: path === "/areas" ? "0.7" : "0.6",
+      changefreq: "monthly",
+    }),
+  );
+
   const productEntries = products.map((p) =>
     urlEntry({
       loc: `${BASE}/memorials/${encodeURIComponent(p.slug)}`,
@@ -91,7 +101,7 @@ export async function onRequestGet({ env }) {
   const xml =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    [...staticEntries, ...productEntries].join("\n") +
+    [...staticEntries, ...areaEntries, ...productEntries].join("\n") +
     `\n</urlset>\n`;
 
   return new Response(xml, {
