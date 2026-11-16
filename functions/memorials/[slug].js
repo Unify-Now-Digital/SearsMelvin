@@ -141,7 +141,7 @@ function buildSchema(product, canonicalUrl, description, imageUrl) {
       "@type": "ListItem",
       position: 3,
       name: catName,
-      item: `${BASE}/memorials/type/${encodeURIComponent(catSlug)}`,
+      item: `${BASE}/memorials?type=${encodeURIComponent(catSlug)}`,
     });
     crumbs.push({ "@type": "ListItem", position: 4, name: product.name, item: canonicalUrl });
   } else {
@@ -161,7 +161,7 @@ function breadcrumbHtml(product) {
   const catSlug = safeSlug(product.product_categories?.slug);
   const catName = String(product.product_categories?.name || "").replace(/\s+/g, " ").trim();
   const typeLink = catSlug && catName
-    ? `<a href="/memorials/type/${catSlug}">${escapeHtml(catName)}</a><span>/</span>`
+    ? `<a href="/memorials?type=${catSlug}">${escapeHtml(catName)}</a><span>/</span>`
     : "";
   return `<a href="/">Home</a><span>/</span><a href="/memorials">Memorials</a><span>/</span>${typeLink}<span>${escapeHtml(product.name || "Memorial")}</span>`;
 }
@@ -176,7 +176,7 @@ function relatedHtml(related, product) {
   const catSlug = safeSlug(product?.product_categories?.slug);
   const catName = String(product?.product_categories?.name || "memorials").replace(/\s+/g, " ").trim();
   const seeAll = catSlug
-    ? `<p><a href="/memorials/type/${catSlug}">See all ${escapeHtml(catName.toLowerCase())}</a></p>`
+    ? `<p><a href="/memorials?type=${catSlug}">See all ${escapeHtml(catName.toLowerCase())}</a></p>`
     : "";
   if (!links.length && !seeAll) return "";
   const heading = links.length ? "<h2>Related designs</h2>" : "";

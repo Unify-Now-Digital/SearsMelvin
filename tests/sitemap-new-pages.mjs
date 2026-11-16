@@ -5,12 +5,11 @@ import { CATEGORIES } from "../data/categories.js";
 import { PAGE_LASTMOD } from "../functions/_page-lastmod.js";
 
 const source = readFileSync(new URL("../functions/sitemap.xml.js", import.meta.url), "utf8");
-assert.match(source, /CATEGORIES/);
+assert.doesNotMatch(source, /CATEGORIES|memorials\/type|\?type=/);
 assert.doesNotMatch(source, /\/areas\//);
 
 for (const category of CATEGORIES) {
-  const path = `/memorials/type/${category.slug}`;
-  assert.match(PAGE_LASTMOD[path], /^\d{4}-\d{2}-\d{2}$/, path);
+  assert.equal(PAGE_LASTMOD[`/memorials/type/${category.slug}`], undefined);
 }
 
 globalThis.fetch = async () => Response.json([
@@ -21,10 +20,13 @@ const response = await onRequestGet({ env: {} });
 assert.equal(response.status, 200);
 const xml = await response.text();
 for (const category of CATEGORIES) {
-  assert.match(xml, new RegExp(`<loc>https://searsmelvin\\.co\\.uk/memorials/type/${category.slug}</loc>`));
+  assert.doesNotMatch(xml, new RegExp(`/memorials/type/${category.slug}`));
+  assert.doesNotMatch(xml, new RegExp(`[?&]type=${category.slug}`));
 }
 assert.match(xml, /<loc>https:\/\/searsmelvin\.co\.uk\/memorials\/the-castell<\/loc>/);
+assert.match(xml, /<loc>https:\/\/searsmelvin\.co\.uk\/memorials<\/loc>/);
 assert.doesNotMatch(xml, /\/areas\//);
-assert.match(xml, /<lastmod>2026-11-16<\/lastmod>/);
+assert.doesNotMatch(xml, /\?type=/);
+assert.match(xml, /<lastmod>2026-11-09<\/lastmod>/);
 
 console.log("sitemap-new-pages: ok");

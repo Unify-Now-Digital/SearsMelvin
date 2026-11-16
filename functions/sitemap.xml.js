@@ -7,7 +7,6 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 import { PAGE_LASTMOD } from "./_page-lastmod.js";
-import { CATEGORIES } from "../data/categories.js";
 
 const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
@@ -80,15 +79,6 @@ export async function onRequestGet({ env }) {
     }),
   );
 
-  const categoryEntries = CATEGORIES.map((category) =>
-    urlEntry({
-      loc: BASE + "/memorials/type/" + category.slug,
-      lastmod: pageLastmod("/memorials/type/" + category.slug),
-      priority: "0.8",
-      changefreq: "weekly",
-    }),
-  );
-
   const productEntries = products.map((p) =>
     urlEntry({
       loc: `${BASE}/memorials/${encodeURIComponent(p.slug)}`,
@@ -101,7 +91,7 @@ export async function onRequestGet({ env }) {
   const xml =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    [...staticEntries, ...categoryEntries, ...productEntries].join("\n") +
+    [...staticEntries, ...productEntries].join("\n") +
     `\n</urlset>\n`;
 
   return new Response(xml, {
