@@ -16,7 +16,7 @@ it whenever you audit or fix something in that list.
   `/api/submit` (all public form submissions), `/api/brochure` (brochure download log + "email me a copy"; GHL tag `Brochure`), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
   `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
-  plus `/memorials/:slug`, `/memorials/type/:type` (category pages), and `/sitemap.xml`. `/areas*` still 301s to `/memorials`. `/api/partner-auth` and
+  plus `/memorials/:slug`, `/memorials/type/:type` (301 to `/memorials?type=<slug>`), and `/sitemap.xml`. `/areas*` still 301s to `/memorials`. `/api/partner-auth` and
   `/api/partner-orders` are retired stubs that return **410 Gone**. The
   partner desk is https://partner.searsmelvin.co.uk (other repo/Worker).
 - **Database** — Supabase project **Mason App** (`bfwohzcugtwbhhxdqgme`), shared
@@ -54,6 +54,9 @@ it whenever you audit or fix something in that list.
   `/api/partner-*` portal on this marketing Worker. Leftover `/partner*`
   paths 301 there; website partner APIs return 410.
 - **ClickUp is not part of this site.** Removed in #135.
+- **Category pages are not separate documents.** `/memorials/type/<slug>` 301s to
+  `/memorials?type=<slug>`. The range page checks that filter. The canonical
+  stays `/memorials`. Do not bring back a standalone category template.
 - The legacy `sears-melvin-form` Cloudflare Worker is dead and unreferenced
   (see the audit doc). Do not wire anything back to it.
 

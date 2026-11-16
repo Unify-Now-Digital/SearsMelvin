@@ -1594,13 +1594,13 @@
                 <li class="footer-nav-secondary"><a href="/brochure">Brochure</a></li>
                 <li class="footer-nav-secondary"><a href="/faq">FAQ</a></li>
                 <li class="footer-nav-secondary"><a href="/memorials">Memorials</a></li>
-                <li><a href="/memorials/type/lawn-headstones">Lawn headstones</a></li>
-                <li><a href="/memorials/type/kerb-sets">Kerb sets</a></li>
-                <li><a href="/memorials/type/heart-memorials">Heart memorials</a></li>
-                <li><a href="/memorials/type/book-memorials">Book memorials</a></li>
-                <li><a href="/memorials/type/churchyard-memorials">Churchyard memorials</a></li>
-                <li><a href="/memorials/type/cremation-memorials">Cremation memorials</a></li>
-                <li><a href="/memorials/type/childrens-memorials">Children's memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 <li class="footer-nav-secondary"><a href="/#process">Process</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
@@ -1924,7 +1924,7 @@
                         { '@type': 'ListItem', position: 2, name: 'Memorials', item: 'https://searsmelvin.co.uk/memorials' }
                     ];
                     if (catSlug) {
-                        crumbs.push({ '@type': 'ListItem', position: 3, name: catName, item: 'https://searsmelvin.co.uk/memorials/type/' + encodeURIComponent(catSlug) });
+                        crumbs.push({ '@type': 'ListItem', position: 3, name: catName, item: 'https://searsmelvin.co.uk/memorials?type=' + encodeURIComponent(catSlug) });
                         crumbs.push({ '@type': 'ListItem', position: 4, name: product.name, item: canonicalUrl });
                     } else {
                         crumbs.push({ '@type': 'ListItem', position: 3, name: product.name, item: canonicalUrl });
@@ -1958,7 +1958,7 @@
                 var bc = document.getElementById('breadcrumb');
                 var nextBc = '<a href="/">Home</a><span>/</span>'
                     + '<a href="/memorials">Memorials</a><span>/</span>'
-                    + (catSlug ? '<a href="/memorials/type/' + encodeURIComponent(catSlug) + '">' + esc(catName) + '</a><span>/</span>' : '')
+                    + (catSlug ? '<a href="/memorials?type=' + encodeURIComponent(catSlug) + '">' + esc(catName) + '</a><span>/</span>' : '')
                     + '<span>' + esc(product.name) + '</span>';
                 if (bc && bc.textContent.replace(/\s+/g, ' ').trim() !== textOfHtml(nextBc)) bc.innerHTML = nextBc;
 
@@ -2003,7 +2003,7 @@
                     }).then(function(rows) {
                         if (!Array.isArray(rows) || !rows.length) return;
                         var seeAll = catSlug
-                            ? '<p><a href="/memorials/type/' + encodeURIComponent(catSlug) + '">See all ' + esc(String(catName || 'memorials').toLowerCase()) + '</a></p>'
+                            ? '<p><a href="/memorials?type=' + encodeURIComponent(catSlug) + '">See all ' + esc(String(catName || 'memorials').toLowerCase()) + '</a></p>'
                             : '';
                         var html = '<h2>Related designs</h2><ul>' + rows.map(function(item) {
                             var slug = String(item.slug || '').toLowerCase();

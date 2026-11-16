@@ -10,11 +10,4 @@ export const PAGE_LASTMOD = {
   "/resources": "2026-11-09",
   "/terms": "2026-11-09",
   "/privacy": "2026-11-09",
-  "/memorials/type/lawn-headstones": "2026-11-16",
-  "/memorials/type/kerb-sets": "2026-11-16",
-  "/memorials/type/heart-memorials": "2026-11-16",
-  "/memorials/type/book-memorials": "2026-11-16",
-  "/memorials/type/churchyard-memorials": "2026-11-16",
-  "/memorials/type/cremation-memorials": "2026-11-16",
-  "/memorials/type/childrens-memorials": "2026-11-16",
 };
