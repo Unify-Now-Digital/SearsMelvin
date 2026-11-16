@@ -10,7 +10,6 @@ const files = [
   "product-copy.js",
   "data/categories.js",
   "functions/_business-schema.js",
-  "functions/_seo-document.js",
   "functions/memorials/type/[type].js",
   "functions/sitemap.xml.js",
   "functions/api/submit.js",
@@ -32,7 +31,8 @@ assert.match(privacy, /Registered in England &amp; Wales/);
 
 const home = readFileSync(new URL("index.html", root), "utf8");
 assert.match(home, /Greater London and surrounds/);
-assert.match(home, /class="footer-explore"[\s\S]*\/memorials\/type\/lawn-headstones/);
+assert.match(home, /class="footer-explore"[\s\S]*\/memorials\?type=lawn-headstones/);
+assert.doesNotMatch(home, /\/memorials\/type\//);
 assert.doesNotMatch(home, /href="\/areas"/);
 
 console.log("no-north-london: ok");

@@ -633,6 +633,14 @@
         .type-browse-heading { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin: 0 0 0.6rem; }
         .type-browse-list { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; list-style: none; padding: 0; margin: 0; }
         .type-browse-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 2px; color: var(--color-text); text-decoration: none; }
+        .type-browse-list a[aria-current="page"] { border-color: var(--color-accent); background: var(--color-warm); }
+        .range-links { margin: 1.5rem 0 0; }
+        .range-links:empty { display: none; }
+        .range-links-heading { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin: 0 0 0.75rem; }
+        .range-links section { margin: 0 0 1rem; }
+        .range-links h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-stone); margin: 0 0 0.35rem; }
+        .range-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+        .range-links a { color: var(--color-accent-dark); font-size: 0.95rem; line-height: 1.5; text-decoration: underline; text-underline-offset: 0.18em; }
     </style>
 </head>
 <body>
@@ -753,13 +761,13 @@
             <nav class="type-browse" aria-label="Browse by type">
                 <h2 class="type-browse-heading">Browse by type</h2>
                 <ul class="type-browse-list">
-                <li><a href="/memorials/type/lawn-headstones">Lawn headstones</a></li>
-                <li><a href="/memorials/type/kerb-sets">Kerb sets</a></li>
-                <li><a href="/memorials/type/heart-memorials">Heart memorials</a></li>
-                <li><a href="/memorials/type/book-memorials">Book memorials</a></li>
-                <li><a href="/memorials/type/churchyard-memorials">Churchyard memorials</a></li>
-                <li><a href="/memorials/type/cremation-memorials">Cremation memorials</a></li>
-                <li><a href="/memorials/type/childrens-memorials">Children's memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 </ul>
             </nav>
             <div class="active-filters" id="activeFilters">
@@ -796,6 +804,7 @@
                     </div>
                 </div>
                 <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
+                <nav class="range-links" id="rangeLinks" aria-label="More memorials"></nav>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -997,9 +1006,8 @@
                 state.productsData = productsData;
 
                 renderFilters();
-                renderProducts();
+                if (!applyUrlFilters()) renderProducts();
                 injectItemListJsonLd(productsData);
-                applyUrlFilters();
                 loadShortlistFromStorage();
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -1100,9 +1108,20 @@
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
-            grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
             const matched = sortedCatalogue();
             const shown = matched.slice(0, catalogueLimit);
+            const noResults = document.getElementById('noResults');
+            const nextSlugs = shown.map((product) => {
+                const id = safeId(product.id);
+                const slug = safeSlug(product.slug);
+                const price = parseFloat(product.base_price);
+                if (!id || !slug || !Number.isFinite(price) || price < 0 || price > 1000000) return '';
+                return slug;
+            }).filter(Boolean);
+            const existing = Array.from(grid.querySelectorAll(':scope > a.product-card[data-slug]')).map((card) => card.dataset.slug);
+            const sameCards = existing.length === nextSlugs.length && existing.every((slug, index) => slug === nextSlugs[index]);
+            if (!sameCards) {
+            grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
 
             let productsHTML = '';
             shown.forEach((product, index) => {
@@ -1133,14 +1152,66 @@
                 productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn' + (saved ? ' active' : '') + '" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
             });
 
-            const noResults = document.getElementById('noResults');
             noResults.insertAdjacentHTML('beforebegin', productsHTML);
+            }
             noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
             setMemorialCount(matched.length);
             const more = document.getElementById('catalogueMore');
             if (more) more.hidden = matched.length <= shown.length;
             scheduleCatalogueTrack();
+            syncRangeLinks();
+        }
+
+        const RANGE_TYPE_ORDER = ['lawn-headstones', 'kerb-sets', 'heart-memorials', 'book-memorials', 'churchyard-memorials', 'cremation-memorials', 'childrens-memorials'];
+
+        function rangeLinksHtml(products) {
+            const groups = new Map();
+            products.forEach((product) => {
+                const slug = safeSlug(product.slug);
+                const name = String(product.name || 'Memorial').replace(/\s+/g, ' ').trim().slice(0, 120);
+                if (!slug || !name) return;
+                const type = safeSlug(product.product_categories && product.product_categories.slug) || 'other';
+                const label = String((product.product_categories && product.product_categories.name) || 'Memorials').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Memorials';
+                if (!groups.has(type)) groups.set(type, { label, items: [] });
+                groups.get(type).items.push({ slug, name });
+            });
+            const keys = Array.from(groups.keys()).sort((a, b) => {
+                const ia = RANGE_TYPE_ORDER.indexOf(a);
+                const ib = RANGE_TYPE_ORDER.indexOf(b);
+                return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
+            });
+            if (!keys.length) return '';
+            return '<h2 class="range-links-heading">More memorials</h2>' + keys.map((key) => {
+                const group = groups.get(key);
+                const items = group.items.map((item) => '<li><a href="/memorials/' + item.slug + '">' + escapeHtml(item.name) + '</a></li>').join('');
+                return '<section data-range-type="' + key + '"><h3>' + escapeHtml(group.label) + '</h3><ul>' + items + '</ul></section>';
+            }).join('');
+        }
+
+        function syncRangeLinks() {
+            const nav = document.getElementById('rangeLinks');
+            if (!nav) return;
+            const rendered = {};
+            document.querySelectorAll('#productsGrid > a.product-card[data-slug]').forEach((card) => { rendered[card.dataset.slug] = true; });
+            const seen = {};
+            const rest = [];
+            sortedCatalogue().forEach((product) => {
+                const slug = safeSlug(product.slug);
+                const id = safeId(product.id);
+                const price = parseFloat(product.base_price);
+                if (!slug || !id || seen[slug]) return;
+                if (!Number.isFinite(price) || price < 0 || price > 1000000) return;
+                seen[slug] = true;
+                if (!rendered[slug]) rest.push(product);
+            });
+            const html = rangeLinksHtml(rest);
+            const existing = Array.from(nav.querySelectorAll('a[href^="/memorials/"]')).map((link) => link.getAttribute('href'));
+            const next = [];
+            const found = html.match(/href="([^"]+)"/g) || [];
+            found.forEach((bit) => next.push(bit.slice(6, -1)));
+            if (existing.join('|') === next.join('|')) return;
+            nav.innerHTML = html;
         }
 
         // ==================== STRUCTURED DATA ====================
@@ -1306,6 +1377,7 @@
             catalogueLimit = CATALOGUE_PAGE;
             renderProducts();
             updateActiveFiltersDisplay();
+            syncTypeParam();
             var change = null;
             if (source && source.dataset && source.dataset.filter) {
                 change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
@@ -1319,15 +1391,28 @@
             const container = document.getElementById('activeFilters');
             const hasFilters = state.filters.type.length > 0 || state.filters.colour.length > 0 || state.filters.price.length > 0;
             container.classList.toggle('has-filters', hasFilters);
-            if (!hasFilters) { container.innerHTML = '<span class="active-filters-label">Active filters:</span>'; return; }
+            if (!hasFilters) {
+                container.innerHTML = '<span class="active-filters-label">Active filters:</span>';
+                markTypeLinks();
+                return;
+            }
             let html = '<span class="active-filters-label">Active filters:</span>';
-            state.filters.type.forEach(t => html += '<span class="filter-tag">' + t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
+            state.filters.type.forEach(t => html += '<span class="filter-tag">' + escapeHtml(typeFilterLabel(t)) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
             state.filters.colour.forEach(c => html += '<span class="filter-tag">' + (colourNames[c] || c) + '<button onclick="removeFilter(\'colour\', \'' + c + '\')">&times;</button></span>');
             state.filters.price.forEach(p => {
                 let label = p === 'under-1000' ? 'Under £1,000' : p === 'over-3000' ? 'Over £3,000' : '£' + p.replace('-', ' - £');
                 html += '<span class="filter-tag">' + label + '<button onclick="removeFilter(\'price\', \'' + p + '\')">&times;</button></span>';
             });
             container.innerHTML = html;
+            markTypeLinks();
+        }
+
+        function markTypeLinks() {
+            document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
+                const current = state.filters.type.length === 1 && link.getAttribute('href') === '/memorials?type=' + state.filters.type[0];
+                if (current) link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            });
         }
 
         function removeFilter(type, value) {
@@ -1607,16 +1692,31 @@
         });
 
         // ==================== URL PARAM FILTERS ====================
+        function typeFilterLabel(slug) {
+            const cat = state.categories.find((item) => safeSlug(item.slug) === slug);
+            if (cat && cat.name) return String(cat.name).replace(/\s+/g, ' ').trim();
+            return slug.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+        }
+
+        function syncTypeParam() {
+            const url = new URL(window.location.href);
+            const types = state.filters.type.filter((value) => safeSlug(value) === value);
+            if (types.length === 1) url.searchParams.set('type', types[0]);
+            else url.searchParams.delete('type');
+            const next = url.pathname + url.search + url.hash;
+            const current = window.location.pathname + window.location.search + window.location.hash;
+            if (next !== current) history.replaceState(null, '', next);
+        }
+
         function applyUrlFilters() {
             const params = new URLSearchParams(window.location.search);
-            const typeParam = params.get('type');
-            if (typeParam) {
-                const checkbox = document.querySelector('input[data-filter="type"][value="' + typeParam + '"]');
-                if (checkbox) {
-                    checkbox.checked = true;
-                    applyFilters();
-                }
-            }
+            const typeParam = safeSlug(params.get('type'));
+            if (!typeParam) return false;
+            const checkbox = Array.from(document.querySelectorAll('input[data-filter="type"]')).find((input) => input.value === typeParam);
+            if (!checkbox) return false;
+            checkbox.checked = true;
+            applyFilters();
+            return true;
         }
 
         // ==================== INIT ====================
@@ -1690,13 +1790,13 @@
                 <li><a href="/about">About</a></li>
                 <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
-                <li><a href="/memorials/type/lawn-headstones">Lawn headstones</a></li>
-                <li><a href="/memorials/type/kerb-sets">Kerb sets</a></li>
-                <li><a href="/memorials/type/heart-memorials">Heart memorials</a></li>
-                <li><a href="/memorials/type/book-memorials">Book memorials</a></li>
-                <li><a href="/memorials/type/churchyard-memorials">Churchyard memorials</a></li>
-                <li><a href="/memorials/type/cremation-memorials">Cremation memorials</a></li>
-                <li><a href="/memorials/type/childrens-memorials">Children's memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/care-guide">Care Guide</a></li>
                 <li><a href="/resources">Support</a></li>
