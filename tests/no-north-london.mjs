@@ -13,6 +13,7 @@ const files = [
   "functions/memorials/type/[type].js",
   "functions/sitemap.xml.js",
   "data/boroughs.json",
+  "data/boroughs.cjs",
   "functions/_area-pages.js",
   "functions/areas/[[path]].js",
   "functions/api/submit.js",

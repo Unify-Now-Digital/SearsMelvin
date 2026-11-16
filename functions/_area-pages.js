@@ -7,7 +7,7 @@
  * URLs are listed in _routes.json and omitted from the /areas splat.
  */
 
-import areaData from "../data/boroughs.json" with { type: "json" };
+import areaData from "../data/boroughs.cjs";
 import { CATEGORIES } from "../data/categories.js";
 
 const BASE = "https://searsmelvin.co.uk";
