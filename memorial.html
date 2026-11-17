@@ -281,17 +281,14 @@
         .product-info { padding-top: 0.5rem; }
         .product-category { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.5rem; }
         .product-info h1 { font-size: 2.5rem; margin-bottom: 0.75rem; line-height: 1.2; }
-        /* Tablet price under the title. The phone bar is the price at
-           1024px and below, but it stays hidden until the intro quote
-           button scrolls away, so a tall tablet can show the title with
-           no price. This line covers that gap up to 1023px, including
-           744px. It uses the phone bar's text, and it hides while the
-           bar is on screen so the price is never shown twice. Desktop
-           at 1024px and above keeps the summary. */
+        /* Tablet price under the title, 600px to 1023px only.
+           Phones stay on the phone bar. The line uses the bar's figure
+           and hides while that bar is on screen. Desktop at 1024px and
+           above keeps the summary. */
         .product-title-price { display: none; margin: -0.35rem 0 0.85rem; font-family: var(--sm-font-body); font-size: var(--sm-text-price); font-weight: var(--sm-weight-body-strong); font-variant-numeric: tabular-nums; line-height: 1.15; color: var(--sm-color-text); }
         .product-title-vat { font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); color: var(--sm-color-text-muted); }
         #productTitleFrom[hidden] { display: none !important; }
-        @media (max-width: 1023px) {
+        @media (min-width: 600px) and (max-width: 1023px) {
             .product-title-price:not([hidden]) { display: block; }
             body:has(.mobile-bottom-bar.is-visible) .product-title-price { display: none !important; }
         }
@@ -1104,7 +1101,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261116a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261116b">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -2638,6 +2635,12 @@
             paintMobileBar(total);
         }
 
+        var paintedBarTotal = null;
+
+        function titlePriceInRange() {
+            return window.matchMedia('(min-width: 600px) and (max-width: 1023px)').matches;
+        }
+
         function paintMobileBar(total) {
             var slot = document.getElementById('mobileBarPrice');
             var amount = document.getElementById('mobileBarAmount');
@@ -2645,7 +2648,9 @@
             var titleSlot = document.getElementById('productTitlePrice');
             var titleAmount = document.getElementById('productTitleAmount');
             var titleFrom = document.getElementById('productTitleFrom');
+            paintedBarTotal = total;
             if (!slot || !amount) return;
+            var showTitle = titlePriceInRange();
             if (!(total > 0)) {
                 slot.hidden = true;
                 if (titleSlot) titleSlot.hidden = true;
@@ -2655,10 +2660,15 @@
             amount.textContent = formatBarPrice(total);
             if (fromWord) fromWord.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
             slot.hidden = false;
-            // Same painted figure. No second total.
-            if (titleAmount) titleAmount.textContent = amount.textContent;
+            // Same painted figure, and only inside 600–1023px. No second total.
+            if (titleAmount && showTitle) titleAmount.textContent = amount.textContent;
             if (titleFrom) titleFrom.hidden = mobileGuideSettled && !sameMoney(total, mobileGuideTotal);
-            if (titleSlot) titleSlot.hidden = false;
+            if (titleSlot) titleSlot.hidden = !showTitle;
+        }
+
+        function syncTitlePriceRange() {
+            if (paintedBarTotal == null) return;
+            paintMobileBar(paintedBarTotal);
         }
 
         // ==================== GALLERY VIEWS ====================
@@ -2865,6 +2875,9 @@
                 syncMobileQuoteBar();
             }, { threshold: 0.15 }).observe(intro);
             window.addEventListener('resize', syncMobileQuoteBar);
+            var titlePriceMedia = window.matchMedia('(min-width: 600px) and (max-width: 1023px)');
+            if (titlePriceMedia.addEventListener) titlePriceMedia.addEventListener('change', syncTitlePriceRange);
+            else if (titlePriceMedia.addListener) titlePriceMedia.addListener(syncTitlePriceRange);
             syncMobileQuoteBar();
             var colourLayout = window.matchMedia('(max-width: 768px)');
             if (colourLayout.addEventListener) colourLayout.addEventListener('change', placeStoneColourControls);
