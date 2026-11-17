@@ -1715,11 +1715,8 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   }
 }
 
-/* 901–1024px: the full nav plus the RQMF chip pushed the showroom
-   number past the viewport (its right edge sat near 997px). Tighten
-   the row, and drop the chip only through 1000px, where the number
-   still cannot clear the edge. The logo stays at least 240px. The
-   tel link and the digits are unchanged, and they stay on one line. */
+/* 901–1024px: keep the row on one line. The logo stays at least 240px.
+   The RQMF chip stays visible. The tel link and the digits are unchanged. */
 @media (max-width: 1024px) and (min-width: 901px) {
   html body #navbar {
     padding-left: 8px !important;
@@ -1734,6 +1731,7 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     gap: 0.15rem !important;
   }
   html body #navbar .nav-links a {
+    font-family: var(--sm-font-body);
     font-size: 0.8125rem;
     white-space: nowrap;
   }
@@ -1747,14 +1745,27 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     white-space: nowrap;
   }
   html body #navbar .nav-accred {
+    display: flex;
     font-size: 0.68rem;
     margin-left: 0.35rem;
     margin-right: 0.35rem;
   }
 }
-@media (max-width: 1000px) and (min-width: 901px) {
-  html body #navbar .nav-accred {
-    display: none !important;
+/* 901–1023px only. A smaller DM Sans nav size, and a tighter row gap,
+   lets the full showroom number sit beside the RQMF chip. 1024px and
+   above keep the 13px nav size. */
+@media (max-width: 1023px) and (min-width: 901px) {
+  html body #navbar {
+    gap: 0.15rem;
+  }
+  html body #navbar .nav-links {
+    gap: 0.08rem !important;
+  }
+  html body #navbar .nav-links a:not(.nav-cta):not(.nav-cta-dark):not(.nav-brochure),
+  html body #navbar .nav-links a.nav-cta,
+  html body #navbar .nav-links a[href^="tel:"] {
+    font-family: var(--sm-font-body);
+    font-size: 0.65rem;
   }
 }
 
