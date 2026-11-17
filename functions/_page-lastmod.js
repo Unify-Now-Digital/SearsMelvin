@@ -10,4 +10,5 @@ export const PAGE_LASTMOD = {
   "/resources": "2026-11-09",
   "/terms": "2026-11-09",
   "/privacy": "2026-11-09",
+  "/areas": "2026-11-16",
 };

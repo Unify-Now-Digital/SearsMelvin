@@ -128,12 +128,14 @@ const MUST_INVOKE = [
   "/partner/orders",
   "/sitemap.xml",
   "/supabase-config",
+  "/areas",
+  "/areas/barnet",
   ...INTERNAL,
 ];
 for (const path of MUST_INVOKE) {
   assert.ok(routes.include.some((rule) => ruleMatches(rule, path.replace(/\/$/, "") || "/")), `include misses ${path}`);
 }
-for (const path of ["/", "/about", "/contact", "/index.html", "/data/team.js", "/assets/sears-melvin-brochure.pdf", "/images/installed/x.webp", "/favicon.svg", "/robots.txt", "/permit-checker", "/areas", "/areas/barnet"]) {
+for (const path of ["/", "/about", "/contact", "/index.html", "/data/team.js", "/assets/sears-melvin-brochure.pdf", "/images/installed/x.webp", "/favicon.svg", "/robots.txt", "/permit-checker"]) {
   assert.equal(routes.include.some((rule) => ruleMatches(rule, path)), false, `${path} must stay a static asset or redirect`);
 }
 
