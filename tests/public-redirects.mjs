@@ -6,8 +6,10 @@ import { PAGE_LASTMOD } from "../functions/_page-lastmod.js";
 
 const redirects = readFileSync(new URL("../_redirects", import.meta.url), "utf8");
 assert.match(redirects, /^\/index\.html\s+\/\s+301/m);
-assert.match(redirects, /^\/areas\/\*\s+\/memorials\s+301/m);
-assert.doesNotMatch(redirects, /^\/areas\/\*\s+\/\s+301/m);
+assert.match(redirects, /^\/areas\.html\s+\/areas\s+301/m);
+assert.doesNotMatch(redirects, /^\/areas\s+\/memorials\s+301/m);
+assert.doesNotMatch(redirects, /^\/areas\/\s+\/memorials\s+301/m);
+assert.doesNotMatch(redirects, /^\/areas\/\*\s+\/memorials\s+301/m);
 
 const robots = readFileSync(new URL("../robots.txt", import.meta.url), "utf8");
 assert.match(robots, /^Disallow: \/rest\/$/m);
