@@ -9,7 +9,6 @@
  */
 
 import areaData from "../data/boroughs.cjs";
-import { CATEGORIES } from "../data/categories.js";
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 
 const BASE = "https://searsmelvin.co.uk";
@@ -40,10 +39,10 @@ const AREA_CSS = `
 .area-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 1rem 0; padding: 0; }
 .area-chips a, .area-chips span { display: inline-flex; align-items: center; min-height: 44px; padding: 0.25rem 0.75rem; border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); color: var(--sm-color-text); text-decoration: none; background: var(--sm-color-bg-panel); }
 .area-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0 0; }
-.area-sketch { margin: 0; }
-.area-sketch svg { width: 100%; height: auto; display: block; background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); color: var(--sm-color-text); }
-.area-sketch figcaption { margin: 0.5rem 0 0; color: var(--sm-color-text-muted); font-size: 0.9rem; }
-.area-legend { display: flex; gap: 1rem; margin: 0.5rem 0 0; padding: 0; list-style: none; color: var(--sm-color-text-muted); font-size: 0.9rem; }
+.area-map { position: relative; height: 240px; min-height: 240px; background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); overflow: hidden; }
+.area-map-hold, .area-map-canvas { position: absolute; inset: 0; height: 240px; }
+.area-map-hold { display: flex; align-items: center; justify-content: center; }
+.area-map-hold a { min-height: 44px; display: inline-flex; align-items: center; }
 .area-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; list-style: none; margin: 0; padding: 0; }
 .area-card { border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); background: var(--sm-color-bg-panel); padding: 1rem 1rem 0.75rem; }
 .area-card h3 { font-family: var(--sm-font-display); font-weight: var(--sm-weight-display); font-size: var(--sm-text-card-title); line-height: 1.2; margin: 0.2rem 0 0.5rem; }
@@ -157,66 +156,95 @@ function findCemetery(boroughSlug, cemeterySlug) {
   return cemetery ? { borough, cemetery } : null;
 }
 
-function sketchSvg(points) {
-  const plotted = points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
-  if (!plotted.length) return "";
-  let minLat = Math.min(...plotted.map((point) => point.lat));
-  let maxLat = Math.max(...plotted.map((point) => point.lat));
-  let minLng = Math.min(...plotted.map((point) => point.lng));
-  let maxLng = Math.max(...plotted.map((point) => point.lng));
-  const latPad = Math.max((maxLat - minLat) * 0.18, 0.01);
-  const lngPad = Math.max((maxLng - minLng) * 0.18, 0.01);
-  minLat -= latPad; maxLat += latPad; minLng -= lngPad; maxLng += lngPad;
-  const width = 320;
-  const height = 240;
-  const pad = 18;
-  const used = [];
-  const marks = plotted.map((point) => {
-    let x = pad + ((point.lng - minLng) / (maxLng - minLng)) * (width - pad * 2);
-    let y = pad + ((maxLat - point.lat) / (maxLat - minLat)) * (height - pad * 2);
-    while (used.some((item) => Math.hypot(item.x - x, item.y - y) < 10)) x += 8;
-    used.push({ x, y });
-    return { ...point, x, y };
-  });
-  const dots = marks.map((point) => {
-    const title = `<title>${escapeHtml(point.label)}</title>`;
-    if (point.kind === "showroom") {
-      return `<g>${title}<rect x="${point.x - 5}" y="${point.y - 5}" width="10" height="10" fill="currentColor"/></g>`;
-    }
-    const fill = point.kind === "here" ? "currentColor" : "none";
-    return `<g>${title}<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="5" fill="${fill}" stroke="currentColor" stroke-width="1.5"/></g>`;
-  }).join("");
-  return `<figure class="area-sketch"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Illustrative positions, not a street map"><text x="12" y="18" fill="currentColor" font-size="12">N</text>${dots}</svg><figcaption>Illustrative positions, not a street map</figcaption><ul class="area-legend"><li>Circle: cemetery</li><li>Square: Finchley showroom</li></ul></figure>`;
-}
+const SHOWROOM_MAP = "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB";
 
-function boroughPoints(borough, hereSlug) {
-  const points = [{ lat: SHOWROOM.latitude, lng: SHOWROOM.longitude, label: "Finchley showroom", kind: "showroom" }];
-  for (const cemetery of borough.cemeteries) {
-    if (!hasGeo(cemetery)) continue;
-    points.push({
-      lat: cemetery.latitude,
-      lng: cemetery.longitude,
-      label: cemetery.name,
-      kind: cemetery.slug === hereSlug ? "here" : "cemetery",
+const MAP_BOOT = `<script>
+(function () {
+  var root = document.querySelector(".area-map");
+  if (!root) return;
+  var button = root.querySelector(".area-map-show");
+  var hold = root.querySelector(".area-map-hold");
+  var canvas = root.querySelector(".area-map-canvas");
+  var dataNode = root.querySelector(".area-map-points");
+  if (!button || !hold || !canvas || !dataNode) return;
+  var points = [];
+  try { points = JSON.parse(dataNode.textContent); } catch (e) { points = []; }
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[ch];
     });
   }
-  return points;
+  function fallback() {
+    var link = document.createElement("a");
+    link.href = root.getAttribute("data-fallback") || ${JSON.stringify(SHOWROOM_MAP)};
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open in Google Maps";
+    hold.replaceChildren(link);
+  }
+  function usable(list) {
+    return (list || []).filter(function (point) {
+      return point && typeof point.lat === "number" && typeof point.lng === "number" &&
+        typeof point.href === "string" && point.href.charAt(0) === "/" && point.href.indexOf("//") !== 0;
+    });
+  }
+  function draw(list) {
+    var places = usable(list);
+    if (!places.length || !window.google || !google.maps) { fallback(); return; }
+    hold.hidden = true;
+    canvas.hidden = false;
+    var map = new google.maps.Map(canvas, { mapTypeControl: false, streetViewControl: false, fullscreenControl: false });
+    var bounds = new google.maps.LatLngBounds();
+    var open = null;
+    places.forEach(function (point) {
+      var position = { lat: point.lat, lng: point.lng };
+      bounds.extend(position);
+      var marker = new google.maps.Marker({ map: map, position: position, title: String(point.name || "") });
+      var label = point.href === "/contact" ? "Visit the showroom" : "Cemetery page";
+      var info = new google.maps.InfoWindow({
+        content: "<p><strong>" + esc(point.name) + "</strong></p><p><a href=\\"" + esc(point.href) + "\\">" + label + "</a></p>"
+      });
+      marker.addListener("click", function () {
+        if (open) open.close();
+        info.open({ map: map, anchor: marker });
+        open = info;
+      });
+    });
+    if (places.length === 1) {
+      map.setCenter(bounds.getCenter());
+      map.setZoom(14);
+    } else {
+      map.fitBounds(bounds, 48);
+    }
+  }
+  button.addEventListener("click", function () {
+    if (button.disabled) return;
+    button.disabled = true;
+    fetch("/api/config").then(function (res) { return res.json(); }).then(function (cfg) {
+      var key = cfg && typeof cfg.googleMapsKey === "string" ? cfg.googleMapsKey : "";
+      if (!key) { fallback(); return; }
+      window.__smAreaMapReady = function () {
+        try { draw(points); } catch (e) { fallback(); }
+      };
+      var script = document.createElement("script");
+      script.async = true;
+      script.src = "https://maps.googleapis.com/maps/api/js?key=" + encodeURIComponent(key) + "&loading=async&callback=__smAreaMapReady";
+      script.onerror = fallback;
+      document.head.appendChild(script);
+    }).catch(fallback);
+  });
+})();
+</script>`;
+
+function mapMarker(place, name, href) {
+  if (!hasGeo(place) || !String(href || "").startsWith("/")) return null;
+  return { lat: place.latitude, lng: place.longitude, name, href };
 }
 
-function nearbyPoints(cemetery) {
-  const showroom = { lat: SHOWROOM.latitude, lng: SHOWROOM.longitude, label: "Finchley showroom", kind: "showroom" };
-  if (!hasGeo(cemetery)) return [showroom];
-  const points = [showroom, { lat: cemetery.latitude, lng: cemetery.longitude, label: cemetery.name, kind: "here" }];
-  const nearest = allCemeteries()
-    .filter((item) => item.slug !== cemetery.slug && hasGeo(item))
-    .map((item) => ({ item, miles: milesBetween(cemetery, item) }))
-    .filter((item) => Number.isFinite(item.miles))
-    .sort((a, b) => a.miles - b.miles)
-    .slice(0, 5);
-  for (const item of nearest) {
-    points.push({ lat: item.item.latitude, lng: item.item.longitude, label: item.item.name, kind: "cemetery" });
-  }
-  return points;
+function mapHtml(markers, fallbackUrl) {
+  const clean = markers.filter(Boolean);
+  if (!clean.length) return "";
+  const json = JSON.stringify(clean).replace(/</g, "\\u003c");
+  return `<div class="area-map" data-fallback="${escapeHtml(fallbackUrl)}"><div class="area-map-hold"><button type="button" class="sm-btn sm-btn-secondary area-map-show">Show map</button></div><div class="area-map-canvas" hidden></div><script type="application/json" class="area-map-points">${json}</script></div>`;
 }
 
 function chipsHtml(items) {
@@ -329,10 +357,9 @@ function pageModel(kind, borough, cemetery) {
       const label = count === 1 ? "1 cemetery" : `${count} cemeteries`;
       return `<li class="area-card"><a href="/areas/${item.slug}"><h3>${escapeHtml(item.name)}</h3><p>${label}</p></a></li>`;
     }).join("");
-    const points = [{ lat: SHOWROOM.latitude, lng: SHOWROOM.longitude, label: "Finchley showroom", kind: "showroom" }];
+    const points = [mapMarker(SHOWROOM, "Finchley showroom", "/contact")];
     for (const item of allCemeteries()) {
-      if (!hasGeo(item)) continue;
-      points.push({ lat: item.latitude, lng: item.longitude, label: item.name, kind: "cemetery" });
+      points.push(mapMarker(item, item.name, `/areas/${item.borough.slug}/${item.slug}`));
     }
     return {
       path: "/areas",
@@ -351,7 +378,7 @@ function pageModel(kind, borough, cemetery) {
           `<span>Fixing included</span>`,
         ]),
         heroButtons("/contact", "Request a quote", "#boroughs", "See the boroughs"),
-        `</div>${sketchSvg(points)}</div>`,
+        `</div>${mapHtml(points, SHOWROOM_MAP)}</div>`,
         `<section class="area-section" id="boroughs"><h2>Boroughs</h2><ul class="area-cards">${cards}</ul></section>`,
         bandHtml(),
       ].join(""),
@@ -385,7 +412,10 @@ function pageModel(kind, borough, cemetery) {
           `<span>Fixing included</span>`,
         ]),
         heroButtons("/contact", "Request a quote", "#cemeteries", "See the cemeteries"),
-        `</div>${sketchSvg(boroughPoints(borough))}</div>`,
+        `</div>${mapHtml([
+          mapMarker(SHOWROOM, "Finchley showroom", "/contact"),
+          ...borough.cemeteries.map((item) => mapMarker(item, item.name, `/areas/${borough.slug}/${item.slug}`)),
+        ], `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Cemeteries in ${borough.name}, London`)}`)}</div>`,
         `<section class="area-section" id="cemeteries"><h2>Cemeteries in ${escapeHtml(borough.name)}</h2><ul class="area-cards">${cards}</ul></section>`,
         stepsHtml("How a memorial gets placed"),
         `<!-- products -->`,
@@ -444,7 +474,10 @@ function pageModel(kind, borough, cemetery) {
         `<span>Fixing included</span>`,
       ]),
       heroButtons("/contact", "Request a quote", mapsHref(cemetery.name, postcode, borough.name), "Open in Google Maps"),
-      `</div>${sketchSvg(nearbyPoints(cemetery, borough))}</div>`,
+      `</div>${mapHtml([
+        mapMarker(SHOWROOM, "Finchley showroom", "/contact"),
+        mapMarker(cemetery, cemetery.name, `/areas/${borough.slug}/${cemetery.slug}`),
+      ], mapsHref(cemetery.name, postcode, borough.name))}</div>`,
       `<section class="area-section"><h2>Details</h2><table class="area-details">${rows.map(([label, value]) => `<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join("")}</table></section>`,
       stepsHtml("How a memorial gets placed here"),
       `<!-- products -->`,
@@ -492,7 +525,8 @@ export function renderAreaPage(shellHtml, model, products) {
     throw new Error("area shell missing breadcrumb schema");
   }
   html = html.replace(/<!-- Structured data: Breadcrumbs -->[\s\S]*?<\/script>/, () => `<!-- Structured data: Breadcrumbs -->\n    ${jsonScript(breadcrumbLd)}`);
-  const block = `<main class="area-page">${crumbsHtml(page.crumbs)}<h1>${escapeHtml(page.h1)}</h1>${body}</main>`;
+  const boot = body.includes("area-map-show") ? MAP_BOOT : "";
+  const block = `<main class="area-page">${crumbsHtml(page.crumbs)}<h1>${escapeHtml(page.h1)}</h1>${body}${boot}</main>`;
   html = html.replace(/<header class="page-header about-hero">[\s\S]*?<\/main>/, () => block);
   html = html.replaceAll('href="/about" class="active"', 'href="/about"');
   html = html.replace(/<span class="accred-note">[^<]*NAMM[^<]*<\/span>/g, "");
