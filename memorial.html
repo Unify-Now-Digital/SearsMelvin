@@ -378,6 +378,38 @@
         .colour-tier summary::after { content: '+'; margin-left: auto; font-size: 1.1rem; line-height: 1; font-weight: 400; }
         .colour-tier[open] summary { margin-bottom: 0.9rem; }
         .colour-tier[open] summary::after { content: '−'; }
+        /* Crystal White sits on its own row. The shared premium tag is unchanged. */
+        .colour-tier.colour-tier-crystal {
+            background: var(--sm-color-bg);
+            border: 1px solid var(--sm-color-border-decorative);
+            border-radius: var(--sm-radius-sm);
+            padding: 0.85rem 0.95rem 1rem;
+            margin-top: 0.35rem;
+        }
+        .colour-tier.colour-tier-crystal summary {
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--sm-color-text);
+            font-family: var(--sm-font-body);
+            font-size: var(--sm-text-sm);
+            font-weight: var(--sm-weight-body);
+        }
+        .colour-tier.colour-tier-crystal .colour-crystal-label {
+            color: var(--sm-color-text);
+            font-family: var(--sm-font-body);
+            font-weight: var(--sm-weight-body-strong);
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .colour-tier.colour-tier-crystal .colour-group-note {
+            margin-left: auto;
+            font-family: var(--sm-font-body);
+            font-weight: var(--sm-weight-body-strong);
+            font-variant-numeric: tabular-nums;
+            color: var(--sm-color-text-accent);
+            letter-spacing: 0;
+            text-transform: none;
+        }
 
         /* Visual Size Selector */
         .size-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; padding: 2rem; background: white; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem; position: relative; }
@@ -871,6 +903,34 @@
             }
             .phone-colour-slot .colour-option input:checked + .colour-wrapper .colour-name {
                 font-family: var(--sm-font-body);
+            }
+            .phone-colour-slot .colour-tier.colour-tier-crystal {
+                flex: 0 0 auto;
+                background: var(--sm-color-bg);
+                border: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm);
+                padding: 0.35rem 0.5rem 0.45rem;
+                margin: 0;
+            }
+            .phone-colour-slot .colour-tier.colour-tier-crystal summary {
+                color: var(--sm-color-text);
+                font-family: var(--sm-font-body);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
+            }
+            .phone-colour-slot .colour-tier.colour-tier-crystal .colour-crystal-label {
+                color: var(--sm-color-text);
+                font-family: var(--sm-font-body);
+                font-weight: var(--sm-weight-body-strong);
+                text-transform: none;
+            }
+            .phone-colour-slot .colour-tier.colour-tier-crystal .colour-group-note {
+                color: var(--sm-color-text-accent);
+                font-family: var(--sm-font-body);
+                font-weight: var(--sm-weight-body-strong);
+                letter-spacing: 0;
+                text-transform: none;
             }
             #stoneColourGroup.is-phone-moved {
                 position: absolute;
@@ -2028,9 +2088,26 @@
             }
         }
 
+        // Per-colour surcharge overrides, keyed by stone_colours.slug.
+        // Crystal White is the only override. Every other premium colour keeps the
+        // category amounts below. A category that is not listed uses default.
+        const COLOUR_SURCHARGE_OVERRIDES = Object.freeze({
+            "crystal-white": Object.freeze({
+                "kerb-sets": 1050,
+                "cremation-memorials": 90,
+                "default": 500,
+            }),
+        });
+
         // Premium colour surcharge depends on the product type.
-        function premiumColourSurcharge() {
+        function premiumColourSurcharge(colourSlug) {
             var slug = productData && productData.product_categories ? productData.product_categories.slug : '';
+            var key = String(colourSlug || '').trim().toLowerCase();
+            var override = key ? COLOUR_SURCHARGE_OVERRIDES[key] : undefined;
+            if (override) {
+                if (Object.hasOwn(override, slug)) return override[slug];
+                return override.default;
+            }
             if (slug === 'kerb-sets') return 550;
             if (slug === 'cremation-memorials') return 90;
             return 200;
@@ -2046,7 +2123,7 @@
             function swatch(c) {
                 const primary = safeCssColour(c.hex_primary);
                 const highlight = safeCssColour(c.hex_secondary || c.hex_primary);
-                const price = c.is_premium ? surcharge : 0;
+                const price = c.is_premium ? premiumColourSurcharge(c.slug) : 0;
                 // image_url when it is a safe image URL. A failed photo drops back to the gradient.
                 const imageUrl = (typeof stoneColourImageUrl === 'function')
                     ? stoneColourImageUrl(c)
@@ -2066,9 +2143,11 @@
             // Group by tier. Falls back to is_premium for rows from before the
             // tier migration (no tier column → standard/premium only).
             function tierOf(c) { return c.tier || (c.is_premium ? 'premium' : 'standard'); }
-            const standard     = colours.filter(function(c) { return tierOf(c) === 'standard'; });
-            const premium      = colours.filter(function(c) { return tierOf(c) === 'premium'; });
-            const naturalStone = colours.filter(function(c) { return tierOf(c) === 'natural-stone'; });
+            function isCrystalWhite(c) { return String(c && c.slug || '').toLowerCase() === 'crystal-white'; }
+            const standard     = colours.filter(function(c) { return tierOf(c) === 'standard' && !isCrystalWhite(c); });
+            const premium      = colours.filter(function(c) { return tierOf(c) === 'premium' && !isCrystalWhite(c); });
+            const crystal      = colours.filter(isCrystalWhite);
+            const naturalStone = colours.filter(function(c) { return tierOf(c) === 'natural-stone' && !isCrystalWhite(c); });
 
             function plainGroup(label, list) {
                 return '<div class="colour-group"><span class="colour-group-label">' + label + '</span>' + row(list) + '</div>';
@@ -2082,11 +2161,22 @@
                      + '</summary>' + row(list) + '</details>';
             }
 
+            function crystalGroup(list) {
+                var price = premiumColourSurcharge(list[0].slug);
+                var label = list[0].name || 'Crystal White';
+                var open = window.matchMedia('(min-width: 769px)').matches ? ' open' : '';
+                return '<details class="colour-tier colour-tier-crystal"' + open + '><summary>'
+                    + '<span class="colour-crystal-label">' + esc(label) + '</span>'
+                    + '<span class="colour-group-note">+' + formatGbp(price) + '</span>'
+                    + '</summary>' + row(list) + '</details>';
+            }
+
             let html;
-            if (standard.length && (premium.length || naturalStone.length)) {
+            if (crystal.length || (standard.length && (premium.length || naturalStone.length))) {
                 html = '';
                 if (standard.length)     html += plainGroup('Standard', standard);
                 if (premium.length)      html += premiumGroup('Additional stone colours', 'Additional', premium);
+                if (crystal.length)      html += crystalGroup(crystal);
                 if (naturalStone.length) html += premiumGroup('Natural stone', 'Natural stone', naturalStone);
             } else {
                 // No premium colours yet (e.g. before the migration runs) — flat list.
@@ -2364,7 +2454,7 @@
             if (state.colourPrice > 0) {
                 colourRow.style.display = 'flex';
                 document.getElementById('priceColourLabel').textContent = `Additional stone colour (${name})`;
-                document.getElementById('priceColourAmount').textContent = `+£${state.colourPrice}`;
+                document.getElementById('priceColourAmount').textContent = '+' + formatGbp(state.colourPrice);
             } else {
                 colourRow.style.display = 'none';
             }
@@ -2749,7 +2839,7 @@
             })();
             const colourName = document.getElementById('selectedColourName').textContent;
             document.getElementById('qsColour').textContent = state.colourPrice > 0
-                ? `${colourName} (+£${state.colourPrice})`
+                ? `${colourName} (+${formatGbp(state.colourPrice)})`
                 : colourName;
             document.getElementById('qsSize').textContent   = document.getElementById('selectedSizeName').textContent || '—';
 

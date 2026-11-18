@@ -12,7 +12,7 @@ const token = "b".repeat(32);
 const storedLines = [
   { name: "Kerb Infill — Chippings (White)", price: 250 },
 ];
-const storedProduct = {
+let storedProduct = {
   name: "The Charnwood",
   slug: "the-charnwood",
   type: "Kerb Sets",
@@ -21,7 +21,7 @@ const storedProduct = {
   addons: ["Kerb Infill — Chippings (White)"],
   addonLineItems: storedLines,
 };
-const storedValue = 4200;
+let storedValue = 4200;
 let catalogueReads = 0;
 
 globalThis.fetch = async (input, init = {}) => {
@@ -72,5 +72,39 @@ assert.equal(payload.quote.value, storedValue);
 assert.equal(payload.quote.product.price, 4200);
 assert.deepEqual(payload.quote.product.addonLineItems, storedLines);
 assert.equal(catalogueReads, 0, "loading a saved quote must not read the catalogue or re-price");
+
+// A saved Crystal White line stays at the price on the order. get-quote does not reprice it.
+storedProduct = {
+  name: "The Castell",
+  slug: "the-castell",
+  type: "Lawn Headstones",
+  colour: "Crystal White",
+  colourSlug: "crystal-white",
+  price: 1650,
+  addons: ["Additional stone colour — Crystal White"],
+  addonLineItems: [{ name: "Additional stone colour — Crystal White", price: 200 }],
+};
+storedValue = 1650;
+catalogueReads = 0;
+const crystalResponse = await onRequest({
+  env,
+  request: new Request("https://searsmelvin.co.uk/api/quotes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "https://searsmelvin.co.uk",
+      "CF-Connecting-IP": "203.0.113.23",
+    },
+    body: JSON.stringify({ action: "get-quote", token }),
+  }),
+});
+const crystalPayload = await crystalResponse.json();
+assert.equal(crystalResponse.status, 200);
+assert.equal(crystalPayload.quote.value, 1650);
+assert.equal(crystalPayload.quote.product.price, 1650);
+assert.deepEqual(crystalPayload.quote.product.addonLineItems, [
+  { name: "Additional stone colour — Crystal White", price: 200 },
+]);
+assert.equal(catalogueReads, 0, "a saved Crystal White quote is not repriced on load");
 
 console.log("saved quote load test passed");
