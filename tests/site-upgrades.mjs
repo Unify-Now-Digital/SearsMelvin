@@ -30,9 +30,13 @@ assert.equal(up.visibleTeam(team, "www.searsmelvin.co.uk").filter((m) => m.place
 assert.equal(up.visibleTeam(team, "preview.workers.dev").length, team.length);
 assert.match(up.teamHtml([{ name: "<b>x</b>", role: "r", line: "l" }]), /&lt;b&gt;/);
 
-// Listing cards carry the price honesty line.
+// Product cards no longer put a permit line under the price.
 const listing = readFileSync("memorials.html", "utf8");
-assert.ok(listing.includes("Cemetery permit fees are extra and vary by cemetery."));
+const serverCards = readFileSync("functions/memorials.js", "utf8");
+assert.ok(!listing.includes("product-price-note"));
+assert.ok(!listing.includes("Cemetery permit fees are extra and vary by cemetery."));
+assert.ok(!serverCards.includes("product-price-note"));
+assert.ok(!serverCards.includes("Cemetery permit fees are extra and vary by cemetery."));
 
 // /about and /brochure exist, and the main public navigation stays consistent.
 assert.ok(existsSync("about.html") && existsSync("brochure.html"));
