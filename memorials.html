@@ -634,13 +634,6 @@
         .type-browse-list { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; list-style: none; padding: 0; margin: 0; }
         .type-browse-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 2px; color: var(--color-text); text-decoration: none; }
         .type-browse-list a[aria-current="page"] { border-color: var(--color-accent); background: var(--color-warm); }
-        .range-links { margin: 1.5rem 0 0; }
-        .range-links:empty { display: none; }
-        .range-links-heading { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin: 0 0 0.75rem; }
-        .range-links section { margin: 0 0 1rem; }
-        .range-links h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-stone); margin: 0 0 0.35rem; }
-        .range-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
-        .range-links a { color: var(--color-accent-dark); font-size: 0.95rem; line-height: 1.5; text-decoration: underline; text-underline-offset: 0.18em; }
     </style>
 </head>
 <body>
@@ -803,7 +796,6 @@
                     </div>
                 </div>
                 <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
-                <nav class="range-links" id="rangeLinks" aria-label="More memorials"></nav>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -1159,58 +1151,6 @@
             const more = document.getElementById('catalogueMore');
             if (more) more.hidden = matched.length <= shown.length;
             scheduleCatalogueTrack();
-            syncRangeLinks();
-        }
-
-        const RANGE_TYPE_ORDER = ['lawn-headstones', 'kerb-sets', 'heart-memorials', 'book-memorials', 'churchyard-memorials', 'cremation-memorials', 'childrens-memorials'];
-
-        function rangeLinksHtml(products) {
-            const groups = new Map();
-            products.forEach((product) => {
-                const slug = safeSlug(product.slug);
-                const name = String(product.name || 'Memorial').replace(/\s+/g, ' ').trim().slice(0, 120);
-                if (!slug || !name) return;
-                const type = safeSlug(product.product_categories && product.product_categories.slug) || 'other';
-                const label = String((product.product_categories && product.product_categories.name) || 'Memorials').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Memorials';
-                if (!groups.has(type)) groups.set(type, { label, items: [] });
-                groups.get(type).items.push({ slug, name });
-            });
-            const keys = Array.from(groups.keys()).sort((a, b) => {
-                const ia = RANGE_TYPE_ORDER.indexOf(a);
-                const ib = RANGE_TYPE_ORDER.indexOf(b);
-                return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
-            });
-            if (!keys.length) return '';
-            return '<h2 class="range-links-heading">More memorials</h2>' + keys.map((key) => {
-                const group = groups.get(key);
-                const items = group.items.map((item) => '<li><a href="/memorials/' + item.slug + '">' + escapeHtml(item.name) + '</a></li>').join('');
-                return '<section data-range-type="' + key + '"><h3>' + escapeHtml(group.label) + '</h3><ul>' + items + '</ul></section>';
-            }).join('');
-        }
-
-        function syncRangeLinks() {
-            const nav = document.getElementById('rangeLinks');
-            if (!nav) return;
-            const rendered = {};
-            document.querySelectorAll('#productsGrid > a.product-card[data-slug]').forEach((card) => { rendered[card.dataset.slug] = true; });
-            const seen = {};
-            const rest = [];
-            sortedCatalogue().forEach((product) => {
-                const slug = safeSlug(product.slug);
-                const id = safeId(product.id);
-                const price = parseFloat(product.base_price);
-                if (!slug || !id || seen[slug]) return;
-                if (!Number.isFinite(price) || price < 0 || price > 1000000) return;
-                seen[slug] = true;
-                if (!rendered[slug]) rest.push(product);
-            });
-            const html = rangeLinksHtml(rest);
-            const existing = Array.from(nav.querySelectorAll('a[href^="/memorials/"]')).map((link) => link.getAttribute('href'));
-            const next = [];
-            const found = html.match(/href="([^"]+)"/g) || [];
-            found.forEach((bit) => next.push(bit.slice(6, -1)));
-            if (existing.join('|') === next.join('|')) return;
-            nav.innerHTML = html;
         }
 
         // ==================== STRUCTURED DATA ====================

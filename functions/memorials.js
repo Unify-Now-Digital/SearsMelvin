@@ -1,7 +1,6 @@
-/** Server-render memorial links so a crawler that does not run JavaScript can reach every design. */
+/** Server-render the first page of memorial cards. Further designs stay on the grid behind "Show more memorials". */
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
-import { CATEGORIES } from "../data/categories.js";
 
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
 
@@ -67,7 +66,6 @@ async function fetchCatalogue(env) {
 }
 
 const CARD_PAGE = 24;
-const TYPE_ORDER = CATEGORIES.map((category) => category.slug);
 
 export function listableProducts(products) {
   const seen = new Set();
@@ -84,38 +82,12 @@ export function listableProducts(products) {
   return out;
 }
 
-export function renderRangeLinks(products) {
-  const groups = new Map();
-  for (const product of products || []) {
-    const slug = safeSlug(product.slug);
-    const name = String(product.name || "Memorial").replace(/\s+/g, " ").trim().slice(0, 120);
-    if (!slug || !name) continue;
-    const type = safeSlug(product.product_categories?.slug) || "other";
-    const label = String(product.product_categories?.name || "Memorials").replace(/\s+/g, " ").trim().slice(0, 120) || "Memorials";
-    if (!groups.has(type)) groups.set(type, { label, items: [] });
-    groups.get(type).items.push({ slug, name });
-  }
-  const keys = [...groups.keys()].sort((a, b) => {
-    const ia = TYPE_ORDER.indexOf(a);
-    const ib = TYPE_ORDER.indexOf(b);
-    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
-  });
-  if (!keys.length) return "";
-  const sections = keys.map((key) => {
-    const group = groups.get(key);
-    const items = group.items.map((item) => `<li><a href="/memorials/${item.slug}">${escapeHtml(item.name)}</a></li>`).join("");
-    return `<section data-range-type="${key}"><h3>${escapeHtml(group.label)}</h3><ul>${items}</ul></section>`;
-  }).join("");
-  return `<h2 class="range-links-heading">More memorials</h2>${sections}`;
-}
-
 export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
   const shown = visible.slice(0, CARD_PAGE);
   const cards = renderCards(shown, colours);
-  const links = renderRangeLinks(visible.slice(CARD_PAGE));
   const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
-  return { grid, links, count: visible.length, more: visible.length > CARD_PAGE };
+  return { grid, count: visible.length, more: visible.length > CARD_PAGE };
 }
 
 function renderCards(products, colours) {
@@ -158,14 +130,13 @@ export async function onRequestGet({ request, env }) {
     const filtered = products.filter((product) => safeSlug(product.product_categories?.slug) === requested);
     if (filtered.length) products = filtered;
   }
-  const { grid, links, count, more } = catalogueInjection(products, catalogue.colours);
+  const { grid, count, more } = catalogueInjection(products, catalogue.colours);
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";
   // The canonical stays the link in the shell (/memorials), including when ?type= is set.
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
-    .on("#rangeLinks", { element(el) { el.setInnerContent(links, { html: true }); } })
     .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
     .on("#filtersShowCount", { element(el) { el.setInnerContent(String(count)); } });
   if (more) rewriter = rewriter.on("#catalogueMore", { element(el) { el.removeAttribute("hidden"); } });
