@@ -63,7 +63,24 @@ function sameChoice(value, row) {
   return normalised && [row?.slug, row?.name].some(candidate => String(candidate || "").toLowerCase() === normalised);
 }
 
-function premiumColourSurcharge(categorySlug) {
+// Per-colour surcharge overrides, keyed by stone_colours.slug.
+// Crystal White is the only override. Every other premium colour keeps the
+// category amounts below. A category that is not listed uses default.
+const COLOUR_SURCHARGE_OVERRIDES = Object.freeze({
+  "crystal-white": Object.freeze({
+    "kerb-sets": 1050,
+    "cremation-memorials": 90,
+    "default": 500,
+  }),
+});
+
+function premiumColourSurcharge(categorySlug, colourSlug) {
+  const key = String(colourSlug || "").trim().toLowerCase();
+  const override = key ? COLOUR_SURCHARGE_OVERRIDES[key] : undefined;
+  if (override) {
+    if (Object.hasOwn(override, categorySlug)) return override[categorySlug];
+    return override.default;
+  }
   if (categorySlug === "kerb-sets") return 550;
   if (categorySlug === "cremation-memorials") return 90;
   return 200;
@@ -134,7 +151,7 @@ export function calculateCanonicalQuoteProduct(rawProduct, catalogue) {
   const sizeAdjustment = money(size?.price_adjustment);
   if (sizeAdjustment) lineItems.push({ name: `${size.size_name || "Selected"} size adjustment`, price: sizeAdjustment });
 
-  const colourPrice = colour.is_premium ? premiumColourSurcharge(categorySlug) : 0;
+  const colourPrice = colour.is_premium ? premiumColourSurcharge(categorySlug, colour.slug) : 0;
   if (colourPrice) lineItems.push({ name: `Additional stone colour — ${colour.name}`, price: colourPrice });
 
   const requestedSlugs = requestedAddonSlugs(rawProduct);
