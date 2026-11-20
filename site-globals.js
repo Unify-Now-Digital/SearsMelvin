@@ -455,7 +455,7 @@
         style.textContent = [
             ':where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #7A6449!important;outline-offset:3px!important;}',
             '@media (max-width:768px){',
-            'body:not(.memorial-page) nav:not(.mobile-bottom-nav){min-height:68px!important;padding:0.75rem 1rem!important;}',
+            'body:not(.memorial-page) nav:not(.mobile-bottom-nav):not(.type-browse){min-height:68px!important;padding:0.75rem 1rem!important;}',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .mobile-menu-btn{width:44px!important;height:44px!important;padding:8px!important;align-items:center!important;justify-content:center!important;}',
             'body:not(.memorial-page) footer:not(.footer-b){padding:1.25rem 1rem 1rem!important;}',
             'body:not(.memorial-page) footer:not(.footer-b) .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
@@ -573,8 +573,27 @@
         document.body.insertBefore(link, document.body.firstChild);
     }
 
+    // The type row is a horizontal scroller. The fade sits on the visible
+    // right edge and drops once the last chip is in view.
+    function syncTypeChips() {
+        var list = document.querySelector('.type-browse-list');
+        var nav = list && list.closest ? list.closest('.type-browse') : null;
+        if (!list || !nav || list.getAttribute('data-sm-chips')) return;
+        list.setAttribute('data-sm-chips', '1');
+        function sync() {
+            var max = list.scrollWidth - list.clientWidth;
+            var atEnd = max <= 2 || list.scrollLeft >= max - 2;
+            nav.classList.toggle('is-scrolled-end', atEnd);
+        }
+        list.addEventListener('scroll', sync, { passive: true });
+        window.addEventListener('resize', sync);
+        if (window.ResizeObserver) new ResizeObserver(sync).observe(list);
+        sync();
+    }
+
     function init() {
         watchChatWidget();
+        syncTypeChips();
         ensureShortlistBadge();
         updateShortlistBadge();
         ensureSkipLink();
