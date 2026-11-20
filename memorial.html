@@ -300,11 +300,17 @@
             .product-container { display: flex; flex-direction: column; gap: 0.75rem; }
             .product-info { display: contents; }
             #productCategory, #productName, #productTitlePrice { order: -1; width: 100%; }
-            .product-gallery { order: 0; width: 100%; }
+            .product-gallery { order: 0; width: 100%; min-width: 0; max-width: 100%; }
             #productName { font-size: 1.85rem; margin-bottom: 0.25rem; }
         }
         @media (max-width: 599px) {
             .product-title-price:not([hidden]) { display: block; }
+            /* The line is in the flow before the price arrives, so the
+               photo does not jump when the figure is painted. */
+            #productTitlePrice[hidden] {
+                display: block !important;
+                visibility: hidden;
+            }
         }
         @media (min-width: 600px) and (max-width: 1023px) {
             .product-title-price:not([hidden]) { display: block; }
@@ -798,7 +804,7 @@
             .quote-modal { max-height: none; overflow: visible; margin: auto 0; }
             .quote-form-row { grid-template-columns: 1fr; }
             .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; padding-top: calc(var(--header-height, 68px) + var(--sm-cookie-stack, 0px) + 0.4rem); }
-            .breadcrumb { font-size: 0.78rem; gap: 0.35rem; flex-wrap: wrap; overflow-wrap: anywhere; }
+            .breadcrumb { font-size: 0.78rem; gap: 0.35rem; flex-wrap: wrap; overflow-wrap: anywhere; min-height: 3.2em; }
             .product-detail { padding: 0.5rem 0.75rem 1rem; }
             .product-container { gap: 1.25rem; }
             .gallery-main { aspect-ratio: 4/3; margin-bottom: 0.6rem; box-shadow: 0 4px 16px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
@@ -1179,7 +1185,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261120e">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120g">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -2146,6 +2152,10 @@
 
         function renderStoneColours(colours) {
             const container = document.getElementById('stoneColourOptions');
+            /* Park the strip in its phone slot before the swatches exist,
+               so they are not painted in the description and then moved. */
+            placeStoneColourControls();
+            if (!container) return;
             if (!colours.length) { container.innerHTML = '<span>No colours available</span>'; return; }
             const surcharge = premiumColourSurcharge();
             // First colour overall is pre-selected (standard colours sort first).
