@@ -326,7 +326,7 @@
         .results-count span { font-weight: 600; color: var(--color-stone); }
         .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--sm-color-bg-surface); color: var(--sm-color-text); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-size: 0.875rem; cursor: pointer; }
         .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
-        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
+        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-family: var(--font-body); font-size: var(--sm-text-md); min-height: var(--sm-control-height); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; color: var(--sm-color-text); }
         .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
         @media (min-width: 901px) {
             .filters-sidebar .filters-scroll { padding-left: 4rem; }
@@ -481,7 +481,7 @@
             .results-count { font-size: 0.8rem; }
             .mobile-filter-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: var(--sm-radius-sm); box-shadow: 0 1px 4px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
             .swatch { width: 44px; height: 44px; }
-            .sort-dropdown select { padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: 0.8rem; max-width: 140px; }
+            .sort-dropdown select { padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: var(--sm-text-md); max-width: none; }
         }
         @media (max-width: 600px) {
             .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
@@ -645,7 +645,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261117a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120c">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 

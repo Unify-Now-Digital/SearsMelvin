@@ -280,7 +280,7 @@
         .trust-bar + .hero, .site-trust-bar + .hero { padding-top: 1.5rem; }
 
         /* Hero */
-        .hero { min-height: 0; display: flex; align-items: center; padding: 2rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: hidden; }
+        .hero { min-height: 0; display: flex; align-items: center; padding: 2rem 2rem 4rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); position: relative; overflow: visible; }
         .hero-content { max-width: 1400px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
         .hero-text { animation: fadeInUp 1s ease forwards; }
         .hero-tagline { font-size: 0.875rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1rem; }
@@ -300,13 +300,14 @@
         .btn-accent { background-color: var(--color-accent); color: white; }
         .btn-accent:hover { background-color: var(--color-stone); }
 
-        .hero-visual { position: relative; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
+        /* width: 100% stops iOS Safari collapsing this grid item to 0. The min size is the floor if the percentage cannot resolve. */
+        .hero-visual { position: relative; width: 100%; max-width: 100%; min-width: 12rem; min-height: 12rem; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
         .hero-image { width: 100%; aspect-ratio: 15/16; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px color-mix(in srgb, var(--sm-color-text) 12%, transparent); position: relative; background: linear-gradient(145deg, var(--sm-color-bg-panel-quiet) 0%, var(--sm-color-bg-panel) 100%); }
         .hero-image svg { width: 100%; height: 100%; object-fit: contain; }
         .hero-image img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
         .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--sm-color-text) 30%, transparent) 100%); pointer-events: none; }
         .hero-image-label { position: absolute; bottom: 0.75rem; left: 0.75rem; right: 0.75rem; color: var(--sm-color-text-inverse); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
-        .hero-guide-price-note { position: relative; z-index: 2; margin-top: 0.75rem; }
+        .hero-guide-price-note { position: static; z-index: 2; display: block; width: auto; max-width: 36rem; margin: 0.75rem 0 0; text-align: center; }
         .form-status-error { display: none; margin: 0 0 0.75rem; padding: 0.75rem 1rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.95rem; }
         .form-status-error.is-visible { display: block; }
         .floating-badge { position: absolute; top: 12px; right: 12px; bottom: auto; width: 140px; height: 140px; background-color: var(--color-accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; animation: float 4s ease-in-out infinite; z-index: 3; }
@@ -709,7 +710,7 @@
       }]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261117a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120c">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>

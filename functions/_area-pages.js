@@ -50,7 +50,10 @@ const AREA_CSS = `
 .area-tag { display: inline-block; margin: 0 0 0.5rem; padding: 0.1rem 0.45rem; border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); font-size: 0.85rem; }
 .area-card p { margin: 0.15rem 0; }
 .area-card .area-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-top: 0.5rem; }
-.area-card .area-links a { min-height: 44px; display: inline-flex; align-items: center; }
+.area-card .area-links a { min-height: 44px; display: inline-flex; align-items: center; color: var(--sm-color-link-on-panel); text-decoration: underline; text-underline-offset: 0.18em; }
+.area-card .area-links a:hover { color: var(--sm-color-link-hover); text-decoration-thickness: 2px; }
+.area-details a { color: var(--sm-color-link-on-panel); text-decoration: underline; text-underline-offset: 0.18em; }
+.area-details a:hover { color: var(--sm-color-link-hover); }
 .area-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .area-steps li { margin: 0; padding-top: 0.75rem; border-top: 1px solid var(--sm-color-border-decorative); }
 .area-step-num { display: block; font-family: var(--sm-font-display); font-size: 1.5rem; }
@@ -64,6 +67,8 @@ const AREA_CSS = `
 .area-band h2, .area-band p { color: var(--sm-color-text-inverse); }
 .area-band a { color: var(--sm-color-text-inverse); }
 .area-band-quote { display: inline-flex; align-items: center; min-height: 44px; padding: 0.75rem 1.25rem; background: var(--sm-color-bg); color: var(--sm-color-text); text-decoration: none; border-radius: var(--sm-radius-sm); }
+.area-band a.area-band-quote { background: var(--sm-color-bg); color: var(--sm-color-text); text-decoration: none; }
+.area-band a.area-band-quote:hover { background: var(--sm-color-bg-panel-quiet); color: var(--sm-color-text); }
 .area-details { width: 100%; border-collapse: collapse; }
 .area-details th, .area-details td { text-align: left; vertical-align: top; padding: 0.7rem 0; border-bottom: 1px solid var(--sm-color-border-decorative); }
 .area-details th { width: 9rem; font-weight: 500; }
