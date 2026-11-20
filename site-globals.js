@@ -16,6 +16,100 @@
         return isMobile() ? 100 : 24;
     }
 
+    // LeadConnector paints the bubble inside a closed shadow tree and
+    // places it from its own position prop (middle-right on this account).
+    // Setting that prop to bottom-right, then pinning the host to a
+    // zero-size corner, is what actually moves the bubble.
+    var CHAT_INNER = 24;
+    var CHAT_PROMPT_H = 176;
+    var CHAT_PROMPT_W = 360;
+    var CHAT_BUBBLE = 84;
+
+    function shownRect(el) {
+        if (!el || !el.getBoundingClientRect) return null;
+        var cs;
+        try { cs = getComputedStyle(el); } catch (e) { return null; }
+        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+        var r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) return null;
+        if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+        return r;
+    }
+
+    function quoteLabel(el) {
+        var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        return text === 'Request your quote' || text === 'Get a quote';
+    }
+
+    function widgetBox(hostBottom, withPrompt) {
+        var vh = window.innerHeight;
+        var vw = window.innerWidth;
+        var bottomY = vh - hostBottom - CHAT_INNER;
+        var height = withPrompt ? CHAT_PROMPT_H : CHAT_BUBBLE;
+        var width = withPrompt ? CHAT_PROMPT_W : CHAT_BUBBLE;
+        var right = vw - 8;
+        return { top: bottomY - height, bottom: bottomY, left: right - width, right: right };
+    }
+
+    function overlaps(a, b) {
+        return a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
+    }
+
+    function chatBlockers() {
+        var nodes = [];
+        var chrome = [
+            document.querySelector('.mobile-bottom-bar.is-visible'),
+            document.querySelector('.price-summary'),
+            document.getElementById('cookieConsent')
+        ];
+        if (isMobile()) chrome.push(document.querySelector('.mobile-bottom-nav'));
+        var i;
+        for (i = 0; i < chrome.length; i++) {
+            var rect = shownRect(chrome[i]);
+            if (rect) nodes.push(rect);
+        }
+        var controls = document.querySelectorAll('a, button');
+        for (i = 0; i < controls.length; i++) {
+            var control = controls[i];
+            if (!quoteLabel(control)) continue;
+            if (control.closest && control.closest('#cookieConsent, #quoteOverlay, .quote-overlay')) continue;
+            var box = shownRect(control);
+            if (box) nodes.push(box);
+        }
+        return nodes;
+    }
+
+    function chatHits(hostBottom, withPrompt) {
+        var box = widgetBox(hostBottom, withPrompt);
+        var blockers = chatBlockers();
+        for (var i = 0; i < blockers.length; i++) {
+            if (overlaps(box, blockers[i])) return true;
+        }
+        return false;
+    }
+
+    function clearance(withPrompt) {
+        var bottom = 16;
+        var vh = window.innerHeight;
+        var cap = Math.round(vh * 0.55);
+        var guard = 0;
+        while (guard < 10 && chatHits(bottom, withPrompt)) {
+            var box = widgetBox(bottom, withPrompt);
+            var blockers = chatBlockers();
+            var next = bottom;
+            for (var i = 0; i < blockers.length; i++) {
+                if (!overlaps(box, blockers[i])) continue;
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[i].top - 12));
+                if (needed > next) next = needed;
+            }
+            if (next <= bottom) next = bottom + 36;
+            bottom = Math.min(next, cap);
+            if (bottom >= cap) break;
+            guard++;
+        }
+        return bottom;
+    }
+
     function isChatWidgetEl(el) {
         if (!el || el.nodeType !== 1) return false;
         var id = (el.id || '').toLowerCase();
@@ -35,21 +129,56 @@
         return false;
     }
 
+    var placingChat = false;
+
+    function pinChatHost(el, bottom) {
+        if (el.position !== 'bottom-right') el.position = 'bottom-right';
+        var px = Math.round(bottom) + 'px';
+        document.documentElement.style.setProperty('--sm-chat-bottom', px);
+        el.style.setProperty('position', 'fixed', 'important');
+        el.style.setProperty('top', 'auto', 'important');
+        el.style.setProperty('left', 'auto', 'important');
+        el.style.setProperty('right', '0px', 'important');
+        el.style.setProperty('bottom', px, 'important');
+        el.style.setProperty('width', '0px', 'important');
+        el.style.setProperty('height', '0px', 'important');
+        el.style.setProperty('margin', '0', 'important');
+        el.style.setProperty('transform', 'translateZ(0)', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+        el.style.setProperty('z-index', '70', 'important');
+    }
+
     function applyWidgetPosition() {
-        var bottom = pickWidgetBottom();
+        if (placingChat) return;
+        placingChat = true;
+        try {
+            var hosts = document.querySelectorAll('chat-widget');
+            if (hosts.length) {
+                var bottom = clearance(true);
+                if (chatHits(bottom, true)) {
+                    for (var h = 0; h < hosts.length; h++) {
+                        if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                    }
+                    bottom = clearance(false);
+                }
+                for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
+            }
+        } catch (e) {}
+        var bottomLegacy = pickWidgetBottom();
         var nodes = document.body ? document.body.children : [];
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
-            if (isChatWidgetEl(el)) {
-                el.style.setProperty('bottom', bottom + 'px', 'important');
-                el.style.setProperty('right', '24px', 'important');
-            }
+            if (!isChatWidgetEl(el) || (el.tagName && el.tagName.toLowerCase() === 'chat-widget')) continue;
+            el.style.setProperty('bottom', bottomLegacy + 'px', 'important');
+            el.style.setProperty('right', '24px', 'important');
         }
-        var deeper = document.querySelectorAll('chat-widget, iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
+        var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
         for (var j = 0; j < deeper.length; j++) {
-            deeper[j].style.setProperty('bottom', bottom + 'px', 'important');
+            if (deeper[j].tagName && deeper[j].tagName.toLowerCase() === 'CHAT-WIDGET') continue;
+            deeper[j].style.setProperty('bottom', bottomLegacy + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');
         }
+        placingChat = false;
         // Heuristic fallback: any small fixed element pinned to the bottom-right
         // corner is almost certainly the chat bubble (regardless of class/tag).
         var direct = document.body ? document.body.children : [];
@@ -70,7 +199,7 @@
             // Don't touch our own injected favourites badge or known nav elements
             if (node.id === 'shortlistNavBtn') continue;
             if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent'))) continue;
-            node.style.setProperty('bottom', bottom + 'px', 'important');
+            node.style.setProperty('bottom', bottomLegacy + 'px', 'important');
             node.style.setProperty('right', '24px', 'important');
         }
     }
@@ -82,6 +211,17 @@
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         window.addEventListener('resize', applyWidgetPosition);
+        var scrollQueued = false;
+        window.addEventListener('scroll', function () {
+            if (scrollQueued) return;
+            scrollQueued = true;
+            var run = function () {
+                scrollQueued = false;
+                applyWidgetPosition();
+            };
+            if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+            else run();
+        }, { passive: true });
         // Reapply periodically for the first 10s — GHL widget often sets inline
         // styles after our observer runs, so re-pin to win the last-write race.
         var ticks = 0;

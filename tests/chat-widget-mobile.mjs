@@ -11,9 +11,22 @@ assert.match(hide[0], /#chat-widget-button,/);
 
 const desktop = css.slice(0, css.indexOf("@media (max-width: 768px)"));
 assert.doesNotMatch(desktop, /chat-widget[^{]*\{[^}]*display:\s*none/, "desktop rules must not hide the chat host");
-assert.doesNotMatch(css, /opacity:\s*0/, "desktop chat must not start invisible");
-assert.doesNotMatch(css, /sm-chat-arrive/, "the delayed fade must stay removed");
-assert.doesNotMatch(css, /pointer-events:\s*none/, "the launcher must stay clickable on desktop");
+
+const anchor = css.match(/html body chat-widget \{([\s\S]*?)\n\}/);
+assert.ok(anchor, "chat host needs a corner anchor");
+assert.match(anchor[1], /opacity:\s*0/);
+assert.match(anchor[1], /pointer-events:\s*auto !important/);
+assert.match(anchor[1], /animation:\s*sm-chat-arrive 1s ease forwards/);
+assert.match(anchor[1], /--sm-chat-bottom/);
+assert.doesNotMatch(anchor[1], /pointer-events:\s*none/);
+assert.doesNotMatch(css, /pointer-events:\s*none/, "the launcher must not disable pointer events");
+assert.doesNotMatch(css, /sm-chat-arrive[^;}]*6s/, "the 6 second delay must stay gone");
+assert.doesNotMatch(css, /PR #[0-9a-fA-F]{3,8}\b/, "a PR number must not look like a hex colour");
+assert.match(css, /@keyframes sm-chat-arrive \{[\s\S]*to \{ opacity: 1; \}/);
+const globals = readFileSync("site-globals.js", "utf8");
+assert.match(globals, /bottom-right/);
+assert.match(globals, /--sm-chat-bottom/);
+assert.match(globals, /showPrompt/);
 
 const pages = readdirSync(".").filter((name) => name.endsWith(".html"));
 let navPages = 0;
