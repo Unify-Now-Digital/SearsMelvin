@@ -77,8 +77,10 @@ const AREA_CSS = `
 }
 @media (max-width: 430px) {
   .area-hero > div { display: flex; flex-direction: column; }
-  .area-hero .area-actions { order: 1; margin-top: 0.75rem; }
-  .area-hero .area-chips { order: 2; }
+  .area-hero .area-actions { display: contents; }
+  .area-hero .area-actions a.sm-btn-primary { order: -2; margin-bottom: 0.75rem; }
+  .area-hero .area-chips { order: -1; }
+  .area-hero .area-actions a.sm-btn-secondary { order: 4; margin-top: 0.75rem; }
 }
 `;
 

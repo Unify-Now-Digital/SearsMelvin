@@ -18,6 +18,9 @@
     // Setting that prop to bottom-right, then pinning the host to a
     // zero-size corner, is what actually moves the bubble.
     var CHAT_INNER = 18;
+    /* The painted bubble sits about 2px higher than this model. Asking for
+       14px leaves a real gap under 18px and clear of the nav. */
+    var CHAT_NAV_GAP = 14;
     var CHAT_PROMPT_H = 176;
     var CHAT_PROMPT_W = 360;
     var CHAT_BUBBLE = 84;
@@ -58,7 +61,6 @@
             document.querySelector('.mobile-bottom-bar.is-visible'),
             document.querySelector('.price-summary')
         ];
-        if (isMobile()) chrome.push(document.querySelector('.mobile-bottom-nav'));
         var i;
         for (i = 0; i < chrome.length; i++) {
             var rect = shownRect(chrome[i]);
@@ -68,11 +70,11 @@
         for (i = 0; i < controls.length; i++) {
             var control = controls[i];
             if (!quoteLabel(control)) continue;
-            if (control.closest && control.closest('#cookieConsent, #quoteOverlay, .quote-overlay')) continue;
+            if (control.closest && control.closest('#cookieConsent, #quoteOverlay, .quote-overlay, nav, #navbar')) continue;
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form button[type="submit"], form input[type="submit"]');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form input, form select, form textarea, form button, .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);
@@ -98,7 +100,7 @@
             if (!rect || rect.bottom < vh - 30) continue;
             if (!chrome || rect.top < chrome.top) chrome = rect;
         }
-        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + 16 - CHAT_INNER)) : 16;
+        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + CHAT_NAV_GAP - CHAT_INNER)) : 16;
         var guard = 0;
         while (guard < 8 && chatHits(bottom, withPrompt)) {
             var blockers = chatBlockers();

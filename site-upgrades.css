@@ -96,7 +96,9 @@ nav#navbar .logo { white-space: nowrap; }
 .sm-brochure-hero > div:last-child { flex: 1; min-width: 240px; }
 .sm-brochure-email { margin-top: 2rem; padding: 1.25rem 1.5rem; background: var(--color-warm, var(--sm-color-bg-panel-quiet)); border: 1px solid var(--color-border, var(--sm-color-border-decorative)); border-radius: 6px; }
 @media (max-width: 768px) {
-  .sm-brochure-email { margin-top: 7rem; }
+  body:has(#brochureRequest) .page-header { padding-top: 0.4rem; padding-bottom: 0.35rem; }
+  .sm-brochure-email { margin-top: 0.5rem; }
+  .sm-brochure-request .sm-brochure-field { margin-bottom: 0.4rem; }
 }
 .sm-brochure-email label span { color: var(--color-text-muted, var(--sm-color-text-muted)); font-size: 0.9rem; }
 .sm-brochure-email-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.6rem; }
