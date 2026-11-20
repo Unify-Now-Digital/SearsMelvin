@@ -140,7 +140,38 @@ body.sm-quote-open iframe[src*="leadconnectorhq"],
 body:has(.quote-overlay.active) chat-widget,
 body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
 
-/* Desktop (769px and up) keeps the launcher visible.
-   PR #262 set opacity 0 and pointer-events none for 6 seconds. The host is a
-   0×0 custom element, so that delay left the bubble invisible and unclickable
-   on the home page. Phones stay hidden in the max-width 768px rule above. */
+/* The launcher fades in over 1 second. Pointer events stay on, so the
+   bubble can be clicked by the time the fade ends. PR 262 held opacity
+   at 0 and pointer events at none for 6 seconds.
+   The host is a closed shadow element. Its own bottom value does not
+   move the bubble. A zero-size fixed host at the corner, with a flat
+   transform, becomes the box the bubble is positioned against.
+   --sm-chat-bottom is the gap under that corner. site-globals.js sets
+   it so the bubble and greeting sit above the price bar and any quote
+   button. Phones stay hidden in the max-width 768px rule above. */
+html body chat-widget {
+    position: fixed !important;
+    top: auto !important;
+    left: auto !important;
+    right: 0 !important;
+    bottom: var(--sm-chat-bottom, 24px) !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    transform: translateZ(0) !important;
+    z-index: 70 !important;
+    pointer-events: auto !important;
+    opacity: 0;
+    animation: sm-chat-arrive 1s ease forwards;
+}
+
+@keyframes sm-chat-arrive {
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html body chat-widget {
+        animation: none;
+        opacity: 1;
+    }
+}
