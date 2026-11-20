@@ -134,6 +134,7 @@ const MEASURE = `(() => {
     accept: acceptBox,
     reject: rejectBox,
     sameSize: !!(acceptBox && rejectBox && Math.abs(acceptBox.w - rejectBox.w) < 1 && Math.abs(acceptBox.h - rejectBox.h) < 1),
+    wordFits: !!(accept && reject && accept.scrollWidth <= accept.clientWidth + 1 && reject.scrollWidth <= reject.clientWidth + 1),
     sameStyle: !!(acceptStyle && rejectStyle && acceptStyle.backgroundColor === rejectStyle.backgroundColor && acceptStyle.color === rejectStyle.color && acceptStyle.fontWeight === rejectStyle.fontWeight),
     privacy: !!(cookieEl && cookieEl.querySelector('a[href="/privacy"]')),
     manage: !!document.getElementById("cookieManage"),
@@ -210,6 +211,7 @@ async function main() {
       if (row.barBtnOverlap > 0) failures.push(`${label}: Get a quote overlap ${row.barBtnOverlap}px`);
       if (row.barOverlap > 0) failures.push(`${label}: phone bar overlap ${row.barOverlap}px`);
       if (!row.sameSize || !row.sameStyle) failures.push(`${label}: Accept and Reject differ`);
+      if (!row.wordFits) failures.push(`${label}: Accept or Reject is clipped`);
       if (!row.privacy || !row.manage) failures.push(`${label}: privacy link or Manage choices missing`);
       if (row.cookie && row.cookie.left > 1) failures.push(`${label}: strip is not full width (left ${row.cookie.left})`);
       if (row.inlineBottom) failures.push(`${label}: first layer set bottom (${row.inlineBottom})`);

@@ -72,7 +72,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form button[type="submit"], form input[type="submit"], .floating-actions button, .floating-actions a');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form button[type="submit"], form input[type="submit"]');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);

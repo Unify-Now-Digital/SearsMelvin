@@ -356,7 +356,6 @@
             .logo { font-size: 1.15rem; gap: 0.5rem; white-space: nowrap; }
             .logo span { display: none; }
             .mobile-menu-btn { display: flex; }
-            .form-row { grid-template-columns: 1fr; }
             .contact-container { gap: 1.25rem; }
             .contact-methods { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
             .contact-method { flex: 1 1 calc(50% - 0.25rem); min-width: 0; padding: 0.7rem 0.8rem; gap: 0.6rem; border-radius: 10px; }
@@ -378,6 +377,15 @@
             .page-header { display: none; }
             .contact-section { padding: 0.6rem 0.85rem 2.5rem; }
             body { padding-bottom: 70px; }
+        }
+        @media (max-width: 640px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        /* On a short phone the full form is taller than the screen. Extra
+           space above it keeps Send Message off the bottom nav instead of
+           leaving the button half covered. */
+        @media (max-width: 480px) {
+            .contact-section { padding-top: 5rem; }
         }
 
         /* Mobile Bottom Nav */

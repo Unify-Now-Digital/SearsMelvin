@@ -328,8 +328,8 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-lead--desk {
 
 html body #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
   display: block;
-  flex: 0 1 auto;
-  min-width: 9.25rem;
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--sm-text-xs);
@@ -339,8 +339,8 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
 
 html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
   display: flex;
-  flex: 1 1 0;
-  min-width: 6rem;
+  flex: 1 1 auto;
+  min-width: max-content;
   gap: var(--sm-space-2);
   margin: 0;
 }
@@ -349,8 +349,9 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-btn {
   flex: 1 1 0;
   min-height: var(--sm-target-min);
   height: var(--sm-target-min);
-  min-width: var(--sm-target-min);
+  min-width: 3.75rem;
   padding: 0 var(--sm-space-2);
+  overflow: visible;
   border-radius: var(--sm-radius-sm);
   font-family: var(--font-body);
   font-size: var(--sm-text-xs);
@@ -372,8 +373,7 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
   font-weight: 500;
   line-height: 1.15;
   text-align: center;
-  white-space: normal;
-  max-width: 6.5rem;
+  white-space: nowrap;
   text-decoration: underline;
 }
 
@@ -384,9 +384,9 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
   }
 }
 
-/* Below 390 a single row would drop the lead under 12px or squeeze the
-   buttons, so the sentence takes the first row and the actions the next. */
-@media (max-width: 374px) {
+/* At 389px and below the sentence takes the first row and the actions
+   the next, so Accept and Reject keep the width of the whole word. */
+@media (max-width: 389px) {
   html body #cookieConsent:not(.is-manage) .sm-cookie-choice {
     flex-wrap: wrap;
   }

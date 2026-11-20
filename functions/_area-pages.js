@@ -75,6 +75,11 @@ const AREA_CSS = `
 @media (max-width: 560px) {
   .area-cards, .area-steps, .area-products { grid-template-columns: 1fr; }
 }
+@media (max-width: 430px) {
+  .area-hero > div { display: flex; flex-direction: column; }
+  .area-hero .area-actions { order: 1; margin-top: 0.75rem; }
+  .area-hero .area-chips { order: 2; }
+}
 `;
 
 export function visibleField(value) {

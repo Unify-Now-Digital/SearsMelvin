@@ -144,7 +144,57 @@
     setSwitch(adsSwitch, adsState, ads);
   }
 
+  function shiftNodes() {
+    var out = [];
+    var kids = doc.body ? doc.body.children : [];
+    var i;
+    for (i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (!el || el.nodeType !== 1) continue;
+      var tag = el.tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'NOSCRIPT') continue;
+      var cs;
+      try { cs = root.getComputedStyle(el); } catch (e) { continue; }
+      if (cs.position === 'fixed' || cs.position === 'sticky' || cs.display === 'none') continue;
+      out.push(el);
+    }
+    return out;
+  }
+
+  // The offset is removed in the same frame, and the in-flow page is held
+  // with a transform so it does not jump. The transform then eases to rest.
+  // A transform does not count as layout shift.
+  function easeStackAway(px) {
+    if (!(px > 1)) return;
+    var reduce = false;
+    try { reduce = root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduce) return;
+    var nodes = shiftNodes();
+    if (!nodes.length) return;
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].style.transition = 'none';
+      nodes[i].style.transform = 'translateY(' + px + 'px)';
+    }
+    if (nodes[0]) nodes[0].getBoundingClientRect();
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].style.transition = 'transform 280ms ease';
+      nodes[i].style.transform = 'translateY(0)';
+    }
+    root.setTimeout(function () {
+      var j;
+      for (j = 0; j < nodes.length; j++) {
+        nodes[j].style.transition = '';
+        nodes[j].style.transform = '';
+      }
+    }, 340);
+  }
+
   function hide() {
+    var px = 0;
+    if (banner.style.display !== 'none' && !banner.classList.contains('is-manage')) {
+      px = Math.round(banner.getBoundingClientRect().height);
+    }
     banner.style.display = 'none';
     banner.classList.remove('is-manage');
     banner.setAttribute('aria-modal', 'false');
@@ -152,6 +202,7 @@
     if (scrim) scrim.classList.remove('is-on');
     doc.body.classList.remove('sm-cookie-manage');
     syncNavOffset();
+    easeStackAway(px);
     syncQuoteBar();
   }
 
