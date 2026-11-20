@@ -9,6 +9,7 @@ const upgrades = read("site-upgrades.css");
 const memorial = read("memorial.html");
 const track = read("track.html");
 const contact = read("contact.html");
+const memorials = read("memorials.html");
 
 assert.match(index, /\.hero-visual\s*\{[^}]*animation:\s*none/);
 assert.match(index, /gioiosa-family-kerb-set-480w\.webp 480w/);
@@ -33,5 +34,12 @@ assert.match(contact, />First name </);
 assert.match(contact, />Enquiry type </);
 assert.doesNotMatch(contact, />First Name </);
 assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
+
+assert.match(memorials, /<h1>Headstones, gravestones and memorials<\/h1>/);
+assert.match(memorials, /<p>Browse our memorials\. Each piece is made to your specification\.<\/p>/);
+assert.doesNotMatch(memorials, /<h1[^>]*class="[^"]*reveal/);
+assert.match(read("chat-widget.css"), /height:\s*80px/);
+assert.match(upgrades, /html body \.mobile-nav-item\.primary span \{[^}]*text-transform:\s*none/);
+assert.match(upgrades, /html body \.mobile-nav-item\.primary \.nav-icon-bg \{[^}]*border-radius:\s*var\(--sm-radius-sm\)/);
 
 console.log("device-review-should-fix: ok");
