@@ -11,6 +11,9 @@ assert.match(hide[0], /#chat-widget-button,/);
 
 const desktop = css.slice(0, css.indexOf("@media (max-width: 768px)"));
 assert.doesNotMatch(desktop, /chat-widget[^{]*\{[^}]*display:\s*none/, "desktop rules must not hide the chat host");
+assert.doesNotMatch(css, /opacity:\s*0/, "desktop chat must not start invisible");
+assert.doesNotMatch(css, /sm-chat-arrive/, "the delayed fade must stay removed");
+assert.doesNotMatch(css, /pointer-events:\s*none/, "the launcher must stay clickable on desktop");
 
 const pages = readdirSync(".").filter((name) => name.endsWith(".html"));
 let navPages = 0;
