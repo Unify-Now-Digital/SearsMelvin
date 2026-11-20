@@ -229,7 +229,7 @@ Use the nine steps. The base is 4px.
 
 The page gutter (`--sm-gutter`) is 20px at 375px wide, and it grows to 64px on a wide screen.
 
-A touch target is at least 44px. A control is 48px tall.
+A touch target is at least 44px wide and 44px tall on a touch screen. A control is 48px tall. A link in a sentence may sit in a row that is 44px tall. Do not shrink a button or a link below 44px to save space on a small phone.
 
 ## 7. Corners
 
@@ -290,7 +290,7 @@ The memorial page phone bar (`.mobile-bottom-bar`) is linen, with a 1px sand rul
 ## 9. Links
 
 1. On linen or white, the link is bronze and underlined.
-2. On sand, the link is dark bronze and underlined.
+2. On sand, the link is dark bronze and underlined. A sand surface includes a cemetery card and the product information column. Related designs, Map, and Official site on those surfaces are dark bronze. Do not use brand bronze there. Dark bronze on sand is 5.66:1.
 3. On ink, the link is linen and underlined. Hover turns it soft bronze.
 4. Hover on a light ground turns the link ink and thickens the underline.
 5. A menu can drop the underline when the group is clearly a menu. The current page still needs a mark (a bronze underline).
@@ -342,7 +342,7 @@ Chips (filters):
 
 1. Use DM Sans 500. Do not use Cormorant for a price.
 2. Write “From £1,450”. Use tabular figures.
-3. Add one line in muted text that says what is included or extra. Example: “Cemetery permit fees are extra and vary by cemetery.”
+3. Add one line in muted text that says what is included or extra. Example: “Cemetery permit fees are extra and vary by cemetery.” On the home page that line sits under the hero photo. It stays visible at every width, including a phone. Do not hide it with a breakpoint. Do not place it outside the hero. The hero must be tall enough for every line. Overflow must not cut it.
 4. The guide-price panel on a product page uses an ink ground, a linen price, and a soft-bronze label.
 5. Do not add a cemetery permit fee to the customer’s guide total.
 
@@ -383,7 +383,7 @@ Chips (filters):
 1. The field ground is white.
 2. The border is 1px bronze (5.33:1 on linen, 5.61:1 on white).
 3. The field is 48px tall. The corner is 2px.
-4. The text is at least 17px, so a phone does not zoom in.
+4. The text is at least 17px, so a phone does not zoom in. This includes every input, textarea, and select. The memorials sort control is one of these. Do not set it below 16px at any breakpoint. Below 16px, iOS Safari zooms the page.
 5. The label sits above the field. Use sentence case. Use DM Sans 500.
 6. Placeholder text uses ink muted.
 7. Focus adds a 2px bronze ring, 2px outside the field, and turns the border ink.
@@ -400,8 +400,9 @@ Chips (filters):
 ### Don’t
 
 1. Do not use a pale grey border on a field.
-2. Do not add a new form on a `/memorials` page. A form submit there can be counted as a lead. The quote form on the product page stays as it is.
-3. Do not use red or green outside form states.
+2. Do not use a sand border on a field or on the memorials sort control. Sand on linen is 1.43:1. It fails as a control boundary. The control border is 1px bronze.
+3. Do not add a new form on a `/memorials` page. A form submit there can be counted as a lead. The quote form on the product page stays as it is.
+4. Do not use red or green outside form states.
 
 ## 14. Header
 
@@ -414,7 +415,8 @@ This is the live header. The ground is linen and the logo is the stacked ink fil
 5. The phone action is `sm-btn--call`. “Get a quote” is the one primary button.
 6. On a phone, put the phone action and the quote action in the ink bottom bar.
 7. Icon buttons are 44px and square.
-8. Focus on linen uses bronze.
+8. The showroom phone stays on one line in the header and in the phone menu, including a narrow fold. Do not let the digits wrap.
+9. Focus on linen uses bronze.
 
 Keep these live hooks when you later change the real header: `#navbar`, `.mobile-menu-btn`, `#mobileNav`, `.nav-brochure`, `#shortlistNavBtn`, `.shortlist-nav-btn`, and the search classes.
 
@@ -533,11 +535,22 @@ The standard is a 4:5 frame on linen. The reference image is `/images/brand/phot
 1. Keep the reference image uncropped.
 2. Use `--sm-color-bg` for the linen ground.
 
+### Home hero
+
+The home hero photo is a real installation. Keep it.
+
+1. The photo box is the full width of its column. Set that width in CSS (`width: 100%`). A grid item with only a maximum width can collapse to 0 on iOS Safari. The price badge then covers the text below.
+2. Give the photo box a minimum width and a minimum height, so it cannot collapse.
+3. The price badge sits on the photo. It must not cover the heading, the lead, or the buttons.
+4. The photo corner is 2px.
+5. The permit line under the photo stays visible. See section 11.
+
 ### Don’t
 
 1. Do not tint the stone.
 2. Do not crop a memorial with a curved top.
 3. Do not apply this frame to a homepage category card.
+4. Do not leave the home hero photo without a width. iOS Safari can draw it at 0.
 
 ## 19. Motion and focus
 
