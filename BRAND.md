@@ -384,7 +384,7 @@ Chips (filters):
 2. The border is 1px bronze (5.33:1 on linen, 5.61:1 on white).
 3. The field is 48px tall. The corner is 2px.
 4. The text is at least 17px, so a phone does not zoom in. This includes every input, textarea, and select. The memorials sort control is one of these. Do not set it below 16px at any breakpoint. Below 16px, iOS Safari zooms the page.
-5. The label sits above the field. Use sentence case. Use DM Sans 500.
+5. The label sits above the field. Use sentence case. Use DM Sans 500. Write “First name”, not “First Name” and not “FIRST NAME”. The same sentence case is used on every form, including contact, the quote form, and order tracking.
 6. Placeholder text uses ink muted.
 7. Focus adds a 2px bronze ring, 2px outside the field, and turns the border ink.
 8. Error uses a 2px error border and a text message. Link the message with `aria-describedby`. Do not use colour as the only cue.
@@ -494,7 +494,7 @@ At 375px the rules stay. They measure about 1.4 device pixels at 1× and about 2
 Do not use a horizontal layout.
 
 1. Do not add a horizontal logo file.
-2. Do not show a horizontal logo on a page or on `/styleguide`.
+2. Do not show a horizontal logo on a page or on `/styleguide`. The order tracking page is included. Its header is linen, with the stacked ink logo. Cards, buttons, and fields on that page use the 2px corner.
 
 The `source-exact` pack is an archive. Do not use it as the master.
 
@@ -544,6 +544,8 @@ The home hero photo is a real installation. Keep it.
 3. The price badge sits on the photo. It must not cover the heading, the lead, or the buttons.
 4. The photo corner is 2px.
 5. The permit line under the photo stays visible. See section 11.
+6. Do not fade the hero photo in. It is the first picture on the page. A fade holds that picture back.
+7. The price badge is a 2px ink badge. It is not a circle. The words stay: From, the price, and Fully installed.
 
 ### Don’t
 

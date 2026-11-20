@@ -299,6 +299,16 @@
         .product-title-price { display: none; margin: -0.35rem 0 0.85rem; font-family: var(--sm-font-body); font-size: var(--sm-text-price); font-weight: var(--sm-weight-body-strong); font-variant-numeric: tabular-nums; line-height: 1.15; color: var(--sm-color-text); }
         .product-title-vat { font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body); color: var(--sm-color-text-muted); }
         #productTitleFrom[hidden] { display: none !important; }
+        @media (max-width: 768px) {
+            .product-container { display: flex; flex-direction: column; gap: 0.75rem; }
+            .product-info { display: contents; }
+            #productCategory, #productName, #productTitlePrice { order: -1; width: 100%; }
+            .product-gallery { order: 0; width: 100%; }
+            #productName { font-size: 1.85rem; margin-bottom: 0.25rem; }
+        }
+        @media (max-width: 599px) {
+            .product-title-price:not([hidden]) { display: block; }
+        }
         @media (min-width: 600px) and (max-width: 1023px) {
             .product-title-price:not([hidden]) { display: block; }
             body:has(.mobile-bottom-bar.is-visible) .product-title-price { display: none !important; }
@@ -1172,7 +1182,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261120c">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -2738,7 +2748,9 @@
         var paintedBarTotal = null;
 
         function titlePriceInRange() {
-            return window.matchMedia('(min-width: 600px) and (max-width: 1023px)').matches;
+            var phone = window.matchMedia('(max-width: 599px)').matches;
+            var tablet = window.matchMedia('(min-width: 600px) and (max-width: 1023px)').matches;
+            return phone || tablet;
         }
 
         function paintMobileBar(total) {

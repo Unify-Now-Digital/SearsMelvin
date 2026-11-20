@@ -396,7 +396,7 @@ html body main p { max-width: var(--sm-measure); }
 
 /* Cookie banner text (shown on first visit) */
 html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
-html body .floating-badge { background-color: var(--sm-accent-aa); }
+html body .floating-badge { background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse); border-radius: var(--sm-radius-sm); }
 html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }
 @media (max-width: 320px) {
   html body .mobile-bottom-nav a.mobile-nav-item:last-child { padding-left: 0; padding-right: 0; }
@@ -1825,11 +1825,15 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   }
 }
 
-@media (max-width: 900px) and (min-width: 600px) {
+@media (max-width: 900px) and (min-width: 769px) {
   html body #navbar .nav-links {
     display: flex !important;
     align-items: center;
     gap: 0.4rem !important;
+  }
+  html body #navbar .logo img {
+    width: 240px;
+    height: 60px;
   }
   html body #navbar .nav-links > li:not(:has(.nav-cta)):not(:has(a[href^="tel:"])) {
     display: none;
@@ -2316,4 +2320,85 @@ html body p.service-area-line-compact { display: none; }
     background: var(--sm-color-action-secondary-bg-hover);
     color: var(--sm-color-text) !important;
   }
+}
+
+/* Device review, should-fix. Touch targets, the fold phone line, a calmer
+   first screen, form labels in sentence case, and sections below the fold. */
+
+html body .nav-search-btn,
+html body .shortlist-close,
+html body .mobile-menu-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+html body .sm-brochure-link {
+  text-transform: none;
+  letter-spacing: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+html body :is(.form-group, .appt-group, .login-field, .quote-form-group, .brochure-field) label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--sm-font-body);
+  font-weight: var(--sm-weight-body-strong);
+  font-size: var(--sm-text-sm);
+  color: var(--sm-color-text);
+}
+
+html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(input, select, textarea) {
+  font-size: var(--sm-text-md);
+  border-color: var(--sm-color-border-control);
+  border-radius: var(--sm-radius-sm);
+}
+
+@media (max-width: 390px) {
+  html body .hero { padding: 0.75rem 1rem 1.5rem; }
+  html body .hero-content { gap: 0.75rem; }
+  html body .hero h1 { font-size: 1.55rem; margin-bottom: 0.4rem; }
+  html body .hero-lead { margin-bottom: 0.75rem; }
+  html body .hero-buttons { gap: 0.5rem; }
+  html body .hero-buttons .btn { min-height: 44px; padding: 0.55rem 0.65rem; }
+  html body .site-trust-bar, html body .trust-bar { padding-left: 0.75rem; padding-right: 0.75rem; }
+}
+
+@media (pointer: coarse) {
+  html body .mobile-menu-btn {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+  html body .mobile-nav a,
+  html body .footer-links a,
+  html body .mobile-nav-item,
+  html body .faq-question,
+  html body .breadcrumb a,
+  html body .area-crumbs a,
+  html body .btn {
+    min-height: 44px;
+  }
+  html body .breadcrumb a,
+  html body .area-crumbs a {
+    display: inline-flex;
+    align-items: center;
+  }
+  html body .mobile-nav a[href^="tel:"],
+  html body .mobile-bottom-nav a[href^="tel:"],
+  html body .mobile-bottom-nav a[href^="tel:"] span {
+    white-space: nowrap;
+  }
+  html body .mobile-bottom-nav-inner {
+    grid-template-columns: 1fr 1fr 1.1fr 1fr auto;
+  }
+}
+
+html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-section, .contact-cta) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
 }

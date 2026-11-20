@@ -286,7 +286,7 @@
         .form-row.full { grid-template-columns: 1fr; }
         
         .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.5rem; }
+        .form-group label { display: block; font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); letter-spacing: 0; text-transform: none; color: var(--sm-color-text); margin-bottom: 0.5rem; }
         .form-group label .required { color: var(--color-error); }
 
         .form-input, .form-select, .form-textarea {
@@ -565,7 +565,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261120c">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -713,7 +713,7 @@
 
                     <!-- Enquiry Type Selection -->
                     <div class="form-group">
-                        <label for="enquiryType">Enquiry Type <span class="required">*</span></label>
+                        <label for="enquiryType">Enquiry type <span class="required">*</span></label>
                         <select id="enquiryType" name="enquiry_type" class="form-select" required onchange="selectEnquiryType(this.value)">
                             <option value="" disabled selected>Choose an enquiry type…</option>
                             <option value="new-memorial">New Memorial — Headstone or kerb set</option>
@@ -728,11 +728,11 @@
                         <!-- Basic Info (Always shown) -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="firstName">First Name <span class="required">*</span></label>
+                                <label for="firstName">First name <span class="required">*</span></label>
                                 <input type="text" id="firstName" name="first_name" class="form-input" placeholder="Your first name" required>
                             </div>
                             <div class="form-group">
-                                <label for="lastName">Last Name <span class="required">*</span></label>
+                                <label for="lastName">Last name <span class="required">*</span></label>
                                 <input type="text" id="lastName" name="last_name" class="form-input" placeholder="Your last name" required>
                             </div>
                         </div>
@@ -750,7 +750,7 @@
 
                         <!-- Cemetery Field (for new memorial / additional work) -->
                         <div class="form-group cemetery-field" id="cemeteryField" style="display: none;">
-                            <label for="cemetery">Cemetery Name</label>
+                            <label for="cemetery">Cemetery name</label>
                             <div class="cemetery-autocomplete">
                                 <input type="text" id="cemetery" name="cemetery" class="form-input" placeholder="Loading cemetery list…" autocomplete="off" aria-autocomplete="list" aria-controls="cemeterySuggestions">
                                 <div class="cemetery-suggestions" id="cemeterySuggestions" role="listbox"></div>
@@ -760,7 +760,7 @@
 
                         <!-- Grave Number (for new memorial / additional work) -->
                         <div class="form-group grave-field" id="graveField" style="display: none;">
-                            <label for="graveNumber">Grave Number (if known)</label>
+                            <label for="graveNumber">Grave number (if known)</label>
                             <input type="text" id="graveNumber" name="grave_number" class="form-input" placeholder="e.g. Section B, Plot 123">
                         </div>
 
@@ -779,7 +779,7 @@
 
                         <!-- Message -->
                         <div class="form-group">
-                            <label for="message">Your Message <span class="required">*</span></label>
+                            <label for="message">Your message <span class="required">*</span></label>
                             <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
                         </div>
 

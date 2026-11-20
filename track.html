@@ -200,11 +200,10 @@
         a { color: inherit; text-decoration: none; }
 
         /* Header */
-        .track-header { background: var(--color-stone); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
-        .track-header h1 { font-size: 1.25rem; color: white; font-weight: 300; }
-        .track-header-logo { font-family: var(--font-display); font-size: 1.15rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
-        .track-header-logo span { font-weight: 300; opacity: 0.6; }
-        .track-header-logo:hover { opacity: 0.85; }
+        .track-header { background: var(--sm-color-bg); color: var(--sm-color-text); padding: 0.5rem 1.25rem; min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--sm-color-border-decorative); }
+        .track-header h1 { font-family: var(--sm-font-display); font-size: var(--sm-text-lg); font-weight: var(--sm-weight-display); color: var(--sm-color-text); }
+        .track-header-logo { display: flex; align-items: center; line-height: 0; text-decoration: none; }
+        .track-header-logo img { width: 240px; height: 60px; display: block; }
 
         /* Main */
         .track-main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
@@ -216,7 +215,7 @@
         .error-state { text-align: center; padding: 4rem 2rem; }
         .error-state h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .error-state p { color: var(--color-text-muted); }
-        .retry-btn { margin-top: 1.25rem; padding: 0.6rem 1.5rem; background: var(--color-stone); color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+        .retry-btn { margin-top: 1.25rem; padding: 0.6rem 1.5rem; min-height: 48px; background: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse); border: none; border-radius: var(--sm-radius-sm); font-size: var(--sm-text-sm); cursor: pointer; font-family: var(--sm-font-body); }
         .retry-btn:hover { background: var(--color-stone-light); }
 
         /* Portal welcome */
@@ -227,11 +226,11 @@
         /* Section headers */
         .section-header { display: flex; align-items: center; gap: 0.5rem; margin: 2rem 0 1rem; }
         .section-header h3 { font-size: 1.3rem; }
-        .section-count { background: var(--color-warm); font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-family: var(--font-body); color: var(--color-text-muted); font-weight: 600; }
-        .section-empty { background: white; border-radius: 10px; padding: 2rem; text-align: center; color: var(--color-text-muted); font-size: 0.9rem; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 4%, transparent); }
+        .section-count { background: var(--sm-color-bg-panel); font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: var(--sm-radius-sm); font-family: var(--sm-font-body); color: var(--sm-color-text); font-weight: 500; }
+        .section-empty { background: var(--sm-color-bg-surface); border-radius: var(--sm-radius-sm); padding: 2rem; text-align: center; color: var(--sm-color-text-muted); font-size: 0.9rem; border: 1px solid var(--sm-color-border-decorative); }
 
         /* Cards */
-        .card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 4%, transparent); }
+        .card { background: var(--sm-color-bg-surface); border-radius: var(--sm-radius-sm); padding: 1.5rem; margin-bottom: 1rem; border: 1px solid var(--sm-color-border-decorative); box-shadow: var(--sm-shadow-sm); }
         .card h4 { font-size: 1.1rem; margin-bottom: 0.25rem; }
         .card-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; margin-bottom: 0.15rem; }
         .card-value { font-size: 0.95rem; margin-bottom: 0.75rem; }
@@ -240,7 +239,7 @@
         .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
 
         /* Status badges */
-        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: var(--sm-radius-sm); font-size: 0.7rem; font-weight: 500; text-transform: none; letter-spacing: 0; }
         .badge-draft { background: var(--sm-color-bg-panel-quiet); color: var(--sm-color-text-muted); }
         .badge-sent { background: var(--sm-color-bg-panel-quiet); color: var(--sm-color-text); }
         .badge-viewed { background: var(--sm-color-bg-panel-quiet); color: var(--sm-color-text); }
@@ -253,26 +252,27 @@
         .badge-change_requested { background: var(--sm-color-error-surface); color: var(--sm-color-error); }
 
         /* Quote card */
-        .quote-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-stone); margin: 0.75rem 0 0.25rem; }
+        .quote-price { font-family: var(--sm-font-body); font-weight: var(--sm-weight-body-strong); font-variant-numeric: tabular-nums; font-size: var(--sm-text-price); color: var(--sm-color-text); margin: 0.75rem 0 0.25rem; }
         .quote-price small { font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-body); }
         .quote-permit-line { margin: 0 0 0.75rem; font-family: var(--sm-font-body); font-weight: var(--sm-weight-body); font-size: var(--sm-text-xs); line-height: 1.45; color: var(--sm-color-text-muted); }
-        .quote-inscription { background: var(--color-cream); border-radius: 8px; padding: 1rem; margin: 0.75rem 0; }
+        .quote-inscription { background: var(--sm-color-bg); border-radius: var(--sm-radius-sm); padding: 1rem; margin: 0.75rem 0; }
         .quote-inscription-text { font-family: var(--font-display); font-size: 1.1rem; line-height: 1.5; color: var(--color-stone); white-space: pre-line; text-align: center; }
         .quote-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
 
         /* Buttons */
-        .btn { padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); border: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .btn { padding: 0.6rem 1.25rem; min-height: 48px; border-radius: var(--sm-radius-sm); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); cursor: pointer; font-family: var(--sm-font-body); border: none; display: inline-flex; align-items: center; gap: 0.4rem; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: var(--color-stone); color: white; }
+        .btn-primary { background: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse); }
         .btn-primary:hover:not(:disabled) { background: var(--color-stone-light); }
         .btn-success { background: var(--color-success); color: white; }
         .btn-success:hover:not(:disabled) { opacity: 0.9; }
-        .btn-outline { background: white; color: var(--color-stone); border: 1px solid var(--color-border); }
+        .btn-outline { background: transparent; color: var(--sm-color-text); border: 1px solid var(--sm-color-border-control); }
         .btn-outline:hover:not(:disabled) { border-color: var(--color-stone); }
 
         /* Edit form */
         .edit-form { display: none; margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem; }
-        .edit-form textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.95rem; font-family: var(--font-body); min-height: 80px; resize: vertical; }
+        .edit-form textarea, .track-reason { width: 100%; padding: 0.75rem; border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-size: var(--sm-text-md); font-family: var(--sm-font-body); min-height: 48px; margin-top: 0.5rem; background: var(--sm-color-bg-surface); color: var(--sm-color-text); box-sizing: border-box; }
+        .edit-form textarea { min-height: 80px; resize: vertical; }
         .edit-form .form-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
         .form-msg { font-size: 0.85rem; margin-top: 0.75rem; }
         .form-msg.success { color: var(--color-success); }
@@ -296,28 +296,28 @@
         .progress-step.done .progress-line { background: var(--color-success); }
 
         /* Proof */
-        .proof-image { width: 100%; border-radius: 8px; border: 1px solid var(--color-border); margin-top: 0.5rem; }
+        .proof-image { width: 100%; border-radius: var(--sm-radius-sm); border: 1px solid var(--sm-color-border-decorative); margin-top: 0.5rem; }
         .proof-date { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem; }
 
         /* Contact */
-        .contact-card { background: var(--color-cream); border-radius: 10px; padding: 1.25rem 1.5rem; text-align: center; margin-top: 2rem; }
+        .contact-card { background: var(--sm-color-bg-panel); border-radius: var(--sm-radius-sm); padding: 1.25rem 1.5rem; text-align: center; margin-top: 2rem; }
         .contact-card p { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.5rem; }
-        .contact-card a { color: var(--color-accent-dark); font-weight: 500; text-decoration: underline; }
+        .contact-card a { color: var(--sm-color-link-on-panel); font-weight: 500; text-decoration: underline; text-underline-offset: 0.18em; }
 
         /* Login card */
         .login-wrapper { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem; }
-        .login-card { background: white; border-radius: 12px; padding: 2.5rem 2rem; max-width: 420px; width: 100%; box-shadow: 0 8px 40px color-mix(in srgb, var(--sm-color-text) 8%, transparent); text-align: center; }
+        .login-card { background: var(--sm-color-bg-surface); border-radius: var(--sm-radius-sm); border: 1px solid var(--sm-color-border-decorative); padding: 2.5rem 2rem; max-width: 420px; width: 100%; box-shadow: var(--sm-shadow-sm); text-align: center; }
         .login-card h2 { font-size: 1.75rem; margin-bottom: 0.25rem; }
         .login-card .subtitle { color: var(--color-text-muted); margin-bottom: 2rem; font-size: 0.9rem; }
         .login-field { margin-bottom: 1rem; text-align: left; }
-        .login-field label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); margin-bottom: 0.25rem; }
-        .login-field input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-size: 1rem; font-family: var(--font-body); }
+        .login-field label { display: block; font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); text-transform: none; letter-spacing: 0; color: var(--sm-color-text); margin-bottom: 0.25rem; }
+        .login-field input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-size: var(--sm-text-md); font-family: var(--sm-font-body); background: var(--sm-color-bg-surface); color: var(--sm-color-text); min-height: 48px; }
         .login-field input:focus { outline: none; border-color: var(--color-accent); }
 
         @media (max-width: 600px) {
-            .track-header { padding: 0.75rem 1rem; }
-            .track-header h1 { font-size: 1rem; }
-            .track-header-logo { font-size: 1rem; }
+            .track-header { flex-wrap: wrap; padding: 0.5rem 1rem; }
+            .track-header h1 { font-size: 1.15rem; width: 100%; }
+            .track-header-logo img { width: 240px; height: 60px; }
             .track-main { padding: 1rem 1rem 3rem; }
             .login-wrapper { padding: 1.5rem; align-items: flex-start; padding-top: 3rem; }
             .login-card { padding: 2rem 1.5rem; }
@@ -353,7 +353,7 @@
     <!-- End Google Tag Manager (noscript) -->
 
 <header class="track-header">
-    <a href="/" class="track-header-logo">Sears Melvin <span>Memorials</span></a>
+    <a href="/" class="track-header-logo"><picture><source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg"><img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66"></picture></a>
     <h1 id="headerTitle">My quotes and orders</h1>
 </header>
 
@@ -368,7 +368,7 @@
                     <label>Email address</label>
                     <input type="email" id="lookupEmail" required placeholder="you@example.com">
                 </div>
-                <button type="submit" class="btn btn-primary" id="lookupBtn" style="width:100%;padding:0.85rem;font-size:1rem;">Send My Portal Link</button>
+                <button type="submit" class="btn btn-primary" id="lookupBtn" style="width:100%;padding:0.85rem;font-size:1rem;">Send my portal link</button>
                 <p id="lookupSuccess" class="form-msg success" style="display:none;margin-top:1rem;"></p>
                 <p id="lookupError" class="form-msg error" style="display:none;margin-top:1rem;"></p>
             </form>
@@ -466,7 +466,7 @@
             errorEl.style.display = 'block';
         }
         btn.disabled = false;
-        btn.textContent = 'Send My Portal Link';
+        btn.textContent = 'Send my portal link';
     }
 
     // ==================== PORTAL ====================
@@ -577,7 +577,7 @@
                     html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.id) + '\')">Request Change</button></div>';
                     html += '<div class="edit-form" id="editOrder_' + esc(o.id) + '">';
                     html += '<textarea id="editOrderText_' + esc(o.id) + '">' + esc(o.inscription.text) + '</textarea>';
-                    html += '<input type="text" id="editOrderReason_' + esc(o.id) + '" placeholder="Reason for change (optional)" style="width:100%;padding:0.6rem;border:1px solid var(--color-border);border-radius:6px;font-size:0.85rem;font-family:var(--font-body);margin-top:0.5rem;">';
+                    html += '<input type="text" class="track-reason" id="editOrderReason_' + esc(o.id) + '" placeholder="Reason for change (optional)">';
                     html += '<div class="form-actions"><button class="btn btn-primary" onclick="submitOrderChange(\'' + esc(o.id) + '\')">Submit Change</button>';
                     html += '<button class="btn btn-outline" onclick="toggleEdit(\'editOrder_' + esc(o.id) + '\')">Cancel</button></div>';
                     html += '<div class="form-msg" id="editOrderMsg_' + esc(o.id) + '"></div></div>';
