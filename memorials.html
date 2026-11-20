@@ -63,14 +63,11 @@
     /* Reserve the cookie strip before first paint. A stored choice means
        the strip stays hidden, so the offset is 0. Does not change consent. */
     (function () {
-      var stack = 0;
-      try {
-        if (!localStorage.getItem('cookieConsent')) {
-          var w = document.documentElement.clientWidth || window.innerWidth || 0;
-          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
-        }
-      } catch (e) {}
-      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+      var open = true;
+      try { open = !localStorage.getItem('cookieConsent'); } catch (e) {}
+      /* CSS media queries turn this into the strip height before first paint.
+         Measuring the width here was late on some cold loads. */
+      document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
@@ -653,13 +650,80 @@
         .type-browse { margin: 0 0 1.25rem; }
         .type-browse-heading { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin: 0 0 0.6rem; }
         .type-browse-list { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; list-style: none; padding: 0; margin: 0; }
-        @media (max-width: 430px), (max-width: 932px) and (max-height: 500px) {
-            /* The square shortlist heart sits at the left, above the nav.
-               Keep every type chip to its right, including landscape phones. */
+        @media (max-width: 932px) and (max-height: 500px) and (min-width: 769px) {
+            /* The square shortlist heart still sits at the left on a short
+               tablet. Phones use the header heart instead. */
             .type-browse-list { padding-left: 56px; }
         }
-        .type-browse-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 2px; color: var(--color-text); text-decoration: none; }
-        .type-browse-list a[aria-current="page"] { border-color: var(--color-accent); background: var(--color-warm); }
+        .type-browse-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); color: var(--sm-color-text); font-family: var(--sm-font-body); text-decoration: none; }
+        .type-browse-list a[aria-current="page"] { border-color: var(--sm-color-text); background: var(--sm-color-text); color: var(--sm-color-bg); }
+        .sm-header-heart { display: none; }
+        @media (max-width: 768px) {
+            .sm-header-heart {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                margin-left: auto;
+                padding: 0;
+                border: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm);
+                background: var(--sm-color-bg);
+                color: var(--sm-color-text);
+                cursor: pointer;
+            }
+            .sm-header-heart svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+            #shortlistNavBtn { display: none !important; }
+            .mobile-menu-btn { margin-left: 0.25rem; }
+            .floating-btn.shortlist { display: none; }
+            .type-browse { position: relative; }
+            .type-browse-list {
+                flex-wrap: nowrap;
+                gap: 0.5rem;
+                overflow-x: auto;
+                overscroll-behavior-x: contain;
+                scrollbar-width: none;
+                padding: 3px 2.5rem 3px 0;
+                -webkit-overflow-scrolling: touch;
+            }
+            .type-browse-list::-webkit-scrollbar { display: none; }
+            .type-browse::after {
+                content: "";
+                position: absolute;
+                right: 0;
+                bottom: 3px;
+                width: 2.5rem;
+                height: 44px;
+                pointer-events: none;
+                background: linear-gradient(90deg, transparent, var(--color-cream));
+            }
+            .type-browse-list a {
+                flex: 0 0 auto;
+                box-sizing: border-box;
+                height: 38px;
+                min-height: 38px;
+                padding: 0 0.85rem;
+                position: relative;
+                white-space: nowrap;
+            }
+            .type-browse-list a::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: -3px;
+                bottom: -3px;
+            }
+        }
+        @media (max-width: 400px) {
+            /* Keep the one chip row above the chat bubble so the bubble can
+               stay in its usual place above the nav. */
+            .page-header { padding-bottom: 0.2rem; }
+            .page-header p { margin-bottom: 0; }
+            .catalogue { padding-top: 0.45rem; }
+            .type-browse { margin-bottom: 0.6rem; }
+        }
     </style>
 </head>
 <body>
@@ -695,6 +759,9 @@
         <button class="shortlist-nav-btn" onclick="openShortlist()" id="shortlistNavBtn" style="display:none;" aria-label="Open your saved memorials">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--color-accent)" stroke="var(--color-accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span id="shortlistNavCount">0</span>
+        </button>
+        <button type="button" class="sm-header-heart" onclick="openShortlist()" aria-label="Open your saved memorials">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
         <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false">
             <span></span><span></span><span></span>
@@ -1437,9 +1504,13 @@
             var navCount = document.getElementById('shortlistNavCount');
             if (navBtn) {
                 navCount.textContent = count;
-                if (count > 0) { navBtn.classList.add('has-items'); navBtn.style.display = 'inline-flex'; navBtn.classList.remove('pulse'); void navBtn.offsetWidth; navBtn.classList.add('pulse'); }
+                var phoneHeader = window.matchMedia('(max-width: 768px)').matches;
+                if (phoneHeader) { navBtn.style.display = 'none'; }
+                else if (count > 0) { navBtn.classList.add('has-items'); navBtn.style.display = 'inline-flex'; navBtn.classList.remove('pulse'); void navBtn.offsetWidth; navBtn.classList.add('pulse'); }
                 else { navBtn.classList.remove('has-items'); navBtn.style.display = 'none'; }
             }
+            var headerHeart = document.querySelector('.sm-header-heart');
+            if (headerHeart) headerHeart.setAttribute('aria-label', count > 0 ? 'Open your saved memorials, ' + count + ' saved' : 'Open your saved memorials');
             const content = document.getElementById('shortlistContent');
             if (count === 0) {
                 content.innerHTML = '<div class="shortlist-empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><p>Your shortlist is empty.<br>Click the heart icon on memorials you like.</p></div>';

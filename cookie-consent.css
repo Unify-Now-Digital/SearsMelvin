@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "DM Sans Fallback";
+  src: local("Arial");
+  size-adjust: 100.6%;
+  ascent-override: 93%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+
 /* Cookie choice. The first layer is a slim strip under the header on
    every page. The second layer (Manage choices) stays a centred card
    on desktop and a bottom sheet on phones. Colours come from tokens.css. */
@@ -32,7 +41,7 @@ html body #cookieConsent.sm-cookie {
   border-bottom: 1px solid var(--sm-color-border-decorative);
   border-radius: 0 0 var(--sm-radius-sm) var(--sm-radius-sm);
   box-shadow: none;
-  font-family: var(--font-body);
+  font-family: "DM Sans", "DM Sans Fallback", sans-serif;
   font-weight: 400;
   font-size: var(--sm-text-xs);
   line-height: 1.35;
@@ -377,11 +386,36 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
   text-decoration: underline;
 }
 
-/* Fixed heights, shared with the head script that sets --sm-cookie-stack.
-   102px under 390, 99px through 430, 61px above that. */
+/* The open strip's offset is a media query, not a measurement. The head
+   script only records whether a choice is stored. A stored choice leaves
+   the offset at 0. 102px under 390, 99px through 430, 61px above that. */
+:root { --sm-cookie-stack: 0px; }
+html[data-sm-cookie="open"] { --sm-cookie-stack: 61px; }
+@media (max-width: 430px) {
+  html[data-sm-cookie="open"] { --sm-cookie-stack: 99px; }
+}
+@media (max-width: 389px) {
+  html[data-sm-cookie="open"] { --sm-cookie-stack: 102px; }
+}
+
+/* Fixed heights, shared with the offset above. */
 html body #cookieConsent.sm-cookie:not(.is-manage) {
   height: 61px;
   overflow: hidden;
+}
+
+/* The actions row is a fixed size so a font swap cannot move it or the page. */
+html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
+  height: var(--sm-target-min);
+  max-height: var(--sm-target-min);
+  flex-wrap: nowrap;
+  align-items: center;
+  overflow: hidden;
+}
+html body #cookieConsent:not(.is-manage) .sm-cookie-btn,
+html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 @media (max-width: 430px) {
@@ -477,4 +511,11 @@ html body #cookieConsent.sm-cookie:not(.is-manage) {
   html body #cookieConsent .sm-cookie-switch::after {
     transition: none;
   }
+}
+
+html body #cookieConsent.sm-cookie,
+html body #cookieConsent.sm-cookie .sm-cookie-btn,
+html body #cookieConsent.sm-cookie .sm-cookie-manage,
+html body #cookieConsent.sm-cookie .sm-cookie-lead {
+  font-family: "DM Sans", "DM Sans Fallback", sans-serif;
 }

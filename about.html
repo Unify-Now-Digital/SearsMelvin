@@ -63,14 +63,11 @@
     /* Reserve the cookie strip before first paint. A stored choice means
        the strip stays hidden, so the offset is 0. Does not change consent. */
     (function () {
-      var stack = 0;
-      try {
-        if (!localStorage.getItem('cookieConsent')) {
-          var w = document.documentElement.clientWidth || window.innerWidth || 0;
-          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
-        }
-      } catch (e) {}
-      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+      var open = true;
+      try { open = !localStorage.getItem('cookieConsent'); } catch (e) {}
+      /* CSS media queries turn this into the strip height before first paint.
+         Measuring the width here was late on some cold loads. */
+      document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a

@@ -115,6 +115,16 @@ html body .sm-brochure-request { border-radius: var(--sm-radius-sm); }
 html body .sm-brochure-request input { display: block; width: 100%; margin: 0 0 0.85rem; }
 html body .sm-brochure-request .sm-brochure-field { margin: 0 0 0.85rem; }
 html body .sm-brochure-request .sm-brochure-field input { margin: 0; }
+@media (max-width: 768px) {
+  /* The later field margin above would put Send me the brochure under the
+     bottom nav once the cookie strip is dismissed. */
+  html body .sm-brochure-request .sm-brochure-field { margin: 0 0 0.35rem; }
+  html body .sm-brochure-request-title { margin-bottom: 0.4rem; }
+  html body .sm-brochure-cover .sm-brochure-thumb { width: 96px; }
+  html body .sm-brochure-cover { min-width: 96px; min-height: 0; }
+  html body .about-section:has(#brochureRequest) { margin-bottom: 0.5rem; }
+  html body .about-section:has(#brochureRequest) > h2 { margin-bottom: 0.35rem; }
+}
 html body .sm-brochure-request input[aria-invalid="true"],
 html body .sm-brochure-request input#brochureName[aria-invalid="true"]:focus,
 html body .sm-brochure-request input#brochureEmail[aria-invalid="true"]:focus {
@@ -387,6 +397,11 @@ html body .contact-method-content small { font-size: 0.9375rem; }
 html body .reassurance h4 { font-size: 1rem; color: var(--sm-color-success); }
 html body .reassurance p, html body .form-footer, html body .form-footer a { font-size: var(--sm-text-small); line-height: 1.6; }
 html body .form-submit { background: var(--sm-accent-aa); }
+@media (max-width: 430px) {
+  /* The chat bubble sits on the right, just above the nav. Keep the
+     send button's icon clear of it without moving the bubble. */
+  html body .form-submit { width: calc(100% - 4.75rem); }
+}
 
 /* Brochure */
 html body .sm-brochure-email-note, html body .sm-brochure-email-note a { font-size: 0.9375rem; color: var(--sm-color-text-muted); }
