@@ -48,14 +48,32 @@ const upgradesSource = readFileSync("site-upgrades.js", "utf8");
 assert.match(upgradesSource, /attribution\s*=\s*api\.getAttribution\(\)/, "download beacon reads stored attribution");
 assert.match(upgradesSource, /gclid:\s*attribution\.gclid\s*\|\|\s*null/, "download beacon includes stored gclid");
 
-// Buttons are tagged with their source; /brochure has the optional email form + "Just download".
+// Buttons are tagged with their source. /brochure asks for name and email first.
 for (const [page, src] of [["index.html", "home"], ["memorials.html", "listing"]]) {
   assert.ok(readFileSync(page, "utf8").includes(`data-brochure-source="${src}"`), `${page} tags source=${src}`);
 }
 const brochure = readFileSync("brochure.html", "utf8");
-assert.ok(brochure.includes("data-brochure-email-form"));
-assert.ok(brochure.includes("Just download"));
+const upgrades = readFileSync("site-upgrades.js", "utf8");
+assert.ok(brochure.includes("data-brochure-request"));
+assert.ok(brochure.includes('id="brochureName"'));
 assert.match(brochure, /<input type="email"[^>]*>/);
+assert.match(brochure, /name="phone"/);
+assert.ok(brochure.includes("data-brochure-thanks"));
+assert.ok(!brochure.includes("Just download"));
+assert.match(upgrades, /href', '\/brochure\?from=' \+ src/);
+assert.doesNotMatch(upgrades, /a\[data-brochure-source\][\s\S]{0,400}setAttribute\('href', url\)/);
+const requestEvent = up.brochureRequestEvent("home");
+assert.deepEqual(requestEvent, { event: "brochure_request", source: "home" });
+assert.equal(requestEvent.send_to, undefined);
+const payload = up.brochureRequestPayload(
+  { name: "TEST Brochure", email: "test+brochure@unifydigital.uk", phone: "07000000000" },
+  { gclid: "test-gclid", gbraid: "test-gbraid", wbraid: "test-wbraid", utm_source: "google", utm_medium: "cpc" },
+  "/brochure",
+);
+assert.equal(payload.channel, "contact");
+assert.equal(payload.enquiry_type, "brochure");
+assert.equal(payload.message, "Brochure request");
+assert.equal(payload.attribution.gclid, "test-gclid");
 
 // ---- /api/brochure
 const env = {

@@ -553,20 +553,26 @@
                     <div>
                         <p>Our memorial designs with guide prices, what’s included and how ordering works — to read at your own pace. Every design links back to its page on our website.</p>
                         <div class="sm-cta-row">
-                            <a href="/assets/sears-melvin-brochure.pdf?v=10.1" data-brochure-link class="sm-btn sm-btn-primary" download>Just download (PDF)</a>
                             <a href="/contact" class="sm-btn sm-btn-secondary">Request a quote</a>
                         </div>
                     </div>
                 </div>
-                <form class="sm-brochure-email" data-brochure-email-form novalidate>
-                    <label for="brochureEmail"><strong>Email me a copy</strong> <span>(optional — we’ll send you the link so it’s easy to find later)</span></label>
-                    <div class="sm-brochure-email-row">
-                        <input type="email" id="brochureEmail" name="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required>
-                        <button type="submit" class="sm-btn sm-btn-secondary">Email me a copy</button>
-                    </div>
-                    <p class="sm-brochure-email-note">We’ll only use your email to send the brochure and follow up about your memorial. See our <a href="/privacy">privacy policy</a>.</p>
-                    <p class="sm-brochure-email-status" data-brochure-email-status role="status" aria-live="polite"></p>
+                <form class="sm-brochure-email sm-brochure-request" id="brochureRequest" data-brochure-request novalidate>
+                    <p class="sm-brochure-request-title">Send me the brochure</p>
+                    <label for="brochureName">Name</label>
+                    <input type="text" id="brochureName" name="name" autocomplete="name" maxlength="120" required>
+                    <label for="brochureEmail">Email</label>
+                    <input type="email" id="brochureEmail" name="email" autocomplete="email" inputmode="email" maxlength="254" required>
+                    <label for="brochurePhone">Phone <span>(optional)</span></label>
+                    <input type="tel" id="brochurePhone" name="phone" autocomplete="tel" inputmode="tel" maxlength="40">
+                    <button type="submit">Send me the brochure</button>
+                    <p class="sm-brochure-email-note">We use your name, email and phone to send the brochure and to reply about your memorial. See our <a href="/privacy">privacy policy</a>.</p>
+                    <p class="sm-brochure-email-status" data-brochure-request-status role="status" aria-live="polite"></p>
                 </form>
+                <div class="sm-brochure-thanks" data-brochure-thanks hidden>
+                    <p>Thank you. Your brochure is ready.</p>
+                    <p><a href="/assets/sears-melvin-brochure.pdf?v=10.1" data-brochure-link download>Download the brochure</a></p>
+                </div>
             </div>
             <div data-brochure-pending hidden>
                 <p>Our printed brochure is being prepared and will be available to download here soon.</p>

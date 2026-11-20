@@ -272,7 +272,7 @@ test("tracking smoke checks", async ({ page }) => {
 
   await visit("/brochure");
   const brochureLink = await page.locator("[data-brochure-link]").count();
-  const brochureEmail = await page.locator("form[data-brochure-email-form]").count();
+  const brochureEmail = await page.locator("form[data-brochure-request]").count();
 
   const unique = (events: string[]) => [...new Set(events)].slice(0, 24).join(", ") || "(none)";
 
@@ -340,7 +340,7 @@ test("tracking smoke checks", async ({ page }) => {
     hooksPass,
     hooksPass
       ? "#quoteForm is on the three product pages. Brochure hooks are on the home page, /memorials, and /brochure."
-      : `quoteForm ${quoteFormFailures.join("; ") || "ok"}; home brochure links ${homeBrochure}; listing brochure links ${listingBrochure}; brochure download links ${brochureLink}; brochure email forms ${brochureEmail}.`,
+      : `quoteForm ${quoteFormFailures.join("; ") || "ok"}; home brochure links ${homeBrochure}; listing brochure links ${listingBrochure}; brochure download links ${brochureLink}; brochure request forms ${brochureEmail}.`,
   );
   record(
     "/memorials has no form",
