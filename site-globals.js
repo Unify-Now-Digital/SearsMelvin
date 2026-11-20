@@ -77,7 +77,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);

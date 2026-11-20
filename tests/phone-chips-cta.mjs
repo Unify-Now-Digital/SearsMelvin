@@ -16,6 +16,9 @@ assert.match(chipRule, /max-width:\s*100%/);
 assert.match(chipRule, /min-width:\s*0/);
 assert.match(chipRule, /overflow-x:\s*auto/);
 assert.match(chipRule, /-webkit-overflow-scrolling:\s*touch/);
+const chipLink = phoneChips.slice(phoneChips.indexOf(".type-browse-list a {"), phoneChips.indexOf(".type-browse-list a::before"));
+assert.match(chipLink, /min-height:\s*44px/);
+assert.match(chipLink, /height:\s*44px/);
 assert.match(memorials, /\.catalogue-container > main \{ min-width: 0; max-width: 100%; \}/);
 assert.match(memorials, /\.type-browse\.is-scrolled-end::after \{ opacity: 0; \}/);
 
@@ -26,7 +29,7 @@ assert.match(globals, /syncTypeChips/);
 assert.match(upgrades, /html\[data-sm-cookie="open"\] body:has\(#brochureRequest\) main\.content/);
 assert.match(upgrades, /html\[data-sm-cookie="open"\] body:has\(#brochureRequest\) #brochureRequest/);
 assert.match(upgrades, /html body textarea#message/);
-assert.match(upgrades, /min-height:\s*4\.5rem/);
+assert.match(upgrades, /html body textarea#message[\s\S]*min-height:\s*2\.75rem/);
 assert.match(upgrades, /\.contact-form-wrapper \.form-row/);
 
 console.log("phone-chips-cta: ok");

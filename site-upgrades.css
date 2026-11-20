@@ -519,6 +519,16 @@ html body {
     min-height: 2.2em;
   }
 }
+@media (max-width: 480px) {
+  /* At 360 the catalogue title is three lines once Cormorant loads.
+     The line under it is two lines. Reserve both. */
+  html body:has(.catalogue) .page-header h1 {
+    min-height: 3.4em;
+  }
+  html body:has(.catalogue) .page-header p:first-of-type {
+    min-height: 3em;
+  }
+}
 
 html body h1,
 html body .hero h1,
@@ -2416,6 +2426,16 @@ html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(inp
   }
 }
 
+/* Classic scrollbars take about 15px. Reserving the gutter from the
+   first paint keeps a 390px window from narrowing once the page grows.
+   Desktop keeps the ordinary scrollbar. */
+@media (max-width: 768px) {
+  html {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
 html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-section, .contact-cta) {
   content-visibility: auto;
   contain-intrinsic-size: auto 480px;
@@ -2443,14 +2463,26 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
    The stacked rows were adding their own gap on top of each field, and the
    message box kept the desktop 8rem height. */
 @media (max-width: 480px) {
+  html body .contact-form-wrapper {
+    padding-top: 0.25rem;
+    padding-bottom: 0.65rem;
+  }
+  html body .contact-form-wrapper .form-header {
+    margin-bottom: 0.35rem;
+  }
+  html body .contact-form-wrapper .form-header p {
+    display: none;
+  }
   html body .contact-form-wrapper .form-row {
-    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
     margin-bottom: 0;
   }
   html body textarea#message {
-    min-height: 4.5rem;
+    min-height: 2.75rem;
+    height: 2.75rem;
   }
   html body .contact-form-wrapper .form-submit {
-    margin-top: 0.5rem;
+    margin-top: 0;
   }
 }
