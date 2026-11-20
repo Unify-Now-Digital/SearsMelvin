@@ -360,9 +360,67 @@
         return { source: src, dataLayer: events, adsSendTo: target };
     }
 
+    function paintBrochureErrors(form, errors) {
+        var fields = [
+            { key: 'name', input: form.querySelector('[name="name"]'), message: form.querySelector('#brochureNameError') },
+            { key: 'email', input: form.querySelector('[name="email"]'), message: form.querySelector('#brochureEmailError') }
+        ];
+        var first = null;
+        var lastMessage = null;
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            var text = errors[field.key] || '';
+            if (!field.input || !field.message) continue;
+            if (text) {
+                field.input.setAttribute('aria-invalid', 'true');
+                field.input.setAttribute('aria-describedby', field.message.id);
+                field.message.hidden = false;
+                field.message.textContent = text;
+                lastMessage = field.message;
+                if (!first) first = field.input;
+            } else {
+                field.input.removeAttribute('aria-invalid');
+                field.input.removeAttribute('aria-describedby');
+                field.message.hidden = true;
+                field.message.textContent = '';
+            }
+        }
+        if (first && first.focus) {
+            try { first.focus(); } catch (e) {}
+        }
+        if (first && first.scrollIntoView) {
+            try { first.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        liftBrochureMessage(lastMessage || first);
+        return first;
+    }
+
+    function showBrochureStatus(status, text, isError) {
+        if (!status) return;
+        status.hidden = !text;
+        status.textContent = text || '';
+        if (status.classList) status.classList.toggle('is-error', !!isError && !!text);
+        if (text && status.scrollIntoView) {
+            try { status.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        if (text) liftBrochureMessage(status);
+    }
+
     // Form success only. No Google Ads send_to. GTM can listen later.
     function brochureRequestEvent(source) {
         return { event: 'brochure_request', source: normaliseSource(source) };
+    }
+
+    var BROCHURE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function brochureFieldErrors(fields) {
+        var name = String(fields && fields.name || '').trim();
+        var email = String(fields && fields.email || '').trim();
+        var errors = {};
+        if (!name) errors.name = 'Please add your name.';
+        if (!email) errors.email = 'Please add your email.';
+        else if (email.length > 254 || !BROCHURE_EMAIL_RE.test(email)) errors.email = 'Please enter a valid email address.';
+        return errors;
     }
 
     function brochureRequestPayload(fields, attribution, page) {
@@ -579,7 +637,7 @@
         return event;
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -732,19 +790,22 @@
                 var name = (form.querySelector('[name="name"]') || {}).value || '';
                 var email = (form.querySelector('[name="email"]') || {}).value || '';
                 var phone = (form.querySelector('[name="phone"]') || {}).value || '';
-                if (form.checkValidity && !form.checkValidity()) {
-                    if (status) status.textContent = 'Please add your name and email.';
+                var fieldErrors = brochureFieldErrors({ name: name, email: email, phone: phone });
+                if (fieldErrors.name || fieldErrors.email) {
+                    showBrochureStatus(status, '');
+                    paintBrochureErrors(form, fieldErrors);
                     return;
                 }
+                paintBrochureErrors(form, {});
                 if (btn) btn.disabled = true;
-                if (status) status.textContent = 'Sending…';
+                showBrochureStatus(status, 'Sending…');
                 var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname);
                 fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
                         if (!res.ok) {
-                            if (status) status.textContent = (res.b && res.b.error) || 'Sorry, we could not send that just now. Please try again.';
                             if (btn) btn.disabled = false;
+                            showBrochureStatus(status, (res.b && res.b.error) || 'Sorry, we could not send that just now. Please try again.', true);
                             return;
                         }
                         root.dataLayer = root.dataLayer || [];
@@ -754,8 +815,8 @@
                         if (thanks) thanks.hidden = false;
                     })
                     .catch(function () {
-                        if (status) status.textContent = 'Sorry, we could not send that just now. Please try again.';
                         if (btn) btn.disabled = false;
+                        showBrochureStatus(status, 'Sorry, we could not send that just now. Please try again.', true);
                     });
             });
             ready.hidden = false;
@@ -773,6 +834,24 @@
         });
         document.body.appendChild(a);
         watchFabOverlaps();
+    }
+
+    // Scroll a brochure message clear of the phone cookie strip. This does not
+    // read or write the cookie choice.
+    function liftBrochureMessage(el) {
+        try {
+            var doc = el && el.ownerDocument;
+            var view = doc && (doc.defaultView || doc.parentWindow);
+            if (!doc || !view || !el.getBoundingClientRect || !view.getComputedStyle) return;
+            var card = doc.getElementById('cookieConsent');
+            if (!card) return;
+            if (view.getComputedStyle(card).display === 'none') return;
+            var cr = card.getBoundingClientRect();
+            if (!cr || cr.height < 8) return;
+            var r = el.getBoundingClientRect();
+            var gap = r.bottom - (cr.top - 12);
+            if (gap > 0 && view.scrollBy) view.scrollBy(0, gap);
+        } catch (e) {}
     }
 
     // Keep the FAB off sticky bars and modals: hide it while a quote/search

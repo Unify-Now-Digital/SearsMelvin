@@ -442,7 +442,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261117a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120a">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -559,15 +559,23 @@
                 </div>
                 <form class="sm-brochure-email sm-brochure-request" id="brochureRequest" data-brochure-request novalidate>
                     <p class="sm-brochure-request-title">Send me the brochure</p>
-                    <label for="brochureName">Name</label>
-                    <input type="text" id="brochureName" name="name" autocomplete="name" maxlength="120" required>
-                    <label for="brochureEmail">Email</label>
-                    <input type="email" id="brochureEmail" name="email" autocomplete="email" inputmode="email" maxlength="254" required>
-                    <label for="brochurePhone">Phone <span>(optional)</span></label>
-                    <input type="tel" id="brochurePhone" name="phone" autocomplete="tel" inputmode="tel" maxlength="40">
+                    <div class="sm-brochure-field">
+                        <label for="brochureName">Name</label>
+                        <input type="text" id="brochureName" name="name" autocomplete="name" maxlength="120" required>
+                        <p class="sm-brochure-field-error" id="brochureNameError" hidden></p>
+                    </div>
+                    <div class="sm-brochure-field">
+                        <label for="brochureEmail">Email</label>
+                        <input type="email" id="brochureEmail" name="email" autocomplete="email" inputmode="email" maxlength="254" required>
+                        <p class="sm-brochure-field-error" id="brochureEmailError" hidden></p>
+                    </div>
+                    <div class="sm-brochure-field">
+                        <label for="brochurePhone">Phone <span>(optional)</span></label>
+                        <input type="tel" id="brochurePhone" name="phone" autocomplete="tel" inputmode="tel" maxlength="40">
+                    </div>
+                    <p class="sm-brochure-request-status" id="brochureRequestStatus" data-brochure-request-status role="alert" hidden></p>
                     <button type="submit">Send me the brochure</button>
                     <p class="sm-brochure-email-note">We use your name, email and phone to send the brochure and to reply about your memorial. See our <a href="/privacy">privacy policy</a>.</p>
-                    <p class="sm-brochure-email-status" data-brochure-request-status role="status" aria-live="polite"></p>
                 </form>
                 <div class="sm-brochure-thanks" data-brochure-thanks hidden>
                     <p>Thank you. Your brochure is ready.</p>
@@ -840,6 +848,6 @@
 
     <script src="/site-globals.js?v=20261111" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=lt4" defer></script>
 </body>
 </html>
