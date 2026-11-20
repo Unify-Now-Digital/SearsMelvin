@@ -394,6 +394,10 @@ html body main p { max-width: var(--sm-measure); }
 html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
 html body .floating-badge { background-color: var(--sm-accent-aa); }
 html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }
+@media (max-width: 320px) {
+  html body .mobile-bottom-nav a.mobile-nav-item:last-child { padding-left: 0; padding-right: 0; }
+  html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.5625rem; }
+}
 
 /* ---- Header offset ----
    One height for the fixed header, the trust bar, anchor jumps and the

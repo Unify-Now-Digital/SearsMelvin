@@ -33,6 +33,9 @@
         var r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) return null;
         if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+        if (el.closest && (el.closest(".hero-buttons") || el.closest(".still-questions"))) {
+            return { top: r.top - 40, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height + 40 };
+        }
         return r;
     }
 
@@ -74,7 +77,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form input, form select, form textarea, form button, .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);
@@ -101,23 +104,7 @@
             if (!chrome || rect.top < chrome.top) chrome = rect;
         }
         var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + CHAT_NAV_GAP - CHAT_INNER)) : 16;
-        var guard = 0;
-        while (guard < 8 && chatHits(bottom, withPrompt)) {
-            var blockers = chatBlockers();
-            var box = widgetBox(bottom, withPrompt);
-            var next = bottom;
-            for (var j = 0; j < blockers.length; j++) {
-                if (!overlaps(box, blockers[j])) continue;
-                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 16));
-                if (needed > next) next = needed;
-            }
-            if (next <= bottom) next = bottom + 24;
-            var cap = Math.round(vh * 0.7);
-            if (next > cap) return cap;
-            bottom = next;
-            guard++;
-        }
-        return bottom;
+        return liftClear(bottom, withPrompt, 0.85);
     }
 
     function chatHits(hostBottom, withPrompt) {
@@ -129,26 +116,31 @@
         return false;
     }
 
-    function clearance(withPrompt) {
-        var bottom = 16;
+    // Move up only as far as a control we can actually clear. Jumping to the
+    // cap used to park the bubble on a higher field (the contact enquiry
+    // type) when a lower control wanted more room than the cap allows.
+    function liftClear(bottom, withPrompt, capRatio) {
         var vh = window.innerHeight;
-        var cap = Math.round(vh * 0.55);
+        var cap = Math.round(vh * capRatio);
         var guard = 0;
-        while (guard < 10 && chatHits(bottom, withPrompt)) {
-            var box = widgetBox(bottom, withPrompt);
+        while (guard < 8 && chatHits(bottom, withPrompt)) {
             var blockers = chatBlockers();
+            var box = widgetBox(bottom, withPrompt);
             var next = bottom;
-            for (var i = 0; i < blockers.length; i++) {
-                if (!overlaps(box, blockers[i])) continue;
-                var needed = Math.ceil(vh - CHAT_INNER - (blockers[i].top - 16));
-                if (needed > next) next = needed;
+            for (var j = 0; j < blockers.length; j++) {
+                if (!overlaps(box, blockers[j])) continue;
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 16));
+                if (needed <= cap && needed > next) next = needed;
             }
-            if (next <= bottom) next = bottom + 36;
-            bottom = Math.min(next, cap);
-            if (bottom >= cap) break;
+            if (next <= bottom) return bottom;
+            bottom = next;
             guard++;
         }
         return bottom;
+    }
+
+    function clearance(withPrompt) {
+        return liftClear(16, withPrompt, 0.55);
     }
 
     function isChatWidgetEl(el) {
