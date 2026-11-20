@@ -37,30 +37,6 @@ lc-chat-widget,
     }
 }
 
-/* When the cookie consent banner is showing, lift higher so it stays usable.
-   The card sits bottom-left. chat-widget is included so the desktop bubble clears it. */
-body:has(#cookieConsent[style*="display: block"]) chat-widget,
-body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
-body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
-body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
-body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
-body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
-    bottom: 120px !important;
-}
-
-@media (max-width: 768px) {
-    body:has(#cookieConsent[style*="display: block"]) chat-widget,
-    body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
-    body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-    body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
-    body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
-    body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
-    body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
-        bottom: 190px !important;
-    }
-}
-
 /* memorial.html has an extra bottom bar on mobile */
 @media (max-width: 768px) {
     body.has-mobile-bottom-bar chat-widget,
@@ -111,8 +87,8 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
 }
 
 /* Phones use the same one-second fade as desktop. The corner anchor
-   below keeps the bubble above the price bar, the bottom nav, and the
-   cookie card. */
+   below keeps the bubble above the price bar and the bottom nav.
+   The cookie strip sits under the header, so it does not add to this gap. */
 
 /* Hide the chat widget (greeting bubble + round button) while the memorial
    quote pop-up is open; it covered the configuration summary on mobile.
@@ -131,8 +107,8 @@ body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
    move the bubble. A zero-size fixed host at the corner, with a flat
    transform, becomes the box the bubble is positioned against.
    --sm-chat-bottom is the gap under that corner. site-globals.js sets
-   it so the bubble and greeting sit above the price bar, the cookie
-   card, and any quote button. Phones use this same anchor. */
+   it so the bubble and greeting sit above the price bar, the bottom
+   nav, and any quote or submit button. Phones use this same anchor. */
 html body chat-widget {
     position: fixed !important;
     top: auto !important;

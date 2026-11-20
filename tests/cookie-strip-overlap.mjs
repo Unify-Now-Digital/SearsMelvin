@@ -122,7 +122,9 @@ const MEASURE = `(() => {
     vh: innerHeight,
     scrollY: Math.round(scrollY),
     cookie,
-    cookieBottom: cookieEl ? getComputedStyle(cookieEl).bottom : null,
+    cookieTop: cookieEl ? getComputedStyle(cookieEl).top : null,
+    inlineBottom: cookieEl ? cookieEl.style.bottom : "",
+    stack: getComputedStyle(document.documentElement).getPropertyValue("--sm-cookie-stack").trim(),
     gap: cookie && intro ? round(intro.top - cookie.bottom) : null,
     introOverlap: overlap(cookie, intro),
     barBtnOverlap: overlap(cookie, barBtn),
@@ -202,12 +204,17 @@ async function main() {
     function check(label, row) {
       rows.push({ label, ...row, cookieH: row.cookie && row.cookie.h });
       if (!row.cookie || row.cookie.h < 40) failures.push(`${label}: cookie strip missing`);
+      const header = row.vw <= 768 ? 68 : 80;
+      if (Math.abs(row.cookie.top - header) > 2) failures.push(`${label}: strip is not under the header (top ${row.cookie.top})`);
       if (row.introOverlap > 0) failures.push(`${label}: Request your quote overlap ${row.introOverlap}px`);
       if (row.barBtnOverlap > 0) failures.push(`${label}: Get a quote overlap ${row.barBtnOverlap}px`);
       if (row.barOverlap > 0) failures.push(`${label}: phone bar overlap ${row.barOverlap}px`);
       if (!row.sameSize || !row.sameStyle) failures.push(`${label}: Accept and Reject differ`);
       if (!row.privacy || !row.manage) failures.push(`${label}: privacy link or Manage choices missing`);
       if (row.cookie && row.cookie.left > 1) failures.push(`${label}: strip is not full width (left ${row.cookie.left})`);
+      if (row.inlineBottom) failures.push(`${label}: first layer set bottom (${row.inlineBottom})`);
+      const stack = parseFloat(row.stack);
+      if (!Number.isFinite(stack) || Math.abs(stack - row.cookie.h) > 1) failures.push(`${label}: page offset ${row.stack} is not the strip height ${row.cookie.h}`);
     }
 
     for (const size of SIZES) {
@@ -241,8 +248,8 @@ async function main() {
     await settle();
     const desk = await evalJson(MEASURE);
     rows.push({ label: "1280 desktop home", ...desk });
-    if (!desk.cookie || desk.cookie.left < 16 || desk.cookie.w > 480) {
-      failures.push(`desktop home card moved (left ${desk.cookie && desk.cookie.left}, width ${desk.cookie && desk.cookie.w})`);
+    if (!desk.cookie || Math.abs(desk.cookie.top - 80) > 2 || desk.cookie.left > 1) {
+      failures.push(`desktop home strip moved (top ${desk.cookie && desk.cookie.top}, left ${desk.cookie && desk.cookie.left})`);
     }
 
     await open("/memorial.html", { w: 1280, h: 800 });
@@ -250,9 +257,11 @@ async function main() {
     await settle();
     const deskProduct = await evalJson(MEASURE);
     rows.push({ label: "1280 desktop product", ...deskProduct });
-    if (!deskProduct.cookie || deskProduct.cookie.left < 16 || deskProduct.cookie.w > 480) {
-      failures.push(`desktop product card moved (left ${deskProduct.cookie && deskProduct.cookie.left}, width ${deskProduct.cookie && deskProduct.cookie.w})`);
+    if (!deskProduct.cookie || Math.abs(deskProduct.cookie.top - 80) > 2 || deskProduct.cookie.left > 1) {
+      failures.push(`desktop product strip moved (top ${deskProduct.cookie && deskProduct.cookie.top}, left ${deskProduct.cookie && deskProduct.cookie.left})`);
     }
+    if (deskProduct.introOverlap > 0) failures.push(`desktop product quote overlap ${deskProduct.introOverlap}px`);
+    if (desk.inlineBottom || deskProduct.inlineBottom) failures.push("desktop strip set a bottom value");
   } finally {
     if (client) client.close();
     chrome.kill("SIGKILL");
@@ -260,7 +269,7 @@ async function main() {
   }
 
   for (const row of rows) {
-    console.log(`${row.label}: intro ${row.introOverlap}px, bar button ${row.barBtnOverlap}px, bar ${row.barOverlap}px, strip ${row.cookieH}px, bottom ${row.cookieBottom}, bar visible ${row.barVisible}`);
+    console.log(`${row.label}: intro ${row.introOverlap}px, bar button ${row.barBtnOverlap}px, bar ${row.barOverlap}px, strip ${row.cookieH}px, top ${row.cookieTop}, bar visible ${row.barVisible}`);
   }
   assert.deepEqual(failures, [], failures.join("\n"));
   console.log("cookie-strip-overlap: ok");

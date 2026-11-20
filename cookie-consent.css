@@ -1,8 +1,6 @@
-/* Cookie choice card. Colours, type and corners come from tokens.css.
-   Phone (768px and below): a slim full-width strip, flush above the
-   bottom nav. Memorial pages at 1024px and below use the same strip,
-   flush above the phone price bar when that bar is visible.
-   Desktop: format D, bottom left. The second layer is format D2. */
+/* Cookie choice. The first layer is a slim strip under the header on
+   every page. The second layer (Manage choices) stays a centred card
+   on desktop and a bottom sheet on phones. Colours come from tokens.css. */
 
 html body #cookieScrim.sm-cookie-scrim {
   display: none;
@@ -19,22 +17,25 @@ html body #cookieScrim.sm-cookie-scrim.is-on {
 html body #cookieConsent.sm-cookie {
   display: none;
   position: fixed;
-  z-index: 9999;
-  left: var(--sm-space-5);
-  bottom: var(--sm-space-5);
-  width: 420px;
+  z-index: 90;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: auto;
+  width: auto;
   box-sizing: border-box;
   margin: 0;
-  padding: 1.25rem;
+  padding: 8px 12px;
   background: var(--sm-color-bg);
   color: var(--sm-color-text);
-  border: 1px solid var(--sm-color-border-decorative);
-  border-radius: var(--sm-radius-sm);
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--sm-color-text) 18%, transparent);
+  border: 0;
+  border-bottom: 1px solid var(--sm-color-border-decorative);
+  border-radius: 0 0 var(--sm-radius-sm) var(--sm-radius-sm);
+  box-shadow: none;
   font-family: var(--font-body);
   font-weight: 400;
   font-size: var(--sm-text-xs);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 html body #cookieConsent.sm-cookie *,
@@ -302,87 +303,106 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
   display: none !important;
 }
 
-@media (min-width: 769px) {
-  html body #cookieConsent .sm-cookie-lead--phone {
-    display: none;
-  }
+html body #cookieConsent:not(.is-manage) .sm-cookie-choice {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--sm-space-2);
 }
 
-/* The desktop card sits above the sticky guide total, so the price stays visible. */
-@media (min-width: 1025px) {
-  body.memorial-page:has(.price-summary) #cookieConsent.sm-cookie:not(.is-manage) {
-    bottom: 140px;
-  }
+html body #cookieConsent:not(.is-manage) .sm-cookie-choice .sm-cookie-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html body #cookieConsent:not(.is-manage) .sm-cookie-lead--desk {
+  display: none;
+}
+
+html body #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 9.25rem;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--sm-text-xs);
+  line-height: 1.25;
+  color: var(--sm-color-text);
+}
+
+html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 6rem;
+  gap: var(--sm-space-2);
+  margin: 0;
+}
+
+html body #cookieConsent:not(.is-manage) .sm-cookie-btn {
+  flex: 1 1 0;
+  min-height: var(--sm-target-min);
+  height: var(--sm-target-min);
+  min-width: var(--sm-target-min);
+  padding: 0 var(--sm-space-2);
+  border-radius: var(--sm-radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: 500;
+  text-transform: none;
+}
+
+html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-height: var(--sm-target-min);
+  margin: 0;
+  padding: 0 var(--sm-space-2);
+  font-family: var(--font-body);
+  font-size: var(--sm-text-xs);
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  max-width: 6.5rem;
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
   html body #cookieConsent.sm-cookie:not(.is-manage) {
-    left: 0;
-    right: 0;
-    width: auto;
-    bottom: calc(var(--ck-nav, 79px) + env(safe-area-inset-bottom, 0px));
-    padding: var(--sm-space-2) var(--sm-space-3) calc(var(--sm-space-2) + env(safe-area-inset-bottom, 0px));
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-top: 1px solid var(--sm-color-border-decorative);
-    border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
-    box-shadow: 0 -4px 18px color-mix(in srgb, var(--sm-color-text) 12%, transparent);
+    top: 68px;
+    padding: 8px 10px;
   }
+}
 
+/* Below 390 a single row would drop the lead under 12px or squeeze the
+   buttons, so the sentence takes the first row and the actions the next. */
+@media (max-width: 374px) {
   html body #cookieConsent:not(.is-manage) .sm-cookie-choice {
-    display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: var(--sm-space-2);
   }
 
-  html body #cookieConsent:not(.is-manage) .sm-cookie-lead {
+  html body #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
     flex: 1 1 100%;
-    margin: 0;
-    font-family: var(--font-body);
-    font-size: var(--sm-text-xs);
-    line-height: 1.35;
-    color: var(--sm-color-text);
+    min-width: 0;
   }
 
   html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
-    display: flex;
-    flex: 1 1 auto;
-    min-width: 200px;
-    gap: var(--sm-space-2);
-    margin: 0;
-  }
-
-  html body #cookieConsent:not(.is-manage) .sm-cookie-btn {
     flex: 1 1 0;
-    min-height: var(--sm-target-min);
-    height: var(--sm-target-min);
-    min-width: var(--sm-target-min);
-    padding: 0 var(--sm-space-3);
-    border-radius: var(--sm-radius-sm);
-    font-family: var(--font-body);
-    font-size: var(--sm-text-sm);
-    font-weight: 500;
-    text-transform: none;
+    min-width: 0;
   }
+}
 
-  html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: auto;
-    min-height: var(--sm-target-min);
-    margin: 0;
-    padding: 0 var(--sm-space-2);
-    font-family: var(--font-body);
-    font-size: var(--sm-text-xs);
-    font-weight: 500;
-    text-align: center;
-    white-space: nowrap;
-  }
-
+@media (max-width: 768px) {
   html body #cookieConsent .sm-cookie-choice .sm-cookie-title {
     position: absolute;
     width: 1px;
@@ -431,121 +451,6 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
 
   html body #cookieConsent.is-manage .sm-cookie-btn--save {
     flex-basis: 100%;
-  }
-}
-
-/* Memorial pages from 769px to 1024px keep the slim strip. Narrower
-   memorial pages already match the phone rules above. The phone price
-   bar, when it is visible, sits flush under the strip. */
-@media (min-width: 769px) and (max-width: 1024px) {
-  body.memorial-page #cookieConsent.sm-cookie:not(.is-manage) {
-    left: 0;
-    right: 0;
-    width: auto;
-    bottom: env(safe-area-inset-bottom, 0px);
-    padding: var(--sm-space-2) var(--sm-space-3);
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-top: 1px solid var(--sm-color-border-decorative);
-    border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
-    box-shadow: 0 -4px 18px color-mix(in srgb, var(--sm-color-text) 12%, transparent);
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-choice {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--sm-space-2);
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-choice .sm-cookie-title {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-lead--desk {
-    display: none;
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
-    display: block;
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-lead {
-    flex: 1 1 100%;
-    margin: 0;
-    font-family: var(--font-body);
-    font-size: var(--sm-text-xs);
-    line-height: 1.35;
-    color: var(--sm-color-text);
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-actions {
-    display: flex;
-    flex: 1 1 auto;
-    min-width: 200px;
-    gap: var(--sm-space-2);
-    margin: 0;
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-btn {
-    flex: 1 1 0;
-    min-height: var(--sm-target-min);
-    height: var(--sm-target-min);
-    min-width: var(--sm-target-min);
-    padding: 0 var(--sm-space-3);
-    border-radius: var(--sm-radius-sm);
-    font-family: var(--font-body);
-    font-size: var(--sm-text-sm);
-    font-weight: 500;
-    text-transform: none;
-  }
-
-  body.memorial-page #cookieConsent:not(.is-manage) .sm-cookie-manage {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: auto;
-    min-height: var(--sm-target-min);
-    margin: 0;
-    padding: 0 var(--sm-space-2);
-    font-family: var(--font-body);
-    font-size: var(--sm-text-xs);
-    font-weight: 500;
-    text-align: center;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 1024px) {
-  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent.sm-cookie:not(.is-manage) {
-    left: 0;
-    right: 0;
-    width: auto;
-    bottom: var(--sm-phone-bar-offset, 68px);
-    padding: var(--sm-space-2) var(--sm-space-3);
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-top: 1px solid var(--sm-color-border-decorative);
-    border-radius: var(--sm-radius-sm) var(--sm-radius-sm) 0 0;
-  }
-
-  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent .sm-cookie-lead {
-    margin: 0;
-  }
-
-  body.memorial-page:has(.mobile-bottom-bar.is-visible) #cookieConsent .sm-cookie-actions {
-    gap: var(--sm-space-2);
   }
 }
 

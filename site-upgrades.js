@@ -906,8 +906,9 @@
         watchFabOverlaps();
     }
 
-    // Scroll a brochure message clear of the phone cookie strip. This does not
-    // read or write the cookie choice.
+    // Scroll a brochure message out from under the cookie strip. A message
+    // that sits clear of the strip is left where it is. This does not read
+    // or write the cookie choice.
     function liftBrochureMessage(el) {
         try {
             var doc = el && el.ownerDocument;
@@ -919,8 +920,10 @@
             var cr = card.getBoundingClientRect();
             if (!cr || cr.height < 8) return;
             var r = el.getBoundingClientRect();
-            var gap = r.bottom - (cr.top - 12);
-            if (gap > 0 && view.scrollBy) view.scrollBy(0, gap);
+            var overlap = Math.min(r.bottom, cr.bottom) - Math.max(r.top, cr.top);
+            if (overlap <= 0 || r.right <= cr.left || r.left >= cr.right) return;
+            var delta = cr.bottom + 12 - r.top;
+            if (delta > 0 && view.scrollBy) view.scrollBy(0, delta);
         } catch (e) {}
     }
 

@@ -1,8 +1,6 @@
-/* Cookie choice card.
-   Phone (768px and below): slim full-width strip above the bottom nav.
-   Memorial pages at 1024px and below use the same strip, above the phone bar.
-   No visible heading on that strip.
-   Desktop: bottom-left card with the heading "Your cookie choices".
+/* Cookie choice.
+   The first layer is a slim strip under the header on every page.
+   It sets its top and the page offset, and never a bottom value.
    "Manage choices" opens the second layer. Essential stays on.
    Analytics starts off and maps to analytics_storage.
    Ads starts off and maps to ad_storage, ad_user_data and ad_personalization.
@@ -99,141 +97,18 @@
     return box;
   }
 
-  function quoteLabel(el) {
-    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    return text === 'Get a quote' || text === 'Request your quote' || text === 'Send me the brochure';
-  }
-
-  function controlNodes() {
-    var selectors = [
-      '#quoteIntro button',
-      '#quoteIntro .btn',
-      '.product-quote-intro button',
-      '.mobile-bottom-bar.is-visible .btn-primary',
-      '#brochureRequest button[type="submit"]',
-      '#brochureRequestStatus',
-      '.sm-brochure-field-error'
-    ];
-    var seen = [];
-    var out = [];
-    function add(el) {
-      if (!el || seen.indexOf(el) !== -1) return;
-      seen.push(el);
-      out.push(el);
-    }
-    var i;
-    var j;
-    for (i = 0; i < selectors.length; i++) {
-      var nodes = doc.querySelectorAll(selectors[i]);
-      for (j = 0; j < nodes.length; j++) add(nodes[j]);
-    }
-    var controls = doc.querySelectorAll('button, a');
-    for (i = 0; i < controls.length; i++) {
-      var control = controls[i];
-      if (!quoteLabel(control)) continue;
-      if (control.closest && control.closest('#cookieConsent, nav, #navbar, .mobile-bottom-nav')) continue;
-      add(control);
-    }
-    return out;
-  }
-
   function syncNavOffset() {
-    var navBox = shownBox(doc.querySelector('.mobile-bottom-nav'));
-    var navHeight = navBox ? Math.round(navBox.height) : 0;
-    doc.documentElement.style.setProperty('--ck-nav', navHeight + 'px');
     var manage = banner.classList.contains('is-manage');
     var hidden = banner.style.display === 'none';
-    var memorial = !!(doc.body && doc.body.classList.contains('memorial-page'));
-    var slim = root.innerWidth <= 768 || (memorial && root.innerWidth <= 1024);
-    if (manage || hidden || !slim) {
-      if (banner.style.bottom) banner.style.bottom = '';
-      if (!manage && !hidden && !slim) liftBrochureClear();
+    if (manage || hidden) {
+      doc.documentElement.style.setProperty('--sm-cookie-stack', '0px');
+      banner.style.top = '';
       return;
     }
-
-    var gap = 8;
-    var floor = 0;
-    var bar = shownBox(doc.querySelector('.mobile-bottom-bar.is-visible'));
-    if (bar) floor = Math.round(bar.height);
-    else if (navBox && root.innerWidth <= 768 && navBox.top < (root.innerHeight || 0) && navBox.bottom > 0) floor = navHeight;
-
-    var vh = root.innerHeight || 0;
-    var card = banner.getBoundingClientRect();
-    var naturalTop = vh - floor - (card.height || 0);
-    var need = floor;
-    var targets = controlNodes();
-
-    function consider(el) {
-      var box = shownBox(el);
-      if (!box || !vh) return;
-      if (box.bottom <= 0 || box.top >= vh) return;
-      if (card.height && box.bottom <= naturalTop + 0.5) return;
-      if (box.top >= vh - floor - 0.5) return;
-      var above = Math.ceil(vh - box.top + targetGap(el));
-      if (above > need) need = above;
-    }
-
-    var i;
-    for (i = 0; i < targets.length; i++) consider(targets[i]);
-
-    if (!bar && root.innerWidth <= 768) {
-      var dot = shownBox(doc.querySelector('.mobile-bottom-nav .nav-icon-bg'));
-      if (dot && dot.bottom >= 0 && dot.top <= vh) {
-        var dotClear = Math.ceil(vh - (dot.top - 12));
-        if (dotClear > floor && dotClear < vh / 2) {
-          doc.documentElement.style.setProperty('--ck-nav', dotClear + 'px');
-        }
-        if (dotClear > need) need = dotClear;
-      }
-    }
-
-    banner.style.bottom = need + 'px';
-    var placed = banner.getBoundingClientRect();
-    for (i = 0; i < targets.length; i++) {
-      var placedBox = shownBox(targets[i]);
-      if (!placedBox) continue;
-      if (placedBox.top < placed.bottom - 0.5 && placedBox.bottom > placed.top && placedBox.left < placed.right && placedBox.right > placed.left) {
-        var corrected = Math.ceil(vh - placedBox.top + targetGap(targets[i]));
-        if (corrected > need) {
-          need = corrected;
-          banner.style.bottom = corrected + 'px';
-          placed = banner.getBoundingClientRect();
-        }
-      }
-    }
-  }
-
-  function targetGap(el) {
-    if (!el) return 8;
-    if (el.closest && el.closest('#brochureRequest')) return 16;
-    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    if (text === 'Send me the brochure') return 16;
-    return 8;
-  }
-
-  function liftBrochureClear() {
-    var vh = root.innerHeight || 0;
-    var guard = 0;
-    while (guard < 4) {
-      var card = banner.getBoundingClientRect();
-      if (!card.height) return;
-      var nodes = doc.querySelectorAll('#brochureRequest button[type="submit"], #brochureRequestStatus, .sm-brochure-field-error');
-      var need = 0;
-      for (var i = 0; i < nodes.length; i++) {
-        var box = shownBox(nodes[i]);
-        if (!box) continue;
-        if (box.top >= card.bottom - 0.5 || box.bottom <= card.top) continue;
-        if (box.left >= card.right - 0.5 || box.right <= card.left) continue;
-        var above = Math.ceil(vh - box.top + 16);
-        if (above > need) need = above;
-      }
-      if (!need) return;
-      var current = parseFloat(banner.style.bottom);
-      if (isNaN(current)) current = 0;
-      if (need <= current + 0.5) return;
-      banner.style.bottom = need + 'px';
-      guard++;
-    }
+    var header = root.innerWidth <= 768 ? 68 : 80;
+    banner.style.top = header + 'px';
+    var height = Math.round(banner.getBoundingClientRect().height);
+    doc.documentElement.style.setProperty('--sm-cookie-stack', (height > 0 ? height : 0) + 'px');
   }
 
   var offsetQueued = false;
@@ -276,6 +151,7 @@
     banner.setAttribute('aria-labelledby', 'cookieTitle');
     if (scrim) scrim.classList.remove('is-on');
     doc.body.classList.remove('sm-cookie-manage');
+    syncNavOffset();
     syncQuoteBar();
   }
 

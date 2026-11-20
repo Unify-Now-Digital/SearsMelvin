@@ -10,9 +10,6 @@
         if (document.body.classList.contains('has-mobile-bottom-bar') && isMobile()) {
             return 160;
         }
-        var consent = document.getElementById('cookieConsent');
-        var consentVisible = consent && getComputedStyle(consent).display !== 'none';
-        if (consentVisible) return isMobile() ? 190 : 120;
         return isMobile() ? 100 : 24;
     }
 
@@ -20,7 +17,7 @@
     // places it from its own position prop (middle-right on this account).
     // Setting that prop to bottom-right, then pinning the host to a
     // zero-size corner, is what actually moves the bubble.
-    var CHAT_INNER = 24;
+    var CHAT_INNER = 18;
     var CHAT_PROMPT_H = 176;
     var CHAT_PROMPT_W = 360;
     var CHAT_BUBBLE = 84;
@@ -59,8 +56,7 @@
         var nodes = [];
         var chrome = [
             document.querySelector('.mobile-bottom-bar.is-visible'),
-            document.querySelector('.price-summary'),
-            document.getElementById('cookieConsent')
+            document.querySelector('.price-summary')
         ];
         if (isMobile()) chrome.push(document.querySelector('.mobile-bottom-nav'));
         var i;
@@ -76,7 +72,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, form button[type="submit"], form input[type="submit"], .floating-actions button, .floating-actions a');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);
@@ -93,7 +89,6 @@
         var vh = window.innerHeight;
         var chrome = null;
         var pieces = [
-            shownRect(document.getElementById('cookieConsent')),
             shownRect(document.querySelector('.mobile-bottom-bar.is-visible')),
             shownRect(document.querySelector('.price-summary'))
         ];
@@ -103,7 +98,7 @@
             if (!rect || rect.bottom < vh - 30) continue;
             if (!chrome || rect.top < chrome.top) chrome = rect;
         }
-        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + 12 - CHAT_INNER)) : 16;
+        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + 16 - CHAT_INNER)) : 16;
         var guard = 0;
         while (guard < 8 && chatHits(bottom, withPrompt)) {
             var blockers = chatBlockers();
@@ -111,7 +106,7 @@
             var next = bottom;
             for (var j = 0; j < blockers.length; j++) {
                 if (!overlaps(box, blockers[j])) continue;
-                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 12));
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 16));
                 if (needed > next) next = needed;
             }
             if (next <= bottom) next = bottom + 24;
@@ -143,7 +138,7 @@
             var next = bottom;
             for (var i = 0; i < blockers.length; i++) {
                 if (!overlaps(box, blockers[i])) continue;
-                var needed = Math.ceil(vh - CHAT_INNER - (blockers[i].top - 12));
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[i].top - 16));
                 if (needed > next) next = needed;
             }
             if (next <= bottom) next = bottom + 36;
