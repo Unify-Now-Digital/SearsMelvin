@@ -9,7 +9,6 @@ const LOGO = `${SITE}/images/brand/logo/sears-melvin-stacked-ink.png`;
 const COVER = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=10.1`;
 const PDF = "/assets/sears-melvin-brochure.pdf?v=10.1";
 const PHONE_DISPLAY = "020 3835 2548";
-const PHONE_TEL = "tel:+442038352548";
 const ADDRESS = "1 The Market Place, Falloden Way, London NW11 6LB";
 const SHOWROOM = "Visit our Finchley showroom, Monday to Friday, 10am to 3pm.";
 const FIXERS = "Our fixers are NAMM-qualified and RQMF registered.";
@@ -322,7 +321,7 @@ export function familyBrochureEmail({ firstName, source } = {}) {
           </tr>
           <tr>
             <td style="padding:4px 36px 28px;">
-              ${p(`When you are ready, you can <a href="${esc(quoteHref)}" style="color:${BRONZE};text-decoration:underline;">request a quote</a>, or call us on <a href="${PHONE_TEL}" style="color:${BRONZE};text-decoration:underline;white-space:nowrap;">${PHONE_DISPLAY}</a>.`, { margin: "0 0 16px" })}
+              ${p(`When you are ready, you can <a href="${esc(quoteHref)}" style="color:${BRONZE};text-decoration:underline;">request a quote</a>, or call us on <span style="color:${INK};white-space:nowrap;">${PHONE_DISPLAY}</span>.`, { margin: "0 0 16px" })}
               ${p(`${SHOWROOM}<br>${ADDRESS}`, { margin: "0 0 22px" })}
               ${p("With care,<br>The Sears Melvin team", { margin: "0" })}
             </td>
@@ -535,7 +534,7 @@ export function familyEnquiryEmail({
           ${messageBlock(message)}
           <tr>
             <td style="padding:24px 36px 28px;">
-              ${p(`If you need us sooner, call <a href="${PHONE_TEL}" style="color:${BRONZE};text-decoration:underline;white-space:nowrap;">${PHONE_DISPLAY}</a>.`)}
+              ${p(`If you need us sooner, call <span style="color:${INK};white-space:nowrap;">${PHONE_DISPLAY}</span>.`)}
               ${p(`${SHOWROOM}<br>${ADDRESS}`, { margin: "0 0 22px" })}
               ${p("With care,<br>The Sears Melvin team", { margin: "0" })}
             </td>
