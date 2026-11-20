@@ -117,14 +117,23 @@ const MEASURE = `(() => {
   const rejectBox = box(reject);
   const acceptStyle = accept ? getComputedStyle(accept) : null;
   const rejectStyle = reject ? getComputedStyle(reject) : null;
+  const leadEl = document.querySelector(".sm-cookie-lead--phone");
+  const lead = box(leadEl);
+  const send = box(document.querySelector(".form-submit"));
   return {
     vw: innerWidth,
     vh: innerHeight,
     scrollY: Math.round(scrollY),
     cookie,
     cookieTop: cookieEl ? getComputedStyle(cookieEl).top : null,
+    position: cookieEl ? getComputedStyle(cookieEl).position : "",
     inlineBottom: cookieEl ? cookieEl.style.bottom : "",
     stack: getComputedStyle(document.documentElement).getPropertyValue("--sm-cookie-stack").trim(),
+    lead,
+    leadClip: !!(leadEl && leadEl.scrollHeight > leadEl.clientHeight + 1),
+    send,
+    sendOverlap: overlap(cookie, send),
+    overflowX: Math.round(document.documentElement.scrollWidth - document.documentElement.clientWidth),
     gap: cookie && intro ? round(intro.top - cookie.bottom) : null,
     introOverlap: overlap(cookie, intro),
     barBtnOverlap: overlap(cookie, barBtn),
@@ -206,7 +215,19 @@ async function main() {
       rows.push({ label, ...row, cookieH: row.cookie && row.cookie.h });
       if (!row.cookie || row.cookie.h < 40) failures.push(`${label}: cookie strip missing`);
       const header = row.vw <= 768 ? 68 : 80;
-      if (Math.abs(row.cookie.top - header) > 2) failures.push(`${label}: strip is not under the header (top ${row.cookie.top})`);
+      if (row.scrollY < 8) {
+        if (Math.abs(row.cookie.top - header) > 2) failures.push(`${label}: strip is not under the header (top ${row.cookie.top})`);
+        if (row.position !== "absolute") failures.push(`${label}: strip is ${row.position}, so it stays on screen`);
+      } else if (row.cookie.bottom > header + 1) {
+        failures.push(`${label}: strip stayed on screen after scroll (bottom ${row.cookie.bottom})`);
+      }
+      if (row.vw <= 768 && row.scrollY < 8) {
+        if (!row.lead || row.lead.w < row.cookie.w - 32) failures.push(`${label}: phone text is ${row.lead && row.lead.w}px in a ${row.cookie.w}px strip`);
+        if (!row.accept || !row.lead || row.accept.top < row.lead.bottom - 1) failures.push(`${label}: buttons are not below the text`);
+        if (row.leadClip) failures.push(`${label}: phone text is clipped`);
+      }
+      if (row.overflowX > 1) failures.push(`${label}: horizontal overflow ${row.overflowX}px`);
+      if (row.sendOverlap > 0) failures.push(`${label}: Send Message overlap ${row.sendOverlap}px`);
       if (row.introOverlap > 0) failures.push(`${label}: Request your quote overlap ${row.introOverlap}px`);
       if (row.barBtnOverlap > 0) failures.push(`${label}: Get a quote overlap ${row.barBtnOverlap}px`);
       if (row.barOverlap > 0) failures.push(`${label}: phone bar overlap ${row.barOverlap}px`);
@@ -253,6 +274,8 @@ async function main() {
     if (!desk.cookie || Math.abs(desk.cookie.top - 80) > 2 || desk.cookie.left > 1) {
       failures.push(`desktop home strip moved (top ${desk.cookie && desk.cookie.top}, left ${desk.cookie && desk.cookie.left})`);
     }
+    if (!desk.accept || desk.accept.w > 160) failures.push(`desktop Accept is ${desk.accept && desk.accept.w}px`);
+    if (desk.position !== "absolute") failures.push(`desktop strip is ${desk.position}`);
 
     await open("/memorial.html", { w: 1280, h: 800 });
     await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
@@ -264,6 +287,20 @@ async function main() {
     }
     if (deskProduct.introOverlap > 0) failures.push(`desktop product quote overlap ${deskProduct.introOverlap}px`);
     if (desk.inlineBottom || deskProduct.inlineBottom) failures.push("desktop strip set a bottom value");
+    if (deskProduct.accept && deskProduct.accept.w > 160) failures.push(`desktop product Accept is ${deskProduct.accept.w}px`);
+
+    await open("/contact.html", { w: 393, h: 852 });
+    await send("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 1, mobile: true });
+    await evalJson(`(() => {
+      const btn = document.querySelector(".form-submit");
+      if (!btn) return;
+      const top = btn.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo(0, Math.max(0, top - 100));
+    })()`);
+    await settle();
+    const contact = await evalJson(MEASURE);
+    rows.push({ label: "393 contact send", ...contact });
+    check("393 contact send", contact);
   } finally {
     if (client) client.close();
     chrome.kill("SIGKILL");

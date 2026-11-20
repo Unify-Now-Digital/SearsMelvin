@@ -99,10 +99,10 @@
 
   // Same heights as the head script and cookie-consent.css. Measuring the
   // strip here let the offset change again after fonts and the chat loaded.
+  // 108px is the stacked phone strip. 61px is the single desktop row.
   function stackHeight() {
     var w = root.innerWidth || 0;
-    if (w <= 389) return 102;
-    if (w <= 430) return 99;
+    if (w <= 768) return 108;
     return 61;
   }
 

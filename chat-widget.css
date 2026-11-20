@@ -135,3 +135,13 @@ html body chat-widget {
         opacity: 1;
     }
 }
+
+/* The bubble covers the right edge. This spacer is the room that lets
+   the last row scroll clear of it. It is in the stylesheet, so the
+   page does not jump when the widget arrives. */
+html body::after {
+    content: "";
+    display: block;
+    height: 80px;
+    clear: both;
+}
