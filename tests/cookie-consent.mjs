@@ -57,6 +57,16 @@ assert.match(css, /body:has\(\.quote-overlay\.active\) #cookieConsent\.sm-cookie
 assert.match(css, /body:has\(\.quote-overlay\.active\) #cookieScrim\.sm-cookie-scrim/);
 assert.doesNotMatch(read("cookie-consent.js"), /quote-overlay/, "hiding the card must not change the consent script");
 assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
+assert.match(css, /@media \(max-width: 768px\) \{[\s\S]*left: 0;[\s\S]*--ck-nav, 79px/);
+assert.match(css, /#cookieConsent:not\(\.is-manage\) \.sm-cookie-btn \{[\s\S]*height: var\(--sm-target-min\)/);
+assert.match(css, /--sm-phone-bar-offset, 68px/);
+const cookieJs = read("cookie-consent.js");
+assert.match(cookieJs, /does not read or write gclid, gbraid or wbraid/);
+assert.doesNotMatch(cookieJs.replace(/\/\*[\s\S]*?\*\//g, ""), /gclid|gbraid|wbraid/);
+assert.match(cookieJs, /#quoteIntro button/);
+assert.match(cookieJs, /Request your quote/);
+assert.match(cookieJs, /Get a quote/);
+assert.match(cookieJs, /function syncNavOffset/);
 assert.match(read("chat-widget.css"), /body:has\(#cookieConsent\[style\*="display: block"\]\) chat-widget/);
 assert.match(read("site-upgrades.css"), /#cookieConsent\[style\*="display: block"\]\) \.sm-brochure-fab/);
 const upgrades = read("site-upgrades.js");
