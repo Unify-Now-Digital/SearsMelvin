@@ -86,7 +86,7 @@ assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bi
 for (const f of ["contact.html", "memorial.html", "memorials.html", "index.html"]) {
   assert.match(readFileSync(f, "utf8"), /attribution: \(window\.SMUpgrades && window\.SMUpgrades\.getAttribution\)/, `${f} sends attribution`);
 }
-assert.match(readFileSync("site-upgrades.js", "utf8"), /action: 'email'[^\n]*attribution: attribution/);
+assert.match(readFileSync("site-upgrades.js", "utf8"), /brochureRequestPayload\(\{ name: name, email: email, phone: phone \}, storedAttribution\(\)/, "brochure form sends stored attribution");
 
 // Floating brochure button
 assert.equal(up.fabAllowed("/"), true);
