@@ -66,6 +66,20 @@
         f.parentNode.insertBefore(gtm, f);
       })();
     </script>
+    <script>
+    /* Reserve the cookie strip before first paint. A stored choice means
+       the strip stays hidden, so the offset is 0. Does not change consent. */
+    (function () {
+      var stack = 0;
+      try {
+        if (!localStorage.getItem('cookieConsent')) {
+          var w = document.documentElement.clientWidth || window.innerWidth || 0;
+          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
+        }
+      } catch (e) {}
+      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+    })();
+    </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
          long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
          scroll events during measurement and idle for ~3s, so the previous

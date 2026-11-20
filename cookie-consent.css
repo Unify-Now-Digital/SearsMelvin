@@ -377,6 +377,25 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
   text-decoration: underline;
 }
 
+/* Fixed heights, shared with the head script that sets --sm-cookie-stack.
+   102px under 390, 99px through 430, 61px above that. */
+html body #cookieConsent.sm-cookie:not(.is-manage) {
+  height: 61px;
+  overflow: hidden;
+}
+
+@media (max-width: 430px) {
+  html body #cookieConsent.sm-cookie:not(.is-manage) {
+    height: 99px;
+  }
+}
+
+@media (max-width: 389px) {
+  html body #cookieConsent.sm-cookie:not(.is-manage) {
+    height: 102px;
+  }
+}
+
 @media (max-width: 768px) {
   html body #cookieConsent.sm-cookie:not(.is-manage) {
     top: 68px;

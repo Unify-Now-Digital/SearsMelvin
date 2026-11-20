@@ -97,6 +97,15 @@
     return box;
   }
 
+  // Same heights as the head script and cookie-consent.css. Measuring the
+  // strip here let the offset change again after fonts and the chat loaded.
+  function stackHeight() {
+    var w = root.innerWidth || 0;
+    if (w <= 389) return 102;
+    if (w <= 430) return 99;
+    return 61;
+  }
+
   function syncNavOffset() {
     var manage = banner.classList.contains('is-manage');
     var hidden = banner.style.display === 'none';
@@ -107,8 +116,7 @@
     }
     var header = root.innerWidth <= 768 ? 68 : 80;
     banner.style.top = header + 'px';
-    var height = Math.round(banner.getBoundingClientRect().height);
-    doc.documentElement.style.setProperty('--sm-cookie-stack', (height > 0 ? height : 0) + 'px');
+    doc.documentElement.style.setProperty('--sm-cookie-stack', stackHeight() + 'px');
   }
 
   var offsetQueued = false;
