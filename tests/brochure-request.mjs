@@ -49,6 +49,7 @@ globalThis.fetch = async (input, init = {}) => {
     { id: "f-wbraid", fieldKey: "contact.wbraid" },
     { id: "f-utm", fieldKey: "contact.utm_source" },
     { id: "f-lc", fieldKey: "contact.lead_channel" },
+    { id: "f-page", fieldKey: "contact.source_page" },
   ] });
   if (url.endsWith("/contacts/") && (init.method || "GET") === "POST") return Response.json({ contact: { id: "ghl-1" } });
   if (url.includes("/opportunities/search")) return Response.json({ opportunities: [] });
@@ -71,7 +72,9 @@ const response = await onRequestPost({
       email: "test+brochure@unifydigital.uk",
       phone: "07000 000000",
       message: "Brochure request",
-      source_page: "/brochure",
+      brochure_source: "home",
+      source_page: "/",
+      details: { brochure_source: "home", product_slug: "the-castell", product_name: "The Castell" },
       attribution: {
         gclid: "test-gclid",
         gbraid: "test-gbraid",
@@ -91,6 +94,10 @@ const enquiry = calls.find((call) => call.url.includes("/rest/v1/enquiries") && 
 assert.ok(enquiry, "Mason enquiry insert");
 assert.equal(enquiry.body.sub_type, "brochure");
 assert.equal(enquiry.body.channel, "contact");
+assert.equal(enquiry.body.source_page, "/");
+assert.equal(enquiry.body.details.brochure_source, "home");
+assert.equal(enquiry.body.details.product_slug, "the-castell");
+assert.equal(enquiry.body.details.product_name, "The Castell");
 assert.equal(enquiry.body.lead_channel, "Brochure");
 assert.equal(enquiry.body.gclid, "test-gclid");
 assert.equal(enquiry.body.gbraid, "test-gbraid");
@@ -109,7 +116,28 @@ assert.ok(contact.body.tags.includes("channel-brochure"));
 const emails = calls.filter((call) => call.url.includes("resend"));
 const business = emails.find((call) => call.body && call.body.to === "info@searsmelvin.co.uk");
 assert.ok(business, JSON.stringify(emails.map((call) => call.body && { to: call.body.to, subject: call.body.subject })));
-assert.equal(business.body.subject, "New Enquiry — TEST Brochure — Brochure");
+assert.equal(business.body.subject, "New Enquiry — Brochure request: TEST Brochure");
+assert.match(business.body.html, /Brochure sent to test\+brochure@unifydigital\.uk at \d{2}:\d{2} on \d{1,2} [A-Z][a-z]{2} \d{4} UK time/);
+assert.match(business.body.text, /^Brochure sent to test\+brochure@unifydigital\.uk at \d{2}:\d{2} on \d{1,2} [A-Z][a-z]{2} \d{4} UK time/);
+assert.doesNotMatch(business.body.html.match(/Brochure sent to [^<]+/)[0], /delivered|received|opened/i);
+assert.doesNotMatch(business.body.text.split("\n")[0], /delivered|received|opened/i);
+assert.match(business.body.html, /Source/);
+assert.match(business.body.text, /Source: Home/);
+assert.match(business.body.html, /https:\/\/app\.gohighlevel\.com\/v2\/location\/loc-test\/contacts\/detail\/ghl-1/);
+const family = emails.find((call) => call.body && call.body.to === "test+brochure@unifydigital.uk");
+assert.equal(family.body.subject, "Your Sears Melvin brochure");
+assert.match(family.body.html, /sears-melvin-brochure\.pdf\?v=10\.1/);
+assert.match(family.body.text, /Download the brochure:/);
+assert.equal(family.body.attachments, undefined);
+assert.doesNotMatch(family.body.html, /We have received your enquiry/);
+assert.ok(calls.findIndex((call) => call.body && call.body.to === "test+brochure@unifydigital.uk") < calls.findIndex((call) => call.body && call.body.to === "info@searsmelvin.co.uk"));
+const note = calls.find((call) => call.method === "POST" && call.url.includes("/notes"));
+assert.match(note.body.body, /Source: Home/);
+assert.match(note.body.body, /Page: \//);
+assert.match(note.body.body, /Product: The Castell/);
+assert.ok(contact.body.customFields.some((field) => field.id === "f-page" && field.field_value === "/"));
+assert.ok(contact.body.customFields.some((field) => field.key === "memorial_product" && field.field_value === "The Castell"));
+assert.equal(calls.some((call) => String(call.url).includes("GHL_CM_PIT_TOKEN") || String(call.url).includes("GHL_SM_PIT_TOKEN")), false);
 assert.equal(calls.some((call) => call.url.includes("/opportunities")), false, "brochure must not call HighLevel opportunities");
 
 function opportunityCreates() {

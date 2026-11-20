@@ -148,10 +148,35 @@ html body .sm-brochure-request button[type="submit"] {
 }
 html body .sm-brochure-request button[type="submit"]:hover { background: var(--sm-color-action-primary-bg-hover); }
 html body .sm-brochure-request button[type="submit"]:focus-visible { outline: 2px solid var(--sm-color-focus); outline-offset: 2px; }
-.sm-brochure-thanks { margin-top: 1.25rem; }
+.sm-brochure-thanks {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--color-warm, var(--sm-color-bg-panel-quiet));
+  border: 1px solid var(--color-border, var(--sm-color-border-decorative));
+  border-radius: var(--sm-radius-sm, 2px);
+}
+.sm-brochure-thanks[hidden] { display: none !important; }
+.sm-brochure-thanks-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display, serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--sm-color-text);
+}
+.sm-brochure-thanks p { margin: 0 0 0.75rem; }
 .sm-brochure-thanks a {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  background: none;
+  color: var(--sm-color-link);
+  text-decoration: underline;
+  border-radius: 0;
+  font-family: inherit;
+}
+.sm-brochure-thanks a[data-brochure-link] {
   display: inline-flex;
-  margin-top: 0.35rem;
+  margin: 0.35rem 0 0.5rem;
   padding: 0.85rem 1.25rem;
   border-radius: var(--sm-radius-sm);
   background: var(--sm-color-action-primary-bg);
@@ -160,6 +185,12 @@ html body .sm-brochure-request button[type="submit"]:focus-visible { outline: 2p
   text-transform: none;
   letter-spacing: 0;
   font-family: var(--sm-font-body);
+  font-weight: 500;
+}
+.sm-brochure-thanks-note {
+  margin: 0.85rem 0 0;
+  color: var(--sm-color-text-muted);
+  font-size: 0.95rem;
 }
 
 /* Reserve the cover column so the JS meta refresh never shifts layout. */
