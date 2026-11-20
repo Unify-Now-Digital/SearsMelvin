@@ -4,6 +4,7 @@
    GHL beta widget renders varying wrappers (custom element, iframe, div).
    site-globals.js applies a JS-side fallback for any element it misses. */
 
+chat-widget,
 iframe[src*="leadconnectorhq"],
 iframe[src*="msgsndr"],
 iframe[title*="hat"],
@@ -20,6 +21,7 @@ lc-chat-widget,
 }
 
 @media (max-width: 768px) {
+    chat-widget,
     iframe[src*="leadconnectorhq"],
     iframe[src*="msgsndr"],
     iframe[title*="hat"],
@@ -35,29 +37,9 @@ lc-chat-widget,
     }
 }
 
-/* When the cookie consent banner is showing, lift higher so it stays usable */
-body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
-body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
-body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
-body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
-body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
-    bottom: 120px !important;
-}
-
-@media (max-width: 768px) {
-    body:has(#cookieConsent[style*="display: block"]) iframe[src*="leadconnectorhq"],
-    body:has(#cookieConsent[style*="display: block"]) iframe[src*="msgsndr"],
-    body:has(#cookieConsent[style*="display: block"]) iframe[title*="hat"],
-    body:has(#cookieConsent[style*="display: block"]) #chat-widget-button,
-    body:has(#cookieConsent[style*="display: block"]) lc-chat-widget,
-    body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26c5126799210"] {
-        bottom: 190px !important;
-    }
-}
-
 /* memorial.html has an extra bottom bar on mobile */
 @media (max-width: 768px) {
+    body.has-mobile-bottom-bar chat-widget,
     body.has-mobile-bottom-bar iframe[src*="leadconnectorhq"],
     body.has-mobile-bottom-bar iframe[src*="msgsndr"],
     body.has-mobile-bottom-bar iframe[title*="hat"],
@@ -104,6 +86,10 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
     display: inline-flex;
 }
 
+/* Phones use the same one-second fade as desktop. The corner anchor
+   below keeps the bubble above the price bar and the bottom nav.
+   The cookie strip sits under the header, so it does not add to this gap. */
+
 /* Hide the chat widget (greeting bubble + round button) while the memorial
    quote pop-up is open; it covered the configuration summary on mobile.
    Restored when the pop-up closes (class removed in closeQuoteModal). */
@@ -113,3 +99,39 @@ body.sm-quote-open #chat-widget-button,
 body.sm-quote-open iframe[src*="leadconnectorhq"],
 body:has(.quote-overlay.active) chat-widget,
 body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
+
+/* The launcher fades in over 1 second. Pointer events stay on, so the
+   bubble can be clicked by the time the fade ends. PR 262 held opacity
+   at 0 and pointer events at none for 6 seconds.
+   The host is a closed shadow element. Its own bottom value does not
+   move the bubble. A zero-size fixed host at the corner, with a flat
+   transform, becomes the box the bubble is positioned against.
+   --sm-chat-bottom is the gap under that corner. site-globals.js sets
+   it so the bubble and greeting sit above the price bar, the bottom
+   nav, and any quote or submit button. Phones use this same anchor. */
+html body chat-widget {
+    position: fixed !important;
+    top: auto !important;
+    left: auto !important;
+    right: 0 !important;
+    bottom: var(--sm-chat-bottom, 24px) !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    transform: translateZ(0) !important;
+    z-index: 70 !important;
+    pointer-events: auto !important;
+    opacity: 0;
+    animation: sm-chat-arrive 1s ease forwards;
+}
+
+@keyframes sm-chat-arrive {
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html body chat-widget {
+        animation: none;
+        opacity: 1;
+    }
+}

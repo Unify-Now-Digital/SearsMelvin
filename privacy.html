@@ -14,35 +14,64 @@
       security_storage:     'granted',
       wait_for_update: 500
     });
+    // Advanced consent mode. Tags load either way. Denied storage sends a
+    // cookieless ping and must not write a Google cookie. Our own click-ID
+    // capture does not read this choice.
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', true);
     try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
+      var smConsentRaw = localStorage.getItem('cookieConsent');
+      var smConsentChoice = null;
+      if (smConsentRaw === 'accepted') smConsentChoice = { analytics: true, ads: true };
+      else if (smConsentRaw === 'declined') smConsentChoice = { analytics: false, ads: false };
+      else if (smConsentRaw && smConsentRaw.charAt(0) === '{') {
+        var smConsentParsed = JSON.parse(smConsentRaw);
+        if (smConsentParsed && typeof smConsentParsed.analytics === 'boolean' && typeof smConsentParsed.ads === 'boolean') {
+          smConsentChoice = smConsentParsed;
+        }
+      }
+      if (smConsentChoice) {
         gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
+          analytics_storage: smConsentChoice.analytics ? 'granted' : 'denied',
+          ad_storage: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_user_data: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_personalization: smConsentChoice.ads ? 'granted' : 'denied'
         });
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager — deferred until first interaction or 3s idle -->
+    <!-- Google Tag Manager — loads at page start (async), straight after the
+         consent defaults above. It used to wait for the first scroll/tap or 3s
+         idle (#67), which lost the paid visits that bounced before that, so
+         GA4 saw only ~24% of Ads clicks. The LeadConnector chat below stays
+         deferred. -->
     <script>
       (function(){
+        // Claim the chat hook flag before GTM can run, so GTM's legacy
+        // "GHL Chat Widget Listener" never double counts chats (docs/TRACKING.md).
+        window.__smChatHook = true;
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
+        var f = document.getElementsByTagName('script')[0];
+        var gtm = document.createElement('script');
+        gtm.async = true;
+        gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+        f.parentNode.insertBefore(gtm, f);
       })();
+    </script>
+    <script>
+    /* Reserve the cookie strip before first paint. A stored choice means
+       the strip stays hidden, so the offset is 0. Does not change consent. */
+    (function () {
+      var stack = 0;
+      try {
+        if (!localStorage.getItem('cookieConsent')) {
+          var w = document.documentElement.clientWidth || window.innerWidth || 0;
+          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
+        }
+      } catch (e) {}
+      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+    })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
          long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
@@ -54,26 +83,42 @@
       (function(){
         var loaded = false;
         // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // Chat submission -> dataLayer, once per submission, no PII. The widget
-        // is a shadow-DOM web component whose beforeSubmit hook runs on this
-        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
-        // races the widget and missed most chats, so claim its guard flag here
-        // (this runs before the deferred GTM load) to avoid double counting.
-        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
-        // trigger on sm_chat_submit.
+        // One chat per tab visit. A Turnstile retry can land many seconds later,
+        // so a short debounce double-counts. Email and phone are still refreshed
+        // on window.__smChatEmail and window.__smChatPhone (same sanitising as
+        // clickIntentBody). The dataLayer events stay free of personal details.
+        // GTM's older fetch-hook listener (tag "GHL Chat Widget Listener") races
+        // the widget and missed most chats, so claim its guard flag here (the
+        // GTM loader above also sets it before gtm.js runs). GA4
+        // "ghl_chat_submission" and Ads "Chat start" trigger on sm_chat_submit.
         window.__smChatHook = true;
-        var lastChatPush = 0;
+        var chatCounted = false;
+        var CHAT_VISIT_KEY = 'sm_chat_counted';
         function chatSubmitted(data){
           try {
-            var now = Date.now();
-            if (now - lastChatPush > 3000) {
-              lastChatPush = now;
-              window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({ event: 'sm_chat_submit' });
-              window.dataLayer.push({ event: 'ghl_chat_submission' });
-            }
+            var contact = data && (data.contact || data) || {};
+            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+            var email = typeof contact.email === 'string' ? contact.email : nested.email;
+            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+            if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
+            if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
           } catch (e) {}
-          try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          try {
+            var counted = chatCounted;
+            if (!counted) {
+              try { counted = sessionStorage.getItem(CHAT_VISIT_KEY) === '1'; } catch (e) {}
+            }
+            if (counted) return true; // later attempts in this tab: globals only
+            chatCounted = true;
+            try { sessionStorage.setItem(CHAT_VISIT_KEY, '1'); } catch (e) {}
+            window.dataLayer = window.dataLayer || [];
+            // No personal details in the event (docs/TRACKING.md golden rule 2).
+            window.dataLayer.push({ event: 'sm_chat_submit' });
+            window.dataLayer.push({ event: 'ghl_chat_submission' });
+            try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          } catch (e) {}
           return true; // never block the chat
         }
         function hookChat(){
@@ -91,10 +136,7 @@
           lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
           document.body.appendChild(lc);
         }
-        var evts = ['pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        setTimeout(load, 10000);
+        setTimeout(load, 1000);
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -104,37 +146,41 @@
     <meta name="description" content="How Sears Melvin Memorials collects, uses, and protects your personal data.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/privacy">
-    <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <meta name="theme-color" content="#FBF9F5">
+    
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Privacy Policy | Sears Melvin Memorials">
     <meta property="og:description" content="How Sears Melvin Memorials collects, uses, and protects your personal data.">
     <meta property="og:url" content="https://searsmelvin.co.uk/privacy">
-    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Privacy Policy | Sears Melvin Memorials">
     <meta name="twitter:description" content="How Sears Melvin Memorials collects, uses, and protects your personal data.">
-    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
+    <link rel="stylesheet" href="/tokens.css">
     <style>
         :root {
-            --color-stone: #2B2A27;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #F7F4EE;
-            --color-warm: #E8E4DD;
-            --color-accent: #7A6449;
-            --color-accent-dark: #6B5840;
-            --color-text: #2B2A27;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
+            --color-stone: var(--sm-color-text);
+            --color-stone-light: var(--sm-color-ink-hover);
+            --color-cream: var(--sm-color-bg);
+            --color-warm: var(--sm-color-bg-panel-quiet);
+            --color-accent: var(--sm-color-text-accent);
+            --color-accent-dark: var(--sm-color-text-accent-strong);
+            --color-text: var(--sm-color-text);
+            --color-text-muted: var(--sm-color-text-muted);
+            --color-border: var(--sm-color-border-decorative);
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', system-ui, sans-serif;
         }
@@ -147,7 +193,7 @@
         }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -155,7 +201,7 @@
         .nav-links a { font-size: 1rem; color: var(--color-text); letter-spacing: 0; transition: color 0.3s; text-decoration: none; }
         .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 10%, transparent); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -166,7 +212,7 @@
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Showroom Banner */
         /* Mobile Bottom Navigation */
-        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
@@ -176,7 +222,7 @@
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
-        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         .nav-cta-dark { background-color: var(--color-text); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
@@ -214,8 +260,8 @@
         }
         h2:first-child { margin-top: 0; }
 
-        p { margin-bottom: 1rem; color: #444; }
-        ul { margin: 0.5rem 0 1rem 1.5rem; color: #444; }
+        p { margin-bottom: 1rem; color: var(--sm-color-text); }
+        ul { margin: 0.5rem 0 1rem 1.5rem; color: var(--sm-color-text); }
         ul li { margin-bottom: 0.4rem; }
 
         a { color: var(--color-accent-dark); }
@@ -223,21 +269,21 @@
 
         .last-updated {
             font-size: 0.85rem;
-            color: #595959;
+            color: var(--sm-color-text-muted);
             margin-bottom: 2.5rem;
         }
 
         /* Footer */
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); }
+        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; text-decoration: none; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; text-decoration: none; }
+        .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; transition: color 0.2s; text-decoration: none; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); }
         .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: var(--sm-color-text-inverse-muted); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
 
@@ -261,17 +307,17 @@
         .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
 
         /* Search Overlay */
-        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
         .search-overlay.active { opacity: 1; visibility: visible; }
 
         /* Search Modal */
-        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .search-modal.active { transform: translateY(0); }
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #767676; }
+        .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -351,9 +397,9 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    <link rel="stylesheet" href="/chat-widget.css?v=8">
 
-    <!-- Structured data: Business -->
+    <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -361,28 +407,30 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "London-based memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and UK-wide installation.",
-      "image": "https://searsmelvin.co.uk/sm-logo.svg",
-      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.",
+      "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
+      "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "geo": {"@type":"GeoCoordinates","latitude":51.58619,"longitude":-0.18362},
+      "hasMap": "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB",
       "areaServed": [
-        {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "AdministrativeArea", "name": "Greater London"},
+        {"@type": "AdministrativeArea", "name": "Hertfordshire"},
+        {"@type": "AdministrativeArea", "name": "Essex"},
+        {"@type": "AdministrativeArea", "name": "Kent"},
+        {"@type": "AdministrativeArea", "name": "Surrey"},
+        {"@type": "AdministrativeArea", "name": "Buckinghamshire"},
+        {"@type": "AdministrativeArea", "name": "Berkshire"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "17:00"
+        "opens": "10:00",
+        "closes": "15:00"
       }]
     }
     </script>
@@ -398,22 +446,23 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
+    <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    height="0" width="0" class="sm-gtm-noscript" ></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
     <nav id="navbar">
         <a href="/" class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
-            Sears Melvin <span>Memorials</span>
+            <picture>
+                <source media="(max-width: 768px) and (min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-ink.svg">
+                <source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg">
+                <img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66">
+            </picture>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
             <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
@@ -483,11 +532,11 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials" class="search-quick-link">Browse memorials</a>
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
-                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/contact" class="search-quick-link">Get a quote</a>
                     </div>
                 </div>
             </div>
@@ -499,7 +548,7 @@
     </header>
 
     <main class="content">
-        <p class="last-updated">Last updated: May 2026</p>
+        <p class="last-updated">Last updated: 11 November 2026</p>
 
         <h2>Who we are</h2>
         <p>Sears Melvin Ltd (trading as Sears Melvin Memorials) is the data controller for the personal data described in this policy. We are a memorial masonry business registered in England and Wales (company number <strong>16191330</strong>), with our registered office at Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Our website is <strong>searsmelvin.co.uk</strong>. You can contact us at <strong>info@searsmelvin.co.uk</strong> or by calling <strong>020 3835 2548</strong>.</p>
@@ -514,7 +563,7 @@
             <li>Photos you upload (for renovation or repair enquiries)</li>
         </ul>
         <p>If you place an order, we additionally collect details necessary to fulfil that order — for example, the cemetery, the deceased's name and dates for inscription, your delivery or installation address, and proof of grave-deed authority where required by the cemetery.</p>
-        <p>Card payments are processed by Stripe; we do not see or store your full card details. We use cookies solely for anonymous site analytics (via Google Tag Manager) to understand how visitors use our site. You can accept or decline cookies when you first visit. We do not use cookies for advertising or personalisation.</p>
+        <p>Card payments are processed by Stripe; we do not see or store your full card details. Essential cookies keep the site working, for example your shortlist and your cookie choice. We use Google Analytics and Google Ads cookies only if you agree. Analytics cookies tell us which pages help people. Ads cookies measure whether our adverts lead to enquiries. You can change this choice at any time with the Cookie settings link in the footer.</p>
 
         <h2>How we use your information</h2>
         <p>We use the information you provide solely to:</p>
@@ -533,7 +582,7 @@
             <li><strong>Contract</strong> (Art. 6(1)(b)) — to take steps at your request before entering into a contract (preparing a quote) and to perform a contract once you place an order, including cemetery permit applications and installation.</li>
             <li><strong>Legitimate interests</strong> (Art. 6(1)(f)) — to respond to general enquiries, to keep our internal records, and to operate, secure and improve the website. We have considered the impact on your rights and believe these processing activities are reasonable and expected.</li>
             <li><strong>Legal obligation</strong> (Art. 6(1)(c)) — to retain accounting and tax records for the periods required by HMRC and the Companies Act 2006.</li>
-            <li><strong>Consent</strong> (Art. 6(1)(a)) — for non-essential cookies and any optional marketing communications. You can withdraw consent at any time by clearing the consent cookie or contacting us.</li>
+            <li><strong>Consent</strong> (Art. 6(1)(a)) — for Google Analytics and Google Ads cookies, and for any optional marketing communications. You can change or withdraw that choice at any time with the Cookie settings link in the footer, or by contacting us.</li>
         </ul>
 
         <h2>Third-party services (data processors)</h2>
@@ -545,7 +594,7 @@
             <li><strong>Stripe</strong> — processes card payments. We do not see or store your full card details. Privacy policy: <a href="https://stripe.com/gb/privacy" target="_blank" rel="noopener">stripe.com/gb/privacy</a>.</li>
             <li><strong>ClickUp</strong> — used internally to log and track customer enquiries and orders. Privacy policy: <a href="https://clickup.com/privacy" target="_blank" rel="noopener">clickup.com/privacy</a>.</li>
             <li><strong>LeadConnector / HighLevel</strong> — powers the live chat widget on this site. Privacy policy: <a href="https://www.gohighlevel.com/privacy-policy" target="_blank" rel="noopener">gohighlevel.com/privacy-policy</a>.</li>
-            <li><strong>Google (Tag Manager &amp; Analytics)</strong> — provides anonymous traffic analytics (loaded only after you accept cookies). Privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</li>
+            <li><strong>Google (Tag Manager, Analytics and Ads)</strong> — measures how the site is used and whether adverts lead to enquiries. These cookies are used only if you agree. Privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</li>
         </ul>
 
         <h2>International data transfers</h2>
@@ -595,30 +644,50 @@
         </ul>
     </main>
 
-    <footer>
+        <footer class="footer-b">
         <div class="footer-container">
-            <div>
-                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div class="footer-brand">
+                <img class="footer-logo" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="262" height="66">
                 <div class="footer-contact">
-                    <a href="tel:+442038352548">020 3835 2548</a><br>
-                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment
+                    <a href="tel:+442038352548">020 3835 2548</a>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span>London</span>
                 </div>
             </div>
-            <ul class="footer-links">
+            <div class="footer-explore">
+                <h2 class="footer-heading">Explore</h2>
+                <ul class="footer-links">
                 <li><a href="/">Home</a></li>
                 <li><a href="/about">About</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/track">Track Order</a></li>
                 <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
                 <li><a href="/privacy">Privacy</a></li>
+                <li><a href="#cookie-settings" class="sm-cookie-settings">Cookie settings</a></li>
             </ul>
-            <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
+            <div class="footer-showroom">
+                <h2 class="footer-heading">Visit our Finchley showroom</h2>
+                <p>1 The Market Place, Falloden Way, NW11 6LB</p>
+                <p class="footer-hours">Monday to Friday, 10am to 3pm</p>
+            </div>
+            <div class="footer-base">
+                <!-- Professional Memberships -->
+            <div class="sm-accred-tight footer-accreditations" ><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
+                <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
+                <p class="sm-footer-legal-tight footer-legal" >Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
         </div>
     </footer>
 
@@ -639,7 +708,7 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+            <button class="sm-bare-btn mobile-nav-item" onclick="openSearch()" >
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <span>Search</span>
             </button>
@@ -666,57 +735,72 @@
         }
     </script>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+<div id="cookieScrim" class="sm-cookie-scrim"></div>
+<div id="cookieConsent" class="sm-cookie" role="dialog" aria-modal="false" aria-labelledby="cookieTitle">
+    <div class="sm-cookie-choice">
+        <h2 class="sm-cookie-title" id="cookieTitle">Your cookie choices</h2>
+        <p class="sm-cookie-lead sm-cookie-lead--desk" id="cookieLeadDesk">We use essential cookies to run the site. With your permission, we also use analytics and ads cookies. <a href="/privacy">Privacy policy</a></p>
+        <p class="sm-cookie-lead sm-cookie-lead--phone" id="cookieLeadPhone">We use cookies for analytics and ads, only if you agree. <a href="/privacy">Privacy policy</a></p>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAccept">Accept</button>
+            <button type="button" class="sm-cookie-btn" id="cookieReject">Reject</button>
+        </div>
+        <button type="button" class="sm-cookie-manage" id="cookieManage">Manage choices</button>
+    </div>
+    <div class="sm-cookie-panel">
+        <h2 class="sm-cookie-title" id="cookieManageTitle" tabindex="-1">Manage cookie choices</h2>
+        <p class="sm-cookie-lead">Choose which cookies we can use. You can change this at any time from the footer.</p>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieEssentialName">Essential</p>
+                <p class="sm-cookie-desc">Keep the site working, for example your shortlist and this choice. Always on.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" role="switch" aria-checked="true" aria-labelledby="cookieEssentialName" disabled></button>
+                <span class="sm-cookie-switch-state">Always on</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAnalyticsName">Analytics</p>
+                <p class="sm-cookie-desc">Google Analytics. Tells us which pages help people, so we can improve them.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAnalytics" role="switch" aria-checked="false" aria-labelledby="cookieAnalyticsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAnalyticsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAdsName">Ads</p>
+                <p class="sm-cookie-desc">Google Ads. Measures whether our adverts lead to enquiries.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAds" role="switch" aria-checked="false" aria-labelledby="cookieAdsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAdsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAcceptAll">Accept all</button>
+            <button type="button" class="sm-cookie-btn" id="cookieRejectAll">Reject all</button>
+            <button type="button" class="sm-cookie-btn sm-cookie-btn--save" id="cookieSave">Save choices</button>
         </div>
     </div>
 </div>
+<script src="/supabase-config"></script>
+<script src="/cookie-consent.js"></script>
 <script>
-(function(){
-    var consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-        document.getElementById('cookieConsent').style.display = 'block';
-    } else if (consent === 'accepted') {
-        pushConsent(true);
-    }
-})();
-function pushConsent(granted) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'update', {
-        ad_storage:           granted ? 'granted' : 'denied',
-        analytics_storage:    granted ? 'granted' : 'denied',
-        ad_user_data:         granted ? 'granted' : 'denied',
-        ad_personalization:   granted ? 'granted' : 'denied'
-    });
-    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
-}
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(true);
-    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
-}
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(false);
-}
 
         // ==================== SITE SEARCH ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SUPABASE_URL = window.SM_SUPABASE.url;
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
 
         const searchFaqData = [
             { q: "How long does a memorial take?", a: "Typically 12 to 24 weeks from order to installation.", url: "/faq#timing" },
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
@@ -739,7 +823,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a quote</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -760,12 +844,9 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + ['','rest','v1',''].join('/')+'products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();
@@ -816,8 +897,8 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261120" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=20261120b" defer></script>
 </body>
 </html>

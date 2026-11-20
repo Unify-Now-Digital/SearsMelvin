@@ -1,4 +1,4 @@
-// Brochure v5: config matches the real PDF, tracking payloads, and /api/brochure.
+// Brochure v10.1: config matches the real PDF, tracking payloads, and /api/brochure.
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -48,14 +48,32 @@ const upgradesSource = readFileSync("site-upgrades.js", "utf8");
 assert.match(upgradesSource, /attribution\s*=\s*api\.getAttribution\(\)/, "download beacon reads stored attribution");
 assert.match(upgradesSource, /gclid:\s*attribution\.gclid\s*\|\|\s*null/, "download beacon includes stored gclid");
 
-// Buttons are tagged with their source; /brochure has the optional email form + "Just download".
+// Buttons are tagged with their source. /brochure asks for name and email first.
 for (const [page, src] of [["index.html", "home"], ["memorials.html", "listing"]]) {
   assert.ok(readFileSync(page, "utf8").includes(`data-brochure-source="${src}"`), `${page} tags source=${src}`);
 }
 const brochure = readFileSync("brochure.html", "utf8");
-assert.ok(brochure.includes("data-brochure-email-form"));
-assert.ok(brochure.includes("Just download"));
+const upgrades = readFileSync("site-upgrades.js", "utf8");
+assert.ok(brochure.includes("data-brochure-request"));
+assert.ok(brochure.includes('id="brochureName"'));
 assert.match(brochure, /<input type="email"[^>]*>/);
+assert.match(brochure, /name="phone"/);
+assert.ok(brochure.includes("data-brochure-thanks"));
+assert.ok(!brochure.includes("Just download"));
+assert.match(upgrades, /href', '\/brochure\?from=' \+ src/);
+assert.doesNotMatch(upgrades, /a\[data-brochure-source\][\s\S]{0,400}setAttribute\('href', url\)/);
+const requestEvent = up.brochureRequestEvent("home");
+assert.deepEqual(requestEvent, { event: "brochure_request", source: "home" });
+assert.equal(requestEvent.send_to, undefined);
+const payload = up.brochureRequestPayload(
+  { name: "TEST Brochure", email: "test+brochure@unifydigital.uk", phone: "07000000000" },
+  { gclid: "test-gclid", gbraid: "test-gbraid", wbraid: "test-wbraid", utm_source: "google", utm_medium: "cpc" },
+  "/brochure",
+);
+assert.equal(payload.channel, "contact");
+assert.equal(payload.enquiry_type, "brochure");
+assert.equal(payload.message, "Brochure request");
+assert.equal(payload.attribution.gclid, "test-gclid");
 
 // ---- /api/brochure
 const env = {
@@ -164,7 +182,7 @@ assert.equal(r.json.ok, true);
 const mail = calls.find((c) => c.url === "https://api.resend.com/emails");
 assert.equal(mail.body.to, "jane@example.com");
 assert.match(mail.body.from, /info@searsmelvin\.co\.uk/);
-assert.ok(mail.body.html.includes(brochureLink("brochure_page").replace(/&/g, "&")));
+assert.ok(mail.body.html.includes(brochureLink("brochure_page").replace(/&/g, "&amp;")));
 assert.match(mail.body.html, /\/assets\/sears-melvin-brochure\.pdf/);
 const ghl = calls.find((c) => c.url.endsWith("/contacts/upsert"));
 assert.equal(ghl.body.locationId, SM_GHL_LOCATION_ID, "SM location only");
@@ -178,9 +196,12 @@ assert.ok(oppCreate, "brochure email opens a New Lead opportunity");
 assert.equal(oppCreate.body.pipelineId, "ty7z50OQyVGXMS1NARrK");
 assert.equal(oppCreate.body.name, "Brochure – jane@example.com");
 assert.equal(oppCreate.auth, "Bearer test-sm-pit", "SM PIT only");
-assert.match(mail.body.html, /sm-logo\.png/);
-assert.match(mail.body.html, /RQMF Registered · No\. 2263/);
-assert.ok(!/namm/i.test(mail.body.html));
+assert.match(mail.body.html, /sears-melvin-stacked-ink\.png/);
+assert.match(mail.body.html, /NAMM-qualified and RQMF registered/);
+assert.doesNotMatch(mail.body.html, /sm-logo\.png/);
+assert.equal(mail.body.subject, "Your Sears Melvin brochure");
+assert.match(mail.body.text, /Download the brochure:/);
+assert.equal(mail.body.attachments, undefined);
 log = calls.find((c) => c.url.endsWith("/brochure_downloads"));
 assert.equal(log.body.email_given, true);
 

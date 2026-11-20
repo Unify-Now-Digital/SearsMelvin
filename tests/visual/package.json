@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "description": "Playwright checks for the design-system baseline. These scripts do not build the site.",
+  "scripts": {
+    "baseline": "playwright test baseline.spec.ts",
+    "compare": "node compare.mjs",
+    "tracking": "playwright test tracking.spec.ts",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^6.0.0"
+  }
+}

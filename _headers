@@ -41,6 +41,13 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 
+# Design reference. Keep it out of search even if something links to it.
+/styleguide
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/styleguide.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
 # The customer tracking page is only useful with a capability token in the URL
 # fragment. robots.txt already disallows crawling it, but that does not stop an
 # externally-linked URL being indexed — X-Robots-Tag does.
@@ -64,6 +71,23 @@
 
 /sitemap.xml
   Cache-Control: public, max-age=3600
+
+# Public Supabase publishable key. Short cache so an env swap shows up
+# within a minute. This response must stay public; it is not a secret.
+/supabase-config
+  Cache-Control: public, max-age=60
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+
+# The brochure PDF and cover are replaced in place (same URL). Pages would
+# otherwise cache them for 4 hours. Links also carry ?v= so a new edition
+# is a new cache key. No stale-while-revalidate: do not keep serving the
+# previous file after max-age.
+/assets/sears-melvin-brochure.pdf
+  Cache-Control: public, max-age=300, must-revalidate
+
+/assets/sears-melvin-brochure-cover.jpg
+  Cache-Control: public, max-age=300, must-revalidate
 
 # HTML: short browser cache, longer SWR so edge can serve stale while
 # revalidating in the background. Ensures content updates propagate

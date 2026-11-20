@@ -1,8 +1,8 @@
-/** Server-render the unfiltered memorial catalogue for non-JavaScript crawlers. */
+/** Server-render the first page of memorial cards. Further designs stay on the grid behind "Show more memorials". */
 
-const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
+import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
+
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
-const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -28,15 +28,22 @@ function safeHex(value) {
 function safeImageUrl(value) {
   if (!value || String(value).length > 2048) return "";
   try {
-    const url = new URL(String(value), "https://searsmelvin.co.uk");
-    return url.protocol === "https:" && !url.username && !url.password ? url.href : "";
+    const supabase = publicSupabaseUrl({});
+    const url = new URL(String(value), supabase);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    if (url.pathname.startsWith("/storage/") || url.pathname.startsWith("/rest/")) {
+      const host = new URL(supabase);
+      url.protocol = host.protocol;
+      url.host = host.host;
+    }
+    return url.href;
   } catch {
     return "";
   }
 }
 
 function imageAttributes(url) {
-  if (!/\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(url)) {
+  if (!new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url)) {
     return `src="${escapeHtml(url)}"`;
   }
   const render = (width) => url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
@@ -46,9 +53,8 @@ function imageAttributes(url) {
 }
 
 async function fetchCatalogue(env) {
-  const base = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
-  const headers = { apikey: key, Authorization: `Bearer ${key}` };
+  const base = publicSupabaseUrl(env);
+  const headers = supabaseKeyHeaders(publishableKey(env));
   const org = encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID);
   const [productsResponse, coloursResponse] = await Promise.all([
     fetch(`${base}/rest/v1/products?organization_id=eq.${org}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=*,product_categories(name,slug)&order=display_order`, { headers }),
@@ -59,11 +65,38 @@ async function fetchCatalogue(env) {
   return Array.isArray(products) && Array.isArray(colours) ? { products, colours } : null;
 }
 
+const CARD_PAGE = 24;
+
+export function listableProducts(products) {
+  const seen = new Set();
+  const out = [];
+  for (const product of products || []) {
+    const slug = safeSlug(product.slug);
+    const id = safeId(product.id);
+    const price = parseFloat(product.base_price);
+    if (!slug || !id || seen.has(slug)) continue;
+    if (!Number.isFinite(price) || price < 0 || price > 1000000) continue;
+    seen.add(slug);
+    out.push(product);
+  }
+  return out;
+}
+
+export function catalogueInjection(products, colours) {
+  const visible = listableProducts(products);
+  const shown = visible.slice(0, CARD_PAGE);
+  const cards = renderCards(shown, colours);
+  const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  return { grid, count: visible.length, more: visible.length > CARD_PAGE };
+}
+
 function renderCards(products, colours) {
   const colourSlugs = colours.map((colour) => safeSlug(colour.slug)).filter(Boolean).join(",");
-  const colourDots = colours.map((colour) =>
+  const colourShown = colours.slice(0, 8);
+  const colourExtra = colours.length - colourShown.length;
+  const colourDots = colourShown.map((colour) =>
     `<span class="product-colour-dot" style="background:${safeHex(colour.hex_primary)};"></span>`
-  ).join("");
+  ).join("") + (colourExtra > 0 ? `<span class="product-colour-more">+${colourExtra}</span>` : "");
 
   return products.map((product, index) => {
     const id = safeId(product.id);
@@ -78,13 +111,12 @@ function renderCards(products, colours) {
     const priority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
     const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="800" alt="${escapeHtml(productName)}" decoding="async"${priority}>` : "";
     const badge = product.is_featured ? `<span class="product-badge">${index === 0 ? "Popular" : "Best Value"}</span>` : "";
-    return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>`;
+    return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p></div></a>`;
   }).join("");
 }
 
 export async function onRequestGet({ request, env }) {
   const shell = await env.ASSETS.fetch(new URL("/memorials.html", request.url));
-  if (new URL(request.url).search) return shell;
   let catalogue;
   try {
     catalogue = await fetchCatalogue(env);
@@ -92,10 +124,34 @@ export async function onRequestGet({ request, env }) {
     return shell;
   }
   if (!catalogue || catalogue.products.length === 0) return shell;
-  const cards = renderCards(catalogue.products, catalogue.colours);
-  if (!cards) return shell;
-  const fallback = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p></div>`;
-  return new HTMLRewriter().on("#productsGrid", {
-    element(el) { el.setInnerContent(fallback, { html: true }); },
-  }).transform(shell);
+  const requested = safeSlug(new URL(request.url).searchParams.get("type"));
+  let products = catalogue.products;
+  if (requested) {
+    const filtered = products.filter((product) => safeSlug(product.product_categories?.slug) === requested);
+    if (filtered.length) products = filtered;
+  }
+  const { grid, count, more } = catalogueInjection(products, catalogue.colours);
+  const typeName = requested && products !== catalogue.products
+    ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
+    : "";
+  // The canonical stays the link in the shell (/memorials), including when ?type= is set.
+  let rewriter = new HTMLRewriter()
+    .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
+    .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
+    .on("#filtersShowCount", { element(el) { el.setInnerContent(String(count)); } });
+  if (more) rewriter = rewriter.on("#catalogueMore", { element(el) { el.removeAttribute("hidden"); } });
+  if (typeName) {
+    const tag = `<span class="active-filters-label">Active filters:</span><span class="filter-tag">${escapeHtml(typeName)}<button onclick="removeFilter('type', '${requested}')">&times;</button></span>`;
+    rewriter = rewriter
+      .on("#activeFilters", {
+        element(el) {
+          el.setAttribute("class", "active-filters has-filters");
+          el.setInnerContent(tag, { html: true });
+        },
+      })
+      .on(`a[href="/memorials?type=${requested}"]`, {
+        element(el) { el.setAttribute("aria-current", "page"); },
+      });
+  }
+  return rewriter.transform(shell);
 }

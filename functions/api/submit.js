@@ -14,6 +14,21 @@ import {
 import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
 import { upsertWebsiteOpportunity } from "./_ghl-opportunity.js";
 import { isTestSubmission } from "./_test-flags.js";
+import { supabaseAuthHeaders, supabaseKeyHeaders } from "./_supabase-keys.js";
+import {
+  adAttributionLine,
+  brochureContactNote,
+  brochureStaffStatusLine,
+  cleanBrochureSource,
+  cleanLabel,
+  cleanPagePath,
+  cleanSlug,
+  familyBrochureEmail,
+  familyEnquiryEmail,
+  ghlContactUrl,
+  staffBrochureEmail,
+  staffEnquiryEmail,
+} from "./_email-brand.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -107,7 +122,10 @@ export async function onRequestPost(context) {
 // hand it to ctx.waitUntil. Preserves error logging.
 function bg(label, task) {
   return Promise.resolve().then(task).catch(err => {
-    console.error(JSON.stringify({ message: "background_task_failed", task: label }));
+    // Include the (PII-free) error text, e.g. "GHL returned 401", so a silent GHL
+    // hand-off failure is diagnosable from Worker logs instead of only the label.
+    const error = String(err?.message || err || "unknown").replace(/[^\w .:/-]/g, "").slice(0, 160);
+    console.error(JSON.stringify({ message: "background_task_failed", task: label, error }));
   });
 }
 
@@ -138,6 +156,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
   const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
+  let enquiryId = null;
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_quote`, {
       method: "POST",
@@ -166,7 +185,8 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     // Fallback for an older create_quote: stamp the attribution on the enquiry it
     // created (blank-safe PATCH). Best-effort: a failure here never loses the quote.
     const rpcBody = await res.json().catch(() => null);
-    await saveEnquiryAttribution(env, rpcBody?.enquiry_id, data.attribution);
+    enquiryId = rpcBody?.enquiry_id || null;
+    await saveEnquiryAttribution(env, enquiryId, data.attribution);
   } catch (err) {
     console.error(JSON.stringify({ message: "quote_save_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save quote. Please try again." }, 500);
@@ -178,6 +198,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
     cemeteryOrLocation, firstName, stoneHex, cemetery, location,
     attribution: data.attribution,
     isTest: testFlag.is_test,
+    enquiryId,
   }));
 
   return jsonResponse({ ok: true });
@@ -187,7 +208,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
 // emails and the GHL contact/opportunity in parallel.
 async function quoteSideEffects({
   env, name, email, phone, message, product, submittedAt,
-  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution, isTest,
+  cemeteryOrLocation, firstName, stoneHex, cemetery, location, attribution, isTest, enquiryId,
 }) {
   const sideEffects = [
     bg("quote business email", () => sendEmail(env.RESEND_API_KEY, {
@@ -211,17 +232,20 @@ async function quoteSideEffects({
       const contactId = await createGHLContact(env, {
         name, email, phone, type: "quote", product,
         cemetery: cemeteryOrLocation,
+        message,
         extraFields: ghlExtraFields,
         attributionFields,
         lead: attribution,
         isTest,
       });
       if (contactId) {
+        await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
           contactId,
           name: `${product.name || "Memorial"} — ${name}`,
           monetaryValue: parseFloat(product.price) || 0,
           enquiry: { type: "quote request", message },
+          source: websiteGhlLabels("quote").source,
         });
       }
     }),
@@ -250,6 +274,12 @@ async function handleEnquiry(ctx, data, submittedAt) {
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
   const testFlag = isTestSubmission({ name, email, phone, message, ...cleanAttribution(data.attribution) });
+  const isBrochure = String(enquiry_type || "").toLowerCase() === "brochure";
+  const brochureSource = cleanBrochureSource(data.brochure_source) || (isBrochure ? "brochure_page" : "");
+  const sourcePage = cleanPagePath(data.source_page);
+  const productSlug = cleanSlug(data.details?.product_slug);
+  const productName = cleanLabel(data.details?.product_name, 120);
+  let enquiryId = null;
 
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
   const isShortlist = enquiry_type === "shortlist-enquiry";
@@ -264,6 +294,12 @@ async function handleEnquiry(ctx, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
   }
 
+  // Preview hosts share nothing with the live mailbox, HighLevel, or enquiries.
+  // The page can still show its success state. Production is the public site only.
+  if (isBrochure && !isLiveSiteRequest(ctx.request)) {
+    return jsonResponse({ ok: true });
+  }
+
   // 1. Supabase first — save record before sending any emails. If the save
   // fails the customer should see an error (and not get a confirmation email
   // for a record that doesn't exist).
@@ -272,15 +308,23 @@ async function handleEnquiry(ctx, data, submittedAt) {
     // can query it cleanly. For shortlist channels keep the items list shape.
     const baseDetails = isShortlist
       ? { items: Array.isArray(data.details?.items) ? data.details.items : [] }
-      : (data.details && typeof data.details === "object" ? { ...data.details } : null);
-    const mergedDetails = grave_number
-      ? { ...(baseDetails || {}), grave_number }
-      : baseDetails;
-    await createEnquiry(env, {
+      : (data.details && typeof data.details === "object" && !isBrochure ? { ...data.details } : null);
+    const brochureDetails = {};
+    if (isBrochure) {
+      if (brochureSource) brochureDetails.brochure_source = brochureSource;
+      if (productSlug) brochureDetails.product_slug = productSlug;
+      if (productName) brochureDetails.product_name = productName;
+    }
+    const mergedDetails = {
+      ...(baseDetails || {}),
+      ...brochureDetails,
+      ...(grave_number ? { grave_number } : {}),
+    };
+    const saved = await createEnquiry(env, {
       channel,
       name, email, phone,
       sub_type: enquiry_type || null,
-      source_page: data.source_page || null,
+      source_page: sourcePage || null,
       message: message || null,
       contact_pref,
       location,
@@ -292,10 +336,11 @@ async function handleEnquiry(ctx, data, submittedAt) {
         : (data.appointment_at || null),
       appointment_kind: data.appointment_kind || null,
       photo_urls,
-      details: mergedDetails,
+      details: Object.keys(mergedDetails).length ? mergedDetails : null,
       attribution: data.attribution,
       is_test: testFlag.is_test,
     });
+    enquiryId = saved?.enquiryId || null;
   } catch (err) {
     console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
@@ -315,93 +360,211 @@ async function handleEnquiry(ctx, data, submittedAt) {
     appointment_kind: data.appointment_kind || null,
     attribution: data.attribution || null,
     isTest: testFlag.is_test,
+    enquiryId,
+    isBrochure,
+    brochureSource,
+    sourcePage,
+    productName,
   }));
 
   return jsonResponse({ ok: true });
 }
 
-// Runs after the response has been returned. Emails + calendar + GHL are all
-// independent so they fire in parallel; photo signing is a prerequisite for
-// the business email so it's chained inside that branch.
+// Family mail is not held for HighLevel. For a brochure, the family send finishes
+// first and its provider result is the first line of the staff alert. The staff
+// alert still goes out when that send fails. Other enquiry subjects stay as they are.
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
-  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest,
+  submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest, enquiryId,
+  isBrochure, brochureSource, sourcePage, productName,
 }) {
-  await Promise.allSettled([
-    bg("enquiry business email", async () => {
-      let photoSignedUrls = [];
-      if (Array.isArray(photo_urls) && photo_urls.length > 0) {
-        try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
-        catch { console.error(JSON.stringify({ message: "enquiry_photo_sign_failed" })); }
-      }
+  const from = `${BUSINESS_NAME} <${FROM_EMAIL}>`;
+  const adLine = adAttributionLine(attribution, deriveLeadSource(attribution));
+  const photoPromise = (async () => {
+    if (!Array.isArray(photo_urls) || photo_urls.length === 0) return [];
+    try { return await signEnquiryPhotoUrls(env, photo_urls); }
+    catch { console.error(JSON.stringify({ message: "enquiry_photo_sign_failed" })); return []; }
+  })();
+  const customerPromise = (async () => {
+    if (!email) return { accepted: false, email: "" };
+    if (isBrochure) return sendFamilyBrochure(env, { name, email, source: brochureSource });
+    const mail = familyEnquiryEmail({
+      name, email, phone, message, enquiryTypeLabel, location,
+      graveNumber: grave_number, contactPref: contact_pref,
+      photoCount: Array.isArray(photo_urls) ? photo_urls.length : 0,
+      shortlistItems,
+    });
+    await sendEmail(env.RESEND_API_KEY, { from, to: email, subject: mail.subject, html: mail.html, text: mail.text });
+    return null;
+  })();
+  const ghlPromise = syncEnquiryContact(env, {
+    name, email, phone, message, enquiry_type, enquiryTypeLabel, location,
+    attribution, isTest, enquiryId, sourcePage, brochureSource, productName, isBrochure,
+  });
+  const calendarPromise = appointment_date && appointment_time
+    ? bg("contact-form calendar event", () => {
+        const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+        const kind = appointment_kind || "showroom";
+        return createGoogleCalendarEvent(env, {
+          name, email, phone,
+          appointment_type: kind,
+          appointment_date,
+          appointment_time,
+          notes: message,
+          typeLabel: typeLabels[kind] || kind,
+        });
+      })
+    : (appointment_at_iso
+        ? bg("contact-form calendar event (ISO)", () => createCalendarEventFromIso(env, {
+            name, email, phone,
+            appointmentAtIso: appointment_at_iso,
+            appointmentKind: appointment_kind || "consultation",
+            notes: message,
+          }))
+        : null);
+
+  const [customerResult, contactId, photoSignedUrls] = await Promise.all([
+    customerPromise.catch((err) => {
+      console.error(JSON.stringify({ message: "enquiry_customer_email_failed", error: String(err?.name || "error") }));
+      return { accepted: false, email: email || "" };
+    }),
+    ghlPromise,
+    photoPromise,
+  ]);
+  const contactUrl = ghlContactUrl(env.GHL_LOCATION_ID, contactId);
+
+  try {
+    if (isBrochure) {
+      const statusLine = brochureStaffStatusLine({
+        accepted: customerResult?.accepted === true,
+        email: customerResult?.email || "",
+        at: customerResult?.at,
+      });
+      const mail = staffBrochureEmail({
+        name, email, phone, source: brochureSource, productName, page: sourcePage,
+        adLine, submittedAt, statusLine, contactUrl,
+      });
       await sendEmail(env.RESEND_API_KEY, {
-        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+        from,
+        to: BUSINESS_EMAIL,
+        subject: `New Enquiry — Brochure request: ${formatNameForSubject(name)}`,
+        html: mail.html,
+        text: mail.text,
+      });
+    } else {
+      const mail = staffEnquiryEmail({
+        name, email, phone, message, enquiryTypeLabel, location,
+        graveNumber: grave_number, contactPref: contact_pref,
+        photoCount: Array.isArray(photo_urls) ? photo_urls.length : 0,
+        photoUrls: photoSignedUrls, shortlistItems, submittedAt,
+        sourcePage, adLine, contactUrl,
+      });
+      await sendEmail(env.RESEND_API_KEY, {
+        from,
         to: BUSINESS_EMAIL,
         subject: `New Enquiry — ${formatNameForSubject(name)} — ${enquiryTypeLabel}`,
-        html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, shortlistItems, submittedAt }),
+        html: mail.html,
+        text: mail.text,
       });
-    }),
-    // Phone-only submissions are valid (the API requires name + email OR phone),
-    // so there may be no address to confirm to. Without this guard Resend is
-    // called with an empty `to` and 400s into a swallowed background error.
-    !email ? null : bg("enquiry customer email", () => {
-      const customerSubjectExtra = grave_number
-        ? ` — Grave ${grave_number}`
-        : (location ? ` — ${location}` : "");
-      return sendEmail(env.RESEND_API_KEY, {
-        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-        to: email,
-        subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
-        html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }),
-      });
-    }),
-    // Calendar event if the contact form picked a slot.
-    appointment_date && appointment_time
-      ? bg("contact-form calendar event", () => {
-          const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
-          const kind = appointment_kind || "showroom";
-          return createGoogleCalendarEvent(env, {
-            name, email, phone,
-            appointment_type: kind,
-            appointment_date,
-            appointment_time,
-            notes: message,
-            typeLabel: typeLabels[kind] || kind,
-          });
-        })
-      : (appointment_at_iso
-          ? bg("contact-form calendar event (ISO)", () => createCalendarEventFromIso(env, {
-              name, email, phone,
-              appointmentAtIso: appointment_at_iso,
-              appointmentKind: appointment_kind || "consultation",
-              notes: message,
-            }))
-          : null),
-    bg("ghl enquiry contact+opportunity", async () => {
-      const attributionFields = await attributionCustomFields(env, attribution);
-      const ghlExtraFields = [
-        message      ? { key: "customer_message",  field_value: message } : null,
-        enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-      ].filter(Boolean);
-      const contactId = await createGHLContact(env, {
-        name, email, phone, type: "enquiry",
-        cemetery: location,
-        extraFields: ghlExtraFields,
-        attributionFields,
-        lead: attribution,
-        isTest,
-      });
-      if (contactId) {
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ message: "enquiry_business_email_failed", error: String(err?.name || "error") }));
+  }
+  if (calendarPromise) await calendarPromise;
+}
+
+async function sendFamilyBrochure(env, { name, email, source }) {
+  try {
+    const id = await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      ...familyBrochureEmail({ firstName: name, source }),
+    }, emailTimeoutMs(env));
+    return { accepted: Boolean(id), email, at: new Date() };
+  } catch {
+    return { accepted: false, email };
+  }
+}
+
+async function syncEnquiryContact(env, {
+  name, email, phone, message, enquiry_type, enquiryTypeLabel, location,
+  attribution, isTest, enquiryId, sourcePage, brochureSource, productName, isBrochure,
+}) {
+  try {
+    const attributionFields = await attributionCustomFields(env, attribution);
+    const extraFields = [
+      message ? { key: "customer_message", field_value: message } : null,
+      enquiry_type ? { key: "enquiry_type", field_value: enquiry_type } : null,
+    ].filter(Boolean);
+    if (sourcePage && env.GHL_API_KEY && env.GHL_LOCATION_ID) {
+      try {
+        const ids = await ghlContactFieldIds(env.GHL_API_KEY, env.GHL_LOCATION_ID);
+        const sourcePageId = ids.source_page || ids.contactsource_page || ids.contact_source_page;
+        if (sourcePageId) extraFields.push({ id: sourcePageId, field_value: sourcePage });
+      } catch {
+        // No new HighLevel field is created. The note still carries the page.
+      }
+    }
+    const ghlType = isBrochure ? "brochure" : "enquiry";
+    const contactId = await createGHLContact(env, {
+      name, email, phone, type: ghlType,
+      cemetery: location,
+      message,
+      product: productName ? { name: productName } : undefined,
+      extraFields,
+      attributionFields,
+      lead: attribution,
+      isTest,
+    });
+    if (!contactId) return null;
+    await saveEnquiryGhlContactId(env, enquiryId, contactId);
+    if (isBrochure) {
+      await addGhlNote(env, contactId, brochureContactNote({
+        source: brochureSource, productName, page: sourcePage,
+      }));
+    } else {
+      try {
         await createGHLOpportunity(env, {
           contactId,
           name: `${enquiryTypeLabel} — ${name}`,
           monetaryValue: 0,
-          enquiry: { type: "enquiry", message },
+          enquiry: { type: ghlType, message },
+          source: websiteGhlLabels(ghlType).source,
         });
+      } catch (err) {
+        console.error(JSON.stringify({
+          message: "ghl_enquiry_opportunity_failed",
+          error: String(err?.message || err).replace(/[^\w .:/-]/g, "").slice(0, 160),
+        }));
       }
-    }),
-  ].filter(Boolean));
+    }
+    return contactId;
+  } catch (err) {
+    console.error(JSON.stringify({
+      message: "ghl_enquiry_contact_failed",
+      error: String(err?.message || err).replace(/[^\w .:/-]/g, "").slice(0, 160),
+    }));
+    return null;
+  }
+}
+
+async function addGhlNote(env, contactId, note) {
+  if (!env.GHL_API_KEY || !contactId || !note) return;
+  try {
+    const res = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.GHL_API_KEY}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body: note }),
+    });
+    if (!res.ok) console.error(JSON.stringify({ message: "ghl_brochure_note_failed", status: res.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "ghl_brochure_note_failed" }));
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -413,8 +576,15 @@ async function handleAppointment(ctx, data, submittedAt) {
   const { name, email, phone, appointment_type, appointment_date, appointment_time } = data;
   const notes = appointmentNotes(data);
   const testFlag = isTestSubmission({ name, email, phone, message: notes, ...cleanAttribution(data.attribution) });
+  let enquiryId = null;
   if (!appointment_date || !appointment_time)
     return jsonResponse({ ok: false, error: "Missing date or time" }, 400);
+  const showroomSlots = new Set(["10:00", "10:30", "11:00", "11:30", "12:00", "13:00", "13:30", "14:00", "14:30"]);
+  const showroomDate = new Date(`${appointment_date}T00:00:00Z`);
+  const showroomDay = showroomDate.getUTCDay();
+  const showroomIso = Number.isNaN(showroomDate.getTime()) ? "" : showroomDate.toISOString().slice(0, 10);
+  if (showroomIso !== appointment_date || !showroomSlots.has(appointment_time) || showroomDay === 0 || showroomDay === 6)
+    return jsonResponse({ ok: false, error: "Please choose a weekday from 10:00 to 14:30. The showroom is open Monday to Friday, 10am to 3pm." }, 400);
 
   const firstName = name.split(" ")[0];
   const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call" };
@@ -429,7 +599,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     ? new Date(`${appointment_date}T${appointment_time}:00`).toISOString()
     : (data.appointment_at || null);
   try {
-    await createEnquiry(env, {
+    const saved = await createEnquiry(env, {
       channel: apptChannel,
       name, email, phone,
       sub_type: appointment_type || null,
@@ -440,6 +610,7 @@ async function handleAppointment(ctx, data, submittedAt) {
       attribution: data.attribution,
       is_test: testFlag.is_test,
     });
+    enquiryId = saved?.enquiryId || null;
   } catch (err) {
     console.error(JSON.stringify({ message: "appointment_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
@@ -452,6 +623,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     typeLabel, dateFormatted, firstName,
     attribution: data.attribution,
     isTest: testFlag.is_test,
+    enquiryId,
   }));
 
   return jsonResponse({ ok: true });
@@ -462,7 +634,7 @@ async function handleAppointment(ctx, data, submittedAt) {
 async function appointmentSideEffects({
   env, name, email, phone, notes, submittedAt,
   appointment_type, appointment_date, appointment_time,
-  typeLabel, dateFormatted, firstName, attribution, isTest,
+  typeLabel, dateFormatted, firstName, attribution, isTest, enquiryId,
 }) {
   let calendarLink = null;
   try {
@@ -493,14 +665,16 @@ async function appointmentSideEffects({
         notes            ? { key: "appointment_notes", field_value: notes } : null,
       ].filter(Boolean);
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "appointment", extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
+        name, email, phone, type: "appointment", message: notes, extraFields: ghlExtraFields, attributionFields, lead: attribution, isTest,
       });
       if (contactId) {
+        await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
           contactId,
           name: `${typeLabel} — ${name}`,
           monetaryValue: 0,
           enquiry: { type: "appointment request", message: notes },
+          source: websiteGhlLabels("appointment").source,
         });
       }
     }),
@@ -701,28 +875,10 @@ function normaliseShortlistItems(rawItems) {
   }).filter(Boolean);
 }
 
-// Renders the shortlist as a full `<tr>` so it drops straight into either
-// enquiry email's outer table.
-function shortlistItemsBlock(items, { heading }) {
-  if (!Array.isArray(items) || items.length === 0) return "";
-  const rows = items.map((item, index) => `
-          <tr>
-            <td width="24" valign="top" style="padding:7px 0;font-family:Arial,sans-serif;font-size:12px;color:#BBBBBB;">${index + 1}.</td>
-            <td style="padding:7px 0;font-family:Arial,sans-serif;font-size:13px;color:#1A1A1A;line-height:1.5;">
-              ${item.url
-                ? `<a href="${item.url}" style="color:#2C2C2C;font-weight:600;text-decoration:none;">${esc(item.name)}</a>`
-                : `<strong style="color:#2C2C2C;">${esc(item.name)}</strong>`}${item.price ? `<span style="color:#999999;"> &middot; ${esc(item.price)}</span>` : ""}
-              ${item.url ? `<br><a href="${item.url}" style="color:#8B7355;font-size:12px;text-decoration:none;">View memorial &rarr;</a>` : ""}
-            </td>
-          </tr>`).join("");
-  return `
-      <tr><td style="padding:14px 28px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">${esc(heading)} (${items.length})</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}
-        </table>
-      </td></tr>`;
-}
 
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE INTEGRATION
+// ═══════════════════════════════════════════════════════════════════
 function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -881,7 +1037,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
                     </tr>
 
                   </table>
-                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 10px 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
+                  <p style="margin:8px 10px 0;font-family:'DM Sans',Arial,sans-serif;font-size:13px;line-height:1.45;font-weight:400;color:#5C554C;">Excludes the cemetery permit fee, if one applies.</p>
 
                   ${inscription ? `<!-- Inscription -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
@@ -945,7 +1101,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
         <!-- Footer -->
         <tr>
           <td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
+            <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;text-decoration:none;">${BUSINESS_EMAIL}</a></span>
           </td>
         </tr>
 
@@ -1102,7 +1258,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
                       <td align="right" style="padding:9px 0 3px;color:#2C2C2C;font-weight:700;font-size:15px;white-space:nowrap;">£${grandTotal.toLocaleString("en-GB",{maximumFractionDigits:0})}</td>
                     </tr>
                   </table>
-                  ${permitFee <= 0 ? `<p style="font-size:11px;color:#999999;margin:6px 0 0;font-family:Arial,sans-serif;">*Permit fee not yet determined — varies by cemetery</p>` : ""}
+                  <p style="margin:8px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:13px;line-height:1.45;font-weight:400;color:#5C554C;">Excludes the cemetery permit fee, if one applies.</p>
 
                 </td>
               </tr>
@@ -1134,7 +1290,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
         <!-- Footer -->
         <tr>
           <td style="background-color:#1A1A1A;padding:16px 28px;text-align:center;border-radius:0 0 10px 10px;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; London (NW11) &middot; ${BUSINESS_EMAIL}</span>
           </td>
         </tr>
 
@@ -1149,163 +1305,12 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
 // Render the submission detail rows shared by the business + customer emails.
 // Keeping the markup in a helper means both inboxes get the same field list,
 // so the customer copy is genuinely a record of what they sent.
-function enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls }) {
-  const contactPrefLabels = { email: "Email", phone: "Phone call", appointment: "Appointment" };
-  const rows = [];
-  if (enquiry_type) {
-    rows.push(`<tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Enquiry type</td><td style="padding:5px 0;color:#1A1A1A;">${esc(formatEnquiryTypeLabel(enquiry_type))}</td></tr>`);
-  }
-  if (location) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>`);
-  }
-  if (grave_number) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Grave</td><td style="padding:5px 0;color:#1A1A1A;">${esc(grave_number)}</td></tr>`);
-  }
-  if (contact_pref) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Preferred reply</td><td style="padding:5px 0;color:#1A1A1A;">${esc(contactPrefLabels[contact_pref] || contact_pref)}</td></tr>`);
-  }
-  if (Array.isArray(photo_urls) && photo_urls.length > 0) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Photos attached</td><td style="padding:5px 0;color:#1A1A1A;">${photo_urls.length} file${photo_urls.length === 1 ? "" : "s"}</td></tr>`);
-  }
-  return rows.join("");
-}
 
-// Renders a 2-column thumbnail grid of clickable photo previews for the
-// business email. Uses signed URLs (1-year TTL) so the team can open the
-// full-size image straight from their inbox.
-function enquiryPhotoGallery(signedUrls) {
-  if (!Array.isArray(signedUrls) || signedUrls.length === 0) return "";
-  const cells = signedUrls.map(url => `
-    <td width="50%" valign="top" style="padding:6px;">
-      <a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;">
-        <img src="${esc(url)}" alt="Enquiry photo" width="260" style="display:block;width:100%;max-width:260px;height:auto;border:1px solid #E0DCD5;border-radius:6px;" />
-      </a>
-    </td>`);
-  // Pair cells into rows of 2
-  let rows = "";
-  for (let i = 0; i < cells.length; i += 2) {
-    rows += `<tr>${cells[i] || ""}${cells[i + 1] || `<td width="50%">&nbsp;</td>`}</tr>`;
-  }
-  return `
-      <tr><td style="padding:4px 22px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 8px 6px;font-family:Arial,sans-serif;">Photos attached</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
-        <p style="font-size:11px;color:#999999;margin:6px 6px 0;font-family:Arial,sans-serif;">Click any photo to open the full-size image. Links expire in 12 months.</p>
-      </td></tr>`;
-}
-
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls, shortlistItems, submittedAt }) {
-  const hasPhotos = Array.isArray(photo_signed_urls) && photo_signed_urls.length > 0;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;padding:24px 0;">
-  <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:10px;overflow:hidden;">
-      <tr><td style="background-color:#2C2C2C;padding:18px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
-          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">${esc(formatEnquiryTypeLabel(enquiry_type))}</span></td>
-        </tr></table>
-      </td></tr>
-      <tr><td style="padding:26px 28px 4px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">${esc(formatEnquiryTypeLabel(enquiry_type))} enquiry</h2>
-        <p style="color:#AAAAAA;font-size:12px;margin:0;font-family:Arial,sans-serif;">Received ${esc(submittedAt)}</p>
-      </td></tr>
-      <tr><td style="padding:16px 28px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #E0DCD5;line-height:0;font-size:0;">&nbsp;</td></tr></table>
-      </td></tr>
-      <tr><td style="padding:16px 28px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 12px 0;font-family:Arial,sans-serif;">Customer</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
-          <tr><td width="130" style="padding:5px 0;color:#999999;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
-          <tr><td style="padding:5px 0;color:#999999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
-          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
-        </table>
-      </td></tr>
-      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials shortlisted" })}
-      ${message ? `<tr><td style="padding:12px 28px ${hasPhotos ? '4px' : '28px'};">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Message</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
-        </table>
-      </td></tr>` : `<tr><td style="padding:0 28px ${hasPhotos ? '4px' : '20px'};font-size:0;line-height:0;">&nbsp;</td></tr>`}
-      ${enquiryPhotoGallery(photo_signed_urls)}
-      <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
-      <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
-}
-
-// Customer copy = receipt notice + verbatim copy of what they submitted, so
-// they can see exactly what reached us. Subject line carries the enquiry type
-// and an extra detail (grave / cemetery) so it stands out in their inbox.
-function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }) {
-  const firstName = (name || "").split(" ")[0];
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;padding:24px 0;">
-  <tr><td align="center">
-    <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#ffffff;border-radius:10px;overflow:hidden;">
-      <tr><td style="background-color:#2C2C2C;padding:20px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
-          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">Submission Received</span></td>
-        </tr></table>
-      </td></tr>
-      <tr><td style="padding:30px 28px 6px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">Thank you, ${esc(firstName)}.</h2>
-        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within one working day.</p>
-        <p style="color:#888888;font-size:13px;line-height:1.6;margin:0 0 18px 0;font-family:Arial,sans-serif;">A copy of your enquiry is below for your records.</p>
-      </td></tr>
-      <tr><td style="padding:0 28px 8px;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your details</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
-          <tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Email</td><td style="padding:5px 0;color:#1A1A1A;">${esc(email)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
-          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
-          ${submittedAt ? `<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Submitted</td><td style="padding:5px 0;color:#1A1A1A;">${esc(submittedAt)}</td></tr>` : ""}
-        </table>
-      </td></tr>
-      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials you shortlisted" })}
-      ${message ? `<tr><td style="padding:14px 28px 8px;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your message</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
-        </table>
-      </td></tr>` : ""}
-      <tr><td style="padding:18px 28px 24px;">
-        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 6px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
-        <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
-      </td></tr>
-      <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; North London (NW11) &middot; ${BUSINESS_EMAIL}</span>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SUPABASE INTEGRATION
-// ═══════════════════════════════════════════════════════════════════
 function supabaseHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+  return supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
-  };
+  });
 }
 
 function splitName(full) {
@@ -1351,7 +1356,7 @@ async function signEnquiryPhotoUrls(env, paths) {
     `${env.SUPABASE_URL}/storage/v1/object/sign/${ENQUIRY_PHOTO_BUCKET}`,
     {
       method: "POST",
-      headers: { apikey: headers.apikey, Authorization: headers.Authorization, "Content-Type": "application/json" },
+      headers: { ...supabaseAuthHeaders(headers), "Content-Type": "application/json" },
       body: JSON.stringify({ expiresIn: ENQUIRY_PHOTO_SIGN_TTL_S, paths }),
     },
   );
@@ -1386,7 +1391,7 @@ async function lookupCemeteryIdByName(env, location) {
   ];
   for (const filter of tries) {
     const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&is_test=eq.false${orgFilter}&select=id&limit=1`;
-    const res = await fetch(url, { headers: { apikey: headers.apikey, Authorization: headers.Authorization } });
+    const res = await fetch(url, { headers: supabaseAuthHeaders(headers) });
     if (!res.ok) continue;
     const rows = await res.json();
     if (rows?.[0]?.id) return rows[0].id;
@@ -1412,7 +1417,7 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
 
   const existingRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
-    { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+    { headers: supabaseAuthHeaders(headers) }
   );
   if (!existingRes.ok) throw new Error(`Supabase people lookup returned ${existingRes.status}`);
   const existing = (await existingRes.json())[0] || null;
@@ -1453,7 +1458,7 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
     if (insertRes.status === 409 || /duplicate key|23505/i.test(errBody)) {
       const refetch = await fetch(
         `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
-        { headers: { apikey: headers.apikey, Authorization: headers.Authorization } }
+        { headers: supabaseAuthHeaders(headers) }
       );
       if (refetch.ok) {
         const row = (await refetch.json())[0];
@@ -1515,7 +1520,7 @@ export async function createEnquiry(env, payload) {
   };
   const post = (body) => fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
-    headers: supabaseHeaders(env),
+    headers: { ...supabaseHeaders(env), Prefer: "return=representation" },
     body: JSON.stringify(body),
   });
   let currentBody = enqBody;
@@ -1537,7 +1542,9 @@ export async function createEnquiry(env, payload) {
     enqRes = await post(currentBody);
   }
   if (!enqRes.ok) throw new Error(`Supabase enquiries returned ${enqRes.status}`);
-  return { personId: person.id };
+  const created = await enqRes.json().catch(() => null);
+  const enquiryId = Array.isArray(created) ? created[0]?.id : created?.id;
+  return { personId: person.id, enquiryId: enquiryId || null };
 }
 
 // enquiries.gclid / gbraid / wbraid / utm_* (migration 2026-10-14). Only keys
@@ -1574,6 +1581,49 @@ export async function saveEnquiryAttribution(env, enquiryId, attribution) {
   } catch {
     console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing" }));
   }
+}
+
+/** Best-effort write-back of the matched/created GHL contact onto the enquiry row. */
+export async function saveEnquiryGhlContactId(env, enquiryId, contactId) {
+  if (!enquiryId || !contactId) return;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+      method: "PATCH",
+      headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+      body: JSON.stringify({ ghl_contact_id: String(contactId) }),
+    });
+    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_ghl_contact_id_save_failed", status: res.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "enquiry_ghl_contact_id_save_failed" }));
+  }
+}
+
+/** Contact source + tags for website forms (Supabase is SoT; GHL is a mirror). */
+export function websiteGhlLabels(type) {
+  const t = String(type || "").toLowerCase();
+  if (t === "quote") {
+    return { source: "Website quote", tags: ["website-quote", "website-lead", "quote-request"] };
+  }
+  if (t === "appointment") {
+    return { source: "Website appointment", tags: ["website-appointment", "website-lead", "appointment"] };
+  }
+  if (t === "brochure") {
+    return { source: "Website brochure", tags: ["brochure", "website-lead"] };
+  }
+  // contact / shortlist / generic enquiry
+  return { source: "Website enquiry", tags: ["website-enquiry", "website-lead", "enquiry"] };
+}
+
+/** Chat-widget (or blank) sources are overwritten by a later website form submission. */
+export function shouldReplaceGhlSource(existingSource, nextSource) {
+  if (!nextSource) return false;
+  if (existingSource == null || String(existingSource).trim() === "") return true;
+  const cur = String(existingSource).trim().toLowerCase();
+  if (cur.includes("chat")) return true;
+  if (cur === String(nextSource).trim().toLowerCase()) return false;
+  // Never clobber a different non-chat source (manual / Ads / YOPA etc.).
+  if (cur.startsWith("website")) return true; // allow quote/enquiry/appointment relabel among website*
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1763,9 +1813,10 @@ export async function attributionCustomFields(env, attribution, { token, locatio
   let ids = {};
   try { ids = await ghlContactFieldIds(token, locationId, fetchImpl); }
   catch (e) { console.error(JSON.stringify({ message: "ghl_field_lookup_failed", error: String(e?.message || e) })); return []; }
-  const missing = keys.filter((k) => !ids[k]);
+  const pick = (key) => ids[key] || ids["contact" + key] || ids["contact_" + key];
+  const missing = keys.filter((k) => !pick(k));
   if (missing.length) console.warn(JSON.stringify({ message: "ghl_attribution_fields_missing", missing }));
-  return keys.filter((k) => ids[k]).map((k) => ({ id: ids[k], field_value: a[k] }));
+  return keys.filter((k) => pick(k)).map((k) => ({ id: pick(k), field_value: a[k] }));
 }
 
 export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
@@ -1777,16 +1828,44 @@ export function fillOnlyCustomFields(existingCustomFields, candidateFields) {
   });
 }
 
+const isBlank = (v) => v == null || String(v).trim() === "";
+
+/** Fill-only patch for a duplicate GHL contact: blank phone / first / last name only. */
+export function returningContactUpdate(existing, { firstName, lastName, phone }) {
+  const update = {};
+  if (isBlank(existing?.phone) && !isBlank(phone)) update.phone = String(phone).trim();
+  if (isBlank(existing?.firstName) && !isBlank(firstName)) update.firstName = firstName;
+  if (isBlank(existing?.lastName) && !isBlank(lastName)) update.lastName = lastName;
+  return update;
+}
+
+const normName = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, " ");
+/** True when GHL already holds a (non-blank) name that differs from the submitted one. */
+export function returningNameDiffers(existing, submittedName) {
+  const ghlName = [existing?.firstName, existing?.lastName].filter((x) => !isBlank(x)).join(" ") || existing?.contactName || existing?.name || "";
+  return !isBlank(ghlName) && !isBlank(submittedName) && normName(ghlName) !== normName(submittedName);
+}
+
+export function returningEnquiryNote({ name, phone, message, product, cemetery }, now = new Date()) {
+  const date = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(now);
+  const dash = (v) => (isBlank(v) ? "-" : String(v).trim());
+  return `Returning enquiry ${date} as '${dash(name)}', phone ${dash(phone)}, message: ${dash(message)}, product/cemetery: ${dash(product)} / ${dash(cemetery)}`;
+}
+
 export async function createGHLContact(env, args, fetchOverride) {
   if (!createGHLContact._locationChecked) {
     createGHLContact._locationChecked = true;
     console.log(JSON.stringify({ message: "ghl_location_check", is_sm_location: env.GHL_LOCATION_ID === "7JJQ1fkS2z8zv5XIDV0P" }));
   }
-  const { name, email, phone, type, product, cemetery, extraFields, attributionFields, lead, isTest } = args;
+  const { name, email, phone, type, product, cemetery, message, extraFields, attributionFields, lead, isTest } = args;
   const fetchImpl = args.fetchImpl || fetchOverride || fetch;
-  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) return null;
+  if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID) {
+    console.error(JSON.stringify({ message: "ghl_contact_skipped_missing_env", has_key: !!env.GHL_API_KEY, has_location: !!env.GHL_LOCATION_ID }));
+    return null;
+  }
   const parts = name.trim().split(" ");
-  const tags = ["website-lead", type === "quote" ? "quote-request" : type, ...leadTags(lead)];
+  const labels = websiteGhlLabels(type);
+  const tags = [...labels.tags, ...leadTags(lead)];
   if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
   if (isTest) tags.push("test-lead");
   if (product?.type) tags.push(product.type.toLowerCase().replace(/\s+/g, "-"));
@@ -1795,6 +1874,8 @@ export async function createGHLContact(env, args, fetchOverride) {
   const leadFields = lead ? await leadCustomFields(env, lead, { fetchImpl }) : [];
   const adSourceFields = await adSourceCustomField(env, lead, { fetchImpl });
   const lastTouchFields = await lastTouchCustomFields(env, lead, { fetchImpl });
+  // First-touch click IDs / UTMs / lead meta / Ad source: fill-blank only on duplicate.
+  // Last-touch fields always take the latest value (see #207 / last-touch tests).
   const trackedFields = [...(attributionFields || []), ...leadFields, ...adSourceFields];
   const customFields = [
     { key: "lead_type", field_value: type },
@@ -1816,33 +1897,49 @@ export async function createGHLContact(env, args, fetchOverride) {
     method: "POST",
     headers,
     // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
+    // Contact `source` + tags are ours: Website quote / enquiry / appointment.
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
-      email, phone: phone || undefined, source: "Website", tags: dedupedTags, customFields,
+      email, phone: phone || undefined, source: labels.source, tags: dedupedTags, customFields,
     }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const existingId = body?.meta?.contactId || body?.meta?.contact?.id;
     const duplicate = [400, 409, 422].includes(res.status) && existingId && /duplicat/i.test(String(body?.message || ""));
-    if (!duplicate) throw new Error(`GHL returned ${res.status}`);
+    if (!duplicate) {
+      const ghlMsg = String(body?.message || "").replace(/[^\w .:-]/g, "").slice(0, 120);
+      throw new Error(`GHL returned ${res.status}${ghlMsg ? ` ${ghlMsg}` : ""}`);
+    }
     try {
       const existingRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, { headers });
       if (!existingRes.ok) throw new Error(`GHL contact lookup returned ${existingRes.status}`);
       const existingBody = await existingRes.json();
-      const fields = [...fillOnlyCustomFields(existingBody?.contact?.customFields || existingBody?.customFields, trackedFields), ...lastTouchFields];
-      if (fields.length) {
+      const existing = existingBody?.contact || existingBody || {};
+      const fields = [...fillOnlyCustomFields(existing.customFields, trackedFields), ...lastTouchFields];
+      const update = returningContactUpdate(existing, { firstName: parts[0], lastName: parts.slice(1).join(" "), phone });
+      if (fields.length) update.customFields = fields;
+      // Relabel chat-widget (or blank) contacts that later submit a website form.
+      if (shouldReplaceGhlSource(existing.source, labels.source)) update.source = labels.source;
+      if (Object.keys(update).length) {
         const updateRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}`, {
-          method: "PUT", headers, body: JSON.stringify({ customFields: fields }),
+          method: "PUT", headers, body: JSON.stringify(update),
         });
         if (!updateRes.ok) throw new Error(`GHL contact update returned ${updateRes.status}`);
+      }
+      if (returningNameDiffers(existing, name)) {
+        const noteRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/notes`, {
+          method: "POST", headers,
+          body: JSON.stringify({ body: returningEnquiryNote({ name, phone, message, product: product?.name, cemetery }) }),
+        });
+        if (!noteRes.ok) throw new Error(`GHL contact note returned ${noteRes.status}`);
       }
     } catch (error) {
       console.error(JSON.stringify({ message: "ghl_duplicate_contact_update_failed", status: error?.message || "unknown" }));
     }
     try {
       const tagsRes = await fetchImpl(`https://services.leadconnectorhq.com/contacts/${existingId}/tags`, {
-        method: "POST", headers, body: JSON.stringify({ tags: dedupedTags }),
+        method: "POST", headers, body: JSON.stringify({ tags: [...new Set([...dedupedTags, "returning-enquiry"])] }),
       });
       if (!tagsRes.ok) throw new Error(`GHL contact tags returned ${tagsRes.status}`);
     } catch (error) {
@@ -1859,7 +1956,7 @@ export async function createGHLContact(env, args, fetchOverride) {
  * a WON opportunity gets a `returning-customer-enquiry` tag + note instead of a
  * new card; won opportunities are never written from here.
  */
-async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry }) {
+async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry, source }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
   return upsertWebsiteOpportunity(env, {
     contactId,
@@ -1868,6 +1965,7 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue, enqui
     pipelineId: env.GHL_PIPELINE_ID || GHL_PIPELINE_ID_DEFAULT,
     defaultStageId: env.GHL_PIPELINE_STAGE_ID || GHL_PIPELINE_STAGE_ID_DEFAULT,
     enquiry,
+    source,
     submittedAt: new Date(),
   });
 }
@@ -2023,16 +2121,59 @@ function esc(str) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-async function sendEmail(apiKey, { from, to, subject, html }) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to, subject, html }),
-  });
-  if (!res.ok) {
-    console.error(JSON.stringify({ message: "resend_request_failed", status: res.status }));
+function isLiveSiteRequest(request) {
+  try {
+    const host = new URL(request.url).hostname.toLowerCase().replace(/\.$/, "");
+    return host === "searsmelvin.co.uk" || host === "www.searsmelvin.co.uk";
+  } catch {
+    return false;
+  }
+}
+
+function emailTimeoutMs(env) {
+  const n = Number(env?.BROCHURE_EMAIL_TIMEOUT_MS);
+  if (Number.isFinite(n) && n >= 20 && n <= 20000) return n;
+  return 15000;
+}
+
+// Returns the provider id. An id means the message was accepted for sending.
+// It does not mean delivered, received, or opened.
+async function sendEmail(apiKey, { from, to, subject, html, text }, timeoutMs = 15000) {
+  const limit = Number.isFinite(timeoutMs) && timeoutMs >= 20 && timeoutMs <= 20000 ? timeoutMs : 15000;
+  const payload = { from, to, subject, html };
+  if (text) payload.text = text;
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, limit);
+  let res;
+  try {
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ message: "resend_request_failed", error: timedOut || err?.name === "TimeoutError" || err?.name === "AbortError" ? "timeout" : "network" }));
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (timedOut) {
+    const err = new Error("timeout");
+    err.name = "TimeoutError";
+    throw err;
+  }
+  const body = await res.json().catch(() => ({}));
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!res.ok || !id) {
+    console.error(JSON.stringify({ message: "resend_request_failed", status: res.status, accepted: false }));
     throw new Error(`Resend request failed with status ${res.status}`);
   }
+  return id;
 }
 
 function jsonResponse(data, status = 200) {

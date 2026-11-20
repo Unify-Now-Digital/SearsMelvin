@@ -5,18 +5,18 @@ form, a page template, a phone number, a link or anything pushed to `dataLayer`,
 this first. CI (`tests/tracking-contract.mjs`, `.github/workflows/tests.yml`) fails a PR
 that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM daily.
 
-- GTM container: **GTM-KRDX4BQ5** (live version 21 at time of writing; snapshot in `docs/gtm-snapshot.json`)
+- GTM container: **GTM-KRDX4BQ5** (live version 28, published 9 Nov 2026 at 23:40 Madrid, replaces v27; snapshot in `docs/gtm-snapshot.json`)
 - GA4: **G-RF3LYJMFVE** (property 527695823)
 - Google Ads: **AW-16866941615** (customer 417-417-3541, manager 527-130-1935)
 
 ## Golden rules
 
 1. Push conversion events **only on a confirmed successful server response**, **first**, before the form is hidden, reset or redirected.
-2. **No personal details in `dataLayer`** (no name, email, phone, message, address). Enhanced conversions read the consent-gated form fields inside GTM instead.
+2. **No personal details in `dataLayer`** (no name, email, phone, message, address). Form enhanced conversions read the consent-gated fields inside GTM. Chat cannot: the LeadConnector widget is a closed shadow DOM, so at `sm_chat_submit` the hook stashes the sanitised email and phone on `window.__smChatEmail` and `window.__smChatPhone` for GTM's user-provided-data variables. Those names are the contract (GTM reads them first). They are not dataLayer fields, and a missing value is deleted so a later chat does not reuse it.
 3. GA4 lead/quote events use **`transport_type: beacon`** (set on the GTM tags) so they survive the page unloading.
 4. Every visible phone number is exactly **`020 3835 2548`** (the Google forwarding-number swap only matches this format). Every `tel:` link must show it as text. Schema JSON-LD keeps `+442038352548`. Exception (Oct 2026): ad visitors only (90-day `sm_ad` cookie) may see the dedicated Ads number from `SM_ADS_PHONE`, swapped at runtime by site-upgrades.js. The HTML always ships `020 3835 2548`.
 5. **No `utm_*` on internal links.** UTMs are only for inbound campaigns (and the outbound brochure email/PDF links in `functions/api/brochure.js` / the PDF).
-6. Every public page loads GTM (GTM-KRDX4BQ5) and the GHL chat loader with the chat hook.
+6. Every public page loads GTM (GTM-KRDX4BQ5) and the GHL chat loader with the chat hook. GTM loads **at page start** in `<head>` (async), straight after the consent defaults; it must not wait for a cookie choice, scroll, tap, or idle (that deferral, from #67, hid ~75% of paid visits from GA4). Consent mode is advanced. Defaults are denied, `ads_data_redaction` is true, and `url_passthrough` is true, so Google can send a cookieless ping and must not write a Google cookie before the visitor agrees. The first-party gclid, gbraid and wbraid capture does not read the cookie choice. The LeadConnector chat stays deferred (tap/type or 10 s). `tests/tracking-guard.mjs` enforces the loader order.
 7. Never change conversion values, primary/secondary or bidding from the website side.
 8. If you change GTM, run `node scripts/tracking-check.mjs --update-snapshot` and commit the new `docs/gtm-snapshot.json` in the same PR, with a GTM version name that says what changed.
 
@@ -25,44 +25,68 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | Event | Pushed from | When | GTM tags that depend on it |
 |---|---|---|---|
 | `sm_lead_submit` `{form_id:'contactForm', enquiry_type}` | `contact.html` | `/api/submit` returns `ok`, before the form is hidden | GA4 `generate_lead` (params form_name=contact_enquiry, value 400 GBP, beacon); Ads **generate_lead** `AW-16866941615/_M8_CK2IrYkcEK-15Oo-` (tag value 400); Ads user-provided data (`__awud`) |
-| `sm_quote_submit` `{form_id:'quoteForm'}` | `memorial.html` quote modal | `/api/submit` (channel quote) returns `ok`, before the form is hidden | GA4 `request_quote` (value = variable, GBP, beacon); Ads **request_quote** `AW-16866941615/l5TiCLCIrYkcEK-15Oo-` (value = variable). Moved to this event in GTM v21; the old `#quoteSuccessMsg` element-visibility trigger is **legacy** (the page still scrolls the message into view inside the modal). |
-| `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit` (fires once per submission, 3 s debounce) | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 200); `__awud` |
+| `sm_quote_submit` `{form_id:'quoteForm'}` | `memorial.html` quote modal | `/api/submit` (channel quote) returns `ok`, before the form is hidden | GA4 `request_quote` (value = variable, GBP, beacon); Ads **request_quote** `AW-16866941615/l5TiCLCIrYkcEK-15Oo-` (value = variable); Ads user-provided data (`__awud`) also listens for this event (GTM v26). Moved to this event in GTM v21; the old `#quoteSuccessMsg` element-visibility trigger is **legacy** (the page still scrolls the message into view inside the modal). |
+| `sm_chat_submit` | inline LeadConnector loader `<script>` in every public page `<head>` | GHL chat widget `registerBeforeSubmit`, **once per tab visit**. `sessionStorage.sm_chat_counted` (and an in-memory flag if storage throws) blocks a later attempt in that tab, including a Turnstile retry many seconds later. Every attempt still refreshes `window.__smChatEmail` / `window.__smChatPhone` with the same sanitising as `clickIntentBody`. The event object stays `{event:'sm_chat_submit'}` only. `/api/click-intent` is called only on the counted attempt. | GA4 `ghl_chat_submission` (once per load); Ads **Chat start** `AW-16866941615/MipOCNXwuLscEK-15Oo-` (tag value 150 GBP, secondary); `__awud` (reads those two globals; GTM container change is separate from this repo) |
 | `ghl_chat_submission` | same place, right after `sm_chat_submit` | same | **No trigger on purpose.** Adding a GTM trigger on it would double count chats. |
-| `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure download click / email sent | GA4 `brochure_download` (param source). Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
-| `consent_update` | cookie banner script on every page | Accept/Decline | Consent mode; GTM consent defaults are `denied` until Accept. |
+| `brochure_download` `{source, email_given}` | `site-upgrades.js` (`brochureEvents`) | brochure file click after the request form | GA4 `brochure_download`. The dataLayer field stays `source`. The GA4 event parameter is `brochure_source`, and its value is still {{DLV - source}}. Optional Ads conversion only if `googleAds.brochureConversionLabel` is set in `site-config.js`. |
+| `brochure_request` `{source}` | `site-upgrades.js` on `/brochure` form success | `/api/submit` returns ok, before the form is hidden | **Not wired in GTM yet.** Add a GA4 event tag on `brochure_request`. Do not mark it as a primary Google Ads conversion. |
+| `view_item_list` | `memorials.html` grid, payload from `site-upgrades.js` | Once when the catalogue grid finishes rendering, and again after a filter or sort settles. 50ms debounce, so the first paint plus a `?type=` deep link is one event. | **Not wired in GTM yet.** Arin adds the tag. Must not trigger `request_quote` or `generate_lead`. |
+| `select_item` | `memorials.html` card click / auxclick | A memorial card tap, including middle-click and modified clicks. The handler does not call `preventDefault`. The same card is ignored for 700ms so click + auxclick cannot double count. | **Not wired in GTM yet.** |
+| `filter_select` | `memorials.html` type, colour, price, clear | One event per control change (`filter_name`, `filter_value`, `selected`, `result_count`). A repeated call for the same control collapses to one event. Landing on `?type=` does not count as a change. Sort updates `view_item_list` only. | **Not wired in GTM yet.** |
+| `consent_update` | `cookie-consent.js` on every page | Accept, Reject, Accept all, Reject all, or Save choices | Consent mode stays advanced. Defaults are `denied`, and GTM still loads. Google sends cookieless pings until a grant. `consent_granted_by_click` fires when the click grants analytics or ads. |
 
-The chat loader also sets `window.__smChatHook = true` before GTM loads. That disables the
+`sm_quote_submit` stays a single push on the confirmed quote response. When the open product matches `sessionStorage.sm_list_context` (written from the card, 12-hour tab life), that same object also gains `product_id`, `category`, `list_position`, `item_list_id` and `active_filter`. A direct product visit, or a card for a different memorial, leaves the event as `{event, form_id}` only. It does not push `sm_lead_submit` or a second `sm_quote_submit`. Contact `sm_lead_submit` is unchanged.
+
+Catalogue payloads are product id, product name, category name, 1-based visible grid index, list id `memorials`, list name `Memorials`, and the active filter string (`type:…|colour:…|price:…|sort:…`, or `all`). No customer, deceased, email, phone or inscription fields.
+
+These pushes are not dropped on preview or localhost. The site has never excluded those hosts from `dataLayer`, and the committed GTM snapshot has no hostname exception. GTM and GA4 still decide what is collected. Do not add a site-side host gate for these events.
+
+The GTM loader (and the chat loader) set `window.__smChatHook = true` before gtm.js can run. That disables the
 older GTM Custom HTML "GHL Chat Widget Listener" (fetch/XHR hook), which raced the widget
 and missed most chats. Do not remove the flag, or chats will be counted twice.
 
 ### generate_lead on quote/shortlist pages (keep)
 GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **unless** the form is `quoteForm`
-(form_name=shortlist, value 400, beacon). It covers the shortlist enquiry form. Keep it.
+(form_name=shortlist, value 400, beacon). Keep that tag. `/memorials` has no `<form>`, so the tag does not fire.
+The shortlist enquiry pushes `sm_lead_submit` with `form_id: 'shortlist'` only after `/api/submit` returns ok.
 
-## GTM tags (live v21, from `docs/gtm-snapshot.json`)
+## GTM tags (live v28, from `docs/gtm-snapshot.json`)
+
+v28 was published on 9 Nov 2026 at 23:40 Madrid and replaces v27.
 
 | Tag type | ID / label | Value | Trigger |
 |---|---|---|---|
-| Google tag | G-RF3LYJMFVE | | Initialization |
+| Google tag | G-RF3LYJMFVE | | Initialization. Config params: `url_passthrough` true, `traffic_type` {{JS - traffic_type}} |
 | Google tag | AW-16866941615 | | Initialization |
 | GA4 event | generate_lead (contact) | 400 GBP | `sm_lead_submit` |
 | GA4 event | generate_lead (shortlist) | 400 GBP | formSubmit on /memorials, not `quoteForm` |
 | GA4 event | request_quote | variable | `sm_quote_submit` |
 | GA4 event | ghl_chat_submission | | `sm_chat_submit` (once per load) |
-| GA4 event | click_to_call | 270 GBP | link click on `tel:` |
+| GA4 event | click_to_call | 150 GBP | link click on `tel:` |
 | GA4 event | click_to_email | | link click on `mailto:` |
-| GA4 event | brochure_download | | `brochure_download` |
+| GA4 event | brochure_download | | `brochure_download` (param `brochure_source` = {{DLV - source}}) |
 | GA4 event | finder_start | | page path contains `finder` |
 | GA4 event | share_shortlist | | click on `.shortlist-btn-*` |
 | Ads conversion | `_M8_CK2IrYkcEK-15Oo-` generate_lead | 400 | `sm_lead_submit` |
 | Ads conversion | `l5TiCLCIrYkcEK-15Oo-` request_quote | variable | `sm_quote_submit` |
-| Ads conversion | `MipOCNXwuLscEK-15Oo-` Chat start | 200 | `sm_chat_submit` |
-| Ads conversion | `okRkCPGTqJsdEK-15Oo-` SM Website click-to-call (tel link) | 270 | link click on `tel:` |
+| Ads conversion | `MipOCNXwuLscEK-15Oo-` Chat start | 150 GBP | `sm_chat_submit` |
+| Ads conversion | `okRkCPGTqJsdEK-15Oo-` SM Website click-to-call (tel link) | 150 | link click on `tel:` |
 | Ads call conversion (`__awcc`) | `K1otCIWr1JodEK-15Oo-` SM Website call (GFN), number swap | | All pages |
-| Ads user-provided data, conversion linker, listeners | | | various |
+| Ads user-provided data, conversion linker, listeners | | | various, including `sm_quote_submit` |
 | Custom HTML | GHL Chat Widget Listener (legacy, neutralised by `__smChatHook`) | | All pages |
+| Custom HTML | HTML - set staff internal cookie | | `PV - sm_internal param`: page URL contains `sm_internal=` |
 
-The exact tag list with triggers and params is `docs/gtm-snapshot.json`.
+The exact tag list with triggers and event params is `docs/gtm-snapshot.json`. That file does not store Google tag config params, variable source, or custom HTML source. Those are recorded here.
+
+### Staff and test traffic (v28)
+
+- Variable `JS - traffic_type` returns `internal` when the query has `sm_test=1` or `sm_internal=1`, or when the cookie `sm_internal` is `1`. Otherwise it returns nothing. `sm_test=1` does not set the cookie.
+- The GA4 config tag (`G-RF3LYJMFVE`) sends that value as `traffic_type` and sets `url_passthrough` to true.
+- `HTML - set staff internal cookie` runs on `PV - sm_internal param`. `sm_internal=1` sets cookie `sm_internal=1` for one year (`path=/`, `Secure`, `SameSite=Lax`). `sm_internal=0` clears it.
+- The GA4 Internal Traffic filter is in Testing. It does not drop internal hits until it is activated.
+- The GA4 custom channel group `SM channels` has `Brochure` first. The rule is medium exactly `pdf`.
+
+Arin confirmed the click-to-call value of 150 GBP on 8 November 2026. The GTM tags still send 150. v28 changed Chat start from 200 to 150 GBP and left it secondary. The Ads API defaults in the table below were read on 14 October 2026 and still show £270 for those call actions. Do not change GTM from this repo.
 
 ## Google Ads conversion actions (read from the Ads API, 14 Oct 2026)
 
@@ -73,7 +97,7 @@ The exact tag list with triggers and params is `docs/gtm-snapshot.json`.
 | 7841909233 | SM Website click-to-call (tel link) | Website (GTM), label okRkCPGTqJsdEK-15Oo- | Primary | £270 |
 | 7604821101 | Lead form - Submit | Google-hosted lead form | Primary | £1 |
 | 7535805491 | click_to_call | Click to call (ad) | Secondary | £270 |
-| 7640856661 | Chat start | Website (GTM), label MipOCNXwuLscEK-15Oo- | Secondary | £1 default; the GTM tag sends £200 |
+| 7640856661 | Chat start | Website (GTM), label MipOCNXwuLscEK-15Oo- | Secondary | £1 default; the GTM tag sends £150 |
 | 7840535941 | SM Website call (GFN) | Website call, label K1otCIWr1JodEK-15Oo-, 90 s | Secondary | £1 |
 | 7559130441 | Calls from ads | Ad call | Secondary | £1 |
 | 7840372295 | SM Won order (offline) | Offline click upload | Secondary | £0 (value sent per upload) |
@@ -104,18 +128,48 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 
 ## Click-ID intents (chat/call)
 
-- Chat submissions and `tel:` clicks send the stored Google Ads click ID to
-  `/api/click-intent`; chat may also include a sanitised email/phone supplied by
-  the widget. Calls never include contact details.
+- Chat submissions and `tel:` clicks send a row to `/api/click-intent`.
+- **Personal data:** email, phone, and name. A chat may include a sanitised
+  email and phone supplied by the widget — the same two fields the
+  `click_intents` row already stores. Name is personal data and is not
+  collected. Calls never include contact details. The dataLayer events stay
+  free of personal details.
+- Attribution comes from `localStorage.sm_attr` (90-day first touch). When that
+  store has no click ID and no UTM, the payload reads `gclid`, `gbraid`, and
+  `wbraid` from the page URL, then fills a missing `gclid` from the Google
+  `_gcl_aw` cookie. The cookie value is `GCL.<unix seconds>.<gclid>` and is
+  ignored once it is older than 90 days. A saved click ID or UTM is left as it is.
+- A counted chat is written even when there is no click ID and no UTM, so an
+  empty store cannot drop the row. The chat sync still only uses a row that
+  has a click ID (`choose_click_intent` skips rows with none).
+- Transport: `navigator.sendBeacon` with the plain JSON string, then always a
+  `fetch` with `keepalive: true`. Both bodies carry the same client `event_id`.
+  The Worker stores that id in the existing `click_intents.id` primary key.
+  The second insert conflicts (HTTP 409) and is ignored, so the pair creates
+  one row. This needs no schema change: `id` is already `uuid primary key
+  default gen_random_uuid()`, and the click and UTM columns are already nullable.
 - The endpoint is same-origin, fail-soft, and writes service-role-only rows to
-  `click_intents` for a backend job to match to GHL contacts. Its draft migration
-  is unapplied, needs Arin's approval, and specifies 120-day retention.
+  `click_intents` for a backend job to match to GHL contacts. The table already
+  has those columns, including a uuid `id` primary key. This fix does not change
+  the schema. The create-table migration in this repo still records a 120-day
+  retention note.
 - The box cron `scripts/ghl-chat-sync/sm_ghl_chat_sync.py` creates chat enquiries
   with `details.source=ghl_chat_sync`. It carries all five first-touch UTMs and
   all five `last_utm_*` values plus last-touch click IDs; matched click intents
   fill missing first-touch UTMs. Google Ads means any click ID, or
   `utm_source=google` unless the medium is organic (website submissions also
   exclude explicit referral).
+- The sync always identity-matches a `click_intents` row (email or phone, within
+  30 minutes before the contact and 10 minutes after), including when the GHL
+  contact already has a native click id. Native clicks stay the click source.
+  Intent clicks are used only when the contact has none. On `--apply` it sets
+  `matched_ghl_contact_id` and `matched_at` only while that column is still null.
+  When native clicks exist, the link is written immediately, so a later skip
+  still records it and a later run can still create the enquiry from those
+  clicks. When the intent is the only click source, the link waits until a
+  person is resolved and any GHL click-field update has succeeded, so
+  `no_person`, `ambiguous_person`, or a failed GHL update can retry next run
+  instead of losing the click ids. One intent is claimed by one contact per run.
 
 ## Test leads
 
@@ -139,8 +193,9 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   order number are skipped. Default is dry run; `--live` uploads.
 
 ## Dedupe rules (summary)
-- Chat: one push per submission (3 s debounce), GTM GA4 chat tag once per page load, legacy listener off.
-- Lead/quote: pushed once per confirmed response; GTM tags `once_per_event`.
+- Chat: one `sm_chat_submit` per tab visit (`sessionStorage` key `sm_chat_counted`, plus an in-memory flag when storage is blocked). A later submit in that tab, including a Turnstile retry, refreshes `window.__smChatEmail` / `window.__smChatPhone` and does not push or call `clickIntent`. GTM's GA4 chat tag is also once per page load. Legacy listener off.
+- Lead/quote: pushed once per confirmed response; GTM tags `once_per_event`. List context is fields on that one `sm_quote_submit` object, not a second conversion event.
+- Catalogue: one `view_item_list` per settled grid, one `filter_select` per changed control, one `select_item` per card activation.
 - `ghl_chat_submission` and `sm_chat_submit` must never both have triggers.
 - Offline: transactionId per order + ledger.
 

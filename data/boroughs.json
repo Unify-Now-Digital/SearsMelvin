@@ -1,0 +1,335 @@
+{
+  "checked": "2026-11-16",
+  "boroughs": [
+    {
+      "slug": "barnet",
+      "name": "Barnet",
+      "cemeteries": [
+        {
+          "name": "East Finchley Cemetery",
+          "operator": "City of Westminster",
+          "postcode": "N2 0RZ",
+          "source": "https://www.westminster.gov.uk/leisure-libraries-and-community/cemeteries-and-bereavement/east-finchley-cemetery",
+          "new_burials": "Open, limited graves for sale",
+          "slug": "east-finchley-cemetery",
+          "latitude": 51.59219,
+          "longitude": -0.18059
+        },
+        {
+          "name": "Edgware Cemetery (Federation of Synagogues)",
+          "operator": "Federation of Synagogues",
+          "postcode": "HA8 8QP",
+          "source": "https://www.federation.org.uk/burial/cemeteries/",
+          "slug": "edgware-cemetery-federation-of-synagogues",
+          "latitude": 51.62855,
+          "longitude": -0.27986
+        },
+        {
+          "name": "Edgwarebury Cemetery",
+          "operator": "Edgwarebury Joint Burial Board",
+          "postcode": "HA8 8QP",
+          "source": "https://www.edgwareburycemetery.org.uk/contact-us/",
+          "slug": "edgwarebury-cemetery",
+          "latitude": 51.62855,
+          "longitude": -0.27986
+        },
+        {
+          "name": "Hendon Cemetery & Crematorium",
+          "operator": "London Borough of Barnet",
+          "postcode": "NW7 1NB",
+          "source": "https://www.barnet.gov.uk/births-deaths-and-certificates/deaths",
+          "slug": "hendon-cemetery-crematorium",
+          "latitude": 51.60124,
+          "longitude": -0.20956
+        },
+        {
+          "name": "Hoop Lane Jewish Cemetery",
+          "operator": "Joint Burial Committee",
+          "postcode": "NW11 7NJ",
+          "source": "https://www.hooplanecemetery.org.uk/contact-us/",
+          "slug": "hoop-lane-jewish-cemetery",
+          "latitude": 51.57726,
+          "longitude": -0.19439
+        },
+        {
+          "name": "Islington & St Pancras Cemetery",
+          "operator": "Islington and Camden Cemetery Services",
+          "postcode": "N2 9AG",
+          "source": "https://iccslondon.co.uk/the-sites/islington-and-st-pancras-cemetery/",
+          "new_burials": "Open, burial options available",
+          "slug": "islington-st-pancras-cemetery",
+          "latitude": 51.59795,
+          "longitude": -0.16826
+        },
+        {
+          "name": "Mill Hill Cemetery",
+          "operator": "City of Westminster",
+          "postcode": "NW7 2RR",
+          "source": "https://www.westminster.gov.uk/leisure-libraries-and-community/cemeteries-and-bereavement/mill-hill-cemetery",
+          "slug": "mill-hill-cemetery",
+          "latitude": 51.61315,
+          "longitude": -0.22248
+        },
+        {
+          "name": "New Southgate Cemetery",
+          "operator": "New Southgate Cemetery & Crematorium Ltd",
+          "postcode": "N11 1JJ",
+          "source": "https://www.newsouthgatecemetery.co.uk/facilities-location.php",
+          "slug": "new-southgate-cemetery",
+          "latitude": 51.6195,
+          "longitude": -0.1425
+        }
+      ]
+    },
+    {
+      "slug": "enfield",
+      "name": "Enfield",
+      "cemeteries": [
+        {
+          "name": "Edmonton Cemetery",
+          "operator": "London Borough of Enfield",
+          "postcode": "N9 9HP",
+          "source": "https://www.enfield.gov.uk/services/births-deaths-and-marriages/cemeteries",
+          "new_burials": "Open, traditional graves available",
+          "slug": "edmonton-cemetery",
+          "latitude": 51.63043,
+          "longitude": -0.07997
+        },
+        {
+          "name": "Edmonton Federation Cemetery",
+          "operator": "Federation of Synagogues",
+          "postcode": "N18 2NF",
+          "source": "https://www.federation.org.uk/burial/cemeteries/",
+          "slug": "edmonton-federation-cemetery",
+          "latitude": 51.61964,
+          "longitude": -0.05042
+        },
+        {
+          "name": "Enfield Cemetery",
+          "operator": "CMG",
+          "postcode": "EN1 4DS",
+          "source": "https://www.thecmg.co.uk/cemeteries/enfield-cemetery",
+          "new_burials": "Open, lawn and traditional graves",
+          "slug": "enfield-cemetery",
+          "latitude": 51.66885,
+          "longitude": -0.05474
+        },
+        {
+          "name": "Hertford Road Cemetery",
+          "operator": "London Borough of Enfield",
+          "postcode": "EN3 5JE",
+          "source": "https://www.enfield.gov.uk/services/births-deaths-and-marriages/cemeteries",
+          "new_burials": "Open, traditional graves",
+          "slug": "hertford-road-cemetery",
+          "latitude": 51.65517,
+          "longitude": -0.0466
+        },
+        {
+          "name": "Lavender Hill Cemetery",
+          "operator": "London Borough of Enfield",
+          "postcode": "EN2 0TH",
+          "source": "https://www.enfield.gov.uk/services/births-deaths-and-marriages/cemeteries",
+          "slug": "lavender-hill-cemetery",
+          "latitude": 51.66673,
+          "longitude": -0.09133
+        },
+        {
+          "name": "Southgate Cemetery (Old Southgate Cemetery)",
+          "operator": "London Borough of Enfield",
+          "postcode": "N14 7JZ",
+          "source": "https://www.enfield.gov.uk/services/births-deaths-and-marriages/cemeteries",
+          "new_burials": "Open, traditional graves and burial chambers",
+          "slug": "southgate-cemetery-old-southgate-cemetery",
+          "latitude": 51.62588,
+          "longitude": -0.13051
+        },
+        {
+          "name": "Strayfield Road Cemetery",
+          "operator": "London Borough of Enfield",
+          "postcode": "EN2 9JE",
+          "source": "https://www.enfield.gov.uk/services/births-deaths-and-marriages/cemeteries",
+          "new_burials": "Open, lawn graves",
+          "slug": "strayfield-road-cemetery",
+          "latitude": 51.67318,
+          "longitude": -0.09673
+        },
+        {
+          "name": "Tottenham Park Cemetery",
+          "source": "https://www.tottenhamparkcemetery.co.uk/",
+          "slug": "tottenham-park-cemetery"
+        },
+        {
+          "name": "Trent Park Cemetery",
+          "operator": "Islington and Camden Cemetery Services",
+          "postcode": "EN4 0DZ",
+          "source": "https://iccslondon.co.uk/the-sites/trent-park-cemetery/",
+          "new_burials": "Lawn-style cemetery with flat plaques",
+          "slug": "trent-park-cemetery",
+          "latitude": 51.65202,
+          "longitude": -0.14985
+        }
+      ]
+    },
+    {
+      "slug": "harrow",
+      "name": "Harrow",
+      "intro_note": "Harrow Council currently reports no new plots for full coffin burials in its cemeteries.",
+      "cemeteries": [
+        {
+          "name": "Eastcote Lane Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA2 8RN",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "eastcote-lane-cemetery",
+          "latitude": 51.56467,
+          "longitude": -0.36177
+        },
+        {
+          "name": "Harrow Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA1 4LR",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "harrow-cemetery",
+          "latitude": 51.58266,
+          "longitude": -0.34771
+        },
+        {
+          "name": "Harrow Weald Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA7 3JS",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "harrow-weald-cemetery",
+          "latitude": 51.61415,
+          "longitude": -0.33382
+        },
+        {
+          "name": "Paines Lane Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA5 3BP",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "paines-lane-cemetery",
+          "latitude": 51.59706,
+          "longitude": -0.37929
+        },
+        {
+          "name": "Pinner New Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA5 5RH",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "pinner-new-cemetery",
+          "latitude": 51.59105,
+          "longitude": -0.36893
+        },
+        {
+          "name": "Roxeth Hill Burial Ground",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA2 0JM",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "roxeth-hill-burial-ground"
+        },
+        {
+          "name": "Wealdstone Cemetery",
+          "operator": "London Borough of Harrow",
+          "postcode": "HA3 7RF",
+          "source": "https://www.harrow.gov.uk/births-deaths-marriages/harrow-cemetries",
+          "slug": "wealdstone-cemetery",
+          "latitude": 51.59531,
+          "longitude": -0.3288
+        }
+      ]
+    },
+    {
+      "slug": "brent",
+      "name": "Brent",
+      "cemeteries": [
+        {
+          "name": "Alperton Cemetery",
+          "operator": "Brent Council",
+          "postcode": "HA0 1AF",
+          "source": "https://www.brent.gov.uk/births-deaths-marriages-nationality/deaths-and-funeral-services/brent-cemeteries",
+          "slug": "alperton-cemetery",
+          "latitude": 51.54258,
+          "longitude": -0.30615
+        },
+        {
+          "name": "Carpenders Park Lawn Cemetery",
+          "operator": "Brent Council (jointly owned with Harrow)",
+          "postcode": "WD19 5RL",
+          "source": "https://www.brent.gov.uk/births-deaths-marriages-nationality/deaths-and-funeral-services/brent-cemeteries/carpenders-park-lawn-cemetery",
+          "slug": "carpenders-park-lawn-cemetery",
+          "latitude": 51.625,
+          "longitude": -0.37423
+        },
+        {
+          "name": "Paddington Old Cemetery",
+          "operator": "Brent Council",
+          "postcode": "NW6 7SD",
+          "source": "https://www.brent.gov.uk/births-deaths-marriages-nationality/deaths-and-funeral-services/brent-cemeteries",
+          "slug": "paddington-old-cemetery",
+          "latitude": 51.5406,
+          "longitude": -0.20369
+        },
+        {
+          "name": "Willesden New Cemetery",
+          "operator": "Brent Council",
+          "postcode": "NW10 9TE",
+          "source": "https://www.brent.gov.uk/births-deaths-marriages-nationality/deaths-and-funeral-services/brent-cemeteries",
+          "slug": "willesden-new-cemetery",
+          "latitude": 51.54665,
+          "longitude": -0.24578
+        }
+      ]
+    },
+    {
+      "slug": "camden",
+      "name": "Camden",
+      "cemeteries": [
+        {
+          "name": "Hampstead Cemetery",
+          "operator": "Islington and Camden Cemetery Services",
+          "postcode": "NW6 1DR",
+          "source": "https://iccslondon.co.uk/the-sites/hampstead-cemetery/",
+          "new_burials": "Closed to new graves except pre-purchased",
+          "slug": "hampstead-cemetery",
+          "latitude": 51.55596,
+          "longitude": -0.19671
+        },
+        {
+          "name": "Highgate Cemetery",
+          "operator": "Friends of Highgate Cemetery Trust",
+          "postcode": "N6",
+          "source": "https://highgatecemetery.org/graves",
+          "slug": "highgate-cemetery",
+          "latitude": 51.57322,
+          "longitude": -0.14617
+        }
+      ]
+    },
+    {
+      "slug": "haringey",
+      "name": "Haringey",
+      "cemeteries": [
+        {
+          "name": "Tottenham Cemetery",
+          "operator": "Burials provided by Dignity Funerals (per Haringey Council)",
+          "source": "https://haringey.gov.uk/births-deaths-marriages-citizenship/deaths-funerals/funerals-cremations-burials",
+          "slug": "tottenham-cemetery"
+        },
+        {
+          "name": "Wood Green Cemetery",
+          "operator": "Burials provided by Dignity Funerals (per Haringey Council)",
+          "source": "https://haringey.gov.uk/births-deaths-marriages-citizenship/deaths-funerals/funerals-cremations-burials",
+          "slug": "wood-green-cemetery"
+        }
+      ]
+    }
+  ],
+  "showroom": {
+    "name": "Finchley showroom",
+    "address": "1 The Market Place, Falloden Way, NW11 6LB",
+    "postcode": "NW11 6LB",
+    "hours": "Monday to Friday, 10am to 3pm",
+    "latitude": 51.58619,
+    "longitude": -0.18362
+  }
+}

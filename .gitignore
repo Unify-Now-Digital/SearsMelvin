@@ -9,6 +9,13 @@
 # OS
 .DS_Store
 
+# Local installs and Playwright output. Reference PNGs under tests/visual/baseline/ stay tracked.
+node_modules/
+test-results/
+playwright-report/
+tests/visual/preview/
+tests/visual/tracking-results.json
+
 # Repo snapshots / release archives — never commit
 *.zip
 

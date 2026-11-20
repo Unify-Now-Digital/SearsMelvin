@@ -19,6 +19,7 @@ import {
   rateLimitResponse,
   readBoundedJson,
 } from "./_security.js";
+import { supabaseKeyHeaders } from "./_supabase-keys.js";
 
 const CAPABILITY_TOKEN_RE = /^[A-Za-z0-9_-]{24,256}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -596,11 +597,9 @@ function escapeHtml(value) {
 }
 
 function sbHeaders(env) {
-  return {
-    "apikey": env.SUPABASE_SERVICE_KEY,
-    "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+  return supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
     "Content-Type": "application/json",
-  };
+  });
 }
 
 function json(data, status = 200) {

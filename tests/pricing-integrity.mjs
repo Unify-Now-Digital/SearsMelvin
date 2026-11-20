@@ -65,7 +65,18 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.match(productRoute, /organization_id=eq\..*is_listed=eq\.true&category_id=not\.is\.null/);
 }
 
-// Kerb sets include the chosen infill even when the browser submits a stale total.
+const hartwell = {
+  ...catalogue,
+  product: {
+    ...catalogue.product,
+    name: "The Hartwell",
+    slug: "the-hartwell",
+    base_price: 4140,
+    product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
+  },
+};
+
+// A stored infill choice still prices, including when the browser total is stale.
 {
   const product = calculateCanonicalQuoteProduct({
     slug: "the-hartwell",
@@ -74,20 +85,79 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
     infillType: "chippings",
     infillColour: "black",
     price: "4140",
-  }, {
-    ...catalogue,
-    product: {
-      ...catalogue.product,
-      name: "The Hartwell",
-      slug: "the-hartwell",
-      base_price: 4140,
-      product_categories: { name: "Kerb Sets", slug: "kerb-sets" },
-    },
-  });
+  }, hartwell);
   assert.equal(product.price, 4390);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "black");
   assert.deepEqual(product.addonLineItems, [
     { name: "Kerb Infill — Chippings (Black)", price: 250 },
   ]);
+}
+
+// An old kerb quote stored the chippings line and never stored infillType.
+// Rebuilding the lines keeps that £250.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+    addonLineItems: [{ name: "Kerb Infill — Chippings (White)", price: 250 }],
+    addons: ["Kerb Infill — Chippings (White)"],
+  }, charnwood);
+  assert.equal(product.price, 4200);
+  assert.equal(product.infillType, "chippings");
+  assert.equal(product.infillColour, "white");
+  assert.deepEqual(product.addonLineItems, [
+    { name: "Kerb Infill — Chippings (White)", price: 250 },
+  ]);
+}
+
+// A new kerb quote omits infill fields. The server adds no infill line and
+// no £250, and it does not write infillType or infillColour onto the quote.
+{
+  const charnwood = {
+    ...hartwell,
+    product: {
+      ...hartwell.product,
+      name: "The Charnwood",
+      slug: "the-charnwood",
+      base_price: 3950,
+    },
+  };
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-charnwood",
+    colour: "Black",
+    sizeCode: "standard",
+    price: "1",
+  }, charnwood);
+  assert.equal(product.price, 3950);
+  assert.equal(product.infillType, undefined);
+  assert.equal(product.infillColour, undefined);
+  assert.deepEqual(product.addonLineItems, []);
+}
+
+// An old quote that chose no infill stays at the base price.
+{
+  const product = calculateCanonicalQuoteProduct({
+    slug: "the-hartwell",
+    colour: "Black",
+    sizeCode: "standard",
+    infillType: "none",
+    price: "9999",
+  }, hartwell);
+  assert.equal(product.price, 4140);
+  assert.equal(product.infillType, "none");
+  assert.deepEqual(product.addonLineItems, []);
 }
 
 // Photo size is a stable code, not a shape name, so the label and price agree.
@@ -125,11 +195,108 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   ]);
 }
 
+const colourCatalogue = {
+  ...catalogue,
+  colours: [
+    { name: "Black", slug: "black", is_premium: false, tier: "standard" },
+    { name: "Black Galaxy", slug: "black-galaxy", is_premium: true, tier: "premium" },
+    { name: "Crystal White", slug: "crystal-white", is_premium: true, tier: "premium" },
+  ],
+};
+
+function catalogueFor(categorySlug, categoryName, basePrice) {
+  return {
+    ...colourCatalogue,
+    product: {
+      ...colourCatalogue.product,
+      base_price: basePrice,
+      product_categories: { name: categoryName, slug: categorySlug },
+    },
+  };
+}
+
+function colourQuote(categorySlug, categoryName, basePrice, colour) {
+  return calculateCanonicalQuoteProduct({
+    slug: "the-castell",
+    colour,
+    sizeCode: "standard",
+    price: "1",
+    addonLineItems: [{ name: `Additional stone colour — ${colour}`, price: 1 }],
+  }, catalogueFor(categorySlug, categoryName, basePrice));
+}
+
+// Crystal White uses the override. Other premium colours keep today's amounts.
+// A submitted line price is ignored. The line name stays the same.
+{
+  const cases = [
+    ["lawn-headstones", "Lawn Headstones", 1450, "Crystal White", 500, 1950],
+    ["lawn-headstones", "Lawn Headstones", 1450, "crystal-white", 500, 1950],
+    ["lawn-headstones", "Lawn Headstones", 1450, "Black Galaxy", 200, 1650],
+    ["kerb-sets", "Kerb Sets", 4140, "Crystal White", 1050, 5190],
+    ["kerb-sets", "Kerb Sets", 4140, "Black Galaxy", 550, 4690],
+    ["cremation-memorials", "Cremation Memorials", 1500, "Crystal White", 90, 1590],
+    ["cremation-memorials", "Cremation Memorials", 1500, "Black Galaxy", 90, 1590],
+    ["book-memorials", "Book Memorials", 2400, "Crystal White", 500, 2900],
+    ["book-memorials", "Book Memorials", 2400, "Black Galaxy", 200, 2600],
+    ["future-memorials", "Future Memorials", 1000, "Crystal White", 500, 1500],
+    ["future-memorials", "Future Memorials", 1000, "Black Galaxy", 200, 1200],
+  ];
+  for (const [categorySlug, categoryName, basePrice, colour, surcharge, total] of cases) {
+    const product = colourQuote(categorySlug, categoryName, basePrice, colour);
+    const lineName = colour === "crystal-white"
+      ? "Additional stone colour — Crystal White"
+      : `Additional stone colour — ${colour}`;
+    assert.equal(product.price, total, `${categorySlug} ${colour}`);
+    assert.equal(product.colourSlug, colour === "Black Galaxy" ? "black-galaxy" : "crystal-white");
+    assert.deepEqual(product.addonLineItems, [{ name: lineName, price: surcharge }]);
+  }
+}
+
+// The page table and the server table are the same literal.
+{
+  function overrideTable(source, file) {
+    const marker = "COLOUR_SURCHARGE_OVERRIDES = Object.freeze(";
+    const start = source.indexOf(marker);
+    assert.notEqual(start, -1, `${file} is missing COLOUR_SURCHARGE_OVERRIDES`);
+    let depth = 0;
+    let end = start + marker.length;
+    for (let i = end; i < source.length; i++) {
+      const ch = source[i];
+      if (ch === "(" || ch === "{") depth++;
+      if (ch === ")" || ch === "}") depth--;
+      end = i + 1;
+      if (depth === 0) break;
+    }
+    return source.slice(start + marker.length, end).replace(/\s+/g, "");
+  }
+  const pricing = await readFile(new URL("../functions/api/_quote-pricing.js", import.meta.url), "utf8");
+  const memorial = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
+  assert.equal(overrideTable(memorial, "memorial.html"), overrideTable(pricing, "_quote-pricing.js"));
+  assert.match(pricing, /premiumColourSurcharge\(categorySlug, colour\.slug\)/);
+  assert.match(memorial, /premiumColourSurcharge\(c\.slug\)/);
+  assert.match(memorial, /colour-tier colour-tier-crystal/);
+  assert.match(memorial, /colour-crystal-label/);
+  const crystalFn = memorial.slice(memorial.indexOf("function crystalGroup"), memorial.indexOf("function crystalGroup") + 700);
+  assert.match(crystalFn, /colour-tier-crystal/);
+  assert.doesNotMatch(crystalFn, /colour-group-tag/);
+  const quotes = await readFile(new URL("../functions/api/quotes.js", import.meta.url), "utf8");
+  const getQuote = quotes.slice(quotes.indexOf("async function getQuoteByToken"), quotes.indexOf("async function updateQuote"));
+  assert.doesNotMatch(getQuote, /canonicaliseQuoteProduct|premiumColourSurcharge/);
+  assert.match(getQuote, /product: order\.product_config \? safeParse\(order\.product_config\) : null/);
+}
+
 // The browser source must carry structured choices and must not expose a dead edit link.
 {
   const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(html, /infillType:\s*'none'/);
   assert.match(html, /infillPrice:\s*0/);
+  assert.doesNotMatch(html, /state\.infillPrice = INFILL_PRICES\.chippings/);
+  assert.match(html, /Excludes the cemetery permit fee, if one applies\./);
+  assert.match(html, /whole \? 0 : 2/);
+  assert.match(html, /#infillOptionGroup, #qsInfillRow \{ display: none !important; \}/);
+  assert.doesNotMatch(html, /infillType:\s*state\.infillType/);
+  assert.doesNotMatch(html, /infillColour:\s*state\.infillColour/);
+  assert.doesNotMatch(html, /value="extra-lettering"/);
   assert.match(html, /addonSlugs:\s*getSelectedAddonSlugs\(\)/);
   assert.match(html, /sizeCode:\s*state\.selectedSize/);
   assert.match(html, /PHOTO_SIZE_LABEL\s*=\s*\{\s*oval:\s*'Oval',\s*rectangle:\s*'Rectangle',\s*heart:\s*'Heart'\s*\}/);
@@ -148,7 +315,18 @@ const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
   assert.doesNotMatch(html, /Flower Vase/);
   const memorialHtml = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(memorialHtml, /a\.slug !== 'flower-vase'/);
-  assert.match(html, /Custom Motif'.*price: 120/);
+  assert.match(html, /Custom motif'.*price: 120/);
+  assert.match(html, /var showInfillEditor = false/);
+  assert.match(html, /id="editInfillType"/);
+  assert.match(html, /addonItems\.forEach/);
+  assert.match(html, /class="quote-permit-line">Excludes the cemetery permit fee, if one applies\./);
+  assert.doesNotMatch(html, /calculateCanonicalQuoteProduct|canonicaliseQuoteProduct/);
+  const submit = await readFile(new URL("../functions/api/submit.js", import.meta.url), "utf8");
+  assert.equal(
+    (submit.match(/Excludes the cemetery permit fee, if one applies\./g) || []).length,
+    2,
+    "both quote emails carry the permit line under the guide total",
+  );
 }
 
 console.log("pricing integrity tests passed");

@@ -28,6 +28,30 @@ GHL_FIELD_IDS = {
 CLICK_KEYS = tuple(GHL_FIELD_IDS)
 UTM_KEYS = ("utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content")
 AD_SOURCE_FIELD_ID = "8rV7EBJDM6HhxEICWKKd"
+# GHL contact fields mirrored fill-blank-only from the Supabase enquiry payload.
+MIRROR_FIELD_IDS = {
+    "utm_source": "FVvm3mLoUvumwHqLvuMa",
+    "utm_medium": "cRHBo0Ol4gKESi6YcOeH",
+    "utm_campaign": "lCQ4Q7NE3ZiCtVvLfCFH",
+    "utm_term": "NapDuNh9NvFVd9GnAa4Z",
+    "utm_content": "TOvFPq81QAkOhLASEx1v",
+    "landing_page": "LZYwQ24LRc2Z7a5u9LWg",
+    "lead_source": "hibtgT5Fud7K91PnKPen",
+    "lead_channel": "Na4hf6DRzmn3MZHiUJy1",
+}
+# Extra fields copied only from a Supabase enquiry row (quotes/forms), fill-blank only.
+ENQUIRY_MIRROR_FIELD_IDS = {
+    **GHL_FIELD_IDS,
+    "last_gclid": "JgZtSf521VQ1VpgCBwQF",
+    "last_gbraid": "enCgjyv1ppTZ62Z6pwE9",
+    "last_wbraid": "c9sjGGhaNrr9EpApV5Sy",
+    "last_utm_source": "1EH7hMMYGrjHSem5K8I9",
+    "last_utm_medium": "aJlzUlYplOuWKdsxaDft",
+    "last_utm_campaign": "iLYeISfTJcBlUSnzWllw",
+    "last_utm_term": "P91sMC50MsvJgyoKJdKs",
+    "last_utm_content": "qOpcUwONwqYuf2PVQ26X",
+}
+ENQUIRY_TRACKING_COLUMNS = tuple(MIRROR_FIELD_IDS) + tuple(ENQUIRY_MIRROR_FIELD_IDS)
 LOG_DIR = os.environ.get("SM_CHAT_SYNC_LOG_DIR", "/workspace/sm-ads-offline/ghl-chat-sync/logs")
 
 
@@ -213,25 +237,31 @@ def contact_name(contact):
 
 
 def is_chat(contact):
+    tags = contact.get("tags") or []
+    tags = {str(tag).lower() for tag in (tags if isinstance(tags, list) else [tags])}
+    # A later website form submission (quote/enquiry) wins over leftover chat_widget
+    # medium on attributionSource — otherwise Emily-style quote leads stay "chat".
+    if tags.intersection({"website-quote", "website-enquiry", "website-lead", "quote-request", "website-appointment"}):
+        return False
     attribution = contact.get("attributionSource") or {}
     medium = attribution.get("medium", "") if isinstance(attribution, dict) else ""
     return "chat" in str(contact.get("source") or "").lower() or "chat" in str(medium).lower()
 
 
 def classify(contact):
-    if is_chat(contact):
-        return "chat"
     source = str(contact.get("source") or "").strip()
     tags = contact.get("tags") or []
     tags = {str(tag).lower() for tag in (tags if isinstance(tags, list) else [tags])}
+    if source.startswith("Website") or tags.intersection({"website-quote", "website-enquiry", "website-lead", "quote-request", "website-appointment"}):
+        return "form"
+    if is_chat(contact):
+        return "chat"
     attribution = contact.get("attributionSource") or {}
     medium = str(attribution.get("medium") or "").lower() if isinstance(attribution, dict) else ""
     if ("call" in source.lower() or tags.intersection({"call", "missed-call"}) or
             (medium in ("other", "") and not contact.get("email") and
              contact.get("phone") and not source)):
         return "call"
-    if source.startswith("Website") or tags.intersection({"website-lead", "quote-request"}):
-        return "form"
     return "other"
 
 
@@ -298,6 +328,30 @@ def utm_from_attribution(attr):
     return result
 
 
+def url_params(attr):
+    value = attr.get("url") if isinstance(attr, dict) else None
+    if not value:
+        return {}
+    try:
+        text = str(value)
+        query = urllib.parse.urlsplit(text if "://" in text else "//" + text).query
+        return {k: v[0] for k, v in urllib.parse.parse_qs(query).items() if v}
+    except ValueError:
+        return {}
+
+
+def fill_utms(utms, attr, clicks):
+    """Fill missing UTMs from the landing URL query only. Never derives or
+    guesses a value (Supabase is the source of truth). Never overwrites.
+    Always returns False (kept for call-site compatibility)."""
+    params = url_params(attr)
+    for key in UTM_KEYS:
+        raw = str(params.get(key) or "").strip()[:100]
+        if key not in utms and raw and raw.lower() not in ("none", "null", "undefined"):
+            utms[key] = raw
+    return False
+
+
 def is_google_ads(clicks, utms):
     if any(clicks.get(key) for key in CLICK_KEYS):
         return True
@@ -338,13 +392,10 @@ def choose_click_intent(contact, kind, intents, contacts):
                      (phone and phone_digits(row.get("phone"))[-10:] == phone))]
     if identity:
         return max(identity, key=lambda row: parse_time(row.get("created_at")))
-    if kind not in ("chat", "call"):
-        return None
-    timed = [row for row in usable if str(row.get("kind") or "").lower() == kind and
-             in_window(row.get("created_at"), centre, dt.timedelta(minutes=15), dt.timedelta(minutes=5))]
-    nearby = [row for row in contacts if classify(row) == kind and
-              in_window(row.get("dateAdded"), centre, dt.timedelta(minutes=15), dt.timedelta(minutes=5))]
-    return timed[0] if len(timed) == 1 and len(nearby) == 1 else None
+    # No time-only fallback: an anonymous tap/chat click near in time is NOT proof
+    # it belongs to this contact (27 Oct 2026: another visitor's phone-tap click IDs
+    # were copied onto a different caller's contact). Identity (email/phone) only.
+    return None
 
 
 def in_order_window(value, order_time):
@@ -440,9 +491,14 @@ def enquiry_payload(contact, person_id, clicks, today, kind="chat", used_intent=
     for key in UTM_KEYS:
         if key not in first_utms and key in intent_utms:
             first_utms[key] = intent_utms[key]
+    derived = fill_utms(first_utms, attribution, clicks)
     last_attribution = contact.get("lastAttributionSource") or {}
+    if not isinstance(last_attribution, dict):
+        last_attribution = {}
     last_utms = utm_from_attribution(last_attribution)
     last_clicks = clicks_from_mapping(last_attribution)
+    if last_attribution:
+        derived = fill_utms(last_utms, last_attribution, last_clicks) or derived
     return {
         "organization_id": SM_ORG,
         "person_id": person_id,
@@ -460,6 +516,9 @@ def enquiry_payload(contact, person_id, clicks, today, kind="chat", used_intent=
         **{"last_" + key: last_utms.get(key) for key in UTM_KEYS},
         **{"last_" + key: last_clicks.get(key) for key in CLICK_KEYS},
         "created_at": contact.get("dateAdded"),
+        # Top-level GHL link columns (details.ghl_contact_id alone left ghl_contact_id NULL).
+        "ghl_contact_id": contact_id or None,
+        "ghl_synced_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "message": (
             f"{'Phone call' if kind == 'call' else 'Web chat'} lead (GHL contact {contact_id}). "
             f"Backfilled from GHL {kind} contact on {today}; no customer action needed."
@@ -468,8 +527,66 @@ def enquiry_payload(contact, person_id, clicks, today, kind="chat", used_intent=
             "ghl_contact_id": contact_id,
             "source": "ghl_chat_sync",
             "attribution_session_source": attribution.get("sessionSource"),
+            **({"utm_derived": "google_ads_click"} if derived else {}),
         },
     }
+
+
+def mirror_updates(fields, payload, extra_ids=None):
+    """Fill-blank-only GHL updates for UTMs, landing page, lead source/channel
+    and Ad source. A non-empty GHL value is never overwritten."""
+    blank = lambda fid: fields.get(fid) is None or str(fields.get(fid)).strip() == ""
+    ids = {**MIRROR_FIELD_IDS, **(extra_ids or {})}
+    updates = [{"id": fid, "field_value": payload[key]} for key, fid in ids.items()
+               if payload.get(key) and blank(fid)]
+    if payload.get("lead_source") == "Google Ads" and blank(AD_SOURCE_FIELD_ID):
+        updates.append({"id": AD_SOURCE_FIELD_ID, "field_value": "Google Ads"})
+    return updates
+
+
+def mirror_keys(updates):
+    names = {fid: key for key, fid in {**MIRROR_FIELD_IDS, **ENQUIRY_MIRROR_FIELD_IDS}.items()}
+    names[AD_SOURCE_FIELD_ID] = "ad_source"
+    return [names.get(item["id"], item["id"]) for item in updates]
+
+
+def existing_enquiry_row(contact_id, base, key):
+    """The Supabase enquiry already linked to this GHL contact (tracking columns)."""
+    rows = request_json("Supabase linked enquiry lookup", supabase_url(base, "enquiries", {
+        "organization_id": "eq." + SM_ORG, "details->>ghl_contact_id": "eq." + str(contact_id),
+        "select": "id,created_at," + ",".join(dict.fromkeys(ENQUIRY_TRACKING_COLUMNS)),
+        "order": "created_at.asc", "limit": "1"}), supabase_headers(key)) or []
+    return rows[0] if rows else None
+
+
+def apply_mirror(token, contact_id, fields, payload, apply, extra_ids=None, existing_tags=None):
+    """payload must be a Supabase enquiry row (or the exact row being inserted)."""
+    updates = mirror_updates(fields, payload, extra_ids)
+    have = {str(t).lower() for t in (existing_tags or [])}
+    tags = [t for t in (["source-google-ads"] if payload.get("lead_source") == "Google Ads" else [])
+            if t not in have]
+    mirror = {"planned": mirror_keys(updates) + ["add_tag:" + t for t in tags]}
+    if not apply:
+        return mirror
+    mirror.update({"applied": [], "errors": []})
+    try:
+        if updates:
+            update_contact(token, contact_id, updates)
+            verified = custom_field_values(get_contact(token, contact_id))
+            bad = [item for item in updates if str(verified.get(item["id"]) or "") != str(item["field_value"])]
+            if bad:
+                raise ApiError("GHL mirror verification failed for: " + ",".join(mirror_keys(bad)))
+            mirror["applied"] += mirror_keys(updates)
+            mirror["verified"] = True
+    except Exception as exc:
+        mirror["errors"].append(str(exc) if isinstance(exc, ApiError) else type(exc).__name__)
+    for tag in tags:
+        try:
+            add_tags(token, contact_id, [tag])
+            mirror["applied"].append("add_tag:" + tag)
+        except Exception as exc:
+            mirror["errors"].append(str(exc) if isinstance(exc, ApiError) else type(exc).__name__)
+    return mirror
 
 
 def insert_enquiry(payload, supabase_base, key):
@@ -529,7 +646,7 @@ def nearest_enquiry(person_id, when, base, key):
     rows = request_json("Supabase nearest enquiry lookup", supabase_url(base, "enquiries", {
         "organization_id": "eq." + SM_ORG, "person_id": "eq." + str(person_id),
         "and": f"(created_at.gte.{iso(when-dt.timedelta(days=1))},created_at.lte.{iso(when+dt.timedelta(days=1))})",
-        "select": "id,created_at,gclid,gbraid,wbraid"}), supabase_headers(key)) or []
+        "select": "id,created_at," + ",".join(dict.fromkeys(ENQUIRY_TRACKING_COLUMNS))}), supabase_headers(key)) or []
     rows = [row for row in rows if parse_time(row.get("created_at"))]
     return min(rows, key=lambda row: abs((parse_time(row["created_at"]) - when).total_seconds())) if rows else None
 
@@ -565,16 +682,44 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         if is_excluded_contact(full_contact, getattr(args, "exclusion", None)):
             record["enquiry"]["reason"] = "excluded_order"
             return record
+        if kind == "form":
+            # Quotes/forms: Supabase is the source of truth. If the website's own GHL
+            # hand-off failed (e.g. the n8n Gmail safety net created the contact),
+            # copy the enquiry's click IDs/UTMs/landing page/Ad source onto blank GHL fields.
+            record["supabase_mirror"] = mirror_form_from_supabase(
+                full_contact, args, token, supabase_base, supabase_key)
         clicks, click_source = contact_clicks(full_contact)
-        used_intent = None
-        if not clicks:
-            used_intent = choose_click_intent(full_contact, kind, intents or [], all_contacts or [contact])
-            if used_intent:
-                clicks, click_source = clicks_from_mapping(used_intent), "click_intents"
+        # Always identity-match, even when GHL already stored a native click id.
+        # Native clicks stay the click source; the intent supplies clicks only
+        # when native is empty.
+        used_intent = choose_click_intent(full_contact, kind, intents or [], all_contacts or [contact])
+        if not clicks and used_intent:
+            clicks, click_source = clicks_from_mapping(used_intent), "click_intents"
         record["click_source"] = click_source
+        record["matched_intent_id"] = used_intent.get("id") if used_intent else None
         record["native_click_keys_present"] = {
             name: redact_click(value) for name, value in clicks.items()
         }
+
+        def commit_intent_link():
+            # Claim the row only once we are willing to give up a later retry.
+            # Native clicks are still on the contact, so that link can be written
+            # immediately. An intent that is the only click source is claimed
+            # later, after person resolution and a successful GHL field update.
+            if not used_intent or not used_intent.get("id"):
+                return
+            if used_intent.get("matched_ghl_contact_id"):
+                return
+            if args.apply:
+                patch_row("Supabase click intent update", supabase_base, "click_intents",
+                          used_intent["id"], supabase_key,
+                          {"matched_ghl_contact_id": contact_id, "matched_at": matched_at},
+                          {"matched_ghl_contact_id": "is.null"})
+                record["intent_matched"] = True
+            used_intent["matched_ghl_contact_id"] = contact_id
+
+        if click_source != "click_intents":
+            commit_intent_link()
         if not clicks:
             record["enquiry"]["reason"] = "no_click_id"
             return record
@@ -615,11 +760,7 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
                 raise ApiError("GHL contact update verification failed for: " + ",".join(failed))
             record["ghl_field_updates"]["applied"] = list(record["ghl_field_updates"]["planned"])
             record["ghl_field_updates"]["verified"] = True
-        if args.apply and used_intent:
-            patch_row("Supabase click intent update", supabase_base, "click_intents",
-                      used_intent["id"], supabase_key,
-                      {"matched_ghl_contact_id": contact_id, "matched_at": matched_at},
-                      {"matched_ghl_contact_id": "is.null"})
+        commit_intent_link()
 
         if kind == "form":
             when = parse_time(full_contact.get("dateAdded"))
@@ -640,17 +781,20 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         )
         if exists:
             record["enquiry"]["reason"] = reason
+            # Older chat/call contacts: backfill blank GHL fields from the Supabase
+            # row only (never from GHL-side or derived values).
+            row = existing_enquiry_row(contact_id, supabase_base, supabase_key)
+            record["ghl_mirror"] = (apply_mirror(token, contact_id, fields, row, args.apply,
+                                                 existing_tags=full_contact.get("tags"))
+                                    if row else {"planned": [], "reason": "no_linked_supabase_row"})
             return record
         if not args.apply:
             record["enquiry"] = {
                 "action": "plan_insert", "reason": None, "new_enquiry_id": None
             }
             preview = enquiry_payload(full_contact, person_id, clicks, today, kind, used_intent=used_intent)
-            if preview["lead_source"] == "Google Ads":
-                planned = ["add_tag:source-google-ads"]
-                if not str(fields.get(AD_SOURCE_FIELD_ID) or "").strip():
-                    planned.insert(0, "fill_ad_source:Google Ads")
-                record["ghl_mirror"] = {"planned": planned}
+            record["ghl_mirror"] = apply_mirror(token, contact_id, fields, preview, False,
+                                                existing_tags=full_contact.get("tags"))
             return record
 
         payload = enquiry_payload(full_contact, person_id, clicks, today, kind, used_intent=used_intent)
@@ -658,20 +802,8 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
         record["enquiry"] = {
             "action": "inserted", "reason": None, "new_enquiry_id": new_id
         }
-        if payload["lead_source"] == "Google Ads":
-            mirror = {"applied": [], "errors": []}
-            try:
-                if not str(fields.get(AD_SOURCE_FIELD_ID) or "").strip():
-                    update_contact(token, contact_id, [{"id": AD_SOURCE_FIELD_ID, "field_value": "Google Ads"}])
-                    mirror["applied"].append("fill_ad_source:Google Ads")
-            except Exception as exc:
-                mirror["errors"].append(str(exc) if isinstance(exc, ApiError) else type(exc).__name__)
-            try:
-                add_tags(token, contact_id, ["source-google-ads"])
-                mirror["applied"].append("add_tag:source-google-ads")
-            except Exception as exc:
-                mirror["errors"].append(str(exc) if isinstance(exc, ApiError) else type(exc).__name__)
-            record["ghl_mirror"] = mirror
+        record["ghl_mirror"] = apply_mirror(token, contact_id, fields, payload, True,
+                                            existing_tags=full_contact.get("tags"))
         return record
     except Exception as exc:
         record["error"] = str(exc) if isinstance(exc, ApiError) else type(exc).__name__
@@ -679,6 +811,22 @@ def process_contact(contact, args, token, supabase_base, supabase_key, today,
             "action": "skip", "reason": "error", "new_enquiry_id": None
         }
         return record
+
+
+def mirror_form_from_supabase(full_contact, args, token, base, key):
+    try:
+        people, method = find_person(full_contact, base, key)
+        if len(people or []) != 1:
+            return {"reason": "no_person" if not people else "ambiguous_person"}
+        when = parse_time(full_contact.get("dateAdded"))
+        row = nearest_enquiry(next(iter(people)), when, base, key) if when else None
+        if not row:
+            return {"reason": "no_enquiry"}
+        fields = custom_field_values(full_contact)
+        return apply_mirror(token, str(full_contact.get("id")), fields, row, args.apply,
+                            ENQUIRY_MIRROR_FIELD_IDS, existing_tags=full_contact.get("tags"))
+    except Exception as exc:
+        return {"errors": [str(exc) if isinstance(exc, ApiError) else type(exc).__name__]}
 
 
 def find_person_values(email, phone, base, key):

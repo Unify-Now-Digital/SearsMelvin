@@ -1,10 +1,10 @@
 /*
  * Small progressive enhancements shared by public pages:
  *  - Google review stars/count on elements with [data-sm-reviews] (hidden until configured)
- *  - Brochure: /brochure download + "email me a copy" ([data-sm-brochure]), direct
- *    download buttons elsewhere ([data-brochure-source]), cover thumbnail +
- *    "<N> pages · <X> MB" meta, and `brochure_download` tracking (GTM dataLayer,
- *    optional Google Ads conversion, first-party log via /api/brochure)
+ *  - Brochure: links with [data-brochure-source] open /brochure. The short form
+ *    there posts to /api/submit (channel contact, enquiry_type brochure) and
+ *    pushes `brochure_request`. The file link after that still pushes
+ *    `brochure_download` (optional Ads label stays unset).
  *  - Meet-the-team rendering on /about ([data-sm-team])
  * Pure helpers are exported on window.SMUpgrades and via module.exports for tests.
  */
@@ -170,8 +170,76 @@
         return Object.assign({ ts: now }, fresh);
     }
 
+    // Google's first-party _gcl_aw cookie is "GCL.<unix seconds>.<gclid>".
+    // Used only when the saved attribution store has no click ID and no UTM.
+    // A value older than the 90-day click window is ignored.
+    function readGclAwGclid(cookie, now) {
+        var parts = String(cookie || '').split(';');
+        for (var i = 0; i < parts.length; i++) {
+            var piece = parts[i].trim();
+            var eq = piece.indexOf('=');
+            if (eq < 1) continue;
+            if (piece.slice(0, eq).trim() !== '_gcl_aw') continue;
+            var raw = piece.slice(eq + 1).trim().replace(/^"|"$/g, '');
+            try { raw = decodeURIComponent(raw.replace(/\+/g, ' ')); } catch (_e) { continue; }
+            var match = /^GCL\.(\d{1,16})\.([\w\-.~]{1,200})$/.exec(raw);
+            if (!match) continue;
+            var seconds = Number(match[1]);
+            if (!isFinite(seconds)) continue;
+            if (typeof now === 'number') {
+                var age = now - seconds * 1000;
+                if (age < -86400000 || age >= ATTR_TTL_MS) continue;
+            }
+            return match[2];
+        }
+        return '';
+    }
+
+    function hasStoredAttribution(saved) {
+        if (!saved || typeof saved !== 'object') return false;
+        var click = CLICK_KEYS.some(function (k) {
+            return typeof saved[k] === 'string' && /^[\w\-.~]{1,200}$/.test(saved[k].trim());
+        });
+        if (click) return true;
+        return UTM_KEYS.some(function (k) { return typeof saved[k] === 'string' && !!saved[k].trim(); });
+    }
+
+    // Saved sm_attr wins. When it is empty, take click IDs and UTMs from the
+    // page URL, then fill a missing gclid from _gcl_aw. landing_page is kept.
+    function resolveClickIntentAttribution(saved, search, cookie, now) {
+        var base = saved && typeof saved === 'object' ? saved : {};
+        if (hasStoredAttribution(base)) return base;
+        var fresh = readAttribution(search);
+        var gclid = readGclAwGclid(cookie, now);
+        if (gclid && !fresh.gclid) fresh.gclid = gclid;
+        var out = {};
+        ATTR_KEYS.forEach(function (k) { if (fresh[k]) out[k] = fresh[k]; });
+        if (typeof base.landing_page === 'string' && base.landing_page) out.landing_page = base.landing_page;
+        return out;
+    }
+
+    function clickIntentEventId() {
+        var bytes = new Uint8Array(16);
+        try {
+            if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') {
+                var uuid = String(crypto.randomUUID()).toLowerCase();
+                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(uuid)) return uuid;
+            }
+            if (typeof crypto !== 'undefined' && crypto && typeof crypto.getRandomValues === 'function') crypto.getRandomValues(bytes);
+            else throw new Error('no crypto');
+        } catch (_e) {
+            for (var i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+        }
+        bytes[6] = (bytes[6] & 15) | 64;
+        bytes[8] = (bytes[8] & 63) | 128;
+        var hex = '';
+        for (var j = 0; j < 16; j++) hex += (bytes[j] < 16 ? '0' : '') + bytes[j].toString(16);
+        return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    }
+
     // Minimal, privacy-bounded payload linking an ad click to a chat/call intent.
     // Pure so the browser and Node tests exercise exactly the same sanitising.
+    // A counted chat is sent even when there is no click ID and no UTM.
     function clickIntentBody(kind, attribution, contact, now, page) {
         if (kind !== 'chat' && kind !== 'call') return null;
         attribution = attribution && typeof attribution === 'object' ? attribution : {};
@@ -180,8 +248,6 @@
             var v = typeof attribution[k] === 'string' ? attribution[k].trim().slice(0, 200) : '';
             if (v && /^[\w\-.~]+$/.test(v)) ids[k] = v;
         });
-        var hasUtm = UTM_KEYS.some(function (k) { return typeof attribution[k] === 'string' && !!attribution[k].trim(); });
-        if (kind === 'chat' && !Object.keys(ids).length && !hasUtm) return null;
         var body = { kind: kind };
         CLICK_KEYS.forEach(function (k) { if (ids[k]) body[k] = ids[k]; });
         UTM_KEYS.forEach(function (k) {
@@ -193,6 +259,9 @@
         var current = cleanPath(page);
         if (current) body.page = current;
         body.ts = now;
+        // Personal data: email, phone, and name. Chat sends only a sanitised
+        // email and phone — the same two fields the click_intents row already
+        // stores. Name is personal data and is not collected.
         if (kind === 'chat' && contact && typeof contact === 'object') {
             var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
             var email = typeof contact.email === 'string' ? contact.email : nested.email;
@@ -203,6 +272,28 @@
             if (phone) body.phone = phone;
         }
         return body;
+    }
+
+    function clickIntentPayload(kind, saved, search, cookie, contact, now, page) {
+        var body = clickIntentBody(kind, resolveClickIntentAttribution(saved, search, cookie, now), contact, now, page);
+        if (!body) return null;
+        body.event_id = clickIntentEventId();
+        return body;
+    }
+
+    // Beacon first, then always a keepalive fetch. Both carry the same body,
+    // including event_id, so the server can keep a single row.
+    function dispatchClickIntent(json, transport) {
+        var sendBeacon = transport && transport.sendBeacon;
+        var doFetch = transport && transport.fetch;
+        try {
+            if (typeof sendBeacon === 'function') sendBeacon('/api/click-intent', json);
+        } catch (_e) {}
+        try {
+            if (typeof doFetch !== 'function') return;
+            var sent = doFetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });
+            if (sent && typeof sent.catch === 'function') sent.catch(function () {});
+        } catch (_e) {}
     }
 
     // ---- First-touch landing page + ad-visitor phone (docs/TRACKING.md) ----
@@ -269,6 +360,136 @@
         return { source: src, dataLayer: events, adsSendTo: target };
     }
 
+    function paintBrochureErrors(form, errors) {
+        var fields = [
+            { key: 'name', input: form.querySelector('[name="name"]'), message: form.querySelector('#brochureNameError') },
+            { key: 'email', input: form.querySelector('[name="email"]'), message: form.querySelector('#brochureEmailError') }
+        ];
+        var first = null;
+        var lastMessage = null;
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            var text = errors[field.key] || '';
+            if (!field.input || !field.message) continue;
+            if (text) {
+                field.input.setAttribute('aria-invalid', 'true');
+                field.input.setAttribute('aria-describedby', field.message.id);
+                field.message.hidden = false;
+                field.message.textContent = text;
+                lastMessage = field.message;
+                if (!first) first = field.input;
+            } else {
+                field.input.removeAttribute('aria-invalid');
+                field.input.removeAttribute('aria-describedby');
+                field.message.hidden = true;
+                field.message.textContent = '';
+            }
+        }
+        if (first && first.focus) {
+            try { first.focus(); } catch (e) {}
+        }
+        if (first && first.scrollIntoView) {
+            try { first.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        liftBrochureMessage(lastMessage || first);
+        return first;
+    }
+
+    function showBrochureStatus(status, text, isError) {
+        if (!status) return;
+        status.hidden = !text;
+        status.textContent = text || '';
+        if (status.classList) status.classList.toggle('is-error', !!isError && !!text);
+        if (text && status.scrollIntoView) {
+            try { status.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        if (text) liftBrochureMessage(status);
+    }
+
+    // Form success only. No Google Ads send_to. GTM can listen later.
+    function brochureRequestEvent(source) {
+        return { event: 'brochure_request', source: normaliseSource(source) };
+    }
+
+    var BROCHURE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function brochureFieldErrors(fields) {
+        var name = String(fields && fields.name || '').trim();
+        var email = String(fields && fields.email || '').trim();
+        var errors = {};
+        if (!name) errors.name = 'Please add your name.';
+        if (!email) errors.email = 'Please add your email.';
+        else if (email.length > 254 || !BROCHURE_EMAIL_RE.test(email)) errors.email = 'Please enter a valid email address.';
+        return errors;
+    }
+
+    function brochureQueryTail(page, slug, name) {
+        var tail = '';
+        var path = cleanPath(page);
+        if (path) tail += '&page=' + encodeURIComponent(path);
+        var item = trackSlug(slug);
+        if (item) tail += '&item=' + encodeURIComponent(item);
+        var label = trackText(name, 120);
+        if (/[<>"]/.test(label)) label = '';
+        if (label) tail += '&name=' + encodeURIComponent(label);
+        return tail;
+    }
+
+    function readBrochureArrival(search) {
+        var from = '';
+        var page = '';
+        var item = '';
+        var label = '';
+        String(search || '').replace(/^\?/, '').split('&').forEach(function (pair) {
+            var i = pair.indexOf('=');
+            if (i < 1) return;
+            var key = pair.slice(0, i);
+            var value = '';
+            try { value = decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' ')); } catch (e) { return; }
+            if (key === 'from') from = value;
+            else if (key === 'page') page = cleanPath(value);
+            else if (key === 'item') item = trackSlug(value);
+            else if (key === 'name') label = /[<>"]/.test(value) ? '' : trackText(value, 120);
+        });
+        var source = from ? normaliseSource(from) : 'brochure_page';
+        if (!page && source === 'brochure_page') page = '/brochure';
+        return { source: source, page: page, slug: item, name: label };
+    }
+
+    function brochureThanksTitle(name) {
+        var token = String(name || '').trim().split(/\s+/)[0] || '';
+        if (!/^[A-Za-z][A-Za-z'’-]{0,40}$/.test(token)) return 'Thank you.';
+        if (token === token.toLowerCase()) token = token.charAt(0).toUpperCase() + token.slice(1);
+        return 'Thank you, ' + token + '.';
+    }
+
+    function brochureRequestPayload(fields, attribution, page, meta) {
+        var name = String(fields && fields.name || '').trim();
+        var email = String(fields && fields.email || '').trim();
+        var phone = String(fields && fields.phone || '').trim();
+        meta = meta && typeof meta === 'object' ? meta : {};
+        var source = meta.source ? normaliseSource(meta.source) : 'brochure_page';
+        var origin = cleanPath(meta.page || '');
+        if (!origin && source === 'brochure_page') origin = cleanPath(page) || '/brochure';
+        var slug = trackSlug(meta.slug);
+        var productName = trackText(meta.name, 120);
+        var details = { brochure_source: source };
+        if (slug) details.product_slug = slug;
+        if (productName) details.product_name = productName;
+        return {
+            channel: 'contact',
+            enquiry_type: 'brochure',
+            name: name,
+            email: email,
+            phone: phone,
+            message: 'Brochure request',
+            brochure_source: source,
+            source_page: origin,
+            details: details,
+            attribution: attribution || null
+        };
+    }
+
     function brochureMetaHtml(cfg) {
         var thumb = safeHttpUrl(cfg.brochureThumbUrl);
         var label = brochureMetaLabel(cfg.brochurePages, cfg.brochureBytes);
@@ -288,7 +509,186 @@
             '<span>Brochure</span></a>';
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, clickIntentBody: clickIntentBody, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl };
+    // ---- Catalogue list tracking (docs/TRACKING.md) -------------------------
+    // Pushed on every host, same as sm_quote_submit and brochure_download.
+    // Preview and localhost are not dropped here: the site has no dataLayer
+    // host exclusion, and the committed GTM snapshot has no hostname exception.
+    var ITEM_LIST_ID = 'memorials';
+    var ITEM_LIST_NAME = 'Memorials';
+    var LIST_CONTEXT_KEY = 'sm_list_context';
+    var LIST_CONTEXT_TTL_MS = 12 * 60 * 60 * 1000;
+    var FILTER_NAMES = { type: 1, colour: 1, price: 1, clear: 1 };
+
+    function trackText(value, max) {
+        var s = String(value == null ? '' : value).replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (s.indexOf('@') !== -1) return '';
+        return s.slice(0, max || 120);
+    }
+    function trackId(value) {
+        var id = String(value == null ? '' : value);
+        return /^[a-zA-Z0-9_-]{1,80}$/.test(id) ? id : '';
+    }
+    function trackSlug(value) {
+        var s = String(value == null ? '' : value).toLowerCase();
+        return /^[a-z0-9-]{1,120}$/.test(s) ? s : '';
+    }
+    function catalogueItem(raw) {
+        var id = trackId(raw && raw.item_id);
+        var name = trackText(raw && raw.item_name, 120);
+        var position = raw && raw.index;
+        if (!id || !name || !Number.isInteger(position) || position < 1 || position > 500) return null;
+        var item = {
+            item_id: id,
+            item_name: name,
+            item_category: trackText(raw.item_category, 120) || 'Memorial',
+            index: position
+        };
+        var slug = trackSlug(raw.slug);
+        if (slug) item.slug = slug;
+        return item;
+    }
+    function catalogueMeta(meta) {
+        return {
+            item_list_id: ITEM_LIST_ID,
+            item_list_name: trackText(meta && meta.item_list_name, 120) || ITEM_LIST_NAME,
+            active_filter: trackText(meta && meta.active_filter, 300) || 'all'
+        };
+    }
+    function publicItem(item) {
+        return {
+            item_id: item.item_id,
+            item_name: item.item_name,
+            item_category: item.item_category,
+            index: item.index
+        };
+    }
+    function viewItemListEvent(items, meta) {
+        var list = catalogueMeta(meta);
+        var clean = [];
+        (items || []).forEach(function (raw) {
+            var item = catalogueItem(raw);
+            if (item) clean.push(publicItem(item));
+        });
+        return {
+            event: 'view_item_list',
+            item_list_id: list.item_list_id,
+            item_list_name: list.item_list_name,
+            active_filter: list.active_filter,
+            result_count: clean.length,
+            ecommerce: {
+                item_list_id: list.item_list_id,
+                item_list_name: list.item_list_name,
+                items: clean
+            }
+        };
+    }
+    function selectItemEvent(raw, meta) {
+        var item = catalogueItem(raw);
+        if (!item) return null;
+        var list = catalogueMeta(meta);
+        var pub = publicItem(item);
+        return {
+            event: 'select_item',
+            item_list_id: list.item_list_id,
+            item_list_name: list.item_list_name,
+            active_filter: list.active_filter,
+            item_id: pub.item_id,
+            item_name: pub.item_name,
+            item_category: pub.item_category,
+            index: pub.index,
+            ecommerce: {
+                item_list_id: list.item_list_id,
+                item_list_name: list.item_list_name,
+                items: [pub]
+            }
+        };
+    }
+    function filterSelectEvent(change, resultCount, meta) {
+        var name = trackSlug(change && change.filter_name);
+        if (!FILTER_NAMES[name]) return null;
+        var value = name === 'clear' ? 'all' : trackSlug(change.filter_value);
+        if (!value) return null;
+        var count = Number(resultCount);
+        if (!Number.isInteger(count) || count < 0 || count > 500) count = 0;
+        var list = catalogueMeta(meta);
+        return {
+            event: 'filter_select',
+            filter_name: name,
+            filter_value: value,
+            selected: !!(change && change.selected),
+            result_count: count,
+            item_list_id: list.item_list_id,
+            active_filter: list.active_filter
+        };
+    }
+    // One user action can call the grid update twice. Keep the last state for
+    // each filter control and drop the duplicate so one change emits one event.
+    function collapseFilterChanges(changes) {
+        var out = [];
+        var index = {};
+        (changes || []).forEach(function (change) {
+            if (!change || !change.filter_name) return;
+            var key = String(change.filter_name) + '\n' + String(change.filter_value == null ? '' : change.filter_value);
+            if (Object.prototype.hasOwnProperty.call(index, key)) out[index[key]] = change;
+            else { index[key] = out.length; out.push(change); }
+        });
+        return out;
+    }
+    function listContextRecord(raw, meta, now) {
+        var item = catalogueItem(raw);
+        if (!item || !item.slug || typeof now !== 'number') return null;
+        var list = catalogueMeta(meta);
+        return {
+            product_id: item.item_id,
+            slug: item.slug,
+            category: item.item_category,
+            list_position: item.index,
+            item_list_id: list.item_list_id,
+            active_filter: list.active_filter,
+            ts: now
+        };
+    }
+    function readListContext(raw, now) {
+        var stored = raw;
+        if (typeof raw === 'string') {
+            if (!raw) return null;
+            try { stored = JSON.parse(raw); } catch (e) { return null; }
+        }
+        if (!stored || typeof stored !== 'object' || typeof now !== 'number') return null;
+        if (typeof stored.ts !== 'number' || !isFinite(stored.ts)) return null;
+        if (now - stored.ts > LIST_CONTEXT_TTL_MS || stored.ts > now + 60000) return null;
+        var product_id = trackId(stored.product_id);
+        var slug = trackSlug(stored.slug);
+        var position = stored.list_position;
+        if (!product_id || !slug || !Number.isInteger(position) || position < 1 || position > 500) return null;
+        return {
+            product_id: product_id,
+            slug: slug,
+            category: trackText(stored.category, 120),
+            list_position: position,
+            item_list_id: ITEM_LIST_ID,
+            active_filter: trackText(stored.active_filter, 300) || 'all',
+            ts: stored.ts
+        };
+    }
+    // Copies list context onto the existing quote event when it belongs to this
+    // product. Returns the same object. Does not push a second event.
+    function applyListContext(event, storedRaw, product, now) {
+        if (!event || typeof event !== 'object') return event;
+        var stored = readListContext(storedRaw, now);
+        if (!stored) return event;
+        var id = trackId(product && (product.id || product.product_id));
+        var slug = trackSlug(product && product.slug);
+        if (!(id && stored.product_id === id) && !(slug && stored.slug === slug)) return event;
+        event.product_id = stored.product_id;
+        if (stored.category) event.category = stored.category;
+        event.list_position = stored.list_position;
+        event.item_list_id = stored.item_list_id;
+        if (stored.active_filter) event.active_filter = stored.active_filter;
+        return event;
+    }
+
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureQueryTail: brochureQueryTail, readBrochureArrival: readBrochureArrival, brochureThanksTitle: brochureThanksTitle, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -331,17 +731,14 @@
         try {
             var now = Date.now();
             if (lastClickIntent[kind] && now - lastClickIntent[kind] < 3000) return;
-            var body = clickIntentBody(kind, api.getAttribution(), contact, now, location.pathname);
+            var cookie = '';
+            try { cookie = document.cookie || ''; } catch (_e) {}
+            var body = clickIntentPayload(kind, api.getAttribution(), location.search, cookie, contact, now, location.pathname);
             if (!body) return;
             lastClickIntent[kind] = now;
             var json = JSON.stringify(body);
-            try {
-                if (navigator.sendBeacon && navigator.sendBeacon('/api/click-intent', json)) return;
-            } catch (_e) {}
-            try {
-                var sent = fetch('/api/click-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: true });
-                if (sent && typeof sent.catch === 'function') sent.catch(function () {});
-            } catch (_e) {}
+            var beacon = typeof navigator.sendBeacon === 'function' ? navigator.sendBeacon.bind(navigator) : null;
+            dispatchClickIntent(json, { sendBeacon: beacon, fetch: root.fetch.bind(root) });
         } catch (_e) {}
     };
     document.addEventListener('click', function (event) {
@@ -409,24 +806,33 @@
         }
     }
 
+    function memorialOnPage() {
+        var path = cleanPath(typeof location !== 'undefined' ? location.pathname : '');
+        var match = /^\/memorials\/([a-z0-9-]{1,120})$/.exec(path);
+        var name = '';
+        if (typeof document !== 'undefined') {
+            var el = document.getElementById('productName');
+            var text = el ? trackText(el.textContent, 120) : '';
+            if (text && text.toLowerCase() !== 'memorial') name = text;
+        }
+        return { slug: match ? match[1] : '', name: name };
+    }
+
     function initBrochure(cfg) {
         var url = safeHttpUrl(cfg.brochurePdfUrl);
         sessionUtm();
         // Header nav links keep going to /brochure but tell it where the click came from.
         document.querySelectorAll('a.nav-brochure, .mobile-nav a[href="/brochure"]').forEach(function (a) {
-            a.setAttribute('href', '/brochure?from=header');
+            var here = memorialOnPage();
+            a.setAttribute('href', '/brochure?from=header' + brochureQueryTail(location.pathname, here.slug, here.name));
         });
         if (!url) return;
-        // Home / product / listing buttons become direct downloads with cover + size.
+        // Home and listing links open the brochure form. They do not download the PDF.
         document.querySelectorAll('a[data-brochure-source]').forEach(function (a) {
             var src = normaliseSource(a.getAttribute('data-brochure-source'));
-            a.setAttribute('href', url);
-            a.setAttribute('download', '');
-            a.classList.add('sm-brochure-dl');
-            a.insertAdjacentHTML('afterbegin', brochureMetaHtml(cfg).replace(/<span class="sm-brochure-meta">[^<]*<\/span>/, ''));
-            var label = brochureMetaLabel(cfg.brochurePages, cfg.brochureBytes);
-            if (label) a.insertAdjacentHTML('beforeend', ' <span class="sm-brochure-meta">PDF · ' + esc(label) + '</span>');
-            a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });
+            var here = memorialOnPage();
+            a.setAttribute('href', '/brochure?from=' + src + brochureQueryTail(location.pathname, here.slug, here.name));
+            a.removeAttribute('download');
         });
         document.querySelectorAll('[data-sm-brochure]').forEach(function (el) {
             var ready = el.querySelector('[data-brochure-ready]');
@@ -441,30 +847,47 @@
                 a.setAttribute('href', url);
                 a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });
             });
-            var form = ready.querySelector('form[data-brochure-email-form]');
+            var form = ready.querySelector('form[data-brochure-request]');
             if (form) form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                var input = form.querySelector('input[type="email"]');
-                var status = form.querySelector('[data-brochure-email-status]');
+                var status = form.querySelector('[data-brochure-request-status]');
                 var btn = form.querySelector('button[type="submit"]');
-                var email = (input && input.value || '').trim();
-                if (!email || (input.checkValidity && !input.checkValidity())) { if (status) status.textContent = 'Please enter a valid email address, or just download it below.'; return; }
+                var name = (form.querySelector('[name="name"]') || {}).value || '';
+                var email = (form.querySelector('[name="email"]') || {}).value || '';
+                var phone = (form.querySelector('[name="phone"]') || {}).value || '';
+                var fieldErrors = brochureFieldErrors({ name: name, email: email, phone: phone });
+                if (fieldErrors.name || fieldErrors.email) {
+                    showBrochureStatus(status, '');
+                    paintBrochureErrors(form, fieldErrors);
+                    return;
+                }
+                paintBrochureErrors(form, {});
                 if (btn) btn.disabled = true;
-                if (status) status.textContent = 'Sending…';
-                var attribution = storedAttribution(), session = sessionUtm(), utm = {};
-                UTM_KEYS.forEach(function (k) { if (attribution[k] || session[k]) utm[k] = attribution[k] || session[k]; });
-                fetch('/api/brochure', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: utm, attribution: attribution, page: location.pathname }) })
+                showBrochureStatus(status, 'Sending…');
+                var arrival = readBrochureArrival(location.search);
+                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname, arrival);
+                fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
-                        if (res.ok) {
-                            trackBrochureDownload(cfg, src, true, true);
-                            if (status) status.textContent = 'Thank you — we’ve emailed the brochure to ' + email + '. You can also download it now.';
-                            form.reset();
-                        } else if (status) status.textContent = (res.b && res.b.error) || 'Sorry, we couldn’t send that just now. Please use “Just download”.';
+                        if (!res.ok) {
+                            if (btn) btn.disabled = false;
+                            showBrochureStatus(status, (res.b && res.b.error) || 'Sorry, we could not send that just now. Please try again.', true);
+                            return;
+                        }
+                        root.dataLayer = root.dataLayer || [];
+                        root.dataLayer.push(brochureRequestEvent(src));
+                        form.hidden = true;
+                        var thanks = el.querySelector('[data-brochure-thanks]');
+                        if (thanks) {
+                            thanks.hidden = false;
+                            var title = thanks.querySelector('[data-brochure-thanks-title]');
+                            if (title) title.textContent = brochureThanksTitle(name);
+                        }
                     })
-                    .catch(function () { if (status) status.textContent = 'Sorry, we couldn’t send that just now. Please use “Just download”.'; })
-                    .then(function () { if (btn) btn.disabled = false; });
+                    .catch(function () {
+                        if (btn) btn.disabled = false;
+                        showBrochureStatus(status, 'Sorry, we could not send that just now. Please try again.', true);
+                    });
             });
             ready.hidden = false;
             if (pending) pending.hidden = true;
@@ -483,15 +906,41 @@
         watchFabOverlaps();
     }
 
+    // Scroll a brochure message out from under the cookie strip. A message
+    // that sits clear of the strip is left where it is. This does not read
+    // or write the cookie choice.
+    function liftBrochureMessage(el) {
+        try {
+            var doc = el && el.ownerDocument;
+            var view = doc && (doc.defaultView || doc.parentWindow);
+            if (!doc || !view || !el.getBoundingClientRect || !view.getComputedStyle) return;
+            var card = doc.getElementById('cookieConsent');
+            if (!card) return;
+            if (view.getComputedStyle(card).display === 'none') return;
+            var cr = card.getBoundingClientRect();
+            if (!cr || cr.height < 8) return;
+            var r = el.getBoundingClientRect();
+            var overlap = Math.min(r.bottom, cr.bottom) - Math.max(r.top, cr.top);
+            if (overlap <= 0 || r.right <= cr.left || r.left >= cr.right) return;
+            var delta = cr.bottom + 12 - r.top;
+            if (delta > 0 && view.scrollBy) view.scrollBy(0, delta);
+        } catch (e) {}
+    }
+
     // Keep the FAB off sticky bars and modals: hide it while a quote/search
     // modal or the cookie banner is open (body.sm-fab-hidden, fallback for
     // browsers without :has).
     function watchFabOverlaps() {
         var doc = document, body = doc.body, queued = false;
         function shown(el) { return !!el && getComputedStyle(el).display !== 'none'; }
+        function footerCoversFab() {
+            var footer = doc.querySelector('footer');
+            if (!footer) return false;
+            return footer.getBoundingClientRect().top < root.innerHeight - 16;
+        }
         function sync() {
             queued = false;
-            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent'));
+            var hide = !!doc.querySelector('.quote-overlay.active, .search-overlay.active') || shown(doc.getElementById('cookieConsent')) || footerCoversFab();
             body.classList.toggle('sm-fab-hidden', hide);
         }
         function queue() { if (!queued) { queued = true; (root.requestAnimationFrame || setTimeout)(sync); } }
@@ -499,6 +948,7 @@
             new MutationObserver(queue).observe(body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
         }
         root.addEventListener('resize', queue);
+        root.addEventListener('scroll', queue, { passive: true });
         sync();
     }
 

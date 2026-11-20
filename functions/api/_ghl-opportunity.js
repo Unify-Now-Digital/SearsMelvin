@@ -128,7 +128,7 @@ export async function flagReturningCustomer(env, contactId, { won, enquiry, subm
  * Returns the decision ({ action, ... }) for logging/tests.
  */
 export async function upsertWebsiteOpportunity(env, {
-  contactId, name, monetaryValue, pipelineId, defaultStageId, enquiry, submittedAt,
+  contactId, name, monetaryValue, pipelineId, defaultStageId, enquiry, source, submittedAt,
 }) {
   const headers = {
     "Authorization": `Bearer ${env.GHL_API_KEY}`,
@@ -176,7 +176,7 @@ export async function upsertWebsiteOpportunity(env, {
       locationId: env.GHL_LOCATION_ID,
       contactId, name,
       monetaryValue: monetaryValue || 0,
-      source: "Website",
+      source: source || "Website",
       status: "open",
     }),
   });

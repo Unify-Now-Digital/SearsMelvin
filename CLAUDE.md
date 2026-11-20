@@ -1,6 +1,6 @@
 # Sears Melvin Memorials — orientation for AI agents
 
-Static site + Cloudflare Pages Functions for a North London (NW11) memorial
+Static site + Cloudflare Pages Functions for a London (NW11) memorial
 masonry business. Read this before changing anything; it records decisions that
 are easy to undo by accident.
 
@@ -16,7 +16,7 @@ it whenever you audit or fix something in that list.
   `/api/submit` (all public form submissions), `/api/brochure` (brochure download log + "email me a copy"; GHL tag `Brochure`), `/api/quotes` (customer quote
   edits), `/api/customer-order` (customer portal), `/api/stripe`,
   `/api/stripe-webhook`, `/api/admin`, `/api/upload-photo`, `/api/config`,
-  plus `/memorials/:slug` and `/sitemap.xml`. `/api/partner-auth` and
+  plus `/memorials/:slug`, `/memorials/type/:type` (301 to `/memorials?type=<slug>`), `/areas`, `/areas/<borough>` and `/areas/<borough>/<cemetery>` (pages built from `data/boroughs.json`), and `/sitemap.xml`. Unknown `/areas/*` paths 301 to `/memorials`. `/api/partner-auth` and
   `/api/partner-orders` are retired stubs that return **410 Gone**. The
   partner desk is https://partner.searsmelvin.co.uk (other repo/Worker).
 - **Database** — Supabase project **Mason App** (`bfwohzcugtwbhhxdqgme`), shared
@@ -54,6 +54,9 @@ it whenever you audit or fix something in that list.
   `/api/partner-*` portal on this marketing Worker. Leftover `/partner*`
   paths 301 there; website partner APIs return 410.
 - **ClickUp is not part of this site.** Removed in #135.
+- **Category pages are not separate documents.** `/memorials/type/<slug>` 301s to
+  `/memorials?type=<slug>`. The range page checks that filter. The canonical
+  stays `/memorials`. Do not bring back a standalone category template.
 - The legacy `sears-melvin-form` Cloudflare Worker is dead and unreferenced
   (see the audit doc). Do not wire anything back to it.
 
@@ -81,12 +84,20 @@ Use the existing convention:
   does **not** vet the fields inside it. Anything from `product` that reaches an
   `href`, a URL, or SQL must be re-validated at the point of use — see
   `productPageUrl()` for the pattern.
-- The browser holds the Supabase **anon** key (published in ~16 HTML files, by
-  design). It must never be able to read anything but the catalogue. Verified
-  2026-08-26: `enquiries`, `orders`, `people`, `invoices`, `payments`,
-  `activity_logs` all return 0 rows to anon. Re-check after any RLS change —
-  the playbook in the audit doc has the one-liner.
-- Never put a secret in `/api/config`; it is a public browser payload.
+- The browser holds the Supabase **publishable** key (the legacy anon JWT
+  until `SUPABASE_PUBLISHABLE_KEY` is set). Pages load it from
+  `/supabase-config`. The only copy in the repo is the legacy anon fallback in
+  `functions/api/_supabase-keys.js`. It must never be able to read anything but
+  the catalogue. Verified 2026-08-26: `enquiries`, `orders`, `people`,
+  `invoices`, `payments`, `activity_logs` all return 0 rows to anon. Re-check
+  after any RLS change — the playbook in the audit doc has the one-liner.
+- Supabase REST and Storage calls send `apikey`. `Authorization: Bearer` is
+  added only when the key is a legacy JWT. Publishable (`sb_publishable_…`)
+  and secret (`sb_secret_…`) keys are not JWTs; a Bearer header makes
+  Supabase reject them. Use `supabaseKeyHeaders()` — do not hand-roll the pair.
+- Never put a secret in `/api/config` or `/supabase-config`. Both are public
+  browser payloads. `/supabase-config` refuses `sb_secret_` and `service_role`
+  values and falls back to the legacy anon key.
 
 ## Working on emails
 
@@ -143,3 +154,29 @@ in the file header when it hasn't been.
 Cloudflare Pages builds from `main`. Branch, PR, and let a human merge; the
 designated working branch is set per task. Env vars live in the Pages dashboard,
 never in `wrangler.jsonc`.
+
+`wrangler.jsonc` has no `pages_build_output_dir` and no `assets.directory`,
+so it does not choose what Git deploys. The dashboard build output is the repo
+root, which would publish internal files (`CLAUDE.md`, `docs/`, `tests/`,
+`scripts/`, `migrations/`, `wrangler.jsonc`, and the other paths listed in
+`functions/_internal-paths.js`). `_routes.json` sends those paths to Pages
+Functions, which return 404. Public HTML, `assets/`, `images/`, `data/team.js`,
+`/api/*`, `/sitemap.xml`, `/supabase-config`, and the `_redirects` rules stay
+as they are. Do not point `assets.directory` at the repo root: Wrangler then
+serves those files before the Function.
+
+Do not add `pages_build_output_dir` until `npx wrangler pages download config`
+has been reviewed. That key makes this file the Pages source of truth and
+would replace dashboard bindings, including secrets that are not in the repo.
+
+The preferred later fix, in the Cloudflare dashboard only (Workers & Pages →
+this project → Settings → Build): set the build command to copy the public
+files into `dist/` (`*.html`, the root CSS/JS the pages load, `data/team.js`,
+`assets/`, `images/`, `favicon.svg`, `sm-logo.svg`, `robots.txt`, `_headers`,
+`_redirects`, `_routes.json`) and set the build output directory to `dist`.
+Leave `functions/` at the repo root. Do not change that dashboard setting
+from a pull request.
+
+Homepage "What Families Say" (Sarah M. of Islington, David R. of Barnet,
+Angela K. of Enfield) are real customer reviews. Keep the visible wording.
+Do not mark them as placeholders.

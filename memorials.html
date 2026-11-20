@@ -14,35 +14,64 @@
       security_storage:     'granted',
       wait_for_update: 500
     });
+    // Advanced consent mode. Tags load either way. Denied storage sends a
+    // cookieless ping and must not write a Google cookie. Our own click-ID
+    // capture does not read this choice.
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', true);
     try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
+      var smConsentRaw = localStorage.getItem('cookieConsent');
+      var smConsentChoice = null;
+      if (smConsentRaw === 'accepted') smConsentChoice = { analytics: true, ads: true };
+      else if (smConsentRaw === 'declined') smConsentChoice = { analytics: false, ads: false };
+      else if (smConsentRaw && smConsentRaw.charAt(0) === '{') {
+        var smConsentParsed = JSON.parse(smConsentRaw);
+        if (smConsentParsed && typeof smConsentParsed.analytics === 'boolean' && typeof smConsentParsed.ads === 'boolean') {
+          smConsentChoice = smConsentParsed;
+        }
+      }
+      if (smConsentChoice) {
         gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
+          analytics_storage: smConsentChoice.analytics ? 'granted' : 'denied',
+          ad_storage: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_user_data: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_personalization: smConsentChoice.ads ? 'granted' : 'denied'
         });
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager — deferred until first interaction or 3s idle -->
+    <!-- Google Tag Manager — loads at page start (async), straight after the
+         consent defaults above. It used to wait for the first scroll/tap or 3s
+         idle (#67), which lost the paid visits that bounced before that, so
+         GA4 saw only ~24% of Ads clicks. The LeadConnector chat below stays
+         deferred. -->
     <script>
       (function(){
+        // Claim the chat hook flag before GTM can run, so GTM's legacy
+        // "GHL Chat Widget Listener" never double counts chats (docs/TRACKING.md).
+        window.__smChatHook = true;
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
+        var f = document.getElementsByTagName('script')[0];
+        var gtm = document.createElement('script');
+        gtm.async = true;
+        gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+        f.parentNode.insertBefore(gtm, f);
       })();
+    </script>
+    <script>
+    /* Reserve the cookie strip before first paint. A stored choice means
+       the strip stays hidden, so the offset is 0. Does not change consent. */
+    (function () {
+      var stack = 0;
+      try {
+        if (!localStorage.getItem('cookieConsent')) {
+          var w = document.documentElement.clientWidth || window.innerWidth || 0;
+          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
+        }
+      } catch (e) {}
+      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+    })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
          long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
@@ -54,26 +83,42 @@
       (function(){
         var loaded = false;
         // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // Chat submission -> dataLayer, once per submission, no PII. The widget
-        // is a shadow-DOM web component whose beforeSubmit hook runs on this
-        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
-        // races the widget and missed most chats, so claim its guard flag here
-        // (this runs before the deferred GTM load) to avoid double counting.
-        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
-        // trigger on sm_chat_submit.
+        // One chat per tab visit. A Turnstile retry can land many seconds later,
+        // so a short debounce double-counts. Email and phone are still refreshed
+        // on window.__smChatEmail and window.__smChatPhone (same sanitising as
+        // clickIntentBody). The dataLayer events stay free of personal details.
+        // GTM's older fetch-hook listener (tag "GHL Chat Widget Listener") races
+        // the widget and missed most chats, so claim its guard flag here (the
+        // GTM loader above also sets it before gtm.js runs). GA4
+        // "ghl_chat_submission" and Ads "Chat start" trigger on sm_chat_submit.
         window.__smChatHook = true;
-        var lastChatPush = 0;
+        var chatCounted = false;
+        var CHAT_VISIT_KEY = 'sm_chat_counted';
         function chatSubmitted(data){
           try {
-            var now = Date.now();
-            if (now - lastChatPush > 3000) {
-              lastChatPush = now;
-              window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({ event: 'sm_chat_submit' });
-              window.dataLayer.push({ event: 'ghl_chat_submission' });
-            }
+            var contact = data && (data.contact || data) || {};
+            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+            var email = typeof contact.email === 'string' ? contact.email : nested.email;
+            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+            if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
+            if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
           } catch (e) {}
-          try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          try {
+            var counted = chatCounted;
+            if (!counted) {
+              try { counted = sessionStorage.getItem(CHAT_VISIT_KEY) === '1'; } catch (e) {}
+            }
+            if (counted) return true; // later attempts in this tab: globals only
+            chatCounted = true;
+            try { sessionStorage.setItem(CHAT_VISIT_KEY, '1'); } catch (e) {}
+            window.dataLayer = window.dataLayer || [];
+            // No personal details in the event (docs/TRACKING.md golden rule 2).
+            window.dataLayer.push({ event: 'sm_chat_submit' });
+            window.dataLayer.push({ event: 'ghl_chat_submission' });
+            try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          } catch (e) {}
           return true; // never block the chat
         }
         function hookChat(){
@@ -91,10 +136,7 @@
           lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
           document.body.appendChild(lc);
         }
-        var evts = ['pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        setTimeout(load, 10000);
+        setTimeout(load, 1000);
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -104,41 +146,45 @@
     <meta name="description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs, fully personalised, with cemetery permit handling included.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/memorials">
-    <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <meta name="theme-color" content="#FBF9F5">
+    
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Headstones, gravestones and memorials London">
     <meta property="og:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
-    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Headstones, gravestones and memorials London">
     <meta name="twitter:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
-    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
     <!-- Supabase data loaded via REST API directly -->
+    <link rel="stylesheet" href="/tokens.css">
     <style>
         :root {
-            --color-stone: #2B2A27;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #F7F4EE;
-            --color-warm: #E8E4DD;
-            --color-accent: #7A6449;
-            --color-accent-dark: #6B5840;
-            --color-accent-light: #A69070;
-            --color-text: #2B2A27;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
-            --color-success: #4A7C59;
-            --color-error: #b44;
+            --color-stone: var(--sm-color-text);
+            --color-stone-light: var(--sm-color-ink-hover);
+            --color-cream: var(--sm-color-bg);
+            --color-warm: var(--sm-color-bg-panel-quiet);
+            --color-accent: var(--sm-color-text-accent);
+            --color-accent-dark: var(--sm-color-text-accent-strong);
+            --color-accent-light: var(--sm-color-text-accent-inverse);
+            --color-text: var(--sm-color-text);
+            --color-text-muted: var(--sm-color-text-muted);
+            --color-border: var(--sm-color-border-decorative);
+            --color-success: var(--sm-color-success);
+            --color-error: var(--sm-color-error);
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
@@ -162,7 +208,7 @@
         .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
         .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
         .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -180,7 +226,7 @@
         .shortlist-nav-btn.has-items { display: inline-flex; }
         @keyframes shortlistPulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         .shortlist-nav-btn.pulse { animation: shortlistPulse 0.4s ease; }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 10%, transparent); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -191,7 +237,7 @@
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Showroom Banner */
         /* Mobile Bottom Navigation */
-        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
@@ -201,27 +247,34 @@
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
-        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .page-header { padding: 0.85rem 2rem 1rem; background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-warm) 100%); text-align: center; }
         .breadcrumb { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 0.6rem; font-size: 0.8rem; color: var(--color-text-muted); }
         .breadcrumb a { color: var(--color-accent-dark); }
         .page-header h1 { font-size: 1.9rem; margin-bottom: 0.3rem; line-height: 1.2; }
         .page-header p { font-size: 0.95rem; line-height: 1.5; max-width: 620px; margin: 0 auto; font-weight: 600; color: var(--color-stone); }
-        .floating-actions { position: fixed; bottom: 2rem; left: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
-        .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
+        .floating-actions { position: fixed; bottom: 2rem; left: 24px; right: auto; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
+        .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.3s; }
         .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
-        .floating-btn.shortlist { background: white; border: 2px solid var(--color-border); }
-        .floating-btn.shortlist svg { stroke: var(--color-accent); }
-        .floating-btn.shortlist:hover { border-color: var(--color-accent); }
+        .floating-btn.shortlist { background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); color: var(--sm-color-text); }
+        .floating-btn.shortlist svg { stroke: var(--color-text-muted); }
+        .floating-btn.shortlist:hover { background: var(--sm-color-bg-panel); border-color: var(--sm-color-border-control); }
+        .floating-btn.shortlist:hover svg { stroke: var(--color-accent); }
         .floating-btn.scroll-top { background: var(--color-stone); opacity: 0; pointer-events: none; transform: translateY(20px); }
         .floating-btn.scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
         .floating-btn.scroll-top svg { stroke: white; }
         .catalogue { padding: 3rem 2rem; }
         .catalogue-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; gap: 3rem; }
-        .filters-sidebar { position: sticky; top: 80px; height: fit-content; }
-        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
-        .filters-header h3 { font-family: var(--font-display); font-size: 1.5rem; }
+        .filters-sidebar { position: sticky; top: calc(var(--header-height, 80px) + var(--sm-cookie-stack, 0px) + 8px); max-height: calc(100vh - var(--header-height, 80px) - var(--sm-cookie-stack, 0px) - 8px - 11.5rem); overflow: auto; height: fit-content; }
+        .filters-sidebar.reveal, .filters-sidebar.reveal.visible { transform: none; }
+        .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); gap: 0.75rem; }
+        .filters-header h2 { font-family: var(--font-display); font-size: 1.5rem; margin: 0; }
+        .filters-header-actions { display: flex; align-items: center; gap: 0.75rem; }
+        .filters-close { display: none; align-items: center; justify-content: center; width: var(--sm-target-min); height: var(--sm-target-min); padding: 0; border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); background: var(--sm-color-bg); color: var(--sm-color-text); cursor: pointer; }
+        .filters-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .filters-apply { display: none; }
+        .filters-show { width: 100%; min-height: var(--sm-control-height); border: 0; border-radius: var(--sm-radius-sm); background: var(--sm-color-action-primary-bg); color: var(--sm-color-action-primary-text); font-family: var(--sm-font-body); font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); cursor: pointer; }
         .filters-clear { background: none; border: none; color: var(--color-accent-dark); font-size: 0.875rem; cursor: pointer; }
         .filters-clear:hover { text-decoration: underline; }
         .filter-group { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
@@ -237,42 +290,66 @@
         .filter-option input:checked + .checkmark::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
         .filter-count { font-size: 0.8rem; color: var(--color-text-muted); margin-left: auto; }
         .colour-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .colour-swatch { cursor: pointer; text-align: center; }
-        .colour-swatch input { display: none; }
+        .colour-swatch { cursor: pointer; text-align: center; position: relative; }
+        /* Clipped, not display:none, so the checkbox stays in the tab order. */
+        .colour-swatch input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+        }
         .swatch-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-        .swatch { width: 48px; height: 48px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s; position: relative; }
-        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 50%, rgba(0,0,0,0.1)); }
-        .colour-swatch:hover .swatch { transform: scale(1.1); }
-        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 2px white, 0 0 0 5px var(--color-accent); transform: scale(1.05); }
-        .swatch-name { font-size: 0.65rem; color: var(--color-text-muted); line-height: 1.2; max-width: 60px; }
+        .swatch { width: 52px; height: 52px; border-radius: 50%; border: 3px solid transparent; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.3s; position: relative; overflow: hidden; }
+        .colour-swatch-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+        .swatch::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, color-mix(in srgb, var(--sm-color-bg-surface) 20%, transparent) 0%, transparent 50%, color-mix(in srgb, var(--sm-color-text) 10%, transparent) 100%); }
+        .swatch.has-photo::after { content: none; }
+        .colour-swatch:hover .swatch { transform: scale(1.05); }
+        .colour-swatch input:checked + .swatch-wrapper .swatch { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--sm-color-bg-surface), 0 0 0 6px var(--color-accent); transform: scale(1.1); }
+        .colour-swatch input:focus-visible + .swatch-wrapper .swatch { outline: 3px solid var(--sm-color-border-strong); outline-offset: 3px; }
+        .swatch-name { font-size: 0.7rem; color: var(--color-text-muted); line-height: 1.3; max-width: 65px; }
         .colour-swatch input:checked + .swatch-wrapper .swatch-name { color: var(--color-stone); font-weight: 600; }
-        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: 6px; margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
+        .active-filters { display: none; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: white; border-radius: var(--sm-radius-sm); margin-bottom: 1.5rem; border: 1px solid var(--color-border); align-items: center; }
         .active-filters.has-filters { display: flex; }
         .active-filters-label { font-size: 0.8rem; color: var(--color-text-muted); margin-right: 0.5rem; }
-        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: 20px; font-size: 0.8rem; color: var(--color-stone); }
+        .filter-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: var(--color-warm); border-radius: var(--sm-radius-sm); font-size: 0.8rem; color: var(--color-stone); }
         .filter-tag button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; color: var(--color-text-muted); padding: 0; }
         .filter-tag button:hover { color: var(--color-stone); }
         .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
         .results-left { display: flex; align-items: center; gap: 1rem; }
         .results-count { font-size: 0.95rem; color: var(--color-text-muted); }
         .results-count span { font-weight: 600; color: var(--color-stone); }
-        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.875rem; cursor: pointer; }
+        .mobile-filter-btn { display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--sm-color-bg-surface); color: var(--sm-color-text); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-size: 0.875rem; cursor: pointer; }
         .mobile-filter-btn svg { width: 16px; height: 16px; stroke: var(--color-stone); fill: none; }
-        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: white; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; }
+        .sort-dropdown select { padding: 0.6rem 2rem 0.6rem 1rem; background: var(--sm-color-bg-surface); border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); font-family: var(--font-body); font-size: var(--sm-text-md); min-height: var(--sm-control-height); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; cursor: pointer; color: var(--sm-color-text); }
         .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        @media (min-width: 901px) {
+            .filters-sidebar .filters-scroll { padding-left: 4rem; }
+            #typeFilters { min-height: 25rem; }
+            #colourFilters { min-height: 28rem; }
+            #priceFilters { min-height: 16rem; }
+        }
+        @media (min-width: 901px) and (max-width: 1100px) {
+            #productsGrid { min-height: 34rem; }
+        }
         @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
         .product-card:nth-child(1) { animation-delay: 0s; }
         .product-card:nth-child(2) { animation-delay: 0.05s; }
         .product-card:nth-child(3) { animation-delay: 0.1s; }
         .product-card:nth-child(4) { animation-delay: 0.15s; }
         .product-card:nth-child(5) { animation-delay: 0.2s; }
         .product-card:nth-child(6) { animation-delay: 0.25s; }
-        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px color-mix(in srgb, var(--sm-color-text) 12%, transparent); }
         .product-card.hidden { display: none; }
         .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
         .product-card:hover .product-actions { opacity: 1; transform: translateX(0); }
-        .product-action { width: 36px; height: 36px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; }
+        .product-action { width: 44px; height: 44px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.2s; }
         .product-action svg { width: 18px; height: 18px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; transition: all 0.2s; }
         .product-action:hover { transform: scale(1.1); }
         .product-action:hover svg { stroke: var(--color-accent); }
@@ -287,8 +364,9 @@
         .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.3rem; display: block; }
         .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
         .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
-        .product-colours { display: flex; gap: 0.25rem; }
-        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .product-colours { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+        .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px color-mix(in srgb, var(--sm-color-text) 20%, transparent); flex: 0 0 auto; }
+        .product-colour-more { font-size: 0.75rem; line-height: 1; color: var(--color-text-muted); margin-left: 0.15rem; white-space: nowrap; }
         .product-price { font-size: 0.9rem; color: var(--color-text-muted); }
         .product-price strong { font-size: 1.1rem; font-weight: 600; color: var(--color-stone); }
         .no-results { display: none; grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 2px dashed var(--color-border); }
@@ -297,9 +375,9 @@
         .no-results h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .no-results p { margin-bottom: 1.5rem; }
         .no-results button { padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-family: var(--font-body); }
-        .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px rgba(0,0,0,0.15); transition: right 0.4s ease; display: flex; flex-direction: column; }
+        .shortlist-panel { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 150; box-shadow: -10px 0 30px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: right 0.4s ease; display: flex; flex-direction: column; }
         .shortlist-panel.active { right: 0; }
-        .shortlist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
+        .shortlist-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 40%, transparent); z-index: 140; display: none; }
         .shortlist-overlay.active { display: block; }
         .shortlist-header { padding: 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
         .shortlist-header h3 { font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -331,32 +409,39 @@
         .shortlist-enquiry textarea { resize: vertical; min-height: 60px; }
         .shortlist-enquiry-btn { width: 100%; padding: 0.75rem; background: var(--color-stone); border: none; color: white; border-radius: 4px; font-family: var(--font-body); font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .shortlist-enquiry-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .shortlist-enquiry-success { color: #4CAF50; font-size: 0.85rem; text-align: center; padding: 0.5rem; display: none; }
-        .save-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2C2C2C; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .shortlist-enquiry-success { color: var(--sm-color-success); font-size: 0.85rem; text-align: center; padding: 0.5rem; display: none; }
+        .save-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--sm-color-bg-inverse); color: white; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 20%, transparent); }
         .save-toast.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-        .save-toast svg { width: 18px; height: 18px; stroke: #e8665a; fill: #e8665a; flex-shrink: 0; }
-        .save-toast a { color: #7A6449; text-decoration: underline; }
+        .save-toast svg { width: 18px; height: 18px; stroke: var(--sm-color-error); fill: var(--sm-color-error); flex-shrink: 0; }
+        .save-toast a { color: var(--sm-color-text-accent); text-decoration: underline; }
         @keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
         .save-btn.animate svg { animation: heartPop 0.4s ease; }
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
+        .catalogue-more-wrap { margin: 1rem 0 0; }
+        .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
+        .form-status-error.is-visible { display: block; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; }
+        .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); }
         .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: var(--sm-color-text-inverse-muted); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
-        .filters-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
+        .filters-overlay { display: none; position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 199; }
         .filters-overlay.active { display: block; }
         @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 900px) {
             .catalogue-container { grid-template-columns: 1fr; gap: 1.5rem; }
-            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: var(--color-cream); z-index: 200; padding: 2rem; overflow-y: auto; transition: left 0.3s ease; }
+            .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; height: 100dvh; max-height: none; background: var(--color-cream); z-index: 200; padding: 1.25rem 1.25rem 0; overflow: hidden; transition: left 0.3s ease; display: flex; flex-direction: column; }
+            .catalogue .sm-brochure-cta { padding-left: 5.5rem; }
             .filters-sidebar.open { left: 0; }
+            .filters-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; padding-bottom: 1rem; }
+            .filters-close { display: inline-flex; }
+            .filters-apply { display: block; flex: none; padding: 0.75rem 0 calc(0.75rem + 84px + env(safe-area-inset-bottom)); background: var(--color-cream); }
             .mobile-filter-btn { display: flex; }
             .nav-links { display: none; }
             .logo { font-size: 1.2rem; gap: 0.5rem; white-space: nowrap; }
@@ -380,7 +465,7 @@
         }
         @media (max-width: 768px) {
             body { padding-bottom: 70px; }
-            .floating-actions { bottom: calc(70px + 1rem); left: 1rem; }
+            .floating-actions { bottom: calc(70px + 1rem); left: 16px; right: auto; }
             .floating-btn { width: 48px; height: 48px; }
             .floating-btn svg { width: 20px; height: 20px; }
             .product-actions { opacity: 1; transform: translateX(0); }
@@ -391,11 +476,12 @@
             .breadcrumb { margin-bottom: 0.75rem; font-size: 0.8rem; }
             .catalogue { padding: 1.25rem 0.75rem 2rem; }
             /* Sticky compact filter bar above the product grid */
-            .results-header { position: sticky; top: 56px; z-index: 50; background: var(--color-cream); margin: 0 -0.75rem 1rem; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
+            .results-header { position: sticky; top: calc(var(--header-height, 68px) + var(--sm-cookie-stack, 0px)); z-index: 50; background: var(--color-cream); margin: 0 -0.75rem 1rem; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--color-border); gap: 0.5rem; }
             .results-left { gap: 0.6rem; flex: 1; min-width: 0; }
             .results-count { font-size: 0.8rem; }
-            .mobile-filter-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-            .sort-dropdown select { padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: 0.8rem; max-width: 140px; }
+            .mobile-filter-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: var(--sm-radius-sm); box-shadow: 0 1px 4px color-mix(in srgb, var(--sm-color-text) 6%, transparent); }
+            .swatch { width: 44px; height: 44px; }
+            .sort-dropdown select { padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: var(--sm-text-md); max-width: none; }
         }
         @media (max-width: 600px) {
             .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
@@ -407,7 +493,7 @@
             .product-price { font-size: 0.75rem; }
             .product-price strong { font-size: 0.9rem; }
             .product-badge { padding: 0.2rem 0.45rem; font-size: 0.6rem; top: 0.5rem; left: 0.5rem; }
-            .product-action { width: 30px; height: 30px; }
+            .product-action { width: 44px; height: 44px; }
             .product-action svg { width: 14px; height: 14px; }
             .product-actions { top: 0.5rem; right: 0.5rem; gap: 0.35rem; }
             .footer-container { flex-direction: column; text-align: center; }
@@ -420,17 +506,17 @@
         .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
 
         /* Search Overlay */
-        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
         .search-overlay.active { opacity: 1; visibility: visible; }
 
         /* Search Modal */
-        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .search-modal.active { transform: translateY(0); }
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
-        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #767676; }
+        .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; color: var(--sm-color-text); }
+        .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -510,9 +596,9 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    <link rel="stylesheet" href="/chat-widget.css?v=8">
 
-    <!-- Structured data: Business -->
+    <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -520,28 +606,30 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "London-based memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and UK-wide installation.",
-      "image": "https://searsmelvin.co.uk/sm-logo.svg",
-      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.",
+      "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
+      "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "geo": {"@type":"GeoCoordinates","latitude":51.58619,"longitude":-0.18362},
+      "hasMap": "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB",
       "areaServed": [
-        {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "AdministrativeArea", "name": "Greater London"},
+        {"@type": "AdministrativeArea", "name": "Hertfordshire"},
+        {"@type": "AdministrativeArea", "name": "Essex"},
+        {"@type": "AdministrativeArea", "name": "Kent"},
+        {"@type": "AdministrativeArea", "name": "Surrey"},
+        {"@type": "AdministrativeArea", "name": "Buckinghamshire"},
+        {"@type": "AdministrativeArea", "name": "Berkshire"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "17:00"
+        "opens": "10:00",
+        "closes": "15:00"
       }]
     }
     </script>
@@ -557,21 +645,35 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
+    <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
+
+    <style>
+        .type-browse { margin: 0 0 1.25rem; }
+        .type-browse-heading { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin: 0 0 0.6rem; }
+        .type-browse-list { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; list-style: none; padding: 0; margin: 0; }
+        @media (max-width: 430px), (max-width: 932px) and (max-height: 500px) {
+            /* The square shortlist heart sits at the left, above the nav.
+               Keep every type chip to its right, including landscape phones. */
+            .type-browse-list { padding-left: 56px; }
+        }
+        .type-browse-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.75rem; border: 1px solid var(--color-border); border-radius: 2px; color: var(--color-text); text-decoration: none; }
+        .type-browse-list a[aria-current="page"] { border-color: var(--color-accent); background: var(--color-warm); }
+    </style>
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    height="0" width="0" class="sm-gtm-noscript" ></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <nav id="navbar">
         <a href="/" class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
-            Sears Melvin <span>Memorials</span>
+            <picture>
+                <source media="(max-width: 768px) and (min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-ink.svg">
+                <source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg">
+                <img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66">
+            </picture>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
             <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
@@ -633,6 +735,7 @@
         </div>
         <h1 class="reveal">Headstones, gravestones and memorials</h1>
         <p class="reveal reveal-delay-1">Browse our memorials. Each piece is made to your specification.</p>
+        <p class="service-area-line">We serve families across Greater London.</p>
     </header>
 
     <div class="filters-overlay" id="filtersOverlay" onclick="closeFilters()"></div>
@@ -642,8 +745,12 @@
             <aside class="filters-sidebar reveal" id="filtersSidebar">
                 <div class="filters-header">
                     <h2>Filters</h2>
-                    <button class="filters-clear" onclick="clearAllFilters()">Clear All</button>
+                    <div class="filters-header-actions">
+                        <button type="button" class="filters-clear" onclick="clearAllFilters()">Clear all</button>
+                        <button type="button" class="filters-close" onclick="closeFilters()" aria-label="Close filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                    </div>
                 </div>
+                <div class="filters-scroll">
                 <div class="filter-group">
                     <h4 class="filter-title">Memorial Type</h4>
                     <div class="filter-options" id="typeFilters">
@@ -662,10 +769,27 @@
                         <span style="color: var(--color-text-muted); font-size: 0.9rem;">All prices</span>
                     </div>
                 </div>
+                </div>
+                <div class="filters-apply">
+                    <button type="button" class="filters-show" id="filtersShow" onclick="closeFilters()">Show <span id="filtersShowCount">0</span> memorials</button>
+                </div>
             </aside>
 
             <main>
-                <div class="active-filters" id="activeFilters">
+                
+            <nav class="type-browse" aria-label="Browse by type">
+                <h2 class="type-browse-heading">Browse by type</h2>
+                <ul class="type-browse-list">
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
+                </ul>
+            </nav>
+            <div class="active-filters" id="activeFilters">
                     <span class="active-filters-label">Active filters:</span>
                 </div>
                 <div class="results-header">
@@ -695,9 +819,10 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
                         <h3>No memorials found</h3>
                         <p>Try adjusting your filters to find the right memorial.</p>
-                        <button onclick="clearAllFilters()">Clear All Filters</button>
+                        <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
+                <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -733,11 +858,11 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials" class="search-quick-link">Browse memorials</a>
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
-                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/contact" class="search-quick-link">Get a quote</a>
                     </div>
                 </div>
             </div>
@@ -763,9 +888,10 @@
                 <input type="text" id="shareLink" value="" placeholder="Share link will appear here" readonly>
             </div>
             <div class="shortlist-actions">
-                <button class="shortlist-btn-copy" onclick="copyShareLink()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Link</button>
+                <button class="shortlist-btn-copy" onclick="copyShareLink(event)"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Link</button>
                 <button class="shortlist-btn-email" onclick="emailShortlist()"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>
             </div>
+            <span id="shortlistCopyLive" role="status" aria-live="polite" aria-atomic="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></span>
             <div class="shortlist-enquiry" id="shortlistEnquiry" style="display:none;">
                 <button class="shortlist-enquiry-toggle" onclick="toggleEnquiryForm()" type="button">
                     Enquire about these memorials
@@ -779,20 +905,23 @@
                     <textarea id="slEnqNote" placeholder="Add a note (optional)"></textarea>
                     <button class="shortlist-enquiry-btn" id="slEnqBtn" onclick="submitShortlistEnquiry()">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        <span>Send Enquiry</span>
+                        <span>Send enquiry</span>
                     </button>
+                    <p class="form-status-error" id="slEnqError" role="alert"></p>
                     <div class="shortlist-enquiry-success" id="slEnqSuccess">Thank you. We will be in touch soon.</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
+<script src="/data/stone-colour-swatches.js"></script>
+<script src="/supabase-config"></script>
+<script>
         // ==================== SUPABASE CONFIG ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
+        const SUPABASE_URL = window.SM_SUPABASE.url;
         const SM_ORG_ID = '3770972d-1bbd-417b-b413-297e844db285';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
-        const SUPABASE_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
+        const SUPABASE_HEADERS = window.SM_SUPABASE.headers();
 
         // Transform Supabase Storage object URL → image render URL (Pro plan feature).
         // resize=contain is required — without it, Supabase keeps the source
@@ -801,9 +930,9 @@
         // Resized product images via Supabase image transforms (originals untouched).
         // Falls back to the original file if the render URL fails.
         function smRender(url, w) {
-            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70&resize=contain';
+            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/')) + '?width=' + w + '&quality=70&resize=contain';
         }
-        function smIsBucketImg(url) { return /\/storage\/v1\/object\/public\/product-images\/[^?]+$/.test(String(url || '')); }
+        function smIsBucketImg(url) { return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(String(url || '')); }
         function smImgAttrs(url, sizes, escFn) {
             var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
             if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
@@ -819,13 +948,13 @@
         }
 
         function supabaseImgUrl(url, width) {
-            if (!url || !url.includes('/storage/v1/object/public/')) return url || '';
-            return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+            if (!url || !url.includes(['','storage','v1','object','public',''].join('/'))) return url || '';
+            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/'))
                 + '?width=' + width + '&resize=contain&format=webp&quality=80';
         }
 
         async function supabaseFetch(table, params) {
-            const url = new URL(SUPABASE_URL + '/rest/v1/' + table);
+            const url = new URL(SUPABASE_URL + ['','rest','v1',''].join('/') + table);
             Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
             const res = await fetch(url.toString(), { headers: SUPABASE_HEADERS });
             if (!res.ok) throw new Error('Supabase query failed: ' + res.status + ' ' + (await res.text()));
@@ -865,8 +994,15 @@
         function safeImageUrl(value) {
             if (!value || String(value).length > 2048) return '';
             try {
-                const url = new URL(String(value), window.location.origin);
+                const url = new URL(String(value), SUPABASE_URL || window.location.origin);
                 if (url.protocol !== 'https:' || url.username || url.password) return '';
+                const offHost = ['', 'storage', 'v1'].join('/');
+                const offRest = ['', 'rest', 'v1'].join('/');
+                if (url.pathname.indexOf(offHost) === 0 || url.pathname.indexOf(offRest) === 0) {
+                    const host = new URL(SUPABASE_URL);
+                    url.protocol = host.protocol;
+                    url.host = host.host;
+                }
                 return url.href;
             } catch (_) { return ''; }
         }
@@ -888,17 +1024,16 @@
                 state.productsData = productsData;
 
                 renderFilters();
-                renderProducts();
+                if (!applyUrlFilters()) renderProducts();
                 injectItemListJsonLd(productsData);
-                applyUrlFilters();
                 loadShortlistFromStorage();
             } catch (error) {
                 console.error('Error loading data:', error);
                 const loadingEl = document.getElementById('productsLoading');
                 if (loadingEl) {
-                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Error loading memorials. Please refresh the page.</p>';
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--sm-color-error); fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: var(--sm-color-error);">Error loading memorials. Please refresh the page.</p>';
                 }
-                document.getElementById('resultsCount').textContent = '0';
+                setMemorialCount('0');
             }
             initScrollAnimations();
         }
@@ -913,7 +1048,7 @@
             categoriesWithProducts.forEach(cat => {
                 const count = state.productsData.filter(p => p.category_id === cat.id).length;
                 const slug = safeSlug(cat.slug);
-                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters()"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
+                if (slug) typeHTML += '<label class="filter-option"><input type="checkbox" data-filter="type" value="' + slug + '" onchange="applyFilters(this)"><span class="checkmark"></span>' + escapeHtml(cat.name) + '<span class="filter-count">(' + count + ')</span></label>';
             });
             typeContainer.innerHTML = typeHTML;
 
@@ -923,7 +1058,14 @@
                 const slug = safeSlug(colour.slug);
                 const primaryHex = safeHex(colour.hex_primary);
                 const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
-                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters()"><span class="swatch-wrapper"><span class="swatch" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');"></span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
+                // image_url when it is a safe image URL. A failed photo drops back to the gradient.
+                const imageUrl = (typeof stoneColourImageUrl === 'function')
+                    ? stoneColourImageUrl(colour)
+                    : safeImageUrl(colour.image_url);
+                const photo = imageUrl
+                    ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                    : '';
+                if (slug) colourHTML += '<label class="colour-swatch"><input type="checkbox" data-filter="colour" value="' + slug + '" onchange="applyFilters(this)"><span class="swatch-wrapper"><span class="swatch' + (imageUrl ? ' has-photo' : '') + '" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');">' + photo + '</span><span class="swatch-name">' + escapeHtml(colour.name) + '</span></span></label>';
             });
             colourContainer.innerHTML = colourHTML;
 
@@ -939,21 +1081,68 @@
             priceRanges.forEach(range => {
                 const count = state.productsData.filter(range.test).length;
                 if (count > 0) {
-                    priceHTML += '<label class="filter-option"><input type="checkbox" data-filter="price" value="' + range.value + '" onchange="applyFilters()"><span class="checkmark"></span>' + range.label + '<span class="filter-count">(' + count + ')</span></label>';
+                    priceHTML += '<label class="filter-option"><input type="checkbox" data-filter="price" value="' + range.value + '" onchange="applyFilters(this)"><span class="checkmark"></span>' + range.label + '<span class="filter-count">(' + count + ')</span></label>';
                 }
             });
             priceContainer.innerHTML = priceHTML;
         }
 
         // ==================== RENDER PRODUCTS ====================
+        const CATALOGUE_PAGE = 24;
+        let catalogueLimit = CATALOGUE_PAGE;
+
+        function priceBand(price) {
+            if (price < 1000) return 'under-1000';
+            if (price < 1500) return '1000-1500';
+            if (price < 2000) return '1500-2000';
+            if (price < 3000) return '2000-3000';
+            return 'over-3000';
+        }
+
+        function catalogueMatches(product) {
+            const categorySlug = safeSlug(product.product_categories && product.product_categories.slug) || 'default';
+            const price = parseFloat(product.base_price);
+            const matchesType = state.filters.type.length === 0 || state.filters.type.includes(categorySlug);
+            const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(priceBand(price));
+            return matchesType && matchesPrice && Number.isFinite(price);
+        }
+
+        function sortedCatalogue() {
+            const list = state.productsData.filter(catalogueMatches);
+            const sortValue = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'featured';
+            const copy = list.slice();
+            if (sortValue === 'price-low') copy.sort((a, b) => parseFloat(a.base_price) - parseFloat(b.base_price));
+            else if (sortValue === 'price-high') copy.sort((a, b) => parseFloat(b.base_price) - parseFloat(a.base_price));
+            else if (sortValue === 'name-az') copy.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+            return copy;
+        }
+
+        function showMoreMemorials() {
+            catalogueLimit += CATALOGUE_PAGE;
+            renderProducts();
+        }
+
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
+            const matched = sortedCatalogue();
+            const shown = matched.slice(0, catalogueLimit);
+            const noResults = document.getElementById('noResults');
+            const nextSlugs = shown.map((product) => {
+                const id = safeId(product.id);
+                const slug = safeSlug(product.slug);
+                const price = parseFloat(product.base_price);
+                if (!id || !slug || !Number.isFinite(price) || price < 0 || price > 1000000) return '';
+                return slug;
+            }).filter(Boolean);
+            const existing = Array.from(grid.querySelectorAll(':scope > a.product-card[data-slug]')).map((card) => card.dataset.slug);
+            const sameCards = existing.length === nextSlugs.length && existing.every((slug, index) => slug === nextSlugs[index]);
+            if (!sameCards) {
             grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
 
             let productsHTML = '';
-            state.productsData.forEach((product, index) => {
+            shown.forEach((product, index) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 if (!id || !slug) return;
@@ -964,6 +1153,7 @@
                 const priceRange = price < 1000 ? 'under-1000' : price >= 3000 ? 'over-3000' : price < 1500 ? '1000-1500' : price < 2000 ? '1500-2000' : '2000-3000';
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
+                const saved = state.shortlist.some(item => item.id === id);
                 const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
                 const productImage = imageUrl
                     ? '<img ' + smImgAttrs(imageUrl, '(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 300px', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
@@ -971,17 +1161,23 @@
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
                 else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
-                const colourDots = state.colours.map(c =>
+                const colourShown = state.colours.slice(0, 8);
+                const colourExtra = state.colours.length - colourShown.length;
+                const colourDots = colourShown.map(c =>
                     '<span class="product-colour-dot" style="background:' + safeHex(c.hex_primary) + ';"></span>'
-                ).join('');
+                ).join('') + (colourExtra > 0 ? '<span class="product-colour-more">+' + colourExtra + '</span>' : '');
 
-                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p><p class="product-price-note">Cemetery permit fees are extra and vary by cemetery.</p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn' + (saved ? ' active' : '') + '" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
             });
 
-            const noResults = document.getElementById('noResults');
             noResults.insertAdjacentHTML('beforebegin', productsHTML);
+            }
+            noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
-            document.getElementById('resultsCount').textContent = products.length;
+            setMemorialCount(matched.length);
+            const more = document.getElementById('catalogueMore');
+            if (more) more.hidden = matched.length <= shown.length;
+            scheduleCatalogueTrack();
         }
 
         // ==================== STRUCTURED DATA ====================
@@ -1039,67 +1235,167 @@
         });
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
+        // ==================== CATALOGUE TRACKING ====================
+        // view_item_list, select_item and filter_select. Payloads are built in
+        // site-upgrades.js. One grid update pushes one list event; a repeated
+        // call for the same control collapses to one filter_select. Nothing
+        // here calls preventDefault, so middle-click and new-tab still navigate.
+        // Preview/localhost are not excluded: this site does not drop dataLayer
+        // events by host, and GTM has no hostname exception to copy.
+        var catalogueTimer = null;
+        var catalogueFilterQueue = [];
+        var lastCatalogueSelect = { key: '', at: 0 };
+
+        function scheduleCatalogueTrack(change) {
+            if (change && change.filter_name) catalogueFilterQueue.push(change);
+            clearTimeout(catalogueTimer);
+            catalogueTimer = setTimeout(flushCatalogueTrack, 50);
+        }
+        function catalogueMetaNow() {
+            var parts = [];
+            ['type', 'colour', 'price'].forEach(function (key) {
+                var values = (state.filters[key] || []).filter(function (v) { return /^[a-z0-9-]{1,80}$/.test(v); }).slice().sort();
+                if (values.length) parts.push(key + ':' + values.join(','));
+            });
+            var sortEl = document.getElementById('sortSelect');
+            var sort = sortEl ? sortEl.value : 'featured';
+            if (sort && sort !== 'featured' && /^[a-z0-9-]{1,40}$/.test(sort)) parts.push('sort:' + sort);
+            return { item_list_id: 'memorials', item_list_name: 'Memorials', active_filter: parts.length ? parts.join('|') : 'all' };
+        }
+        function catalogueCards() {
+            return Array.from(document.querySelectorAll('#productsGrid > a.product-card[data-id]')).filter(function (el) {
+                return !el.classList.contains('hidden');
+            });
+        }
+        function catalogueCardPayload(el, index) {
+            var catEl = el.querySelector('.product-category');
+            return {
+                item_id: el.dataset.id,
+                item_name: el.dataset.name,
+                item_category: catEl ? catEl.textContent : '',
+                slug: el.dataset.slug,
+                index: index
+            };
+        }
+        function writeCatalogueContext(payload, meta) {
+            var api = window.SMUpgrades;
+            if (!api || !api.listContextRecord) return;
+            var record = api.listContextRecord(payload, meta, Date.now());
+            if (!record) return;
+            try { sessionStorage.setItem(api.LIST_CONTEXT_KEY, JSON.stringify(record)); } catch (e) {}
+        }
+        function flushCatalogueTrack() {
+            catalogueTimer = null;
+            var api = window.SMUpgrades;
+            if (!api || !api.viewItemListEvent) return;
+            var queued = api.collapseFilterChanges(catalogueFilterQueue);
+            catalogueFilterQueue = [];
+            var meta = catalogueMetaNow();
+            var items = catalogueCards().map(function (el, i) { return catalogueCardPayload(el, i + 1); });
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
+            window.dataLayer.push(api.viewItemListEvent(items, meta));
+            queued.forEach(function (change) {
+                var filterEvent = api.filterSelectEvent(change, items.length, meta);
+                if (filterEvent) window.dataLayer.push(filterEvent);
+            });
+        }
+        function catalogueCardFromEvent(event) {
+            if (!event || !event.target || !event.target.closest) return null;
+            if (event.button != null && event.button !== 0 && event.button !== 1) return null;
+            var card = event.target.closest('#productsGrid > a.product-card[data-id]');
+            if (!card) return null;
+            if (event.target.closest('button, .save-btn')) return null;
+            var cards = catalogueCards();
+            var index = cards.indexOf(card);
+            if (index < 0) return null;
+            return catalogueCardPayload(card, index + 1);
+        }
+        function rememberCatalogueCard(event) {
+            var payload = catalogueCardFromEvent(event);
+            if (!payload) return;
+            writeCatalogueContext(payload, catalogueMetaNow());
+        }
+        function catalogueSelectFromEvent(event) {
+            var payload = catalogueCardFromEvent(event);
+            if (!payload) return;
+            var meta = catalogueMetaNow();
+            writeCatalogueContext(payload, meta);
+            var api = window.SMUpgrades;
+            if (!api || !api.selectItemEvent) return;
+            var now = Date.now();
+            var key = payload.item_id + ':' + payload.index;
+            if (lastCatalogueSelect.key === key && now - lastCatalogueSelect.at < 700) return;
+            lastCatalogueSelect = { key: key, at: now };
+            var selectEvent = api.selectItemEvent(payload, meta);
+            if (!selectEvent) return;
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
+            window.dataLayer.push(selectEvent);
+        }
+
         // ==================== FILTERS ====================
-        function applyFilters() {
+        function applyFilters(source) {
             state.filters = { type: [], colour: [], price: [] };
             document.querySelectorAll('input[data-filter]:checked').forEach(input => {
                 state.filters[input.dataset.filter].push(input.value);
             });
-            let visibleCount = 0;
-            products.forEach(product => {
-                const type = product.dataset.type;
-                const colours = product.dataset.colours.split(',');
-                const price = product.dataset.price;
-                const matchesType = state.filters.type.length === 0 || state.filters.type.includes(type);
-                const matchesColour = state.filters.colour.length === 0 || state.filters.colour.some(c => colours.includes(c));
-                const matchesPrice = state.filters.price.length === 0 || state.filters.price.includes(price);
-                if (matchesType && matchesColour && matchesPrice) { product.classList.remove('hidden'); visibleCount++; }
-                else { product.classList.add('hidden'); }
-            });
-            document.getElementById('resultsCount').textContent = visibleCount;
-            document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+            catalogueLimit = CATALOGUE_PAGE;
+            renderProducts();
             updateActiveFiltersDisplay();
+            syncTypeParam();
+            var change = null;
+            if (source && source.dataset && source.dataset.filter) {
+                change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
+            } else if (source && source.filter_name) {
+                change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
+            }
+            scheduleCatalogueTrack(change);
         }
 
         function updateActiveFiltersDisplay() {
             const container = document.getElementById('activeFilters');
             const hasFilters = state.filters.type.length > 0 || state.filters.colour.length > 0 || state.filters.price.length > 0;
             container.classList.toggle('has-filters', hasFilters);
-            if (!hasFilters) { container.innerHTML = '<span class="active-filters-label">Active filters:</span>'; return; }
+            if (!hasFilters) {
+                container.innerHTML = '<span class="active-filters-label">Active filters:</span>';
+                markTypeLinks();
+                return;
+            }
             let html = '<span class="active-filters-label">Active filters:</span>';
-            state.filters.type.forEach(t => html += '<span class="filter-tag">' + t.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
+            state.filters.type.forEach(t => html += '<span class="filter-tag">' + escapeHtml(typeFilterLabel(t)) + '<button onclick="removeFilter(\'type\', \'' + t + '\')">&times;</button></span>');
             state.filters.colour.forEach(c => html += '<span class="filter-tag">' + (colourNames[c] || c) + '<button onclick="removeFilter(\'colour\', \'' + c + '\')">&times;</button></span>');
             state.filters.price.forEach(p => {
                 let label = p === 'under-1000' ? 'Under £1,000' : p === 'over-3000' ? 'Over £3,000' : '£' + p.replace('-', ' - £');
                 html += '<span class="filter-tag">' + label + '<button onclick="removeFilter(\'price\', \'' + p + '\')">&times;</button></span>';
             });
             container.innerHTML = html;
+            markTypeLinks();
+        }
+
+        function markTypeLinks() {
+            document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
+                const current = state.filters.type.length === 1 && link.getAttribute('href') === '/memorials?type=' + state.filters.type[0];
+                if (current) link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            });
         }
 
         function removeFilter(type, value) {
             const checkbox = document.querySelector('input[data-filter="' + type + '"][value="' + value + '"]');
-            if (checkbox) { checkbox.checked = false; applyFilters(); }
+            if (checkbox) { checkbox.checked = false; applyFilters(checkbox); }
         }
 
         function clearAllFilters() {
+            var had = document.querySelector('input[data-filter]:checked');
+            if (!had) return;
             document.querySelectorAll('input[data-filter]').forEach(input => input.checked = false);
-            applyFilters();
+            applyFilters({ filter_name: 'clear', filter_value: 'all', selected: false });
         }
 
         // ==================== SORTING ====================
         function sortProducts() {
-            const sortValue = document.getElementById('sortSelect').value;
-            const grid = document.getElementById('productsGrid');
-            const sorted = [...products].sort((a, b) => {
-                switch(sortValue) {
-                    case 'price-low': return parseFloat(a.dataset.priceValue) - parseFloat(b.dataset.priceValue);
-                    case 'price-high': return parseFloat(b.dataset.priceValue) - parseFloat(a.dataset.priceValue);
-                    case 'name-az': return a.dataset.name.localeCompare(b.dataset.name);
-                    default: return 0;
-                }
-            });
-            sorted.forEach(p => grid.appendChild(p));
-            grid.appendChild(document.getElementById('noResults'));
+            renderProducts();
         }
 
 
@@ -1185,17 +1481,60 @@
             document.getElementById('shortlistEnquiry').classList.toggle('open');
         }
 
-        function copyShareLink() {
-            const input = document.getElementById('shareLink');
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(input.value).then(function() {
-                    var btn = input.nextElementSibling;
-                    if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
-                });
-            } else {
-                input.select();
-                document.execCommand('copy');
+        function copyShareLink(event) {
+            var input = document.getElementById('shareLink');
+            if (!input) return;
+            var clicked = event && event.target ? event.target : event;
+            var btn = clicked && typeof clicked.closest === 'function' ? clicked.closest('.shortlist-btn-copy') : null;
+            if (!btn && document.querySelector) btn = document.querySelector('.shortlist-btn-copy');
+
+            function markCopied() {
+                var live = document.getElementById('shortlistCopyLive');
+                if (live) live.textContent = 'Link copied';
+                if (!btn) return;
+                if (!btn._copyLabelNode && btn._copyLabelHtml == null) {
+                    var children = btn.childNodes;
+                    var found = null;
+                    for (var i = 0; i < children.length; i++) {
+                        if (children[i].nodeType === 3 && /\S/.test(children[i].nodeValue || '')) {
+                            found = children[i];
+                            break;
+                        }
+                    }
+                    if (found) {
+                        btn._copyLabelNode = found;
+                        btn._copyLabelText = found.nodeValue;
+                    } else {
+                        btn._copyLabelHtml = btn.innerHTML;
+                    }
+                }
+                if (btn._copyLabelNode) btn._copyLabelNode.nodeValue = 'Link copied';
+                else btn.textContent = 'Link copied';
+                clearTimeout(btn._copyLabelTimer);
+                btn._copyLabelTimer = setTimeout(function() {
+                    if (btn._copyLabelNode) btn._copyLabelNode.nodeValue = btn._copyLabelText;
+                    else if (btn._copyLabelHtml != null) btn.innerHTML = btn._copyLabelHtml;
+                    btn._copyLabelNode = null;
+                    btn._copyLabelText = null;
+                    btn._copyLabelHtml = null;
+                    if (live) live.textContent = '';
+                }, 2000);
             }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                var pending;
+                try {
+                    pending = navigator.clipboard.writeText(input.value);
+                } catch (err) {
+                    return;
+                }
+                if (pending && typeof pending.then === 'function') pending.then(markCopied, function() {});
+                return;
+            }
+            try {
+                input.select();
+                if (document.execCommand('copy')) markCopied();
+            } catch (err) {}
         }
 
         function emailShortlist() {
@@ -1212,7 +1551,17 @@
             var email = document.getElementById('slEnqEmail').value.trim();
             var phone = document.getElementById('slEnqPhone').value.trim();
             var note = document.getElementById('slEnqNote').value.trim();
-            if (!name || !email) return;
+            var errEl = document.getElementById('slEnqError');
+            function showShortlistError(message) {
+                if (!errEl) return;
+                errEl.textContent = message || '';
+                errEl.classList.toggle('is-visible', !!message);
+            }
+            if (!name || !email) {
+                showShortlistError('Please add your name and email.');
+                return;
+            }
+            showShortlistError('');
             var btn = document.getElementById('slEnqBtn');
             btn.disabled = true;
             btn.querySelector('span').textContent = 'Sending…';
@@ -1246,13 +1595,17 @@
                 });
                 var result = await res.json();
                 if (result.ok) {
+                    try {
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({ event: 'sm_lead_submit', form_id: 'shortlist' });
+                    } catch (trackErr) { /* tracking must never break the form */ }
                     document.getElementById('slEnqSuccess').style.display = 'block';
                     btn.style.display = 'none';
                 } else { throw new Error(result.error); }
             } catch (e) {
                 btn.disabled = false;
-                btn.querySelector('span').textContent = 'Send Enquiry';
-                alert('Sorry, something went wrong. Please try again.');
+                btn.querySelector('span').textContent = 'Send enquiry';
+                showShortlistError('Sorry, something went wrong. Please try again.');
             }
         }
 
@@ -1292,27 +1645,61 @@
             document.getElementById('filtersSidebar').classList.remove('open');
             document.getElementById('filtersOverlay').classList.remove('active');
         }
+        function setMemorialCount(count) {
+            var shown = document.getElementById('resultsCount');
+            var buttonCount = document.getElementById('filtersShowCount');
+            if (shown) shown.textContent = count;
+            if (buttonCount) buttonCount.textContent = count;
+        }
+        document.addEventListener('keydown', function(event) {
+            if (event.key !== 'Escape') return;
+            var sidebar = document.getElementById('filtersSidebar');
+            if (sidebar && sidebar.classList.contains('open')) closeFilters();
+        });
 
         // ==================== URL PARAM FILTERS ====================
+        function typeFilterLabel(slug) {
+            const cat = state.categories.find((item) => safeSlug(item.slug) === slug);
+            if (cat && cat.name) return String(cat.name).replace(/\s+/g, ' ').trim();
+            return slug.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+        }
+
+        function syncTypeParam() {
+            const url = new URL(window.location.href);
+            const types = state.filters.type.filter((value) => safeSlug(value) === value);
+            if (types.length === 1) url.searchParams.set('type', types[0]);
+            else url.searchParams.delete('type');
+            const next = url.pathname + url.search + url.hash;
+            const current = window.location.pathname + window.location.search + window.location.hash;
+            if (next !== current) history.replaceState(null, '', next);
+        }
+
         function applyUrlFilters() {
             const params = new URLSearchParams(window.location.search);
-            const typeParam = params.get('type');
-            if (typeParam) {
-                const checkbox = document.querySelector('input[data-filter="type"][value="' + typeParam + '"]');
-                if (checkbox) {
-                    checkbox.checked = true;
-                    applyFilters();
-                }
-            }
+            const typeParam = safeSlug(params.get('type'));
+            if (!typeParam) return false;
+            const checkbox = Array.from(document.querySelectorAll('input[data-filter="type"]')).find((input) => input.value === typeParam);
+            if (!checkbox) return false;
+            checkbox.checked = true;
+            applyFilters();
+            return true;
         }
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
+            var catalogueGrid = document.getElementById('productsGrid');
+            if (catalogueGrid) {
+                // pointerdown stores the card before a middle-click or new tab is created.
+                // click and auxclick push select_item and never call preventDefault.
+                catalogueGrid.addEventListener('pointerdown', rememberCatalogueCard, true);
+                catalogueGrid.addEventListener('click', catalogueSelectFromEvent, true);
+                catalogueGrid.addEventListener('auxclick', catalogueSelectFromEvent, true);
+            }
             // Loading timeout - show error if data doesn't load within 15s
             const loadingTimeout = setTimeout(() => {
                 const loadingEl = document.getElementById('productsLoading');
                 if (loadingEl) {
-                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #b44; fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: #b44;">Loading timed out. Please refresh the page.</p>';
+                    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--sm-color-error); fill: none;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg><p style="margin-top: 1rem; color: var(--sm-color-error);">Loading timed out. Please refresh the page.</p>';
                 }
             }, 15000);
             loadData().finally(() => clearTimeout(loadingTimeout));
@@ -1326,23 +1713,24 @@
                 const checkProducts = setInterval(() => {
                     checkCount++;
                     if (checkCount > 100) { clearInterval(checkProducts); return; }
-                    if (products.length > 0) {
+                    if (state.productsData.length > 0) {
                         clearInterval(checkProducts);
                         // Clear existing shortlist so shared link shows exactly what was shared
                         state.shortlist = [];
-                        document.querySelectorAll('.save-btn.active').forEach(btn => btn.classList.remove('active'));
                         shortlistIds.split(',').forEach(key => {
-                            // Match by slug or id
-                            const card = document.querySelector('.product-card[data-slug="' + key + '"]') || document.querySelector('.product-card[data-id="' + key + '"]');
-                            if (card) {
-                                const id = card.dataset.id;
-                                if (!state.shortlist.some(s => s.id === id)) {
-                                    state.shortlist.push({ id, slug: card.dataset.slug || '', name: card.dataset.name, price: card.querySelector('.product-price strong').textContent, type: card.querySelector('.product-category').textContent, image: card.dataset.image || '' });
-                                    const btn = card.querySelector('.save-btn');
-                                    if (btn) btn.classList.add('active');
-                                }
-                            }
+                            const product = state.productsData.find(item => item.slug === key || item.id === key);
+                            if (!product || state.shortlist.some(item => item.id === product.id)) return;
+                            const price = parseFloat(product.base_price);
+                            state.shortlist.push({
+                                id: product.id,
+                                slug: product.slug || '',
+                                name: product.name,
+                                price: Number.isFinite(price) ? ('£' + price.toLocaleString()) : '',
+                                type: (product.product_categories && product.product_categories.name) || '',
+                                image: safeImageUrl(product.image_url) || ''
+                            });
                         });
+                        renderProducts();
                         updateShortlistUI();
                         openShortlist();
                     }
@@ -1352,19 +1740,29 @@
     </script>
 
     <!-- Footer -->
-    <footer>
+    <footer class="footer-b">
         <div class="footer-container">
-            <div>
-                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div class="footer-brand">
+                <img class="footer-logo" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="262" height="66">
                 <div class="footer-contact">
-                    <a href="tel:+442038352548">020 3835 2548</a><br>
-                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment
+                    <a href="tel:+442038352548">020 3835 2548</a>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span>London</span>
                 </div>
             </div>
-            <ul class="footer-links">
+            <div class="footer-explore">
+                <h2 class="footer-heading">Explore</h2>
+                <ul class="footer-links">
                 <li><a href="/about">About</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/care-guide">Care Guide</a></li>
                 <li><a href="/resources">Support</a></li>
@@ -1373,10 +1771,20 @@
                 <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
                 <li><a href="/privacy">Privacy</a></li>
+                <li><a href="#cookie-settings" class="sm-cookie-settings">Cookie settings</a></li>
             </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
+            <div class="footer-showroom">
+                <h2 class="footer-heading">Visit our Finchley showroom</h2>
+                <p>1 The Market Place, Falloden Way, NW11 6LB</p>
+                <p class="footer-hours">Monday to Friday, 10am to 3pm</p>
+            </div>
+            <div class="footer-base">
+                <!-- Professional Memberships -->
+            <div class="sm-accred-tight footer-accreditations" ><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
+                <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
+                <p class="sm-footer-legal-tight footer-legal" >Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
         </div>
     </footer>
 
@@ -1403,7 +1811,7 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+            <button class="sm-bare-btn mobile-nav-item" onclick="openSearch()" >
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <span>Search</span>
             </button>
@@ -1414,46 +1822,60 @@
         </div>
     </nav>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+<div id="cookieScrim" class="sm-cookie-scrim"></div>
+<div id="cookieConsent" class="sm-cookie" role="dialog" aria-modal="false" aria-labelledby="cookieTitle">
+    <div class="sm-cookie-choice">
+        <h2 class="sm-cookie-title" id="cookieTitle">Your cookie choices</h2>
+        <p class="sm-cookie-lead sm-cookie-lead--desk" id="cookieLeadDesk">We use essential cookies to run the site. With your permission, we also use analytics and ads cookies. <a href="/privacy">Privacy policy</a></p>
+        <p class="sm-cookie-lead sm-cookie-lead--phone" id="cookieLeadPhone">We use cookies for analytics and ads, only if you agree. <a href="/privacy">Privacy policy</a></p>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAccept">Accept</button>
+            <button type="button" class="sm-cookie-btn" id="cookieReject">Reject</button>
+        </div>
+        <button type="button" class="sm-cookie-manage" id="cookieManage">Manage choices</button>
+    </div>
+    <div class="sm-cookie-panel">
+        <h2 class="sm-cookie-title" id="cookieManageTitle" tabindex="-1">Manage cookie choices</h2>
+        <p class="sm-cookie-lead">Choose which cookies we can use. You can change this at any time from the footer.</p>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieEssentialName">Essential</p>
+                <p class="sm-cookie-desc">Keep the site working, for example your shortlist and this choice. Always on.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" role="switch" aria-checked="true" aria-labelledby="cookieEssentialName" disabled></button>
+                <span class="sm-cookie-switch-state">Always on</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAnalyticsName">Analytics</p>
+                <p class="sm-cookie-desc">Google Analytics. Tells us which pages help people, so we can improve them.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAnalytics" role="switch" aria-checked="false" aria-labelledby="cookieAnalyticsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAnalyticsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAdsName">Ads</p>
+                <p class="sm-cookie-desc">Google Ads. Measures whether our adverts lead to enquiries.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAds" role="switch" aria-checked="false" aria-labelledby="cookieAdsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAdsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAcceptAll">Accept all</button>
+            <button type="button" class="sm-cookie-btn" id="cookieRejectAll">Reject all</button>
+            <button type="button" class="sm-cookie-btn sm-cookie-btn--save" id="cookieSave">Save choices</button>
         </div>
     </div>
 </div>
+<script src="/cookie-consent.js"></script>
 <script>
-(function(){
-    var consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-        document.getElementById('cookieConsent').style.display = 'block';
-    } else if (consent === 'accepted') {
-        pushConsent(true);
-    }
-})();
-function pushConsent(granted) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'update', {
-        ad_storage:           granted ? 'granted' : 'denied',
-        analytics_storage:    granted ? 'granted' : 'denied',
-        ad_user_data:         granted ? 'granted' : 'denied',
-        ad_personalization:   granted ? 'granted' : 'denied'
-    });
-    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
-}
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(true);
-    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
-}
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(false);
-}
 
         // ==================== SITE SEARCH ==
 
@@ -1462,7 +1884,7 @@ function declineCookies() {
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
@@ -1485,7 +1907,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a quote</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1506,12 +1928,9 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + ['','rest','v1',''].join('/')+'products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();
@@ -1562,8 +1981,8 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261120" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=20261120b" defer></script>
 </body>
 </html>

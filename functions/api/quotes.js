@@ -15,7 +15,7 @@ import {
   readBoundedJson,
   supabaseHeaders,
 } from "./_security.js";
-import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js";
+import { canonicaliseQuoteProduct, QuotePricingError, storedInfillChoice } from "./_quote-pricing.js";
 import { formatNameForSubject } from "./submit.js";
 
 const CAPABILITY_TOKEN_RE = /^[A-Za-z0-9_-]{32,256}$/;
@@ -131,6 +131,18 @@ async function updateQuote(env, data) {
       ...product,
       slug: product.slug || oldConfig?.slug,
     };
+    // The editor replaces addon lines and does not send infillType when the
+    // stored quote never had one. Keep the chippings line from the saved order.
+    const explicitInfill = typeof submittedProduct.infillType === "string" && submittedProduct.infillType.trim();
+    if (!explicitInfill) {
+      const inferred = storedInfillChoice(oldConfig);
+      if (inferred) {
+        submittedProduct.infillType = inferred.infillType;
+        if (!submittedProduct.infillColour && inferred.infillColour) {
+          submittedProduct.infillColour = inferred.infillColour;
+        }
+      }
+    }
     try {
       safeProduct = await canonicaliseQuoteProduct(env, submittedProduct);
     } catch (error) {

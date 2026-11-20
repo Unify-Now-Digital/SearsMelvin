@@ -5,13 +5,16 @@
  * Path: /sitemap.xml (Cloudflare Pages routes the .js file to this URL).
  */
 
+import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
+import { PAGE_LASTMOD } from "./_page-lastmod.js";
+import { areaPaths } from "./_area-pages.js";
+
 const BASE = "https://searsmelvin.co.uk";
-const PUBLIC_SUPABASE_URL = "https://bfwohzcugtwbhhxdqgme.supabase.co";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
-const PUBLIC_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg";
 
 // Static, hand-maintained set. Customer-facing only — never list /admin,
-// /track, /quote (noindex or login-gated). /partner 301s off-site.
+// /track, /quote (noindex or login-gated), or /styleguide (design reference).
+// /partner 301s off-site.
 const STATIC_PAGES = [
   { path: "/",                priority: "1.0",  changefreq: "weekly"  },
   { path: "/memorials",       priority: "0.9",  changefreq: "weekly"  },
@@ -37,17 +40,11 @@ function escXml(s) {
 async function fetchProducts(env) {
   // Public crawler route: use only the same public anon role as the catalogue,
   // never the all-powerful service-role key.
-  const url = env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
+  const url = publicSupabaseUrl(env);
   try {
     const res = await fetch(
       `${url}/rest/v1/products?organization_id=eq.${encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID)}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=slug,updated_at,created_at&order=display_order.asc`,
-      {
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${key}`,
-        },
-      },
+      { headers: supabaseKeyHeaders(publishableKey(env)) },
     );
     if (!res.ok) return [];
     return await res.json();
@@ -56,8 +53,8 @@ async function fetchProducts(env) {
   }
 }
 
-function todayIso() {
-  return new Date().toISOString().split("T")[0];
+function pageLastmod(path) {
+  return PAGE_LASTMOD[path] || "";
 }
 
 function urlEntry({ loc, lastmod, priority, changefreq }) {
@@ -73,21 +70,29 @@ function urlEntry({ loc, lastmod, priority, changefreq }) {
 
 export async function onRequestGet({ env }) {
   const products = await fetchProducts(env);
-  const today = todayIso();
 
   const staticEntries = STATIC_PAGES.map((p) =>
     urlEntry({
       loc: BASE + p.path,
-      lastmod: today,
+      lastmod: pageLastmod(p.path),
       priority: p.priority,
       changefreq: p.changefreq,
+    }),
+  );
+
+  const areaEntries = areaPaths().map((path) =>
+    urlEntry({
+      loc: BASE + path,
+      lastmod: pageLastmod(path) || pageLastmod("/areas"),
+      priority: path === "/areas" ? "0.7" : "0.6",
+      changefreq: "monthly",
     }),
   );
 
   const productEntries = products.map((p) =>
     urlEntry({
       loc: `${BASE}/memorials/${encodeURIComponent(p.slug)}`,
-      lastmod: (p.updated_at || p.created_at || today).split("T")[0],
+      lastmod: String(p.updated_at || p.created_at || "").split("T")[0],
       priority: "0.7",
       changefreq: "monthly",
     }),
@@ -96,7 +101,7 @@ export async function onRequestGet({ env }) {
   const xml =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    [...staticEntries, ...productEntries].join("\n") +
+    [...staticEntries, ...areaEntries, ...productEntries].join("\n") +
     `\n</urlset>\n`;
 
   return new Response(xml, {

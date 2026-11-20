@@ -17,6 +17,7 @@ import {
   rateLimitResponse,
   readBoundedJson,
 } from "./_security.js";
+import { supabaseKeyHeaders } from "./_supabase-keys.js";
 
 const BUCKET = "enquiry-photos";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -97,7 +98,7 @@ export async function onRequestPost(context) {
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        ...supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY),
         "Content-Type": mime,
         "x-upsert": "false",
       },
@@ -167,7 +168,7 @@ export async function onRequestDelete(context) {
     `${env.SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURI(path)}`,
     {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      headers: supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY),
     },
   );
   if (!delRes.ok && delRes.status !== 404) {
@@ -182,6 +183,8 @@ export async function onRequestDelete(context) {
   return json({ ok: true });
 }
 
+// The service key is the HMAC secret. Swapping SUPABASE_SERVICE_KEY
+// invalidates delete and submit tokens already sitting in a browser.
 async function createObjectToken(env, purpose, path) {
   const key = await crypto.subtle.importKey(
     "raw",

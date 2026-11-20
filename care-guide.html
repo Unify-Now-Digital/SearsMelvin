@@ -14,35 +14,64 @@
       security_storage:     'granted',
       wait_for_update: 500
     });
+    // Advanced consent mode. Tags load either way. Denied storage sends a
+    // cookieless ping and must not write a Google cookie. Our own click-ID
+    // capture does not read this choice.
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', true);
     try {
-      if (localStorage.getItem('cookieConsent') === 'accepted') {
+      var smConsentRaw = localStorage.getItem('cookieConsent');
+      var smConsentChoice = null;
+      if (smConsentRaw === 'accepted') smConsentChoice = { analytics: true, ads: true };
+      else if (smConsentRaw === 'declined') smConsentChoice = { analytics: false, ads: false };
+      else if (smConsentRaw && smConsentRaw.charAt(0) === '{') {
+        var smConsentParsed = JSON.parse(smConsentRaw);
+        if (smConsentParsed && typeof smConsentParsed.analytics === 'boolean' && typeof smConsentParsed.ads === 'boolean') {
+          smConsentChoice = smConsentParsed;
+        }
+      }
+      if (smConsentChoice) {
         gtag('consent', 'update', {
-          ad_storage:'granted', analytics_storage:'granted',
-          ad_user_data:'granted', ad_personalization:'granted'
+          analytics_storage: smConsentChoice.analytics ? 'granted' : 'denied',
+          ad_storage: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_user_data: smConsentChoice.ads ? 'granted' : 'denied',
+          ad_personalization: smConsentChoice.ads ? 'granted' : 'denied'
         });
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager — deferred until first interaction or 3s idle -->
+    <!-- Google Tag Manager — loads at page start (async), straight after the
+         consent defaults above. It used to wait for the first scroll/tap or 3s
+         idle (#67), which lost the paid visits that bounced before that, so
+         GA4 saw only ~24% of Ads clicks. The LeadConnector chat below stays
+         deferred. -->
     <script>
       (function(){
+        // Claim the chat hook flag before GTM can run, so GTM's legacy
+        // "GHL Chat Widget Listener" never double counts chats (docs/TRACKING.md).
+        window.__smChatHook = true;
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var loaded = false;
-        function load(){
-          if (loaded) return; loaded = true;
-          var f = document.getElementsByTagName('script')[0];
-          var gtm = document.createElement('script');
-          gtm.async = true;
-          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          f.parentNode.insertBefore(gtm, f);
-        }
-        var evts = ['scroll','pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        if ('requestIdleCallback' in window) requestIdleCallback(load, {timeout: 3000});
-        else setTimeout(load, 3000);
+        var f = document.getElementsByTagName('script')[0];
+        var gtm = document.createElement('script');
+        gtm.async = true;
+        gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+        f.parentNode.insertBefore(gtm, f);
       })();
+    </script>
+    <script>
+    /* Reserve the cookie strip before first paint. A stored choice means
+       the strip stays hidden, so the offset is 0. Does not change consent. */
+    (function () {
+      var stack = 0;
+      try {
+        if (!localStorage.getItem('cookieConsent')) {
+          var w = document.documentElement.clientWidth || window.innerWidth || 0;
+          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
+        }
+      } catch (e) {}
+      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+    })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
          long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
@@ -54,26 +83,42 @@
       (function(){
         var loaded = false;
         // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // Chat submission -> dataLayer, once per submission, no PII. The widget
-        // is a shadow-DOM web component whose beforeSubmit hook runs on this
-        // page. GTM's older fetch-hook listener (tag "GHL Chat Widget Listener")
-        // races the widget and missed most chats, so claim its guard flag here
-        // (this runs before the deferred GTM load) to avoid double counting.
-        // GTM's existing GA4 "ghl_chat_submission" + Ads "Chat start" tags
-        // trigger on sm_chat_submit.
+        // One chat per tab visit. A Turnstile retry can land many seconds later,
+        // so a short debounce double-counts. Email and phone are still refreshed
+        // on window.__smChatEmail and window.__smChatPhone (same sanitising as
+        // clickIntentBody). The dataLayer events stay free of personal details.
+        // GTM's older fetch-hook listener (tag "GHL Chat Widget Listener") races
+        // the widget and missed most chats, so claim its guard flag here (the
+        // GTM loader above also sets it before gtm.js runs). GA4
+        // "ghl_chat_submission" and Ads "Chat start" trigger on sm_chat_submit.
         window.__smChatHook = true;
-        var lastChatPush = 0;
+        var chatCounted = false;
+        var CHAT_VISIT_KEY = 'sm_chat_counted';
         function chatSubmitted(data){
           try {
-            var now = Date.now();
-            if (now - lastChatPush > 3000) {
-              lastChatPush = now;
-              window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({ event: 'sm_chat_submit' });
-              window.dataLayer.push({ event: 'ghl_chat_submission' });
-            }
+            var contact = data && (data.contact || data) || {};
+            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
+            var email = typeof contact.email === 'string' ? contact.email : nested.email;
+            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
+            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
+            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
+            if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
+            if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
           } catch (e) {}
-          try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          try {
+            var counted = chatCounted;
+            if (!counted) {
+              try { counted = sessionStorage.getItem(CHAT_VISIT_KEY) === '1'; } catch (e) {}
+            }
+            if (counted) return true; // later attempts in this tab: globals only
+            chatCounted = true;
+            try { sessionStorage.setItem(CHAT_VISIT_KEY, '1'); } catch (e) {}
+            window.dataLayer = window.dataLayer || [];
+            // No personal details in the event (docs/TRACKING.md golden rule 2).
+            window.dataLayer.push({ event: 'sm_chat_submit' });
+            window.dataLayer.push({ event: 'ghl_chat_submission' });
+            try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
+          } catch (e) {}
           return true; // never block the chat
         }
         function hookChat(){
@@ -91,10 +136,7 @@
           lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
           document.body.appendChild(lc);
         }
-        var evts = ['pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        setTimeout(load, 10000);
+        setTimeout(load, 1000);
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -104,41 +146,45 @@
     <meta name="description" content="Step-by-step guide to cleaning and maintaining a headstone safely. Granite, marble and slate care, products to avoid, and when to call a professional mason.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600&display=swap"></noscript>
-    <link rel="icon" href="/favicon.svg?v=sm-20260813" type="image/svg+xml">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/images/brand/logo/favicon/apple-touch-icon.png">
     <link rel="canonical" href="https://searsmelvin.co.uk/care-guide">
-    <meta name="theme-color" content="#2C2C2C">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <meta name="theme-color" content="#FBF9F5">
+    
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
     <meta property="og:title" content="Headstone Care — Cleaning &amp; Maintenance Guide">
     <meta property="og:description" content="Step-by-step guide to cleaning and maintaining a headstone safely. Granite, marble and slate care, products to avoid, and when to call a professional mason.">
     <meta property="og:url" content="https://searsmelvin.co.uk/care-guide">
-    <meta property="og:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Headstone Care — Cleaning &amp; Maintenance Guide">
     <meta name="twitter:description" content="Step-by-step guide to cleaning and maintaining a headstone safely. Granite, marble and slate care, products to avoid, and when to call a professional mason.">
-    <meta name="twitter:image" content="https://searsmelvin.co.uk/sm-logo.svg">
+    <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
+    <link rel="stylesheet" href="/tokens.css">
     <style>
         :root {
-            --color-stone: #2B2A27;
-            --color-stone-light: #3D3D3D;
-            --color-cream: #F7F4EE;
-            --color-warm: #E8E4DD;
-            --color-accent: #7A6449;
-            --color-accent-dark: #6B5840;
-            --color-accent-light: #A69070;
-            --color-text: #2B2A27;
-            --color-text-muted: #595959;
-            --color-border: #E0DCD5;
-            --color-success: #4A7C59;
-            --color-warning: #c9a227;
-            --color-error: #b44;
+            --color-stone: var(--sm-color-text);
+            --color-stone-light: var(--sm-color-ink-hover);
+            --color-cream: var(--sm-color-bg);
+            --color-warm: var(--sm-color-bg-panel-quiet);
+            --color-accent: var(--sm-color-text-accent);
+            --color-accent-dark: var(--sm-color-text-accent-strong);
+            --color-accent-light: var(--sm-color-text-accent-inverse);
+            --color-text: var(--sm-color-text);
+            --color-text-muted: var(--sm-color-text-muted);
+            --color-border: var(--sm-color-border-decorative);
+            --color-success: var(--sm-color-success);
+            --color-warning: var(--sm-color-warning);
+            --color-error: var(--sm-color-error);
             --font-display: 'Cormorant Garamond', Georgia, serif;
             --font-body: 'DM Sans', -apple-system, sans-serif;
         }
@@ -156,7 +202,7 @@
         .reveal.visible { opacity: 1; transform: translateY(0); animation: none; }
 
         /* Navigation */
-        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(250, 248, 245, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        nav#navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--sm-color-bg) 95%, transparent); backdrop-filter: blur(10px); box-shadow: 0 1px 0 color-mix(in srgb, var(--sm-color-text) 5%, transparent); }
         .logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--color-stone); display: flex; align-items: center; gap: 0.75rem; }
         .logo span { font-weight: 300; opacity: 0.7; }
         .logo-icon { width: 28px; height: 36px; }
@@ -164,7 +210,7 @@
         .nav-links a { font-size: 1rem; color: var(--color-text); letter-spacing: 0; transition: color 0.3s; }
         .nav-links a:hover, .nav-links a.active { color: var(--color-accent-dark); }
         .nav-links a.active { font-weight: 600; }
-        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .mobile-nav { display: none; position: fixed; top: 96px; left: 0; right: 0; background: white; padding: 0 2rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 10%, transparent); z-index: 99; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
         .mobile-nav.active { display: block; max-height: 500px; padding: 1rem 2rem; }
         .mobile-nav a { display: block; padding: 0.75rem 0; color: var(--color-text); font-size: 1rem; border-bottom: 1px solid var(--color-border); text-decoration: none; transition: color 0.2s; }
         .mobile-nav a:hover, .mobile-nav a.active { color: var(--color-accent-dark); font-weight: 500; }
@@ -175,7 +221,7 @@
         .mobile-menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
         /* Showroom Banner */
         /* Mobile Bottom Navigation */
-        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+        .mobile-bottom-nav { display: none; position: fixed; top: auto; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--color-border); z-index: 1000; padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px color-mix(in srgb, var(--sm-color-text) 8%, transparent); }
         .mobile-bottom-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
         .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.5rem; text-decoration: none; color: var(--color-text-muted); transition: color 0.2s; }
         .mobile-nav-item:hover, .mobile-nav-item.active { color: var(--color-accent-dark); }
@@ -185,7 +231,7 @@
         .mobile-nav-item.primary svg { stroke: white; }
         .mobile-nav-item.primary span { color: var(--color-text-muted); }
         .mobile-nav-item.primary.active span { color: var(--color-accent-dark); }
-        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px rgba(139,115,85,0.3); }
+        .mobile-nav-item.primary .nav-icon-bg { background: var(--color-accent); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -1.5rem; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent); }
         @media (max-width: 768px) { .mobile-bottom-nav { display: block; } }
         .nav-cta { background-color: var(--color-stone); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
         .nav-cta-dark { background-color: var(--color-text); color: var(--color-cream) !important; padding: 0.75rem 1.5rem; border-radius: 2px; }
@@ -201,7 +247,7 @@
         .care-main { max-width: 780px; }
 
         /* Back to top */
-        .back-to-top { position: fixed; bottom: 2rem; left: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--color-accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; visibility: hidden; transition: all 0.3s; z-index: 50; }
+        .back-to-top { position: fixed; bottom: 2rem; left: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--color-accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px color-mix(in srgb, var(--sm-color-text) 15%, transparent); opacity: 0; visibility: hidden; transition: all 0.3s; z-index: 50; }
         .back-to-top.visible { opacity: 1; visibility: visible; }
         .back-to-top:hover { background: var(--color-stone); transform: translateY(-2px); }
         .back-to-top svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
@@ -212,7 +258,7 @@
         .toc {
             position: sticky; top: 90px;
             background: white; border-radius: 16px; padding: 0;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 24px color-mix(in srgb, var(--sm-color-text) 6%, transparent), 0 1px 4px color-mix(in srgb, var(--sm-color-text) 3%, transparent);
             overflow: hidden;
         }
         .toc-header {
@@ -225,22 +271,22 @@
             content: '';
             position: absolute; top: 0; right: 0; bottom: 0;
             width: 80px;
-            background: linear-gradient(135deg, transparent 0%, rgba(139,115,85,0.15) 100%);
+            background: linear-gradient(135deg, transparent 0%, color-mix(in srgb, var(--sm-color-text-accent) 15%, transparent) 100%);
             pointer-events: none;
         }
         .toc h3 {
             font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
-            color: rgba(255,255,255,0.55); font-weight: 600; font-family: var(--font-body);
+            color: var(--sm-color-text-inverse-muted); font-weight: 600; font-family: var(--font-body);
             margin: 0;
         }
         .toc-progress {
             margin-top: 0.75rem;
-            height: 2px; background: rgba(255,255,255,0.12); border-radius: 2px;
+            height: 2px; background: color-mix(in srgb, var(--sm-color-bg-surface) 12%, transparent); border-radius: 2px;
             overflow: hidden;
         }
         .toc-progress-bar {
             height: 100%; width: 0%;
-            background: linear-gradient(90deg, var(--color-accent-light), #c9a96e);
+            background: linear-gradient(90deg, var(--color-accent-light), var(--sm-color-text-accent-inverse));
             border-radius: 2px;
             transition: width 0.4s ease;
         }
@@ -258,7 +304,7 @@
             transform: translateX(2px);
         }
         .toc-list li a.active {
-            color: var(--color-accent-dark); background: rgba(139,115,85,0.08);
+            color: var(--color-accent-dark); background: color-mix(in srgb, var(--sm-color-text-accent) 8%, transparent);
             font-weight: 500;
         }
         .toc-list li a .toc-icon {
@@ -268,9 +314,9 @@
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
         }
-        .toc-list li a:hover .toc-icon { background: rgba(139,115,85,0.1); }
+        .toc-list li a:hover .toc-icon { background: color-mix(in srgb, var(--sm-color-text-accent) 10%, transparent); }
         .toc-list li a.active .toc-icon {
-            background: var(--color-accent); box-shadow: 0 2px 8px rgba(139,115,85,0.3);
+            background: var(--color-accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text-accent) 30%, transparent);
         }
         .toc-list li a .toc-icon svg {
             width: 16px; height: 16px; stroke: var(--color-text-muted);
@@ -290,12 +336,12 @@
         }
         .toc-download:hover {
             color: var(--color-stone); border-color: var(--color-accent);
-            background: rgba(139,115,85,0.04);
+            background: color-mix(in srgb, var(--sm-color-text-accent) 4%, transparent);
         }
         .toc-download svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
 
         /* Content Section */
-        .content-section { margin-bottom: 4rem; }
+        .content-section { margin-bottom: 4rem; scroll-margin-top: var(--header-height, 68px); }
         .content-section h2 { font-size: clamp(1.4rem, 3.5vw, 1.75rem); margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--color-border); display: flex; align-items: center; gap: 0.75rem; }
         .content-section h2 svg { width: 28px; height: 28px; stroke: var(--color-accent); fill: none; stroke-width: 1.5; }
         .content-section h3 { font-size: 1.25rem; margin: 1.5rem 0 1rem; color: var(--color-stone); }
@@ -306,35 +352,35 @@
 
         /* Stone Type Cards */
         .stone-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin: 2rem 0; }
-        .stone-card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .stone-card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 12px color-mix(in srgb, var(--sm-color-text) 4%, transparent); }
         .stone-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-        .stone-swatch { width: 48px; height: 48px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .stone-swatch.black { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); }
-        .stone-swatch.grey { background: linear-gradient(135deg, #888 0%, #aaa 100%); }
-        .stone-swatch.red { background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%); }
-        .stone-swatch.white { background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%); }
+        .stone-swatch { width: 48px; height: 48px; border-radius: 8px; box-shadow: 0 2px 6px color-mix(in srgb, var(--sm-color-text) 10%, transparent); }
+        .stone-swatch.black { background: linear-gradient(135deg, var(--sm-color-material-black) 0%, var(--sm-color-material-black-mid) 100%); }
+        .stone-swatch.grey { background: linear-gradient(135deg, var(--sm-color-material-grey) 0%, var(--sm-color-material-grey-light) 100%); }
+        .stone-swatch.red { background: linear-gradient(135deg, var(--sm-color-material-red) 0%, var(--sm-color-material-red-light) 100%); }
+        .stone-swatch.white { background: linear-gradient(135deg, var(--sm-color-material-white) 0%, var(--sm-color-material-white-shade) 100%); }
         .stone-card-header h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; }
         .stone-card p { font-size: 0.9rem; line-height: 1.7; }
 
         /* Seasonal Tips */
         .season-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 2rem 0; }
-        .season-card { background: white; border-radius: 10px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .season-card { background: white; border-radius: 10px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 12px color-mix(in srgb, var(--sm-color-text) 4%, transparent); }
         .season-icon { width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .season-icon svg { width: 28px; height: 28px; stroke-width: 1.5; fill: none; }
-        .season-icon.spring { background: #e8f5e9; }
-        .season-icon.spring svg { stroke: #4caf50; }
-        .season-icon.summer { background: #fff8e1; }
-        .season-icon.summer svg { stroke: #ff9800; }
-        .season-icon.autumn { background: #fff3e0; }
-        .season-icon.autumn svg { stroke: #bf360c; }
-        .season-icon.winter { background: #e3f2fd; }
-        .season-icon.winter svg { stroke: #2196f3; }
+        .season-icon.spring { background: var(--sm-color-success-surface); }
+        .season-icon.spring svg { stroke: var(--sm-color-success); }
+        .season-icon.summer { background: var(--sm-color-warning-surface); }
+        .season-icon.summer svg { stroke: var(--sm-color-warning); }
+        .season-icon.autumn { background: var(--sm-color-warning-surface); }
+        .season-icon.autumn svg { stroke: var(--sm-color-error); }
+        .season-icon.winter { background: var(--sm-color-bg-panel-quiet); }
+        .season-icon.winter svg { stroke: var(--sm-color-text-accent); }
         .season-card h4 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
         .season-card p { font-size: 0.85rem; line-height: 1.6; }
 
         /* Dos and Don'ts */
         .do-dont { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin: 2rem 0; }
-        .do-list, .dont-list { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .do-list, .dont-list { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 12px color-mix(in srgb, var(--sm-color-text) 4%, transparent); }
         .do-list h4, .dont-list h4 { display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-border); }
         .do-list h4 svg { stroke: var(--color-success); }
         .dont-list h4 svg { stroke: var(--color-error); }
@@ -348,9 +394,9 @@
         /* Alert Box */
         .alert { padding: 1.25rem 1.5rem; border-radius: 8px; margin: 1.5rem 0; display: flex; gap: 1rem; align-items: flex-start; }
         .alert svg { width: 24px; height: 24px; flex-shrink: 0; fill: none; stroke-width: 2; }
-        .alert-warning { background: rgba(201, 162, 39, 0.1); border-left: 4px solid var(--color-warning); }
+        .alert-warning { background: color-mix(in srgb, var(--sm-color-text-accent-inverse) 10%, transparent); border-left: 4px solid var(--color-warning); }
         .alert-warning svg { stroke: var(--color-warning); }
-        .alert-info { background: rgba(139, 115, 85, 0.08); border-left: 4px solid var(--color-accent); }
+        .alert-info { background: color-mix(in srgb, var(--sm-color-text-accent) 8%, transparent); border-left: 4px solid var(--color-accent); }
         .alert-info svg { stroke: var(--color-accent); }
         .alert-content h4 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem; }
         .alert-content p { font-size: 0.9rem; margin: 0; }
@@ -358,11 +404,12 @@
         /* CTA Section */
         .cta-section { text-align: center; padding: 3rem; background: var(--color-stone); border-radius: 12px; color: white; margin-top: 3rem; }
         .cta-section h3 { font-size: 1.75rem; color: white; margin-bottom: 0.75rem; }
-        .cta-section p { color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 450px; margin-left: auto; margin-right: auto; }
+        .cta-section p { color: var(--sm-color-text-inverse-muted); margin-bottom: 1.5rem; max-width: 450px; margin-left: auto; margin-right: auto; }
         .cta-buttons { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
         .cta-buttons .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 1.75rem; border-radius: 6px; font-weight: 500; transition: all 0.3s; }
+        .cta-buttons a[href^="tel:"] { white-space: nowrap; }
         .cta-buttons .btn-primary { background: white; color: var(--color-stone); }
-        .cta-buttons .btn-secondary { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.3); }
+        .cta-buttons .btn-secondary { background: transparent; color: white; border: 2px solid color-mix(in srgb, var(--sm-color-bg-surface) 30%, transparent); }
         .cta-buttons .btn:hover { transform: translateY(-2px); }
         .cta-buttons .btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
 
@@ -397,21 +444,21 @@
 
         /* Mobile Bottom Nav */
         /* Footer */
-        footer { padding: 3rem 2rem; background-color: #1A1A1A; color: rgba(255,255,255,0.6); margin-top: 4rem; }
+        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); margin-top: 4rem; }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255,255,255,0.6); font-size: 0.875rem; transition: color 0.2s; }
+        .footer-links a { color: var(--sm-color-text-inverse-muted); font-size: 0.875rem; transition: color 0.2s; }
         .footer-links a:hover { color: white; }
-        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer-copy { font-size: 0.8rem; width: 100%; text-align: center; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid color-mix(in srgb, var(--sm-color-bg-surface) 10%, transparent); }
         .footer-contact { font-size: 0.85rem; line-height: 1.8; margin-top: 0.75rem; }
-        .footer-contact a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+        .footer-contact a { color: var(--sm-color-text-inverse-muted); transition: color 0.2s; }
         .footer-contact a:hover { color: white; }
         .banner-divider { opacity: 0.4; margin: 0 0.5rem; }
         /* Print */
         @media print {
-            nav, .mobile-nav, .mobile-bottom-nav,
+            nav#navbar, .mobile-nav, .mobile-bottom-nav,
             .back-to-top, .toc, .cta-section { display: none !important; }
             .care-container { display: block; }
             .care-main { max-width: 100%; }
@@ -426,17 +473,17 @@
         .nav-search-btn svg { width: 20px; height: 20px; stroke: var(--color-stone); fill: none; stroke-width: 2; }
 
         /* Search Overlay */
-        .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
+        .search-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--sm-color-text) 50%, transparent); z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(4px); }
         .search-overlay.active { opacity: 1; visibility: visible; }
 
         /* Search Modal */
-        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .search-modal { position: fixed; top: 0; left: 0; right: 0; z-index: 201; background: white; transform: translateY(-100%); transition: transform 0.3s ease; box-shadow: 0 10px 40px color-mix(in srgb, var(--sm-color-text) 15%, transparent); }
         .search-modal.active { transform: translateY(0); }
         .search-modal-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem 2rem; }
         .search-input-wrapper { position: relative; display: flex; align-items: center; gap: 1rem; }
         .search-input-wrapper svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; }
         .search-modal .search-input { flex: 1; padding: 1rem 0; border: none; border-radius: 0; font-family: var(--font-body); font-size: 1.25rem; background: transparent; outline: none; box-shadow: none; width: auto; }
-        .search-modal .search-input::placeholder { color: #767676; }
+        .search-modal .search-input::placeholder { color: var(--sm-color-text-muted); }
         .search-close-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; }
         .search-close-btn svg { width: 24px; height: 24px; stroke: var(--color-text-muted); fill: none; stroke-width: 2; }
         .search-close-btn:hover svg { stroke: var(--color-stone); }
@@ -521,9 +568,9 @@
             .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
         </style>
     </noscript>
-    <link rel="stylesheet" href="/chat-widget.css?v=2">
+    <link rel="stylesheet" href="/chat-widget.css?v=8">
 
-    <!-- Structured data: Business -->
+    <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -531,28 +578,30 @@
       "@id": "https://searsmelvin.co.uk/#business",
       "name": "Sears Melvin Memorials",
       "alternateName": "Sears Melvin",
-      "description": "London-based memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison and UK-wide installation.",
-      "image": "https://searsmelvin.co.uk/sm-logo.svg",
-      "logo": "https://searsmelvin.co.uk/sm-logo.svg",
+      "description": "Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.",
+      "image": "https://searsmelvin.co.uk/images/brand/share-card.jpg",
+      "logo": "https://searsmelvin.co.uk/images/brand/logo/favicon/icon-512.png",
       "url": "https://searsmelvin.co.uk",
       "telephone": "+442038352548",
       "email": "info@searsmelvin.co.uk",
       "priceRange": "££",
       "address": {"@type":"PostalAddress","streetAddress":"1 The Market Place, Falloden Way","addressLocality":"London","postalCode":"NW11 6LB","addressCountry":"GB"},
+      "geo": {"@type":"GeoCoordinates","latitude":51.58619,"longitude":-0.18362},
+      "hasMap": "https://www.google.com/maps/search/?api=1&query=1+The+Market+Place+Falloden+Way+London+NW11+6LB",
       "areaServed": [
-        {"@type": "Country", "name": "United Kingdom"},
-        {"@type": "City", "name": "London"},
-        {"@type": "AdministrativeArea", "name": "Barnet"},
-        {"@type": "AdministrativeArea", "name": "Camden"},
-        {"@type": "AdministrativeArea", "name": "Brent"},
-        {"@type": "AdministrativeArea", "name": "Haringey"},
-        {"@type": "AdministrativeArea", "name": "Enfield"}
+        {"@type": "AdministrativeArea", "name": "Greater London"},
+        {"@type": "AdministrativeArea", "name": "Hertfordshire"},
+        {"@type": "AdministrativeArea", "name": "Essex"},
+        {"@type": "AdministrativeArea", "name": "Kent"},
+        {"@type": "AdministrativeArea", "name": "Surrey"},
+        {"@type": "AdministrativeArea", "name": "Buckinghamshire"},
+        {"@type": "AdministrativeArea", "name": "Berkshire"}
       ],
       "openingHoursSpecification": [{
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "17:00"
+        "opens": "10:00",
+        "closes": "15:00"
       }]
     }
     </script>
@@ -624,21 +673,22 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261014a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
+    <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRDX4BQ5"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    height="0" width="0" class="sm-gtm-noscript" ></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <nav id="navbar">
         <a href="/" class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 42" fill="var(--color-accent)">
-                <path d="M3 42 L3 12 Q3 6 10 3 Q16 0 22 3 Q29 6 29 12 L29 42 Z" opacity="0.3"/>
-                <path d="M6 42 L6 14 Q6 9 11 6 Q16 3 21 6 Q26 9 26 14 L26 42 Z"/>
-            </svg>
-            Sears Melvin <span>Memorials</span>
+            <picture>
+                <source media="(max-width: 768px) and (min-resolution: 2dppx)" srcset="/images/brand/logo/sears-melvin-stacked-ink.svg">
+                <source media="(max-width: 768px)" srcset="/images/brand/logo/sears-melvin-stacked-ink-no-rules.svg">
+                <img src="/images/brand/logo/sears-melvin-stacked-ink.svg" alt="Sears Melvin Memorials" width="262" height="66">
+            </picture>
         </a>
         <div class="nav-accred" aria-label="Accreditations">
             <span class="accred-link" title="Register of Qualified Memorial Fixers">RQMF Registered · No. 2263</span>
@@ -706,11 +756,11 @@
                 <div class="search-section" id="quickLinksSection">
                     <div class="search-section-title">Quick Links</div>
                     <div class="search-quick-links">
-                        <a href="/memorials" class="search-quick-link">Browse Memorials</a>
+                        <a href="/memorials" class="search-quick-link">Browse memorials</a>
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
-                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/contact" class="search-quick-link">Get a quote</a>
                     </div>
                 </div>
             </div>
@@ -1000,32 +1050,52 @@
 
     </main>
 
-    <footer>
+        <footer class="footer-b">
         <div class="footer-container">
-            <div>
-                <div class="footer-logo">Sears Melvin <span>Memorials</span></div>
+            <div class="footer-brand">
+                <img class="footer-logo" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="262" height="66">
                 <div class="footer-contact">
-                    <a href="tel:+442038352548">020 3835 2548</a><br>
-                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off--><br>
-                    North London — By appointment
+                    <a href="tel:+442038352548">020 3835 2548</a>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span>London</span>
                 </div>
             </div>
-            <ul class="footer-links">
+            <div class="footer-explore">
+                <h2 class="footer-heading">Explore</h2>
+                <ul class="footer-links">
                 <li><a href="/">Home</a></li>
                 <li><a href="/about">About</a></li>
+                <li><a href="/brochure">Brochure</a></li>
                 <li><a href="/memorials">Memorials</a></li>
+                <li><a href="/memorials?type=lawn-headstones">Lawn headstones</a></li>
+                <li><a href="/memorials?type=kerb-sets">Kerb sets</a></li>
+                <li><a href="/memorials?type=heart-memorials">Heart memorials</a></li>
+                <li><a href="/memorials?type=book-memorials">Book memorials</a></li>
+                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials</a></li>
+                <li><a href="/memorials?type=cremation-memorials">Cremation memorials</a></li>
+                <li><a href="/memorials?type=childrens-memorials">Children's memorials</a></li>
                 <li><a href="/faq">FAQ</a></li>
                 <li><a href="/care-guide">Memorial Care</a></li>
                 <li><a href="/resources">Support</a></li>
                 <li><a href="/contact">Contact</a></li>
                 <li><a href="/privacy">Privacy</a></li>
+                <li><a href="#cookie-settings" class="sm-cookie-settings">Cookie settings</a></li>
                 <li><a href="/track">Track Order</a></li>
                 <li><a href="https://partner.searsmelvin.co.uk">Partner Portal</a></li>
                 <li><a href="/terms">Terms</a></li>
             </ul>
-            <p class="footer-copy">© 2026 Sears Melvin Memorials. All rights reserved.</p>
-            <div class="footer-accreditations" style="display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);"><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" loading="lazy" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
-            <p class="footer-legal" style="font-size:0.75rem;line-height:1.6;width:100%;text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.45);">Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
+            <div class="footer-showroom">
+                <h2 class="footer-heading">Visit our Finchley showroom</h2>
+                <p>1 The Market Place, Falloden Way, NW11 6LB</p>
+                <p class="footer-hours">Monday to Friday, 10am to 3pm</p>
+            </div>
+            <div class="footer-base">
+                <!-- Professional Memberships -->
+            <div class="sm-accred-tight footer-accreditations" ><span class="accred-label">Accredited</span><span class="accred-logo accred-logo--footer" title="RQMF Registered · No. 2263"><img src="/images/accreditations/rqmf-logo-white.png" alt="RQMF – Register of Qualified Memorial Fixers logo" width="161" height="128" decoding="async"><span class="accred-text">RQMF Registered · No. 2263</span></span><span class="accred-note">Our fixers are NAMM-qualified and RQMF registered.</span></div>
+                <p class="footer-copy">&copy; 2026 Sears Melvin Memorials. All rights reserved.</p>
+                <p class="sm-footer-legal-tight footer-legal" >Sears Melvin Ltd. Registered in England &amp; Wales, company no. 16191330. Registered office: Unit 16, Dorewards Hall, Dorewards Chase, Braintree CM7 5LS, United Kingdom. Trading as Sears Melvin Memorials.</p>
+            </div>
         </div>
     </footer>
 
@@ -1046,7 +1116,7 @@
                 </div>
                 <span>Enquire</span>
             </a>
-            <button class="mobile-nav-item" onclick="openSearch()" style="background:none;border:none;cursor:pointer;">
+            <button class="sm-bare-btn mobile-nav-item" onclick="openSearch()" >
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 <span>Search</span>
             </button>
@@ -1133,57 +1203,72 @@
         });
     </script>
 <!-- Cookie Consent Banner -->
-<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#ccc;padding:1rem 1.5rem;font-family:-apple-system,sans-serif;font-size:0.85rem;box-shadow:0 -2px 10px rgba(0,0,0,0.15);">
-    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <p style="margin:0;flex:1;min-width:200px;color:#ccc;">We use cookies to analyse site traffic and improve your experience. See our <a href="/privacy" style="color:#A69070;text-decoration:underline;">privacy policy</a>.</p>
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-            <button onclick="acceptCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Accept</button>
-            <button onclick="declineCookies()" style="background:transparent;color:#fff;border:1px solid #ccc;padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;font-size:0.85rem;">Decline</button>
+<div id="cookieScrim" class="sm-cookie-scrim"></div>
+<div id="cookieConsent" class="sm-cookie" role="dialog" aria-modal="false" aria-labelledby="cookieTitle">
+    <div class="sm-cookie-choice">
+        <h2 class="sm-cookie-title" id="cookieTitle">Your cookie choices</h2>
+        <p class="sm-cookie-lead sm-cookie-lead--desk" id="cookieLeadDesk">We use essential cookies to run the site. With your permission, we also use analytics and ads cookies. <a href="/privacy">Privacy policy</a></p>
+        <p class="sm-cookie-lead sm-cookie-lead--phone" id="cookieLeadPhone">We use cookies for analytics and ads, only if you agree. <a href="/privacy">Privacy policy</a></p>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAccept">Accept</button>
+            <button type="button" class="sm-cookie-btn" id="cookieReject">Reject</button>
+        </div>
+        <button type="button" class="sm-cookie-manage" id="cookieManage">Manage choices</button>
+    </div>
+    <div class="sm-cookie-panel">
+        <h2 class="sm-cookie-title" id="cookieManageTitle" tabindex="-1">Manage cookie choices</h2>
+        <p class="sm-cookie-lead">Choose which cookies we can use. You can change this at any time from the footer.</p>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieEssentialName">Essential</p>
+                <p class="sm-cookie-desc">Keep the site working, for example your shortlist and this choice. Always on.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" role="switch" aria-checked="true" aria-labelledby="cookieEssentialName" disabled></button>
+                <span class="sm-cookie-switch-state">Always on</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAnalyticsName">Analytics</p>
+                <p class="sm-cookie-desc">Google Analytics. Tells us which pages help people, so we can improve them.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAnalytics" role="switch" aria-checked="false" aria-labelledby="cookieAnalyticsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAnalyticsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-row">
+            <div>
+                <p class="sm-cookie-name" id="cookieAdsName">Ads</p>
+                <p class="sm-cookie-desc">Google Ads. Measures whether our adverts lead to enquiries.</p>
+            </div>
+            <div class="sm-cookie-switch-wrap">
+                <button type="button" class="sm-cookie-switch" id="cookieAds" role="switch" aria-checked="false" aria-labelledby="cookieAdsName"></button>
+                <span class="sm-cookie-switch-state" id="cookieAdsState">Off</span>
+            </div>
+        </div>
+        <div class="sm-cookie-actions">
+            <button type="button" class="sm-cookie-btn" id="cookieAcceptAll">Accept all</button>
+            <button type="button" class="sm-cookie-btn" id="cookieRejectAll">Reject all</button>
+            <button type="button" class="sm-cookie-btn sm-cookie-btn--save" id="cookieSave">Save choices</button>
         </div>
     </div>
 </div>
+<script src="/supabase-config"></script>
+<script src="/cookie-consent.js"></script>
 <script>
-(function(){
-    var consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-        document.getElementById('cookieConsent').style.display = 'block';
-    } else if (consent === 'accepted') {
-        pushConsent(true);
-    }
-})();
-function pushConsent(granted) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'update', {
-        ad_storage:           granted ? 'granted' : 'denied',
-        analytics_storage:    granted ? 'granted' : 'denied',
-        ad_user_data:         granted ? 'granted' : 'denied',
-        ad_personalization:   granted ? 'granted' : 'denied'
-    });
-    window.dataLayer.push({ event: 'consent_update', analytics_storage: granted ? 'granted' : 'denied' });
-}
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'accepted');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(true);
-    window.dataLayer = window.dataLayer || []; window.dataLayer.push({event:'consent_granted_by_click'});
-}
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'declined');
-    document.getElementById('cookieConsent').style.display = 'none';
-    pushConsent(false);
-}
 
         // ==================== SITE SEARCH ====================
-        const SUPABASE_URL = 'https://bfwohzcugtwbhhxdqgme.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmd29oemN1Z3R3YmhoeGRxZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDA0NTIsImV4cCI6MjA4Mzc3NjQ1Mn0.QbEq1y3hczoRzcCrdajPmpPNkeh5A7jkAsfHP9BSAGg';
+        const SUPABASE_URL = window.SM_SUPABASE.url;
+        const SUPABASE_ANON_KEY = window.SM_SUPABASE.key;
 
         const searchFaqData = [
             { q: "How long does a memorial take?", a: "Typically 12 to 24 weeks from order to installation.", url: "/faq#timing" },
             { q: "What is a permit?", a: "A permit is required by the cemetery before any memorial can be installed.", url: "/faq#permits" },
             { q: "How much does a headstone cost?", a: "Prices start from around \u00a31,400 for lawn headstones.", url: "/faq#pricing" },
             { q: "How does payment work?", a: "A 50% deposit plus the cemetery permit fee confirms your order. The balance is due before installation. Invoices come by email and can be paid by card or bank transfer.", url: "/faq#payment" },
-            { q: "Can I visit the showroom?", a: "Yes, our showroom is open by appointment in Hampstead Garden Suburb.", url: "/contact" },
+            { q: "Can I visit the showroom?", a: "Yes, our showroom is open Monday to Friday, 10am to 3pm in Finchley.", url: "/contact" },
             { q: "What stone colours are available?", a: "We offer Black Galaxy, Vizag Blue, Rustenberg Grey, and more.", url: "/memorials" },
             { q: "How do I care for a memorial?", a: "Regular cleaning with water and a soft cloth is recommended.", url: "/care-guide" },
         ];
@@ -1206,7 +1291,7 @@ function declineCookies() {
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse Memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a quote</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1227,12 +1312,9 @@ function declineCookies() {
 
             try {
                 var response = await fetch(
-                    SUPABASE_URL + '/rest/v1/products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
+                    SUPABASE_URL + ['','rest','v1',''].join('/')+'products?organization_id=eq.3770972d-1bbd-417b-b413-297e844db285&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&or=(name.ilike.*' + encodeURIComponent(query) + '*,description.ilike.*' + encodeURIComponent(query) + '*)&select=id,name,slug,base_price,image_url,category_id',
                     {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                        }
+                        headers: window.SM_SUPABASE.headers()
                     }
                 );
                 var products = await response.json();
@@ -1283,8 +1365,8 @@ function declineCookies() {
 
     </script>
 
-    <script src="/site-globals.js" defer></script>
+    <script src="/site-globals.js?v=20261120" defer></script>
     <script src="/site-config.js" defer></script>
-    <script src="/site-upgrades.js?v=lt3" defer></script>
+    <script src="/site-upgrades.js?v=20261120b" defer></script>
 </body>
 </html>

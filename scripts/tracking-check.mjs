@@ -140,7 +140,10 @@ async function main() {
         checked++;
         problems.push(...pageProblems(p, html));
         if (p === "/contact" && !/event: 'sm_lead_submit'/.test(html)) problems.push("/contact: sm_lead_submit push missing");
-        if (p.startsWith("/memorials/")) {
+        // Product pages are /memorials/<slug>. /memorials/type/<slug> 301s to
+        // the filtered catalogue. A sitemap that still lists the old path is
+        // not a quote form, so it is not checked for sm_quote_submit.
+        if (p.startsWith("/memorials/") && !p.startsWith("/memorials/type/")) {
           productPath ||= p;
           if (!/event: 'sm_quote_submit'/.test(html)) problems.push(`${p}: sm_quote_submit push missing`);
         }

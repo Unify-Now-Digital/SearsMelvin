@@ -22,7 +22,8 @@ assert.match(html, /const charCount = countBillableInscriptionChars\(text\);/);
 assert.match(html, /const extra = Math\.max\(0, charCount - charsIncluded\);/);
 assert.match(html, /const cost\s+= parseFloat\(\(extra \* pricePerChar\)\.toFixed\(2\)\);/);
 
-// Running total, quote-summary total, and the extra-lettering line keep two decimals.
+// Running total, quote-summary total, and the extra-lettering line share formatGbp.
+// Whole pounds drop the pence. A price with pence keeps two decimals.
 assert.match(html, /const fmt\s+= formatGbp\(total\);/);
 assert.match(html, /document\.getElementById\('qsTotal'\)\.textContent = formatGbp\(total\);/);
 assert.match(html, /item\.name === 'Extra Lettering'[\s\S]{0,80}formatGbp\(item\.price\)/);
@@ -31,5 +32,5 @@ const helper = html.match(/function formatGbp\(amount\) \{([\s\S]*?)\n        \}
 assert.ok(helper, "formatGbp helper missing");
 const formatGbp = new Function("amount", helper[1]);
 assert.equal(formatGbp(1452.4), "£1,452.40");
-assert.equal(formatGbp(1450), "£1,450.00");
+assert.equal(formatGbp(1450), "£1,450");
 assert.equal(formatGbp(2.4), "£2.40");

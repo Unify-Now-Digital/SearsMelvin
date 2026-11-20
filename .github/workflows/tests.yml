@@ -11,7 +11,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run all tests (incl. tracking contract, docs/TRACKING.md)
+      - name: Install Chrome for the header offset test
+        run: |
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v google-chrome-stable >/dev/null 2>&1; then
+            wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            sudo apt-get update
+            sudo apt-get install -y /tmp/chrome.deb || sudo apt-get -f install -y
+          fi
+      - name: Brand lint and tests
         run: |
           set -e
-          for t in tests/*.mjs; do echo "== $t"; node "$t"; done
+          echo "== tests/brand-guard.mjs"
+          node tests/brand-guard.mjs
+          for t in tests/*.mjs; do
+            if [ "$t" = "tests/brand-guard.mjs" ]; then continue; fi
+            echo "== $t"
+            node "$t"
+          done

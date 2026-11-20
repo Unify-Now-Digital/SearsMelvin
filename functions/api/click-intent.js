@@ -1,6 +1,18 @@
-// /api/click-intent — fail-soft capture of ad click IDs for chat/call matching.
+// /api/click-intent — fail-soft capture of chat/call intent for later matching.
+// Personal data: email, phone, and name. Only a sanitised email and phone are
+// stored, and only on a chat. Name is personal data and is not read or stored.
+// The row holds no more contact detail than it did before this change.
 import { checkRateLimit, getClientAddress, hardenedJson, isSameOriginRequest, readBoundedJson, RequestValidationError, supabaseHeaders } from "./_security.js";
 import { cleanAttribution } from "./submit.js";
+
+// The beacon and the keepalive fetch share this id. It is written to the
+// existing click_intents.id primary key (uuid, default gen_random_uuid()).
+// The second insert conflicts, so the pair creates one row. No new column.
+function cleanEventId(value) {
+  if (typeof value !== "string") return null;
+  const id = value.trim().toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id) ? id : null;
+}
 
 function cleanPath(value) {
   if (typeof value !== "string") return null;
@@ -43,9 +55,8 @@ export async function onRequestPost({ request, env }) {
 
   const attribution = cleanAttribution(data);
   const kind = data.kind === "chat" || data.kind === "call" ? data.kind : null;
-  const hasClickId = attribution.gclid || attribution.gbraid || attribution.wbraid;
-  const hasUtm = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].some((key) => attribution[key]);
-  if (!kind || (kind === "chat" && !hasClickId && !hasUtm)) return noContent();
+  // A counted chat is stored even with no click ID and no UTM. Calls already were.
+  if (!kind) return noContent();
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.SM_ORG_ID) {
     console.error(JSON.stringify({ message: "click_intent_config_missing" }));
     return noContent();
@@ -58,6 +69,8 @@ export async function onRequestPost({ request, env }) {
   });
   if (!ipLimit.allowed) return noContent();
 
+  // Personal data: email and phone (chat only). Name is personal data and is
+  // not copied onto the row. Do not add it.
   const row = {
     organization_id: env.SM_ORG_ID,
     kind,
@@ -70,6 +83,8 @@ export async function onRequestPost({ request, env }) {
     phone: kind === "chat" ? cleanPhone(data.phone) : null,
     user_agent: (request.headers.get("User-Agent") || "").slice(0, 300) || null,
   };
+  const eventId = cleanEventId(data.event_id);
+  if (eventId) row.id = eventId;
   for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
     if (attribution[key]) row[key] = attribution[key];
   }
@@ -81,9 +96,12 @@ export async function onRequestPost({ request, env }) {
       body: JSON.stringify(row),
     };
     let response = await fetch(url, options);
+    // 409: the paired beacon/fetch already inserted this event id. Not a failure.
+    if (response.status === 409 && row.id) return noContent();
     if (response.status === 400) {
       const { utm_source, utm_medium, utm_campaign, utm_term, utm_content, ...legacyRow } = row;
       response = await fetch(url, { ...options, body: JSON.stringify(legacyRow) });
+      if (response.status === 409 && legacyRow.id) return noContent();
     }
     if (!response.ok) console.error(JSON.stringify({ message: "click_intent_insert_failed", status: response.status }));
   } catch {

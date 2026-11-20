@@ -10,10 +10,137 @@
         if (document.body.classList.contains('has-mobile-bottom-bar') && isMobile()) {
             return 160;
         }
-        var consent = document.getElementById('cookieConsent');
-        var consentVisible = consent && getComputedStyle(consent).display !== 'none';
-        if (consentVisible) return isMobile() ? 190 : 120;
         return isMobile() ? 100 : 24;
+    }
+
+    // LeadConnector paints the bubble inside a closed shadow tree and
+    // places it from its own position prop (middle-right on this account).
+    // Setting that prop to bottom-right, then pinning the host to a
+    // zero-size corner, is what actually moves the bubble.
+    var CHAT_INNER = 18;
+    /* The painted bubble sits about 2px higher than this model. Asking for
+       14px leaves a real gap under 18px and clear of the nav. */
+    var CHAT_NAV_GAP = 14;
+    var CHAT_PROMPT_H = 176;
+    var CHAT_PROMPT_W = 360;
+    var CHAT_BUBBLE = 84;
+
+    function shownRect(el) {
+        if (!el || !el.getBoundingClientRect) return null;
+        var cs;
+        try { cs = getComputedStyle(el); } catch (e) { return null; }
+        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+        var r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) return null;
+        if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+        if (el.closest && (el.closest(".hero-buttons") || el.closest(".still-questions"))) {
+            return { top: r.top - 40, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height + 40 };
+        }
+        return r;
+    }
+
+    function quoteLabel(el) {
+        var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        return text === 'Request your quote' || text === 'Get a quote' || text === 'Send me the brochure';
+    }
+
+    function widgetBox(hostBottom, withPrompt) {
+        var vh = window.innerHeight;
+        var vw = window.innerWidth;
+        var bottomY = vh - hostBottom - CHAT_INNER;
+        var height = withPrompt ? CHAT_PROMPT_H : CHAT_BUBBLE;
+        var width = withPrompt ? CHAT_PROMPT_W : CHAT_BUBBLE;
+        var right = vw - 8;
+        return { top: bottomY - height, bottom: bottomY, left: right - width, right: right };
+    }
+
+    function overlaps(a, b) {
+        return a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
+    }
+
+    function chatBlockers() {
+        var nodes = [];
+        var chrome = [
+            document.querySelector('.mobile-bottom-bar.is-visible'),
+            document.querySelector('.price-summary')
+        ];
+        var i;
+        for (i = 0; i < chrome.length; i++) {
+            var rect = shownRect(chrome[i]);
+            if (rect) nodes.push(rect);
+        }
+        var controls = document.querySelectorAll('a, button');
+        for (i = 0; i < controls.length; i++) {
+            var control = controls[i];
+            if (!quoteLabel(control)) continue;
+            if (control.closest && control.closest('#cookieConsent, #quoteOverlay, .quote-overlay, nav, #navbar')) continue;
+            var box = shownRect(control);
+            if (box) nodes.push(box);
+        }
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a');
+        for (i = 0; i < extras.length; i++) {
+            var extra = shownRect(extras[i]);
+            if (extra) nodes.push(extra);
+        }
+        return nodes;
+    }
+
+    function phoneWidth() {
+        return window.innerWidth <= 768;
+    }
+
+    function stackBottom(withPrompt) {
+        if (window.innerWidth > 1024) return clearance(withPrompt);
+        var vh = window.innerHeight;
+        var chrome = null;
+        var pieces = [
+            shownRect(document.querySelector('.mobile-bottom-bar.is-visible')),
+            shownRect(document.querySelector('.price-summary'))
+        ];
+        if (phoneWidth()) pieces.push(shownRect(document.querySelector('.mobile-bottom-nav')));
+        for (var i = 0; i < pieces.length; i++) {
+            var rect = pieces[i];
+            if (!rect || rect.bottom < vh - 30) continue;
+            if (!chrome || rect.top < chrome.top) chrome = rect;
+        }
+        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + CHAT_NAV_GAP - CHAT_INNER)) : 16;
+        return liftClear(bottom, withPrompt, 0.85);
+    }
+
+    function chatHits(hostBottom, withPrompt) {
+        var box = widgetBox(hostBottom, withPrompt);
+        var blockers = chatBlockers();
+        for (var i = 0; i < blockers.length; i++) {
+            if (overlaps(box, blockers[i])) return true;
+        }
+        return false;
+    }
+
+    // Move up only as far as a control we can actually clear. Jumping to the
+    // cap used to park the bubble on a higher field (the contact enquiry
+    // type) when a lower control wanted more room than the cap allows.
+    function liftClear(bottom, withPrompt, capRatio) {
+        var vh = window.innerHeight;
+        var cap = Math.round(vh * capRatio);
+        var guard = 0;
+        while (guard < 8 && chatHits(bottom, withPrompt)) {
+            var blockers = chatBlockers();
+            var box = widgetBox(bottom, withPrompt);
+            var next = bottom;
+            for (var j = 0; j < blockers.length; j++) {
+                if (!overlaps(box, blockers[j])) continue;
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 16));
+                if (needed <= cap && needed > next) next = needed;
+            }
+            if (next <= bottom) return bottom;
+            bottom = next;
+            guard++;
+        }
+        return bottom;
+    }
+
+    function clearance(withPrompt) {
+        return liftClear(16, withPrompt, 0.55);
     }
 
     function isChatWidgetEl(el) {
@@ -21,7 +148,7 @@
         var id = (el.id || '').toLowerCase();
         var cls = (el.className && el.className.toString ? el.className.toString() : '').toLowerCase();
         var tag = el.tagName ? el.tagName.toLowerCase() : '';
-        if (tag === 'lc-chat-widget') return true;
+        if (tag === 'chat-widget' || tag === 'lc-chat-widget') return true;
         if (id.indexOf('lc_') === 0 || id.indexOf('lc-') === 0) return true;
         if (cls.indexOf('lc-') === 0 || cls.indexOf('lc_') === 0) return true;
         if (cls.indexOf('leadconnector') !== -1) return true;
@@ -35,21 +162,62 @@
         return false;
     }
 
+    var placingChat = false;
+
+    function pinChatHost(el, bottom) {
+        if (el.position !== 'bottom-right') el.position = 'bottom-right';
+        var px = Math.round(bottom) + 'px';
+        document.documentElement.style.setProperty('--sm-chat-bottom', px);
+        el.style.setProperty('position', 'fixed', 'important');
+        el.style.setProperty('top', 'auto', 'important');
+        el.style.setProperty('left', 'auto', 'important');
+        el.style.setProperty('right', '0px', 'important');
+        el.style.setProperty('bottom', px, 'important');
+        el.style.setProperty('width', '0px', 'important');
+        el.style.setProperty('height', '0px', 'important');
+        el.style.setProperty('margin', '0', 'important');
+        el.style.setProperty('transform', 'translateZ(0)', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+        el.style.setProperty('z-index', '70', 'important');
+    }
+
     function applyWidgetPosition() {
-        var bottom = pickWidgetBottom();
+        if (placingChat) return;
+        placingChat = true;
+        try {
+            var hosts = document.querySelectorAll('chat-widget');
+            if (hosts.length) {
+                var phone = phoneWidth();
+                var withPrompt = !phone;
+                var h;
+                for (h = 0; h < hosts.length; h++) {
+                    if (phone && !hosts[h].active && hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                }
+                var bottom = stackBottom(withPrompt);
+                if (withPrompt && chatHits(bottom, true)) {
+                    for (h = 0; h < hosts.length; h++) {
+                        if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                    }
+                    bottom = stackBottom(false);
+                }
+                for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
+            }
+        } catch (e) {}
+        var bottomLegacy = pickWidgetBottom();
         var nodes = document.body ? document.body.children : [];
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
-            if (isChatWidgetEl(el)) {
-                el.style.setProperty('bottom', bottom + 'px', 'important');
-                el.style.setProperty('right', '24px', 'important');
-            }
+            if (!isChatWidgetEl(el) || (el.tagName && el.tagName.toLowerCase() === 'chat-widget')) continue;
+            el.style.setProperty('bottom', bottomLegacy + 'px', 'important');
+            el.style.setProperty('right', '24px', 'important');
         }
         var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
         for (var j = 0; j < deeper.length; j++) {
-            deeper[j].style.setProperty('bottom', bottom + 'px', 'important');
+            if (deeper[j].tagName && deeper[j].tagName.toLowerCase() === 'CHAT-WIDGET') continue;
+            deeper[j].style.setProperty('bottom', bottomLegacy + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');
         }
+        placingChat = false;
         // Heuristic fallback: any small fixed element pinned to the bottom-right
         // corner is almost certainly the chat bubble (regardless of class/tag).
         var direct = document.body ? document.body.children : [];
@@ -70,7 +238,7 @@
             // Don't touch our own injected favourites badge or known nav elements
             if (node.id === 'shortlistNavBtn') continue;
             if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent'))) continue;
-            node.style.setProperty('bottom', bottom + 'px', 'important');
+            node.style.setProperty('bottom', bottomLegacy + 'px', 'important');
             node.style.setProperty('right', '24px', 'important');
         }
     }
@@ -82,6 +250,17 @@
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         window.addEventListener('resize', applyWidgetPosition);
+        var scrollQueued = false;
+        window.addEventListener('scroll', function () {
+            if (scrollQueued) return;
+            scrollQueued = true;
+            var run = function () {
+                scrollQueued = false;
+                applyWidgetPosition();
+            };
+            if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+            else run();
+        }, { passive: true });
         // Reapply periodically for the first 10s — GHL widget often sets inline
         // styles after our observer runs, so re-pin to win the last-write race.
         var ticks = 0;
@@ -201,8 +380,10 @@
     function compactFooter() {
         // The memorial product page has a purpose-built responsive footer.
         // Do not inject the generic footer rules over its mobile layout.
+        // Option B owns its own spacing. Leave that footer alone.
         if (document.body && document.body.classList.contains('memorial-page')) return;
         var footer = document.querySelector('footer');
+        if (footer && footer.classList.contains('footer-b')) return;
         if (footer) {
             var contact = footer.querySelector('.footer-contact');
             if (contact && !contact.getAttribute('data-sm-compact')) {
@@ -222,19 +403,19 @@
         var style = document.createElement('style');
         style.id = 'sm-footer-compact-style';
         style.textContent = [
-            'footer{padding:1.5rem 2rem 1.25rem!important;}',
-            '.footer-container{align-items:center!important;gap:1rem 2rem!important;}',
-            '.footer-contact{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 0.55rem!important;line-height:1.5!important;margin-top:0.35rem!important;}',
-            '.footer-contact a{display:inline!important;min-height:0!important;padding:0!important;line-height:1.5!important;}',
-            '.footer-contact-sep{color:rgba(255,255,255,0.25)!important;}',
-            '.footer-links{gap:0.4rem 1rem!important;}',
-            '.footer-links a{min-height:32px!important;padding:0 0.25rem!important;}',
-            '.footer-copy{margin-top:0.75rem!important;padding-top:0.85rem!important;}',
-            '.footer-legal{margin-top:0.35rem!important;line-height:1.5!important;}',
-            '.footer-accreditations{margin-top:0.6rem!important;padding-top:0!important;border-top:0!important;gap:0.6rem!important;}',
-            '.footer-accreditations .accred-badge{padding:0.2rem 0.6rem!important;font-size:0.72rem!important;}',
-            '@media (max-width:768px){.footer-contact{justify-content:center!important;}}',
-            '@media (hover:none) and (pointer:coarse){.footer-contact a{display:inline-block!important;min-height:44px!important;padding:0.55rem 0!important;line-height:1.2!important;}}'
+            'footer:not(.footer-b){padding:1.5rem 2rem 1.25rem!important;}',
+            'footer:not(.footer-b) .footer-container{align-items:center!important;gap:1rem 2rem!important;}',
+            'footer:not(.footer-b) .footer-contact{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:0 0.55rem!important;line-height:1.5!important;margin-top:0.35rem!important;}',
+            'footer:not(.footer-b) .footer-contact a{display:inline!important;min-height:0!important;padding:0!important;line-height:1.5!important;}',
+            'footer:not(.footer-b) .footer-contact-sep{color:rgba(255,255,255,0.25)!important;}',
+            'footer:not(.footer-b) .footer-links{gap:0.4rem 1rem!important;}',
+            'footer:not(.footer-b) .footer-links a{min-height:32px!important;padding:0 0.25rem!important;}',
+            'footer:not(.footer-b) .footer-copy{margin-top:0.75rem!important;padding-top:0.85rem!important;}',
+            'footer:not(.footer-b) .footer-legal{margin-top:0.35rem!important;line-height:1.5!important;}',
+            'footer:not(.footer-b) .footer-accreditations{margin-top:0.6rem!important;padding-top:0!important;border-top:0!important;gap:0.6rem!important;}',
+            'footer:not(.footer-b) .footer-accreditations .accred-badge{padding:0.2rem 0.6rem!important;font-size:0.72rem!important;}',
+            '@media (max-width:768px){footer:not(.footer-b) .footer-contact{justify-content:center!important;}}',
+            '@media (hover:none) and (pointer:coarse){footer:not(.footer-b) .footer-contact a{display:inline-block!important;min-height:44px!important;padding:0.55rem 0!important;line-height:1.2!important;}}'
         ].join('');
         document.head.appendChild(style);
     }
@@ -248,7 +429,7 @@
         if (document.body && document.body.classList.contains('memorial-page')) return;
 
         var footer = document.querySelector('footer');
-        if (footer) {
+        if (footer && !footer.classList.contains('footer-b')) {
             var links = footer.querySelectorAll('.footer-links a');
             for (var i = 0; i < links.length; i++) {
                 var link = links[i];
@@ -276,15 +457,15 @@
             '@media (max-width:768px){',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav){min-height:68px!important;padding:0.75rem 1rem!important;}',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .mobile-menu-btn{width:44px!important;height:44px!important;padding:8px!important;align-items:center!important;justify-content:center!important;}',
-            'body:not(.memorial-page) footer{padding:1.25rem 1rem 1rem!important;}',
-            'body:not(.memorial-page) footer .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b){padding:1.25rem 1rem 1rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-container{width:100%!important;max-width:100%!important;box-sizing:border-box!important;gap:1rem!important;}',
             'html,body{overflow-x:clip!important;}',
-            'body:not(.memorial-page) footer .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
-            'body:not(.memorial-page) footer .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
-            'body:not(.memorial-page) footer .sm-footer-secondary{display:none!important;}',
-            'body:not(.memorial-page) footer .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer .sm-footer-track{order:2!important;}body:not(.memorial-page) footer .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer .sm-footer-privacy{order:4!important;}',
-            'body:not(.memorial-page) footer .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
-            'body:not(.memorial-page) footer .footer-legal{font-size:0.875rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0.25rem 0.75rem!important;width:100%!important;max-width:360px!important;margin-inline:0!important;padding-inline:0!important;box-sizing:border-box!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-links a{display:flex!important;align-items:center!important;min-height:44px!important;padding:0.35rem 0.25rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .sm-footer-secondary{display:none!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .sm-footer-contact{order:1!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-track{order:2!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-terms{order:3!important;}body:not(.memorial-page) footer:not(.footer-b) .sm-footer-privacy{order:4!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-copy{margin-top:0.5rem!important;padding-top:0.75rem!important;}',
+            'body:not(.memorial-page) footer:not(.footer-b) .footer-legal{font-size:0.875rem!important;line-height:1.45!important;margin-top:0.45rem!important;}',
             '}',
             '@media (max-width:480px){',
             'body:not(.memorial-page) nav:not(.mobile-bottom-nav) .nav-accred{display:none!important;}',
@@ -299,22 +480,70 @@
     }
 
     function keepMobileMenuStateAccessible() {
-        if (document.body && document.body.classList.contains('memorial-page')) return;
         var button = document.querySelector('.mobile-menu-btn');
         var menu = document.getElementById('mobileNav');
         if (!button || !menu || button.getAttribute('data-sm-menu-state')) return;
 
         function sync() {
-            button.setAttribute('aria-expanded', menu.classList.contains('active') ? 'true' : 'false');
+            var open = menu.classList.contains('active');
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.classList.toggle('sm-menu-open', open);
         }
 
         sync();
+        if (window.MutationObserver) {
+            new MutationObserver(sync).observe(menu, { attributes: true, attributeFilter: ['class'] });
+        }
         button.addEventListener('click', function () {
             // The existing inline handler toggles the panel first; this keeps
             // its accessible state in step without rewriting every template.
             sync();
         });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape' || !menu.classList.contains('active')) return;
+            if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
+        });
+        document.addEventListener('click', function (e) {
+            if (!menu.classList.contains('active')) return;
+            if (menu.contains(e.target) || button.contains(e.target)) return;
+            if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
+        });
         button.setAttribute('data-sm-menu-state', '1');
+    }
+
+    // Phone menu, option B. One row style, brochure as a normal row, and the
+    // quote and call actions as a pair. The number stays one text node.
+    function shapePhoneMenu() {
+        var menu = document.getElementById('mobileNav');
+        if (!menu || menu.getAttribute('data-sm-phone-menu')) return;
+
+        var brochure = menu.querySelector('a.nav-brochure');
+        if (brochure && !brochure.querySelector('.sm-menu-note')) {
+            var note = document.createElement('small');
+            note.className = 'sm-menu-note';
+            note.textContent = 'Free PDF';
+            brochure.appendChild(note);
+        }
+
+        var tel = menu.querySelector('a[href^="tel:"]');
+        if (tel && !tel.querySelector('svg')) {
+            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('class', 'sm-menu-phone');
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2');
+            svg.appendChild(path);
+            tel.insertBefore(svg, tel.firstChild);
+        }
+
+        if (!menu.querySelector('.sm-menu-hours')) {
+            var hours = document.createElement('p');
+            hours.className = 'sm-menu-hours';
+            hours.textContent = 'Showroom: Monday to Friday, 10am to 3pm';
+            menu.appendChild(hours);
+        }
+        menu.setAttribute('data-sm-phone-menu', '1');
     }
 
     function ensureSkipLink() {
@@ -353,6 +582,7 @@
         compactFooter();
         applyPublicResponsiveBaseline();
         keepMobileMenuStateAccessible();
+        shapePhoneMenu();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });

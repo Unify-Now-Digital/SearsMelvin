@@ -27,7 +27,7 @@ const jsonResponse = (status, body) => ({ ok: status >= 200 && status < 300, sta
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
     if (calls.length === 1) return jsonResponse(409, { message: "Location does not allow duplicated contacts", meta: { contactId: "existing-1" } });
-    if (calls.length === 2) return jsonResponse(200, { contact: { customFields: [{ id: "gclid-id", field_value: "" }, { id: "utm-id", field_value: "saved" }] } });
+    if (calls.length === 2) return jsonResponse(200, { contact: { firstName: "Test", lastName: "Person", phone: "+440000", customFields: [{ id: "gclid-id", field_value: "" }, { id: "utm-id", field_value: "saved" }] } });
     return jsonResponse(200, {});
   };
   const id = await createGHLContact(env, {
@@ -36,7 +36,7 @@ const jsonResponse = (status, body) => ({ ok: status >= 200 && status < 300, sta
   });
   assert.equal(id, "existing-1");
   assert.deepEqual(calls.map(call => call.options.method || "GET"), ["POST", "GET", "PUT", "POST"]);
-  assert.deepEqual(JSON.parse(calls[2].options.body), { customFields: [{ id: "gclid-id", field_value: "click" }] });
+  assert.deepEqual(JSON.parse(calls[2].options.body), { customFields: [{ id: "gclid-id", field_value: "click" }], source: "Website appointment" });
   assert.match(calls[3].url, /\/contacts\/existing-1\/tags$/);
 }
 
@@ -45,14 +45,15 @@ const jsonResponse = (status, body) => ({ ok: status >= 200 && status < 300, sta
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
     if (calls.length === 1) return jsonResponse(422, { message: "does not allow duplicated contacts", meta: { contact: { id: "existing-2" } } });
-    if (calls.length === 2) return jsonResponse(200, { contact: { customFields: [{ id: "gclid-id", field_value: "saved" }] } });
+    if (calls.length === 2) return jsonResponse(200, { contact: { firstName: "Test", lastName: "Person", phone: "+440000", customFields: [{ id: "gclid-id", field_value: "saved" }] } });
     return jsonResponse(200, {});
   };
   assert.equal(await createGHLContact(env, {
     name: "Test Person", email: "test@example.com", type: "appointment", fetchImpl,
     attributionFields: [{ id: "gclid-id", field_value: "new" }],
   }), "existing-2");
-  assert.equal(calls.some(call => call.options.method === "PUT"), false);
+  const put2 = calls.find(call => call.options.method === "PUT");
+  assert.deepEqual(JSON.parse(put2.options.body), { source: "Website appointment" }, "blank source labelled; filled gclid left alone");
 }
 
 assert.equal(appointmentNotes({ notes: "  note  ", message: "message" }), "note");

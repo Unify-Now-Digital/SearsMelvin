@@ -31,7 +31,7 @@ try {
       enquiryAttempt += 1;
       return enquiryAttempt === 1
         ? new Response(JSON.stringify({ code: "PGRST204", message: "last_gclid column missing" }), { status: 400 })
-        : new Response(null, { status: 201 });
+        : Response.json([{ id: "enquiry-created-1" }], { status: 201 });
     }
     throw new Error(`Unexpected fetch ${url}`);
   };
