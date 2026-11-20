@@ -68,6 +68,40 @@ Words to avoid:
 3. cheap
 4. best
 
+## Internal comms tone
+
+Use this for an email or a message to Sears Melvin staff. Karen, Matthew, and Aylin are examples. Arin set this rule on 20 November 2026.
+
+Customer-facing voice stays in Tone of voice. Business-notification subjects stay as they are.
+
+Internal language is softer and less directive.
+
+1. Ask. Write “Could you…”, “When you have a moment…”, or “It would help to…”. Do not write a bare order such as “Send X” or “Do Y today”.
+2. Give the reason first. Say what happened, and when. Then make the gentle ask.
+3. Open warm, and close warm. Write “Hi Karen”. Write “Thanks so much, Arin”. Invite a second look: “Let me know if anything looks off.”
+4. Share good news in plain words. Write “Good news: Croydon approved this.”
+5. Do not use an emoji or an icon glyph. Use a bronze eyebrow label from section 10, in small capitals. REPLY, SEND, CALL, and UPDATE are the usual words. The label names the note. The sentence carries the ask.
+6. Put one customer on each row or list item. Keep the list easy to scan.
+7. Write short sentences. Keep one idea in each sentence. Tone of voice and section 5 already state that rule.
+
+### Before and after
+
+1. Before: “Send to Lambeth. Then tell Westminster to ignore.” After: “This one should go to Lambeth. It would also help to let Westminster know they can ignore our 6 Nov email.”
+2. Before: “Karen, call the family today.” After: “Hi Karen, the family asked for a call on 18 Nov. When you have a moment, could you call them? Let me know if anything looks off. Thanks so much, Arin.”
+3. Before: “Croydon approved. Tell the family and chase Barnet.” After, on two lines. UPDATE: “Good news: Croydon approved this. It would help to let the family know.” REPLY: “Barnet wrote on 12 Nov. Could you answer them when you have a moment?”
+
+### Do
+
+1. Do write “Could you…”.
+2. Do write “When you have a moment…”.
+3. Do write “Good news: Croydon approved this.”
+
+### Don’t
+
+1. Do not write “Send X” or “Do Y today”.
+2. Do not use an emoji or an icon glyph.
+3. Do not put two customers on one line.
+
 ## 2. The brand in one page
 
 The brand is warm, calm, and clear.
