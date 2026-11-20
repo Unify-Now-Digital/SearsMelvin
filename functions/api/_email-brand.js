@@ -9,6 +9,7 @@ const LOGO = `${SITE}/images/brand/logo/sears-melvin-stacked-ink.png`;
 const COVER = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=10.1`;
 const PDF = "/assets/sears-melvin-brochure.pdf?v=10.1";
 const PHONE_DISPLAY = "020 3835 2548";
+const PHONE_TEL = "tel:+442038352548";
 const ADDRESS = "1 The Market Place, Falloden Way, London NW11 6LB";
 const SHOWROOM = "Visit our Finchley showroom, Monday to Friday, 10am to 3pm.";
 const FIXERS = "Our fixers are NAMM-qualified and RQMF registered.";
@@ -238,12 +239,6 @@ function inkButton(href, label) {
   </td>`;
 }
 
-function outlineButton(href, label) {
-  return `<td align="center" bgcolor="${WHITE}" style="background-color:${WHITE};border:1px solid ${BRONZE};border-radius:2px;">
-    <a href="${esc(href)}" style="display:inline-block;padding:11px 20px;font-family:${SANS};font-size:15px;font-weight:500;line-height:1.3;color:${INK};text-decoration:none;border-radius:2px;">${esc(label)}</a>
-  </td>`;
-}
-
 function fieldRow(label, valueHtml, last) {
   const edge = last ? `border-top:1px solid ${SAND};border-bottom:1px solid ${SAND};` : `border-top:1px solid ${SAND};`;
   return `<tr>
@@ -321,7 +316,7 @@ export function familyBrochureEmail({ firstName, source } = {}) {
           </tr>
           <tr>
             <td style="padding:4px 36px 28px;">
-              ${p(`When you are ready, you can <a href="${esc(quoteHref)}" style="color:${BRONZE};text-decoration:underline;">request a quote</a>, or call us on <span style="color:${INK};white-space:nowrap;">${PHONE_DISPLAY}</span>.`, { margin: "0 0 16px" })}
+              ${p(`When you are ready, you can <a href="${esc(quoteHref)}" style="color:${BRONZE};text-decoration:underline;">request a quote</a>, or call us on <a href="${PHONE_TEL}" style="color:${BRONZE};text-decoration:underline;white-space:nowrap;">${PHONE_DISPLAY}</a>.`, { margin: "0 0 16px" })}
               ${p(`${SHOWROOM}<br>${ADDRESS}`, { margin: "0 0 22px" })}
               ${p("With care,<br>The Sears Melvin team", { margin: "0" })}
             </td>
@@ -353,17 +348,10 @@ export function familyBrochureEmail({ firstName, source } = {}) {
   return { subject: "Your Sears Melvin brochure", html, text };
 }
 
-function actionRow({ email, phone, contactUrl }) {
+function actionRow({ email, contactUrl }) {
   const mail = String(email || "").trim();
-  const tel = telHref(phone);
-  const cells = [];
-  if (mail) cells.push(inkButton(`mailto:${mail}`, "Reply by email"));
-  if (tel) {
-    if (cells.length) cells.push(`<td width="10" style="font-size:0;line-height:0;">&nbsp;</td>`);
-    cells.push(outlineButton(tel, "Call"));
-  }
-  const buttons = cells.length
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${cells.join("")}</tr></table>`
+  const buttons = mail
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${inkButton(`mailto:${mail}`, "Reply by email")}</tr></table>`
     : "";
   const highlevel = contactUrl
     ? `<p style="margin:16px 0 0;font-family:${SANS};font-size:15px;line-height:1.6;color:${INK};"><a href="${esc(contactUrl)}" style="color:${BRONZE};text-decoration:underline;">Open in HighLevel</a></p>`
@@ -412,7 +400,7 @@ export function staffBrochureEmail({
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows.join("")}</table>
             </td>
           </tr>
-          ${actionRow({ email, phone, contactUrl })}`,
+          ${actionRow({ email, contactUrl })}`,
   });
   const textLines = [
     status,
@@ -429,8 +417,6 @@ export function staffBrochureEmail({
   if (time) textLines.push(`Time: ${time}`);
   textLines.push("");
   if (email) textLines.push(`Reply by email: mailto:${String(email).trim()}`);
-  const tel = telHref(phone);
-  if (tel) textLines.push(`Call: ${tel}`);
   if (contactUrl) textLines.push(`Open in HighLevel: ${contactUrl}`);
   return { html, text: textLines.join("\n") };
 }
@@ -534,7 +520,7 @@ export function familyEnquiryEmail({
           ${messageBlock(message)}
           <tr>
             <td style="padding:24px 36px 28px;">
-              ${p(`If you need us sooner, call <span style="color:${INK};white-space:nowrap;">${PHONE_DISPLAY}</span>.`)}
+              ${p(`If you need us sooner, call <a href="${PHONE_TEL}" style="color:${BRONZE};text-decoration:underline;white-space:nowrap;">${PHONE_DISPLAY}</a>.`)}
               ${p(`${SHOWROOM}<br>${ADDRESS}`, { margin: "0 0 22px" })}
               ${p("With care,<br>The Sears Melvin team", { margin: "0" })}
             </td>
@@ -619,7 +605,7 @@ export function staffEnquiryEmail({
           ${shortlistBlock(shortlistItems, "Memorials shortlisted")}
           ${messageBlock(message)}
           ${photoBlock(photoUrls)}
-          ${actionRow({ email, phone, contactUrl })}`,
+          ${actionRow({ email, contactUrl })}`,
   });
   const text = [
     `${who} sent an enquiry.`,
@@ -640,8 +626,6 @@ export function staffEnquiryEmail({
   }
   if (String(message || "").trim()) text.push("", "Your message:", String(message).trim());
   if (email) text.push("", `Reply by email: mailto:${String(email).trim()}`);
-  const tel = telHref(phone);
-  if (tel) text.push(`Call: ${tel}`);
   if (contactUrl) text.push(`Open in HighLevel: ${contactUrl}`);
   return { html, text: text.join("\n") };
 }

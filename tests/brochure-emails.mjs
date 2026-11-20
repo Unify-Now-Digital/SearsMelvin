@@ -156,11 +156,11 @@ function statusLine(mail) {
   assert.equal(family.body.subject, "Your Sears Melvin brochure");
   assert.match(family.body.html, /assets\/sears-melvin-brochure\.pdf\?v=10\.1/);
   assert.match(family.body.text, /Download the brochure:/);
-  assert.match(family.body.html, /call us on <span[^>]*>020 3835 2548<\/span>/);
+  assert.match(family.body.html, /call us on <a href="tel:\+442038352548"[^>]*>020 3835 2548<\/a>/);
   assert.match(family.body.text, /or call us on 020 3835 2548/);
-  assert.doesNotMatch(family.body.html, /tel:/);
-  assert.doesNotMatch(family.body.text, /tel:/);
-  assert.doesNotMatch(family.body.html, />Call</);
+  assert.doesNotMatch(staff.body.html, />Call</);
+  assert.doesNotMatch(staff.body.text, /^Call:/m);
+  assert.match(staff.body.html, /Reply by email/);
   assert.equal(family.body.attachments, undefined);
   assert.doesNotMatch(family.body.subject, /We have received your enquiry/);
   assert.equal(staff.body.subject, "New Enquiry — Brochure request: Alex Taylor");
@@ -188,6 +188,8 @@ for (const mode of ["http", "noid", "timeout"]) {
   assert.match(staff.body.html, /Brochure email failed: please send it manually/);
   assert.doesNotMatch(staff.body.html, /Brochure sent to/);
   assert.doesNotMatch(staff.body.text, /Brochure sent to/);
+  assert.doesNotMatch(staff.body.html, />Call</);
+  assert.doesNotMatch(staff.body.text, /^Call:/m);
   assert.doesNotMatch(statusLine(staff.body), /delivered|received|opened/i);
 }
 
@@ -208,13 +210,12 @@ for (const mode of ["http", "noid", "timeout"]) {
   const staff = sent.find((call) => call.body.to === "info@searsmelvin.co.uk");
   assert.equal(family.body.subject, "We have received your enquiry — Sears Melvin Memorials");
   assert.match(family.body.html, /within one working day/);
-  assert.match(family.body.html, /call <span[^>]*>020 3835 2548<\/span>/);
+  assert.match(family.body.html, /call <a href="tel:\+442038352548"[^>]*>020 3835 2548<\/a>/);
   assert.match(family.body.text, /If you need us sooner, call 020 3835 2548/);
-  assert.doesNotMatch(family.body.html, /tel:/);
-  assert.doesNotMatch(family.body.text, /tel:/);
-  assert.doesNotMatch(family.body.html, />Call</);
   assert.match(family.body.text, /within one working day/);
-  assert.match(staff.body.html, />Call</);
+  assert.doesNotMatch(staff.body.html, />Call</);
+  assert.doesNotMatch(staff.body.text, /^Call:/m);
+  assert.match(staff.body.html, /Reply by email/);
   assert.doesNotMatch(family.body.html, /sears-melvin-brochure\.pdf/);
   assert.equal(staff.body.subject, "New Enquiry — Alex Taylor — Question");
   assert.doesNotMatch(staff.body.html, /Brochure sent to/);
