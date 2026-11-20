@@ -22,6 +22,22 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.includes("/rest/v1/people?email=eq.")) return Response.json([{ id: "person-1", is_customer: false, is_test: false }]);
   if (url.includes("/rest/v1/people?id=eq.")) return new Response(null, { status: 204 });
   if (url.includes("/rest/v1/cemeteries")) return Response.json([]);
+  if (url.includes("/rest/v1/products?")) {
+    return Response.json([{
+      id: "product-1",
+      name: "The Castell",
+      slug: "the-castell",
+      base_price: 1450,
+      image_url: "/images/castell.jpg",
+      inscription_chars_included: 80,
+      inscription_price_per_char: 1.95,
+      product_categories: { name: "Lawn Headstones", slug: "lawn-headstones" },
+    }]);
+  }
+  if (url.includes("/rest/v1/stone_colours?")) return Response.json([{ name: "Black", slug: "black", is_premium: false, tier: "standard" }]);
+  if (url.includes("/rest/v1/product_addons?")) return Response.json([]);
+  if (url.includes("/rest/v1/product_sizes?")) return Response.json([]);
+  if (url.includes("/rpc/create_quote")) return Response.json({ ok: true, enquiry_id: "enq-quote" });
   if (url.includes("/rest/v1/enquiries") && (init.method || "GET") === "POST") {
     return Response.json([{ id: "enq-1" }]);
   }
@@ -94,5 +110,51 @@ const emails = calls.filter((call) => call.url.includes("resend"));
 const business = emails.find((call) => call.body && call.body.to === "info@searsmelvin.co.uk");
 assert.ok(business, JSON.stringify(emails.map((call) => call.body && { to: call.body.to, subject: call.body.subject })));
 assert.equal(business.body.subject, "New Enquiry — TEST Brochure — Brochure");
+assert.equal(calls.some((call) => call.url.includes("/opportunities")), false, "brochure must not call HighLevel opportunities");
+
+function opportunityCreates() {
+  return calls.filter((call) => call.method === "POST" && call.url.includes("/opportunities"));
+}
+
+async function post(body) {
+  calls.length = 0;
+  pending.length = 0;
+  const res = await onRequestPost({
+    env,
+    waitUntil: (promise) => pending.push(promise),
+    request: new Request("https://searsmelvin.co.uk/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://searsmelvin.co.uk", "CF-Connecting-IP": "203.0.113.11" },
+      body: JSON.stringify(body),
+    }),
+  });
+  await Promise.all(pending);
+  return res.json();
+}
+
+{
+  const contactResult = await post({
+    channel: "contact",
+    enquiry_type: "question",
+    name: "TEST Contact",
+    email: "test+contact@unifydigital.uk",
+    message: "Please call.",
+  });
+  assert.equal(contactResult.ok, true);
+  assert.ok(calls.some((call) => call.method === "POST" && call.url.endsWith("/contacts/")), "contact post creates a HighLevel contact");
+  assert.equal(opportunityCreates().length, 1, "contact post still creates an opportunity");
+}
+
+{
+  const quoteResult = await post({
+    channel: "quote",
+    name: "TEST Quote",
+    email: "test+quote@unifydigital.uk",
+    product: { name: "The Castell", slug: "the-castell", colour: "Black", price: "1450" },
+  });
+  assert.equal(quoteResult.ok, true);
+  assert.ok(calls.some((call) => call.method === "POST" && call.url.endsWith("/contacts/")), "quote post creates a HighLevel contact");
+  assert.equal(opportunityCreates().length, 1, "quote post still creates an opportunity");
+}
 
 console.log("brochure-request: ok");

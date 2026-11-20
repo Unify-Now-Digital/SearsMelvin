@@ -409,13 +409,16 @@ async function enquirySideEffects({
       });
       if (contactId) {
         await saveEnquiryGhlContactId(env, enquiryId, contactId);
-        await createGHLOpportunity(env, {
-          contactId,
-          name: `${enquiryTypeLabel} — ${name}`,
-          monetaryValue: 0,
-          enquiry: { type: ghlType, message },
-          source: websiteGhlLabels(ghlType).source,
-        });
+        // Brochure is a contact plus the brochure tag. It does not open a card.
+        if (ghlType !== "brochure") {
+          await createGHLOpportunity(env, {
+            contactId,
+            name: `${enquiryTypeLabel} — ${name}`,
+            monetaryValue: 0,
+            enquiry: { type: ghlType, message },
+            source: websiteGhlLabels(ghlType).source,
+          });
+        }
       }
     }),
   ].filter(Boolean));
