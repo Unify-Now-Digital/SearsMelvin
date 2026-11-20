@@ -38,7 +38,7 @@
 
     function quoteLabel(el) {
         var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-        return text === 'Request your quote' || text === 'Get a quote';
+        return text === 'Request your quote' || text === 'Get a quote' || text === 'Send me the brochure';
     }
 
     function widgetBox(hostBottom, withPrompt) {
@@ -76,7 +76,51 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error');
+        for (i = 0; i < extras.length; i++) {
+            var extra = shownRect(extras[i]);
+            if (extra) nodes.push(extra);
+        }
         return nodes;
+    }
+
+    function phoneWidth() {
+        return window.innerWidth <= 768;
+    }
+
+    function stackBottom(withPrompt) {
+        if (window.innerWidth > 1024) return clearance(withPrompt);
+        var vh = window.innerHeight;
+        var chrome = null;
+        var pieces = [
+            shownRect(document.getElementById('cookieConsent')),
+            shownRect(document.querySelector('.mobile-bottom-bar.is-visible')),
+            shownRect(document.querySelector('.price-summary'))
+        ];
+        if (phoneWidth()) pieces.push(shownRect(document.querySelector('.mobile-bottom-nav')));
+        for (var i = 0; i < pieces.length; i++) {
+            var rect = pieces[i];
+            if (!rect || rect.bottom < vh - 30) continue;
+            if (!chrome || rect.top < chrome.top) chrome = rect;
+        }
+        var bottom = chrome ? Math.max(0, Math.ceil((vh - chrome.top) + 12 - CHAT_INNER)) : 16;
+        var guard = 0;
+        while (guard < 8 && chatHits(bottom, withPrompt)) {
+            var blockers = chatBlockers();
+            var box = widgetBox(bottom, withPrompt);
+            var next = bottom;
+            for (var j = 0; j < blockers.length; j++) {
+                if (!overlaps(box, blockers[j])) continue;
+                var needed = Math.ceil(vh - CHAT_INNER - (blockers[j].top - 12));
+                if (needed > next) next = needed;
+            }
+            if (next <= bottom) next = bottom + 24;
+            var cap = Math.round(vh * 0.7);
+            if (next > cap) return cap;
+            bottom = next;
+            guard++;
+        }
+        return bottom;
     }
 
     function chatHits(hostBottom, withPrompt) {
@@ -154,12 +198,18 @@
         try {
             var hosts = document.querySelectorAll('chat-widget');
             if (hosts.length) {
-                var bottom = clearance(true);
-                if (chatHits(bottom, true)) {
-                    for (var h = 0; h < hosts.length; h++) {
+                var phone = phoneWidth();
+                var withPrompt = !phone;
+                var h;
+                for (h = 0; h < hosts.length; h++) {
+                    if (phone && !hosts[h].active && hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                }
+                var bottom = stackBottom(withPrompt);
+                if (withPrompt && chatHits(bottom, true)) {
+                    for (h = 0; h < hosts.length; h++) {
                         if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
                     }
-                    bottom = clearance(false);
+                    bottom = stackBottom(false);
                 }
                 for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
             }

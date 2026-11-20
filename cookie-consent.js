@@ -101,7 +101,40 @@
 
   function quoteLabel(el) {
     var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    return text === 'Get a quote' || text === 'Request your quote';
+    return text === 'Get a quote' || text === 'Request your quote' || text === 'Send me the brochure';
+  }
+
+  function controlNodes() {
+    var selectors = [
+      '#quoteIntro button',
+      '#quoteIntro .btn',
+      '.product-quote-intro button',
+      '.mobile-bottom-bar.is-visible .btn-primary',
+      '#brochureRequest button[type="submit"]',
+      '#brochureRequestStatus',
+      '.sm-brochure-field-error'
+    ];
+    var seen = [];
+    var out = [];
+    function add(el) {
+      if (!el || seen.indexOf(el) !== -1) return;
+      seen.push(el);
+      out.push(el);
+    }
+    var i;
+    var j;
+    for (i = 0; i < selectors.length; i++) {
+      var nodes = doc.querySelectorAll(selectors[i]);
+      for (j = 0; j < nodes.length; j++) add(nodes[j]);
+    }
+    var controls = doc.querySelectorAll('button, a');
+    for (i = 0; i < controls.length; i++) {
+      var control = controls[i];
+      if (!quoteLabel(control)) continue;
+      if (control.closest && control.closest('#cookieConsent, nav, #navbar, .mobile-bottom-nav')) continue;
+      add(control);
+    }
+    return out;
   }
 
   function syncNavOffset() {
@@ -114,6 +147,7 @@
     var slim = root.innerWidth <= 768 || (memorial && root.innerWidth <= 1024);
     if (manage || hidden || !slim) {
       if (banner.style.bottom) banner.style.bottom = '';
+      if (!manage && !hidden && !slim) liftBrochureClear();
       return;
     }
 
@@ -127,39 +161,20 @@
     var card = banner.getBoundingClientRect();
     var naturalTop = vh - floor - (card.height || 0);
     var need = floor;
-    var selectors = [
-      '#quoteIntro button',
-      '#quoteIntro .btn',
-      '.product-quote-intro button',
-      '.mobile-bottom-bar.is-visible .btn-primary'
-    ];
-    var seen = [];
+    var targets = controlNodes();
 
     function consider(el) {
-      if (!el || seen.indexOf(el) !== -1) return;
-      seen.push(el);
       var box = shownBox(el);
       if (!box || !vh) return;
       if (box.bottom <= 0 || box.top >= vh) return;
       if (card.height && box.bottom <= naturalTop + 0.5) return;
       if (box.top >= vh - floor - 0.5) return;
-      var above = Math.ceil(vh - box.top + gap);
+      var above = Math.ceil(vh - box.top + targetGap(el));
       if (above > need) need = above;
     }
 
     var i;
-    var j;
-    for (i = 0; i < selectors.length; i++) {
-      var nodes = doc.querySelectorAll(selectors[i]);
-      for (j = 0; j < nodes.length; j++) consider(nodes[j]);
-    }
-    var controls = doc.querySelectorAll('button, a');
-    for (i = 0; i < controls.length; i++) {
-      var control = controls[i];
-      if (!quoteLabel(control)) continue;
-      if (control.closest && control.closest('#cookieConsent, nav, #navbar, .mobile-bottom-nav')) continue;
-      consider(control);
-    }
+    for (i = 0; i < targets.length; i++) consider(targets[i]);
 
     if (!bar && root.innerWidth <= 768) {
       var dot = shownBox(doc.querySelector('.mobile-bottom-nav .nav-icon-bg'));
@@ -174,10 +189,50 @@
 
     banner.style.bottom = need + 'px';
     var placed = banner.getBoundingClientRect();
-    var placedIntro = shownBox(doc.querySelector('#quoteIntro button, #quoteIntro .btn'));
-    if (placedIntro && placedIntro.top < placed.bottom - 0.5 && placedIntro.bottom > placed.top) {
-      var corrected = Math.ceil(vh - placedIntro.top + gap);
-      if (corrected > need) banner.style.bottom = corrected + 'px';
+    for (i = 0; i < targets.length; i++) {
+      var placedBox = shownBox(targets[i]);
+      if (!placedBox) continue;
+      if (placedBox.top < placed.bottom - 0.5 && placedBox.bottom > placed.top && placedBox.left < placed.right && placedBox.right > placed.left) {
+        var corrected = Math.ceil(vh - placedBox.top + targetGap(targets[i]));
+        if (corrected > need) {
+          need = corrected;
+          banner.style.bottom = corrected + 'px';
+          placed = banner.getBoundingClientRect();
+        }
+      }
+    }
+  }
+
+  function targetGap(el) {
+    if (!el) return 8;
+    if (el.closest && el.closest('#brochureRequest')) return 16;
+    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (text === 'Send me the brochure') return 16;
+    return 8;
+  }
+
+  function liftBrochureClear() {
+    var vh = root.innerHeight || 0;
+    var guard = 0;
+    while (guard < 4) {
+      var card = banner.getBoundingClientRect();
+      if (!card.height) return;
+      var nodes = doc.querySelectorAll('#brochureRequest button[type="submit"], #brochureRequestStatus, .sm-brochure-field-error');
+      var need = 0;
+      for (var i = 0; i < nodes.length; i++) {
+        var box = shownBox(nodes[i]);
+        if (!box) continue;
+        if (box.top >= card.bottom - 0.5 || box.bottom <= card.top) continue;
+        if (box.left >= card.right - 0.5 || box.right <= card.left) continue;
+        var above = Math.ceil(vh - box.top + 16);
+        if (above > need) need = above;
+      }
+      if (!need) return;
+      var current = parseFloat(banner.style.bottom);
+      if (isNaN(current)) current = 0;
+      if (need <= current + 0.5) return;
+      banner.style.bottom = need + 'px';
+      guard++;
     }
   }
 
@@ -329,6 +384,10 @@
   var quoteBar = doc.querySelector('.mobile-bottom-bar');
   if (quoteBar && typeof root.MutationObserver === 'function') {
     new root.MutationObserver(queueNavOffset).observe(quoteBar, { attributes: true, attributeFilter: ['class'] });
+  }
+  var brochureForm = doc.getElementById('brochureRequest');
+  if (brochureForm && typeof root.MutationObserver === 'function') {
+    new root.MutationObserver(queueNavOffset).observe(brochureForm, { attributes: true, subtree: true, attributeFilter: ['hidden', 'class'] });
   }
   if (typeof root.ResizeObserver === 'function' && doc.body) {
     new root.ResizeObserver(queueNavOffset).observe(doc.body);

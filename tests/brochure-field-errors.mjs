@@ -18,6 +18,10 @@ assert.ok(form.indexOf('id="brochureEmail"') > form.indexOf('id="brochureNameErr
 assert.ok(form.indexOf('id="brochureEmailError"') > form.indexOf('id="brochureEmail"'));
 assert.ok(form.indexOf('id="brochureRequestStatus"') < form.indexOf('type="submit"'), "server message sits above the button, not under the cookie strip");
 assert.equal(form.includes("Please add your name and email."), false);
+assert.match(form, /<label for="brochurePhone">Phone<\/label>/);
+assert.equal(form.includes("(optional)"), false);
+assert.doesNotMatch(form, /id="brochurePhone"[^>]*\brequired\b/);
+assert.equal(up.brochureFieldErrors({ name: "Ada", email: "ada@example.co.uk", phone: "" }).phone, undefined);
 
 assert.deepEqual(up.brochureFieldErrors({ name: "", email: "" }), {
   name: "Please add your name.",
