@@ -3,11 +3,11 @@
 // in-page control in the lower viewport, and the footer.
 // Needs Chrome (google-chrome or CHROME_PATH).
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { launchChrome } from "./chrome-launch.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SIZES = [
@@ -62,21 +62,6 @@ function startServer() {
     res.end(readFileSync(file));
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
-}
-
-async function waitForJson(port) {
-  const deadline = Date.now() + 15000;
-  let last = "";
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (res.ok) return res.json();
-    } catch (error) {
-      last = error instanceof Error ? error.message : String(error);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`Chrome debugger did not open (${last})`);
 }
 
 function connect(wsUrl) {
@@ -160,7 +145,7 @@ async function main() {
   const { port } = server.address();
   const origin = `http://127.0.0.1:${port}`;
   const debugPort = 9600 + Math.floor(Math.random() * 200);
-  const chrome = spawn(chromeBin, [
+  const { proc: chrome, version } = await launchChrome(chromeBin, [
     "--headless=new",
     "--no-sandbox",
     "--disable-dev-shm-usage",
@@ -170,13 +155,12 @@ async function main() {
     "--remote-allow-origins=*",
     `--user-data-dir=/tmp/chrome-cookie-strip-${debugPort}`,
     "about:blank",
-  ], { stdio: "ignore" });
+  ]);
 
   const failures = [];
   const rows = [];
   let client;
   try {
-    const version = await waitForJson(debugPort);
     client = connect(version.webSocketDebuggerUrl);
     await client.ready;
     const { targetId } = await client.send("Target.createTarget", { url: "about:blank" });

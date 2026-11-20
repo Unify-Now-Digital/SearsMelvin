@@ -3,11 +3,11 @@
 // "Request your quote" control. Widths are the desktop sizes from the
 // review. Needs Chrome, and the LeadConnector widget must load.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { launchChrome } from "./chrome-launch.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const WIDTHS = (process.env.CHAT_HIT_WIDTHS || "1280,1440").split(",").map((n) => Number(n.trim())).filter(Boolean);
@@ -66,21 +66,6 @@ function startServer() {
     res.end(readFileSync(file));
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
-}
-
-async function waitForJson(port) {
-  const deadline = Date.now() + 15000;
-  let last = "";
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (res.ok) return res.json();
-    } catch (error) {
-      last = error instanceof Error ? error.message : String(error);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`Chrome debugger did not open (${last})`);
 }
 
 function connect(wsUrl) {
@@ -182,7 +167,7 @@ async function main() {
   const { port } = server.address();
   const origin = `http://127.0.0.1:${port}`;
   const debugPort = 9400 + Math.floor(Math.random() * 400);
-  const chromeProc = spawn(chrome, [
+  const { proc: chromeProc, version } = await launchChrome(chrome, [
     "--headless=new",
     "--no-sandbox",
     "--disable-dev-shm-usage",
@@ -192,12 +177,11 @@ async function main() {
     "--remote-allow-origins=*",
     `--user-data-dir=/tmp/chrome-chat-hits-${debugPort}`,
     "about:blank",
-  ], { stdio: "ignore" });
+  ]);
 
   const failures = [];
   let client;
   try {
-    const version = await waitForJson(debugPort);
     client = connect(version.webSocketDebuggerUrl);
     await client.ready;
     const { targetId } = await client.send("Target.createTarget", { url: "about:blank" });
