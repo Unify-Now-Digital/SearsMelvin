@@ -1,13 +1,10 @@
-// Karen stays on desktop. Phones and small screens hide the chat host.
-// The loader script is not skipped: click-intent still has its hook.
+// The chat host is visible on phones and on desktop. The one-second
+// fade does not turn pointer events off. The loader script is not skipped.
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 
 const css = readFileSync("chat-widget.css", "utf8");
-const hide = css.match(/@media \(max-width: 768px\) \{[\s\S]*?chat-widget,[\s\S]*?display:\s*none !important;\s*\}/);
-assert.ok(hide, "chat-widget.css must hide chat-widget at max-width 768px");
-assert.match(hide[0], /lc-chat-widget,/);
-assert.match(hide[0], /#chat-widget-button,/);
+assert.doesNotMatch(css, /@media \(max-width: 768px\) \{[^}]*display:\s*none/, "phones must not hide the chat host");
 
 const desktop = css.slice(0, css.indexOf("@media (max-width: 768px)"));
 assert.doesNotMatch(desktop, /chat-widget[^{]*\{[^}]*display:\s*none/, "desktop rules must not hide the chat host");

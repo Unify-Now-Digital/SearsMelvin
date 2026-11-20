@@ -110,25 +110,9 @@ body:has(#cookieConsent[style*="display: block"]) [data-widget-id="69f5bdefa4b26
     display: inline-flex;
 }
 
-/* Phones and small screens: hide the chat host, so the launcher bubble
-   and the greeting inside its shadow tree go with it. 768px is the site
-   mobile layout. The bottom nav starts here, site-globals.js uses the
-   same MOBILE_BREAKPOINT, and the offsets above already use this query.
-   The memorials filter button appears earlier, at 900px, when the sidebar
-   becomes a drawer. That is a catalogue layout, not this mobile chrome.
-   Desktop (769px and up) is unchanged. The loader script still runs. */
-@media (max-width: 768px) {
-    chat-widget,
-    lc-chat-widget,
-    #chat-widget-button,
-    iframe[src*="leadconnectorhq"],
-    iframe[src*="msgsndr"],
-    iframe[title*="hat"],
-    [data-widget-id="69ff236b0d119858db377c07"],
-    [data-widget-id="69f5bdefa4b26c5126799210"] {
-        display: none !important;
-    }
-}
+/* Phones use the same one-second fade as desktop. The corner anchor
+   below keeps the bubble above the price bar, the bottom nav, and the
+   cookie card. */
 
 /* Hide the chat widget (greeting bubble + round button) while the memorial
    quote pop-up is open; it covered the configuration summary on mobile.
@@ -147,8 +131,8 @@ body:has(.quote-overlay.active) lc-chat-widget { display: none !important; }
    move the bubble. A zero-size fixed host at the corner, with a flat
    transform, becomes the box the bubble is positioned against.
    --sm-chat-bottom is the gap under that corner. site-globals.js sets
-   it so the bubble and greeting sit above the price bar and any quote
-   button. Phones stay hidden in the max-width 768px rule above. */
+   it so the bubble and greeting sit above the price bar, the cookie
+   card, and any quote button. Phones use this same anchor. */
 html body chat-widget {
     position: fixed !important;
     top: auto !important;

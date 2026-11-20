@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 import { launchChrome } from "./chrome-launch.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const WIDTHS = (process.env.CHAT_HIT_WIDTHS || "1280,1440").split(",").map((n) => Number(n.trim())).filter(Boolean);
+const WIDTHS = (process.env.CHAT_HIT_WIDTHS || "360,390,414,768,1280,1440").split(",").map((n) => Number(n.trim())).filter(Boolean);
+const HEIGHTS = { 360: 800, 390: 844, 414: 896, 768: 1024, 1280: 900, 1440: 900 };
 const PAGES = [
   ["home", "/"],
   ["product", "/memorial.html"],
@@ -216,7 +217,7 @@ async function main() {
 
     for (const [name, path] of PAGES) {
       for (const width of WIDTHS) {
-        const height = width <= 768 ? 844 : 900;
+        const height = HEIGHTS[width] || (width <= 768 ? 844 : 900);
         await send("Page.navigate", { url: origin + path });
         await evalJson(`new Promise((resolve) => {
           if (document.readyState === "complete") resolve();
@@ -234,12 +235,11 @@ async function main() {
           failures.push(`${label}: chat widget did not load`);
           continue;
         }
-        if (sample.display !== "none") {
-          if (Number(sample.opacity) < 0.99) failures.push(`${label}: opacity ${sample.opacity} after 1.3s`);
-          if (sample.pointer !== "auto") failures.push(`${label}: pointer-events ${sample.pointer}`);
-          if (sample.position && sample.position !== "bottom-right") failures.push(`${label}: position ${sample.position}`);
-          if (!sample.bubble) failures.push(`${label}: bubble is not hit-testable`);
-        }
+        if (sample.display === "none") failures.push(`${label}: chat is hidden`);
+        if (Number(sample.opacity) < 0.99) failures.push(`${label}: opacity ${sample.opacity} after 1.3s`);
+        if (sample.pointer !== "auto") failures.push(`${label}: pointer-events ${sample.pointer}`);
+        if (sample.position && sample.position !== "bottom-right") failures.push(`${label}: position ${sample.position}`);
+        if (!sample.bubble) failures.push(`${label}: bubble is not hit-testable`);
         for (const hit of sample.hits) {
           if (hit.covered) failures.push(`${label}: ${hit.text} ${hit.w}x${hit.h} ${hit.name} hit ${hit.top}`);
         }
