@@ -109,14 +109,17 @@
   function syncNavOffset() {
     var manage = banner.classList.contains('is-manage');
     var hidden = banner.style.display === 'none';
-    if (manage || hidden) {
-      doc.documentElement.style.setProperty('--sm-cookie-stack', '0px');
+    var open = !(manage || hidden);
+    doc.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
+    /* Keep the inline value equal to the stylesheet so a later write cannot
+       move the page. The stylesheet already reserved this height. */
+    doc.documentElement.style.setProperty('--sm-cookie-stack', (open ? stackHeight() : 0) + 'px');
+    if (!open) {
       banner.style.top = '';
       return;
     }
     var header = root.innerWidth <= 768 ? 68 : 80;
     banner.style.top = header + 'px';
-    doc.documentElement.style.setProperty('--sm-cookie-stack', stackHeight() + 'px');
   }
 
   var offsetQueued = false;

@@ -63,14 +63,11 @@
     /* Reserve the cookie strip before first paint. A stored choice means
        the strip stays hidden, so the offset is 0. Does not change consent. */
     (function () {
-      var stack = 0;
-      try {
-        if (!localStorage.getItem('cookieConsent')) {
-          var w = document.documentElement.clientWidth || window.innerWidth || 0;
-          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
-        }
-      } catch (e) {}
-      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+      var open = true;
+      try { open = !localStorage.getItem('cookieConsent'); } catch (e) {}
+      /* CSS media queries turn this into the strip height before first paint.
+         Measuring the width here was late on some cold loads. */
+      document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
@@ -800,7 +797,7 @@
             .quote-overlay { align-items: flex-start; overflow-y: auto; }
             .quote-modal { max-height: none; overflow: visible; margin: auto 0; }
             .quote-form-row { grid-template-columns: 1fr; }
-            .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; padding-top: calc(var(--header-height, 68px) + 0.4rem); }
+            .breadcrumb-bar { padding: 0.5rem 1rem 0.4rem; padding-top: calc(var(--header-height, 68px) + var(--sm-cookie-stack, 0px) + 0.4rem); }
             .breadcrumb { font-size: 0.78rem; gap: 0.35rem; flex-wrap: wrap; overflow-wrap: anywhere; }
             .product-detail { padding: 0.5rem 0.75rem 1rem; }
             .product-container { gap: 1.25rem; }
@@ -813,8 +810,8 @@
         @media (max-width: 768px) {
             html body .gallery-main { aspect-ratio: 4 / 3; height: auto; max-height: none; }
             html body .gallery-main img { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: center; }
-            .phone-colour-slot { margin: 0.65rem 0 0.35rem; }
-            /* Reserve the colour strip before it is moved here, so the intro below does not jump. */
+            .phone-colour-slot { margin: 0.65rem 0 0.35rem; min-height: 19rem; }
+            /* Same height while the strip is still in its home, so moving it here does not push the page. */
             #phoneColourSlot[hidden] { display: block !important; min-height: 19rem; }
             .phone-colour-slot .stone-colour-preview {
                 margin: 0 0 0.75rem;
@@ -1026,7 +1023,7 @@
             /* The product CTA repeats these guarantees at a readable size. */
             body.memorial-page .site-trust-bar { display: none; }
             /* Trust bar is hidden here, so the breadcrumb has to clear the header itself. */
-            .breadcrumb-bar { padding-top: calc(var(--header-height, 68px) + 0.5rem); }
+            .breadcrumb-bar { padding-top: calc(var(--header-height, 68px) + var(--sm-cookie-stack, 0px) + 0.5rem); }
             .breadcrumb { flex-wrap: wrap; }
             body.memorial-page { overflow-x: clip; }
         }
