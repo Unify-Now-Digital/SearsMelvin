@@ -1,0 +1,17 @@
+Subject: Brochure request: Alex Taylor
+From: Sears Melvin Memorials <info@searsmelvin.co.uk>
+To: info@searsmelvin.co.uk
+
+Alex Taylor has asked for the brochure.
+
+Name: Alex Taylor
+Phone: 020 7946 0123
+Email: alex@example.com
+Source: Home
+Page: https://searsmelvin.co.uk/
+Ad: Google Ads · memorials_search
+Time: 20 Nov 2026, 12:15 UK time
+
+Reply by email: mailto:alex@example.com
+Call: tel:+442079460123
+Open in HighLevel: https://app.gohighlevel.com/v2/location/7JJQ1fkS2z8zv5XIDV0P/contacts/detail/{contact_id}
