@@ -1,5 +1,7 @@
 /* Cookie choice card.
-   Phone (768px and below): inset card above the bottom nav. No visible heading.
+   Phone (768px and below): slim full-width strip above the bottom nav.
+   Memorial pages at 1024px and below use the same strip, above the phone bar.
+   No visible heading on that strip.
    Desktop: bottom-left card with the heading "Your cookie choices".
    "Manage choices" opens the second layer. Essential stays on.
    Analytics starts off and maps to analytics_storage.
@@ -97,20 +99,102 @@
     return box;
   }
 
+  function quoteLabel(el) {
+    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    return text === 'Get a quote' || text === 'Request your quote';
+  }
+
   function syncNavOffset() {
     var navBox = shownBox(doc.querySelector('.mobile-bottom-nav'));
-    var height = navBox ? Math.round(navBox.height) : 0;
-    doc.documentElement.style.setProperty('--ck-nav', height + 'px');
-    if (banner.classList.contains('is-manage') || root.innerWidth > 768) return;
-    if (banner.style.display === 'none') return;
-    var dot = shownBox(doc.querySelector('.mobile-bottom-nav .nav-icon-bg'));
-    if (!dot || dot.bottom < 0 || dot.top > root.innerHeight) return;
-    var card = banner.getBoundingClientRect();
-    if (!card.height) return;
-    var need = Math.ceil(card.bottom - (dot.top - 12));
-    if (need > 0 && need < root.innerHeight / 2) {
-      doc.documentElement.style.setProperty('--ck-nav', (height + need) + 'px');
+    var navHeight = navBox ? Math.round(navBox.height) : 0;
+    doc.documentElement.style.setProperty('--ck-nav', navHeight + 'px');
+    var manage = banner.classList.contains('is-manage');
+    var hidden = banner.style.display === 'none';
+    var memorial = !!(doc.body && doc.body.classList.contains('memorial-page'));
+    var slim = root.innerWidth <= 768 || (memorial && root.innerWidth <= 1024);
+    if (manage || hidden || !slim) {
+      if (banner.style.bottom) banner.style.bottom = '';
+      return;
     }
+
+    var gap = 8;
+    var floor = 0;
+    var bar = shownBox(doc.querySelector('.mobile-bottom-bar.is-visible'));
+    if (bar) floor = Math.round(bar.height);
+    else if (navBox && root.innerWidth <= 768 && navBox.top < (root.innerHeight || 0) && navBox.bottom > 0) floor = navHeight;
+
+    var vh = root.innerHeight || 0;
+    var card = banner.getBoundingClientRect();
+    var naturalTop = vh - floor - (card.height || 0);
+    var need = floor;
+    var selectors = [
+      '#quoteIntro button',
+      '#quoteIntro .btn',
+      '.product-quote-intro button',
+      '.mobile-bottom-bar.is-visible .btn-primary'
+    ];
+    var seen = [];
+
+    function consider(el) {
+      if (!el || seen.indexOf(el) !== -1) return;
+      seen.push(el);
+      var box = shownBox(el);
+      if (!box || !vh) return;
+      if (box.bottom <= 0 || box.top >= vh) return;
+      if (card.height && box.bottom <= naturalTop + 0.5) return;
+      if (box.top >= vh - floor - 0.5) return;
+      var above = Math.ceil(vh - box.top + gap);
+      if (above > need) need = above;
+    }
+
+    var i;
+    var j;
+    for (i = 0; i < selectors.length; i++) {
+      var nodes = doc.querySelectorAll(selectors[i]);
+      for (j = 0; j < nodes.length; j++) consider(nodes[j]);
+    }
+    var controls = doc.querySelectorAll('button, a');
+    for (i = 0; i < controls.length; i++) {
+      var control = controls[i];
+      if (!quoteLabel(control)) continue;
+      if (control.closest && control.closest('#cookieConsent, nav, #navbar, .mobile-bottom-nav')) continue;
+      consider(control);
+    }
+
+    if (!bar && root.innerWidth <= 768) {
+      var dot = shownBox(doc.querySelector('.mobile-bottom-nav .nav-icon-bg'));
+      if (dot && dot.bottom >= 0 && dot.top <= vh) {
+        var dotClear = Math.ceil(vh - (dot.top - 12));
+        if (dotClear > floor && dotClear < vh / 2) {
+          doc.documentElement.style.setProperty('--ck-nav', dotClear + 'px');
+        }
+        if (dotClear > need) need = dotClear;
+      }
+    }
+
+    banner.style.bottom = need + 'px';
+    var placed = banner.getBoundingClientRect();
+    var placedIntro = shownBox(doc.querySelector('#quoteIntro button, #quoteIntro .btn'));
+    if (placedIntro && placedIntro.top < placed.bottom - 0.5 && placedIntro.bottom > placed.top) {
+      var corrected = Math.ceil(vh - placedIntro.top + gap);
+      if (corrected > need) banner.style.bottom = corrected + 'px';
+    }
+  }
+
+  var offsetQueued = false;
+  function queueNavOffset() {
+    if (offsetQueued) return;
+    offsetQueued = true;
+    var run = function () {
+      offsetQueued = false;
+      syncNavOffset();
+    };
+    if (root.requestAnimationFrame) {
+      root.requestAnimationFrame(function () {
+        run();
+        root.requestAnimationFrame(syncNavOffset);
+      });
+    } else run();
   }
 
   function setSwitch(button, stateEl, on) {
@@ -234,6 +318,33 @@
 
   doc.addEventListener('keydown', onKey);
   root.addEventListener('resize', syncNavOffset);
+  root.addEventListener('scroll', function () {
+    queueNavOffset();
+    // Header and font shifts can move an in-flow button after the first frame.
+    root.setTimeout(queueNavOffset, 150);
+    root.setTimeout(queueNavOffset, 450);
+  }, { passive: true });
+  root.setTimeout(queueNavOffset, 400);
+  root.setTimeout(queueNavOffset, 1000);
+  var quoteBar = doc.querySelector('.mobile-bottom-bar');
+  if (quoteBar && typeof root.MutationObserver === 'function') {
+    new root.MutationObserver(queueNavOffset).observe(quoteBar, { attributes: true, attributeFilter: ['class'] });
+  }
+  if (typeof root.ResizeObserver === 'function' && doc.body) {
+    new root.ResizeObserver(queueNavOffset).observe(doc.body);
+  }
+  if (doc.fonts && doc.fonts.ready && typeof doc.fonts.ready.then === 'function') {
+    doc.fonts.ready.then(queueNavOffset);
+  }
+  if (typeof root.IntersectionObserver === 'function') {
+    var offsetObserver = new root.IntersectionObserver(queueNavOffset);
+    var navEl = doc.querySelector('.mobile-bottom-nav');
+    var dotEl = doc.querySelector('.mobile-bottom-nav .nav-icon-bg');
+    if (navEl) offsetObserver.observe(navEl);
+    if (dotEl) offsetObserver.observe(dotEl);
+    var introEl = doc.getElementById('quoteIntro');
+    if (introEl) offsetObserver.observe(introEl);
+  }
   root.addEventListener('hashchange', function () {
     if (root.location && root.location.hash === '#cookie-settings') openManage('footer');
   });
