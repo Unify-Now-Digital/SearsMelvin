@@ -67,8 +67,9 @@ assert.match(html, /@media \(max-width: 1024px\)[\s\S]*\.mobile-bottom-bar\.is-v
 assert.doesNotMatch(html, /@media \(min-width: 769px\)[\s\S]{0,400}\.mobile-bottom-bar\.is-visible/);
 assert.match(css, /@media \(max-width: 1024px\) \{[\s\S]*html body \.mobile-bottom-bar \{[\s\S]*background: var\(--sm-color-bg\);[\s\S]*border-top: 1px solid var\(--sm-color-border-decorative\);/);
 const cookieCss = readFileSync("cookie-consent.css", "utf8");
-assert.match(cookieCss, /body\.memorial-page:has\(\.mobile-bottom-bar\.is-visible\) #cookieConsent\.sm-cookie:not\(\.is-manage\)/);
-assert.match(cookieCss, /--sm-phone-bar-offset/);
+assert.doesNotMatch(cookieCss, /body\.memorial-page:has\(\.mobile-bottom-bar\.is-visible\) #cookieConsent/);
+assert.doesNotMatch(cookieCss, /--sm-phone-bar-offset/);
+assert.doesNotMatch(cookieCss, /bottom:\s*140px/);
 assert.match(css, /html body \.mobile-bottom-bar \.mobile-bar-call \{[\s\S]*width: var\(--sm-control-height\);[\s\S]*height: var\(--sm-control-height\);/);
 assert.doesNotMatch(css.slice(css.lastIndexOf("Memorial phone bar")), /#[0-9a-fA-F]{3,8}\b/, "the bar uses tokens, not a raw colour");
 

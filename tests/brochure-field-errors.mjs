@@ -18,6 +18,10 @@ assert.ok(form.indexOf('id="brochureEmail"') > form.indexOf('id="brochureNameErr
 assert.ok(form.indexOf('id="brochureEmailError"') > form.indexOf('id="brochureEmail"'));
 assert.ok(form.indexOf('id="brochureRequestStatus"') < form.indexOf('type="submit"'), "server message sits above the button, not under the cookie strip");
 assert.equal(form.includes("Please add your name and email."), false);
+assert.match(form, /<label for="brochurePhone">Phone<\/label>/);
+assert.equal(form.includes("(optional)"), false);
+assert.doesNotMatch(form, /id="brochurePhone"[^>]*\brequired\b/);
+assert.equal(up.brochureFieldErrors({ name: "Ada", email: "ada@example.co.uk", phone: "" }).phone, undefined);
 
 assert.deepEqual(up.brochureFieldErrors({ name: "", email: "" }), {
   name: "Please add your name.",
@@ -117,8 +121,8 @@ assert.equal(status.scrolled, true);
 
 assert.match(css, /input\[aria-invalid="true"\][\s\S]*border-width:\s*2px/);
 assert.match(css, /border-color:\s*var\(--sm-color-error\)/);
-assert.match(css, /scroll-margin-bottom:\s*calc\(var\(--ck-nav, 79px\) \+ 8\.5rem\)/);
-assert.match(css, /#cookieConsent\[style\*="display: block"\]\) \.sm-brochure-request/);
+assert.match(css, /scroll-margin-top:\s*calc\(var\(--header-height, 80px\) \+ var\(--sm-cookie-stack, 0px\) \+ 12px\)/);
+assert.doesNotMatch(css, /--ck-nav/, "the brochure form does not lift for a bottom cookie strip");
 assert.match(js, /paintBrochureErrors\(form, fieldErrors\)/);
 assert.match(js, /first\.focus\(\)/);
 assert.doesNotMatch(js, /Please add your name and email/);

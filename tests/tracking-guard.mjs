@@ -29,12 +29,15 @@ for (const f of pages) {
   const gtmBlock = s.slice(s.lastIndexOf("<script>", iGtm), s.indexOf("</script>", iGtm));
   assert.doesNotMatch(gtmBlock, /requestIdleCallback|addEventListener|setTimeout/, `${f}: GTM loader must not be deferred`);
   assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
-  // LeadConnector chat stays deferred (interaction or 10s), never loaded at parse time.
+  // LeadConnector chat starts loading after 1 second. It is not loaded
+  // at parse time, on the first interaction, or after 10 seconds.
   const iLc = s.indexOf("widgets.leadconnectorhq.com/loader.js");
   assert.ok(iLc > -1, `${f}: LeadConnector loader missing`);
   const lcBlock = s.slice(s.lastIndexOf("<script>", iLc), s.indexOf("</script>", iLc));
   assert.match(lcBlock, /function load\(\)\{\s*if \(loaded\) return; loaded = true;[\s\S]*widgets\.leadconnectorhq\.com\/loader\.js/, `${f}: LeadConnector chat must stay behind the deferred load()`);
-  assert.match(lcBlock, /setTimeout\(load, 10000\)/, `${f}: LeadConnector 10s fallback missing`);
+  assert.match(lcBlock, /setTimeout\(load, 1000\)/, `${f}: LeadConnector must start loading at 1 second`);
+  assert.doesNotMatch(lcBlock, /setTimeout\(load, 10000\)/, `${f}: LeadConnector 10s wait must stay gone`);
+  assert.doesNotMatch(lcBlock, /pointerdown|touchstart/, `${f}: LeadConnector must not wait for interaction`);
   assert.doesNotMatch(lcBlock, /'scroll'/, `${f}: LeadConnector must not load on scroll`);
 }
 

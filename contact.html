@@ -59,6 +59,20 @@
         f.parentNode.insertBefore(gtm, f);
       })();
     </script>
+    <script>
+    /* Reserve the cookie strip before first paint. A stored choice means
+       the strip stays hidden, so the offset is 0. Does not change consent. */
+    (function () {
+      var stack = 0;
+      try {
+        if (!localStorage.getItem('cookieConsent')) {
+          var w = document.documentElement.clientWidth || window.innerWidth || 0;
+          stack = w <= 389 ? 102 : w <= 430 ? 99 : 61;
+        }
+      } catch (e) {}
+      document.documentElement.style.setProperty('--sm-cookie-stack', stack + 'px');
+    })();
+    </script>
     <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
          long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
          scroll events during measurement and idle for ~3s, so the previous
@@ -122,10 +136,7 @@
           lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
           document.body.appendChild(lc);
         }
-        var evts = ['pointerdown','keydown','touchstart'];
-        function trigger(){ load(); evts.forEach(function(e){ window.removeEventListener(e, trigger); }); }
-        evts.forEach(function(e){ window.addEventListener(e, trigger, {passive:true, once:true}); });
-        setTimeout(load, 10000);
+        setTimeout(load, 1000);
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -359,7 +370,6 @@
             .logo { font-size: 1.15rem; gap: 0.5rem; white-space: nowrap; }
             .logo span { display: none; }
             .mobile-menu-btn { display: flex; }
-            .form-row { grid-template-columns: 1fr; }
             .contact-container { gap: 1.25rem; }
             .contact-methods { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
             .contact-method { flex: 1 1 calc(50% - 0.25rem); min-width: 0; padding: 0.7rem 0.8rem; gap: 0.6rem; border-radius: 10px; }
@@ -381,6 +391,18 @@
             .page-header { display: none; }
             .contact-section { padding: 0.6rem 0.85rem 2.5rem; }
             body { padding-bottom: 70px; }
+        }
+        @media (max-width: 640px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        /* On a short phone the full form is taller than the screen. Extra
+           space above it keeps Send Message off the bottom nav instead of
+           leaving the button half covered. */
+        @media (max-width: 480px) {
+            .contact-section { padding-top: 0.2rem; }
+            .form-group { margin-bottom: 0.35rem; }
+            .form-textarea { min-height: 64px; }
+            .contact-section .service-area-line-compact { display: none; }
         }
 
         /* Mobile Bottom Nav */
@@ -494,7 +516,7 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=5">
+    <link rel="stylesheet" href="/chat-widget.css?v=8">
 
     <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
@@ -806,7 +828,7 @@
                         <a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a>
                         <a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a>
                         <a href="/faq" class="search-quick-link">FAQs</a>
-                        <a href="/contact" class="search-quick-link">Get a Quote</a>
+                        <a href="/contact" class="search-quick-link">Get a quote</a>
                     </div>
                 </div>
             </div>
@@ -1345,7 +1367,7 @@
         }
 
         function getQuickLinksHTML() {
-            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a Quote</a></div></div>';
+            return '<div class="search-section" id="quickLinksSection"><div class="search-section-title">Quick Links</div><div class="search-quick-links"><a href="/memorials" class="search-quick-link">Browse memorials</a><a href="/memorials?type=lawn-headstones" class="search-quick-link">Lawn Headstones</a><a href="/memorials?type=kerb-sets" class="search-quick-link">Kerb Sets</a><a href="/faq" class="search-quick-link">FAQs</a><a href="/contact" class="search-quick-link">Get a quote</a></div></div>';
         }
 
         function handleSearch(query) {
@@ -1419,7 +1441,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261111" defer></script>
+    <script src="/site-globals.js?v=20261120" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261120b" defer></script>
 </body>

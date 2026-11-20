@@ -3,11 +3,11 @@
 // in-page control in the lower viewport, and the footer.
 // Needs Chrome (google-chrome or CHROME_PATH).
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { launchChrome } from "./chrome-launch.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SIZES = [
@@ -62,21 +62,6 @@ function startServer() {
     res.end(readFileSync(file));
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
-}
-
-async function waitForJson(port) {
-  const deadline = Date.now() + 15000;
-  let last = "";
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (res.ok) return res.json();
-    } catch (error) {
-      last = error instanceof Error ? error.message : String(error);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`Chrome debugger did not open (${last})`);
 }
 
 function connect(wsUrl) {
@@ -137,7 +122,9 @@ const MEASURE = `(() => {
     vh: innerHeight,
     scrollY: Math.round(scrollY),
     cookie,
-    cookieBottom: cookieEl ? getComputedStyle(cookieEl).bottom : null,
+    cookieTop: cookieEl ? getComputedStyle(cookieEl).top : null,
+    inlineBottom: cookieEl ? cookieEl.style.bottom : "",
+    stack: getComputedStyle(document.documentElement).getPropertyValue("--sm-cookie-stack").trim(),
     gap: cookie && intro ? round(intro.top - cookie.bottom) : null,
     introOverlap: overlap(cookie, intro),
     barBtnOverlap: overlap(cookie, barBtn),
@@ -147,6 +134,7 @@ const MEASURE = `(() => {
     accept: acceptBox,
     reject: rejectBox,
     sameSize: !!(acceptBox && rejectBox && Math.abs(acceptBox.w - rejectBox.w) < 1 && Math.abs(acceptBox.h - rejectBox.h) < 1),
+    wordFits: !!(accept && reject && accept.scrollWidth <= accept.clientWidth + 1 && reject.scrollWidth <= reject.clientWidth + 1),
     sameStyle: !!(acceptStyle && rejectStyle && acceptStyle.backgroundColor === rejectStyle.backgroundColor && acceptStyle.color === rejectStyle.color && acceptStyle.fontWeight === rejectStyle.fontWeight),
     privacy: !!(cookieEl && cookieEl.querySelector('a[href="/privacy"]')),
     manage: !!document.getElementById("cookieManage"),
@@ -160,7 +148,7 @@ async function main() {
   const { port } = server.address();
   const origin = `http://127.0.0.1:${port}`;
   const debugPort = 9600 + Math.floor(Math.random() * 200);
-  const chrome = spawn(chromeBin, [
+  const { proc: chrome, version } = await launchChrome(chromeBin, [
     "--headless=new",
     "--no-sandbox",
     "--disable-dev-shm-usage",
@@ -170,13 +158,12 @@ async function main() {
     "--remote-allow-origins=*",
     `--user-data-dir=/tmp/chrome-cookie-strip-${debugPort}`,
     "about:blank",
-  ], { stdio: "ignore" });
+  ]);
 
   const failures = [];
   const rows = [];
   let client;
   try {
-    const version = await waitForJson(debugPort);
     client = connect(version.webSocketDebuggerUrl);
     await client.ready;
     const { targetId } = await client.send("Target.createTarget", { url: "about:blank" });
@@ -218,12 +205,18 @@ async function main() {
     function check(label, row) {
       rows.push({ label, ...row, cookieH: row.cookie && row.cookie.h });
       if (!row.cookie || row.cookie.h < 40) failures.push(`${label}: cookie strip missing`);
+      const header = row.vw <= 768 ? 68 : 80;
+      if (Math.abs(row.cookie.top - header) > 2) failures.push(`${label}: strip is not under the header (top ${row.cookie.top})`);
       if (row.introOverlap > 0) failures.push(`${label}: Request your quote overlap ${row.introOverlap}px`);
       if (row.barBtnOverlap > 0) failures.push(`${label}: Get a quote overlap ${row.barBtnOverlap}px`);
       if (row.barOverlap > 0) failures.push(`${label}: phone bar overlap ${row.barOverlap}px`);
       if (!row.sameSize || !row.sameStyle) failures.push(`${label}: Accept and Reject differ`);
+      if (!row.wordFits) failures.push(`${label}: Accept or Reject is clipped`);
       if (!row.privacy || !row.manage) failures.push(`${label}: privacy link or Manage choices missing`);
       if (row.cookie && row.cookie.left > 1) failures.push(`${label}: strip is not full width (left ${row.cookie.left})`);
+      if (row.inlineBottom) failures.push(`${label}: first layer set bottom (${row.inlineBottom})`);
+      const stack = parseFloat(row.stack);
+      if (!Number.isFinite(stack) || Math.abs(stack - row.cookie.h) > 1) failures.push(`${label}: page offset ${row.stack} is not the strip height ${row.cookie.h}`);
     }
 
     for (const size of SIZES) {
@@ -257,8 +250,8 @@ async function main() {
     await settle();
     const desk = await evalJson(MEASURE);
     rows.push({ label: "1280 desktop home", ...desk });
-    if (!desk.cookie || desk.cookie.left < 16 || desk.cookie.w > 480) {
-      failures.push(`desktop home card moved (left ${desk.cookie && desk.cookie.left}, width ${desk.cookie && desk.cookie.w})`);
+    if (!desk.cookie || Math.abs(desk.cookie.top - 80) > 2 || desk.cookie.left > 1) {
+      failures.push(`desktop home strip moved (top ${desk.cookie && desk.cookie.top}, left ${desk.cookie && desk.cookie.left})`);
     }
 
     await open("/memorial.html", { w: 1280, h: 800 });
@@ -266,9 +259,11 @@ async function main() {
     await settle();
     const deskProduct = await evalJson(MEASURE);
     rows.push({ label: "1280 desktop product", ...deskProduct });
-    if (!deskProduct.cookie || deskProduct.cookie.left < 16 || deskProduct.cookie.w > 480) {
-      failures.push(`desktop product card moved (left ${deskProduct.cookie && deskProduct.cookie.left}, width ${deskProduct.cookie && deskProduct.cookie.w})`);
+    if (!deskProduct.cookie || Math.abs(deskProduct.cookie.top - 80) > 2 || deskProduct.cookie.left > 1) {
+      failures.push(`desktop product strip moved (top ${deskProduct.cookie && deskProduct.cookie.top}, left ${deskProduct.cookie && deskProduct.cookie.left})`);
     }
+    if (deskProduct.introOverlap > 0) failures.push(`desktop product quote overlap ${deskProduct.introOverlap}px`);
+    if (desk.inlineBottom || deskProduct.inlineBottom) failures.push("desktop strip set a bottom value");
   } finally {
     if (client) client.close();
     chrome.kill("SIGKILL");
@@ -276,7 +271,7 @@ async function main() {
   }
 
   for (const row of rows) {
-    console.log(`${row.label}: intro ${row.introOverlap}px, bar button ${row.barBtnOverlap}px, bar ${row.barOverlap}px, strip ${row.cookieH}px, bottom ${row.cookieBottom}, bar visible ${row.barVisible}`);
+    console.log(`${row.label}: intro ${row.introOverlap}px, bar button ${row.barBtnOverlap}px, bar ${row.barOverlap}px, strip ${row.cookieH}px, top ${row.cookieTop}, bar visible ${row.barVisible}`);
   }
   assert.deepEqual(failures, [], failures.join("\n"));
   console.log("cookie-strip-overlap: ok");

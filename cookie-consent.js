@@ -1,8 +1,6 @@
-/* Cookie choice card.
-   Phone (768px and below): slim full-width strip above the bottom nav.
-   Memorial pages at 1024px and below use the same strip, above the phone bar.
-   No visible heading on that strip.
-   Desktop: bottom-left card with the heading "Your cookie choices".
+/* Cookie choice.
+   The first layer is a slim strip under the header on every page.
+   It sets its top and the page offset, and never a bottom value.
    "Manage choices" opens the second layer. Essential stays on.
    Analytics starts off and maps to analytics_storage.
    Ads starts off and maps to ad_storage, ad_user_data and ad_personalization.
@@ -99,86 +97,26 @@
     return box;
   }
 
-  function quoteLabel(el) {
-    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    return text === 'Get a quote' || text === 'Request your quote';
+  // Same heights as the head script and cookie-consent.css. Measuring the
+  // strip here let the offset change again after fonts and the chat loaded.
+  function stackHeight() {
+    var w = root.innerWidth || 0;
+    if (w <= 389) return 102;
+    if (w <= 430) return 99;
+    return 61;
   }
 
   function syncNavOffset() {
-    var navBox = shownBox(doc.querySelector('.mobile-bottom-nav'));
-    var navHeight = navBox ? Math.round(navBox.height) : 0;
-    doc.documentElement.style.setProperty('--ck-nav', navHeight + 'px');
     var manage = banner.classList.contains('is-manage');
     var hidden = banner.style.display === 'none';
-    var memorial = !!(doc.body && doc.body.classList.contains('memorial-page'));
-    var slim = root.innerWidth <= 768 || (memorial && root.innerWidth <= 1024);
-    if (manage || hidden || !slim) {
-      if (banner.style.bottom) banner.style.bottom = '';
+    if (manage || hidden) {
+      doc.documentElement.style.setProperty('--sm-cookie-stack', '0px');
+      banner.style.top = '';
       return;
     }
-
-    var gap = 8;
-    var floor = 0;
-    var bar = shownBox(doc.querySelector('.mobile-bottom-bar.is-visible'));
-    if (bar) floor = Math.round(bar.height);
-    else if (navBox && root.innerWidth <= 768 && navBox.top < (root.innerHeight || 0) && navBox.bottom > 0) floor = navHeight;
-
-    var vh = root.innerHeight || 0;
-    var card = banner.getBoundingClientRect();
-    var naturalTop = vh - floor - (card.height || 0);
-    var need = floor;
-    var selectors = [
-      '#quoteIntro button',
-      '#quoteIntro .btn',
-      '.product-quote-intro button',
-      '.mobile-bottom-bar.is-visible .btn-primary'
-    ];
-    var seen = [];
-
-    function consider(el) {
-      if (!el || seen.indexOf(el) !== -1) return;
-      seen.push(el);
-      var box = shownBox(el);
-      if (!box || !vh) return;
-      if (box.bottom <= 0 || box.top >= vh) return;
-      if (card.height && box.bottom <= naturalTop + 0.5) return;
-      if (box.top >= vh - floor - 0.5) return;
-      var above = Math.ceil(vh - box.top + gap);
-      if (above > need) need = above;
-    }
-
-    var i;
-    var j;
-    for (i = 0; i < selectors.length; i++) {
-      var nodes = doc.querySelectorAll(selectors[i]);
-      for (j = 0; j < nodes.length; j++) consider(nodes[j]);
-    }
-    var controls = doc.querySelectorAll('button, a');
-    for (i = 0; i < controls.length; i++) {
-      var control = controls[i];
-      if (!quoteLabel(control)) continue;
-      if (control.closest && control.closest('#cookieConsent, nav, #navbar, .mobile-bottom-nav')) continue;
-      consider(control);
-    }
-
-    if (!bar && root.innerWidth <= 768) {
-      var dot = shownBox(doc.querySelector('.mobile-bottom-nav .nav-icon-bg'));
-      if (dot && dot.bottom >= 0 && dot.top <= vh) {
-        var dotClear = Math.ceil(vh - (dot.top - 12));
-        if (dotClear > floor && dotClear < vh / 2) {
-          doc.documentElement.style.setProperty('--ck-nav', dotClear + 'px');
-        }
-        if (dotClear > need) need = dotClear;
-      }
-    }
-
-    banner.style.bottom = need + 'px';
-    var placed = banner.getBoundingClientRect();
-    var placedIntro = shownBox(doc.querySelector('#quoteIntro button, #quoteIntro .btn'));
-    if (placedIntro && placedIntro.top < placed.bottom - 0.5 && placedIntro.bottom > placed.top) {
-      var corrected = Math.ceil(vh - placedIntro.top + gap);
-      if (corrected > need) banner.style.bottom = corrected + 'px';
-    }
+    var header = root.innerWidth <= 768 ? 68 : 80;
+    banner.style.top = header + 'px';
+    doc.documentElement.style.setProperty('--sm-cookie-stack', stackHeight() + 'px');
   }
 
   var offsetQueued = false;
@@ -214,13 +152,65 @@
     setSwitch(adsSwitch, adsState, ads);
   }
 
+  function shiftNodes() {
+    var out = [];
+    var kids = doc.body ? doc.body.children : [];
+    var i;
+    for (i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (!el || el.nodeType !== 1) continue;
+      var tag = el.tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'NOSCRIPT') continue;
+      var cs;
+      try { cs = root.getComputedStyle(el); } catch (e) { continue; }
+      if (cs.position === 'fixed' || cs.position === 'sticky' || cs.display === 'none') continue;
+      out.push(el);
+    }
+    return out;
+  }
+
+  // The offset is removed in the same frame, and the in-flow page is held
+  // with a transform so it does not jump. The transform then eases to rest.
+  // A transform does not count as layout shift.
+  function easeStackAway(px) {
+    if (!(px > 1)) return;
+    var reduce = false;
+    try { reduce = root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduce) return;
+    var nodes = shiftNodes();
+    if (!nodes.length) return;
+    var i;
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].style.transition = 'none';
+      nodes[i].style.transform = 'translateY(' + px + 'px)';
+    }
+    if (nodes[0]) nodes[0].getBoundingClientRect();
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].style.transition = 'transform 280ms ease';
+      nodes[i].style.transform = 'translateY(0)';
+    }
+    root.setTimeout(function () {
+      var j;
+      for (j = 0; j < nodes.length; j++) {
+        nodes[j].style.transition = '';
+        nodes[j].style.transform = '';
+      }
+    }, 340);
+  }
+
   function hide() {
+    var px = 0;
+    if (banner.style.display !== 'none' && !banner.classList.contains('is-manage')) {
+      px = Math.round(banner.getBoundingClientRect().height);
+    }
     banner.style.display = 'none';
     banner.classList.remove('is-manage');
     banner.setAttribute('aria-modal', 'false');
     banner.setAttribute('aria-labelledby', 'cookieTitle');
     if (scrim) scrim.classList.remove('is-on');
     doc.body.classList.remove('sm-cookie-manage');
+    syncNavOffset();
+    easeStackAway(px);
     syncQuoteBar();
   }
 
@@ -329,6 +319,10 @@
   var quoteBar = doc.querySelector('.mobile-bottom-bar');
   if (quoteBar && typeof root.MutationObserver === 'function') {
     new root.MutationObserver(queueNavOffset).observe(quoteBar, { attributes: true, attributeFilter: ['class'] });
+  }
+  var brochureForm = doc.getElementById('brochureRequest');
+  if (brochureForm && typeof root.MutationObserver === 'function') {
+    new root.MutationObserver(queueNavOffset).observe(brochureForm, { attributes: true, subtree: true, attributeFilter: ['hidden', 'class'] });
   }
   if (typeof root.ResizeObserver === 'function' && doc.body) {
     new root.ResizeObserver(queueNavOffset).observe(doc.body);
