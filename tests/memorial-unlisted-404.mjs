@@ -11,9 +11,15 @@ const req = (slug, query = "") => ({
 
 globalThis.fetch = async () => Response.json([]);
 let response = await onRequestGet(req("test-product"));
-assert.equal(response.status, 404);
+assert.equal(response.status, 302);
+assert.equal(response.headers.get("Location"), "/memorials");
 assert.equal(response.headers.get("X-Robots-Tag"), "noindex");
-assert.match(await response.text(), /GTM-KRDX4BQ5/);
+assert.equal(response.headers.get("Cache-Control"), "no-store");
+
+const query = "?gclid=abc&utm_source=x&utm_medium=cpc&gbraid=g1&wbraid=w1";
+response = await onRequestGet(req("zzz-nope", query));
+assert.equal(response.status, 302);
+assert.equal(response.headers.get("Location"), "/memorials" + query);
 
 response = await onRequestGet(req("tapered-churchyard-memorial", "?gclid=abc"));
 assert.equal(response.status, 301);

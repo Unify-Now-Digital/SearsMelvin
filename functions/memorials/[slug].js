@@ -6,7 +6,8 @@
  * before the response is sent, so a crawler that does not run JavaScript
  * still sees one product per URL.
  *
- * An unknown slug is a real 404. A known retired slug is a 301 or a 410.
+ * An unknown slug redirects to /memorials (302, query string kept).
+ * A known retired slug is a 301 or a 410.
  * If Supabase cannot be reached, the shell is served with 200 so a live
  * product is not turned into a 404 during an outage.
  */
@@ -223,11 +224,19 @@ export async function onRequestGet({ request, env, params }) {
     const legacy = legacySlugStatus(String(slug).toLowerCase());
     if (legacy === 410) return gone();
     if (typeof legacy === "string") return moved(request, legacy);
-    const headers = new Headers(shell.headers);
-    headers.set("X-Robots-Tag", "noindex");
-    headers.set("Cache-Control", "no-store");
-    headers.set("Content-Type", "text/html; charset=utf-8");
-    return new Response(shell.body, { status: 404, headers });
+    // Unknown or unlisted slug. 302 because the slug may be listed later.
+    // The query string (gclid, gbraid, wbraid, utm_*) is kept verbatim.
+    const src = new URL(request.url);
+    const dest = new URL("/memorials", src.origin);
+    dest.search = src.search;
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: dest.pathname + dest.search,
+        "X-Robots-Tag": "noindex",
+        "Cache-Control": "no-store",
+      },
+    });
   }
   if (!product) return shell;
 
