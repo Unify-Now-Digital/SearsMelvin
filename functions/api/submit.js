@@ -15,6 +15,20 @@ import { canonicaliseQuoteProduct, QuotePricingError } from "./_quote-pricing.js
 import { upsertWebsiteOpportunity } from "./_ghl-opportunity.js";
 import { isTestSubmission } from "./_test-flags.js";
 import { supabaseAuthHeaders, supabaseKeyHeaders } from "./_supabase-keys.js";
+import {
+  adAttributionLine,
+  brochureContactNote,
+  brochureStaffStatusLine,
+  cleanBrochureSource,
+  cleanLabel,
+  cleanPagePath,
+  cleanSlug,
+  familyBrochureEmail,
+  familyEnquiryEmail,
+  ghlContactUrl,
+  staffBrochureEmail,
+  staffEnquiryEmail,
+} from "./_email-brand.js";
 
 const BUSINESS_EMAIL = "info@searsmelvin.co.uk";
 const FROM_EMAIL = "info@searsmelvin.co.uk";
@@ -260,6 +274,11 @@ async function handleEnquiry(ctx, data, submittedAt) {
   const contact_pref = data.contact_pref || null;
   const photo_urls = Array.isArray(data.photo_urls) ? data.photo_urls : null;
   const testFlag = isTestSubmission({ name, email, phone, message, ...cleanAttribution(data.attribution) });
+  const isBrochure = String(enquiry_type || "").toLowerCase() === "brochure";
+  const brochureSource = cleanBrochureSource(data.brochure_source) || (isBrochure ? "brochure_page" : "");
+  const sourcePage = cleanPagePath(data.source_page);
+  const productSlug = cleanSlug(data.details?.product_slug);
+  const productName = cleanLabel(data.details?.product_name, 120);
   let enquiryId = null;
 
   // Channel routing: shortlist enquiries → 'shortlist'; everything else → 'contact'.
@@ -275,6 +294,12 @@ async function handleEnquiry(ctx, data, submittedAt) {
     return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
   }
 
+  // Preview hosts share nothing with the live mailbox, HighLevel, or enquiries.
+  // The page can still show its success state. Production is the public site only.
+  if (isBrochure && !isLiveSiteRequest(ctx.request)) {
+    return jsonResponse({ ok: true });
+  }
+
   // 1. Supabase first — save record before sending any emails. If the save
   // fails the customer should see an error (and not get a confirmation email
   // for a record that doesn't exist).
@@ -283,15 +308,23 @@ async function handleEnquiry(ctx, data, submittedAt) {
     // can query it cleanly. For shortlist channels keep the items list shape.
     const baseDetails = isShortlist
       ? { items: Array.isArray(data.details?.items) ? data.details.items : [] }
-      : (data.details && typeof data.details === "object" ? { ...data.details } : null);
-    const mergedDetails = grave_number
-      ? { ...(baseDetails || {}), grave_number }
-      : baseDetails;
+      : (data.details && typeof data.details === "object" && !isBrochure ? { ...data.details } : null);
+    const brochureDetails = {};
+    if (isBrochure) {
+      if (brochureSource) brochureDetails.brochure_source = brochureSource;
+      if (productSlug) brochureDetails.product_slug = productSlug;
+      if (productName) brochureDetails.product_name = productName;
+    }
+    const mergedDetails = {
+      ...(baseDetails || {}),
+      ...brochureDetails,
+      ...(grave_number ? { grave_number } : {}),
+    };
     const saved = await createEnquiry(env, {
       channel,
       name, email, phone,
       sub_type: enquiry_type || null,
-      source_page: data.source_page || null,
+      source_page: sourcePage || null,
       message: message || null,
       contact_pref,
       location,
@@ -303,7 +336,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
         : (data.appointment_at || null),
       appointment_kind: data.appointment_kind || null,
       photo_urls,
-      details: mergedDetails,
+      details: Object.keys(mergedDetails).length ? mergedDetails : null,
       attribution: data.attribution,
       is_test: testFlag.is_test,
     });
@@ -328,100 +361,210 @@ async function handleEnquiry(ctx, data, submittedAt) {
     attribution: data.attribution || null,
     isTest: testFlag.is_test,
     enquiryId,
+    isBrochure,
+    brochureSource,
+    sourcePage,
+    productName,
   }));
 
   return jsonResponse({ ok: true });
 }
 
-// Runs after the response has been returned. Emails + calendar + GHL are all
-// independent so they fire in parallel; photo signing is a prerequisite for
-// the business email so it's chained inside that branch.
+// Family mail is not held for HighLevel. For a brochure, the family send finishes
+// first and its provider result is the first line of the staff alert. The staff
+// alert still goes out when that send fails. Other enquiry subjects stay as they are.
 async function enquirySideEffects({
   env, name, email, phone, message, location,
   enquiry_type, enquiryTypeLabel, grave_number, contact_pref, photo_urls, shortlistItems,
   submittedAt, appointment_date, appointment_time, appointment_at_iso, appointment_kind, attribution, isTest, enquiryId,
+  isBrochure, brochureSource, sourcePage, productName,
 }) {
-  await Promise.allSettled([
-    bg("enquiry business email", async () => {
-      let photoSignedUrls = [];
-      if (Array.isArray(photo_urls) && photo_urls.length > 0) {
-        try { photoSignedUrls = await signEnquiryPhotoUrls(env, photo_urls); }
-        catch { console.error(JSON.stringify({ message: "enquiry_photo_sign_failed" })); }
-      }
+  const from = `${BUSINESS_NAME} <${FROM_EMAIL}>`;
+  const adLine = adAttributionLine(attribution, deriveLeadSource(attribution));
+  const photoPromise = (async () => {
+    if (!Array.isArray(photo_urls) || photo_urls.length === 0) return [];
+    try { return await signEnquiryPhotoUrls(env, photo_urls); }
+    catch { console.error(JSON.stringify({ message: "enquiry_photo_sign_failed" })); return []; }
+  })();
+  const customerPromise = (async () => {
+    if (!email) return { accepted: false, email: "" };
+    if (isBrochure) return sendFamilyBrochure(env, { name, email, source: brochureSource });
+    const mail = familyEnquiryEmail({
+      name, email, phone, message, enquiryTypeLabel, location,
+      graveNumber: grave_number, contactPref: contact_pref,
+      photoCount: Array.isArray(photo_urls) ? photo_urls.length : 0,
+      shortlistItems,
+    });
+    await sendEmail(env.RESEND_API_KEY, { from, to: email, subject: mail.subject, html: mail.html, text: mail.text });
+    return null;
+  })();
+  const ghlPromise = syncEnquiryContact(env, {
+    name, email, phone, message, enquiry_type, enquiryTypeLabel, location,
+    attribution, isTest, enquiryId, sourcePage, brochureSource, productName, isBrochure,
+  });
+  const calendarPromise = appointment_date && appointment_time
+    ? bg("contact-form calendar event", () => {
+        const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
+        const kind = appointment_kind || "showroom";
+        return createGoogleCalendarEvent(env, {
+          name, email, phone,
+          appointment_type: kind,
+          appointment_date,
+          appointment_time,
+          notes: message,
+          typeLabel: typeLabels[kind] || kind,
+        });
+      })
+    : (appointment_at_iso
+        ? bg("contact-form calendar event (ISO)", () => createCalendarEventFromIso(env, {
+            name, email, phone,
+            appointmentAtIso: appointment_at_iso,
+            appointmentKind: appointment_kind || "consultation",
+            notes: message,
+          }))
+        : null);
+
+  const [customerResult, contactId, photoSignedUrls] = await Promise.all([
+    customerPromise.catch((err) => {
+      console.error(JSON.stringify({ message: "enquiry_customer_email_failed", error: String(err?.name || "error") }));
+      return { accepted: false, email: email || "" };
+    }),
+    ghlPromise,
+    photoPromise,
+  ]);
+  const contactUrl = ghlContactUrl(env.GHL_LOCATION_ID, contactId);
+
+  try {
+    if (isBrochure) {
+      const statusLine = brochureStaffStatusLine({
+        accepted: customerResult?.accepted === true,
+        email: customerResult?.email || "",
+        at: customerResult?.at,
+      });
+      const mail = staffBrochureEmail({
+        name, email, phone, source: brochureSource, productName, page: sourcePage,
+        adLine, submittedAt, statusLine, contactUrl,
+      });
       await sendEmail(env.RESEND_API_KEY, {
-        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+        from,
+        to: BUSINESS_EMAIL,
+        subject: `New Enquiry — Brochure request: ${formatNameForSubject(name)}`,
+        html: mail.html,
+        text: mail.text,
+      });
+    } else {
+      const mail = staffEnquiryEmail({
+        name, email, phone, message, enquiryTypeLabel, location,
+        graveNumber: grave_number, contactPref: contact_pref,
+        photoCount: Array.isArray(photo_urls) ? photo_urls.length : 0,
+        photoUrls: photoSignedUrls, shortlistItems, submittedAt,
+        sourcePage, adLine, contactUrl,
+      });
+      await sendEmail(env.RESEND_API_KEY, {
+        from,
         to: BUSINESS_EMAIL,
         subject: `New Enquiry — ${formatNameForSubject(name)} — ${enquiryTypeLabel}`,
-        html: enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls: photoSignedUrls, shortlistItems, submittedAt }),
+        html: mail.html,
+        text: mail.text,
       });
-    }),
-    // Phone-only submissions are valid (the API requires name + email OR phone),
-    // so there may be no address to confirm to. Without this guard Resend is
-    // called with an empty `to` and 400s into a swallowed background error.
-    !email ? null : bg("enquiry customer email", () => {
-      const customerSubjectExtra = grave_number
-        ? ` — Grave ${grave_number}`
-        : (location ? ` — ${location}` : "");
-      return sendEmail(env.RESEND_API_KEY, {
-        from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
-        to: email,
-        subject: `${enquiryTypeLabel} enquiry${customerSubjectExtra} — ${BUSINESS_NAME}`,
-        html: enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }),
-      });
-    }),
-    // Calendar event if the contact form picked a slot.
-    appointment_date && appointment_time
-      ? bg("contact-form calendar event", () => {
-          const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call", consultation: "Consultation" };
-          const kind = appointment_kind || "showroom";
-          return createGoogleCalendarEvent(env, {
-            name, email, phone,
-            appointment_type: kind,
-            appointment_date,
-            appointment_time,
-            notes: message,
-            typeLabel: typeLabels[kind] || kind,
-          });
-        })
-      : (appointment_at_iso
-          ? bg("contact-form calendar event (ISO)", () => createCalendarEventFromIso(env, {
-              name, email, phone,
-              appointmentAtIso: appointment_at_iso,
-              appointmentKind: appointment_kind || "consultation",
-              notes: message,
-            }))
-          : null),
-    bg("ghl enquiry contact+opportunity", async () => {
-      const attributionFields = await attributionCustomFields(env, attribution);
-      const ghlExtraFields = [
-        message      ? { key: "customer_message",  field_value: message } : null,
-        enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
-      ].filter(Boolean);
-      const ghlType = String(enquiry_type || "").toLowerCase() === "brochure" ? "brochure" : "enquiry";
-      const contactId = await createGHLContact(env, {
-        name, email, phone, type: ghlType,
-        cemetery: location,
-        message,
-        extraFields: ghlExtraFields,
-        attributionFields,
-        lead: attribution,
-        isTest,
-      });
-      if (contactId) {
-        await saveEnquiryGhlContactId(env, enquiryId, contactId);
-        // Brochure is a contact plus the brochure tag. It does not open a card.
-        if (ghlType !== "brochure") {
-          await createGHLOpportunity(env, {
-            contactId,
-            name: `${enquiryTypeLabel} — ${name}`,
-            monetaryValue: 0,
-            enquiry: { type: ghlType, message },
-            source: websiteGhlLabels(ghlType).source,
-          });
-        }
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ message: "enquiry_business_email_failed", error: String(err?.name || "error") }));
+  }
+  if (calendarPromise) await calendarPromise;
+}
+
+async function sendFamilyBrochure(env, { name, email, source }) {
+  try {
+    const id = await sendEmail(env.RESEND_API_KEY, {
+      from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
+      to: email,
+      ...familyBrochureEmail({ firstName: name, source }),
+    }, emailTimeoutMs(env));
+    return { accepted: Boolean(id), email, at: new Date() };
+  } catch {
+    return { accepted: false, email };
+  }
+}
+
+async function syncEnquiryContact(env, {
+  name, email, phone, message, enquiry_type, enquiryTypeLabel, location,
+  attribution, isTest, enquiryId, sourcePage, brochureSource, productName, isBrochure,
+}) {
+  try {
+    const attributionFields = await attributionCustomFields(env, attribution);
+    const extraFields = [
+      message ? { key: "customer_message", field_value: message } : null,
+      enquiry_type ? { key: "enquiry_type", field_value: enquiry_type } : null,
+    ].filter(Boolean);
+    if (sourcePage && env.GHL_API_KEY && env.GHL_LOCATION_ID) {
+      try {
+        const ids = await ghlContactFieldIds(env.GHL_API_KEY, env.GHL_LOCATION_ID);
+        const sourcePageId = ids.source_page || ids.contactsource_page || ids.contact_source_page;
+        if (sourcePageId) extraFields.push({ id: sourcePageId, field_value: sourcePage });
+      } catch {
+        // No new HighLevel field is created. The note still carries the page.
       }
-    }),
-  ].filter(Boolean));
+    }
+    const ghlType = isBrochure ? "brochure" : "enquiry";
+    const contactId = await createGHLContact(env, {
+      name, email, phone, type: ghlType,
+      cemetery: location,
+      message,
+      product: productName ? { name: productName } : undefined,
+      extraFields,
+      attributionFields,
+      lead: attribution,
+      isTest,
+    });
+    if (!contactId) return null;
+    await saveEnquiryGhlContactId(env, enquiryId, contactId);
+    if (isBrochure) {
+      await addGhlNote(env, contactId, brochureContactNote({
+        source: brochureSource, productName, page: sourcePage,
+      }));
+    } else {
+      try {
+        await createGHLOpportunity(env, {
+          contactId,
+          name: `${enquiryTypeLabel} — ${name}`,
+          monetaryValue: 0,
+          enquiry: { type: ghlType, message },
+          source: websiteGhlLabels(ghlType).source,
+        });
+      } catch (err) {
+        console.error(JSON.stringify({
+          message: "ghl_enquiry_opportunity_failed",
+          error: String(err?.message || err).replace(/[^\w .:/-]/g, "").slice(0, 160),
+        }));
+      }
+    }
+    return contactId;
+  } catch (err) {
+    console.error(JSON.stringify({
+      message: "ghl_enquiry_contact_failed",
+      error: String(err?.message || err).replace(/[^\w .:/-]/g, "").slice(0, 160),
+    }));
+    return null;
+  }
+}
+
+async function addGhlNote(env, contactId, note) {
+  if (!env.GHL_API_KEY || !contactId || !note) return;
+  try {
+    const res = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.GHL_API_KEY}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body: note }),
+    });
+    if (!res.ok) console.error(JSON.stringify({ message: "ghl_brochure_note_failed", status: res.status }));
+  } catch {
+    console.error(JSON.stringify({ message: "ghl_brochure_note_failed" }));
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -732,28 +875,10 @@ function normaliseShortlistItems(rawItems) {
   }).filter(Boolean);
 }
 
-// Renders the shortlist as a full `<tr>` so it drops straight into either
-// enquiry email's outer table.
-function shortlistItemsBlock(items, { heading }) {
-  if (!Array.isArray(items) || items.length === 0) return "";
-  const rows = items.map((item, index) => `
-          <tr>
-            <td width="24" valign="top" style="padding:7px 0;font-family:Arial,sans-serif;font-size:12px;color:#BBBBBB;">${index + 1}.</td>
-            <td style="padding:7px 0;font-family:Arial,sans-serif;font-size:13px;color:#1A1A1A;line-height:1.5;">
-              ${item.url
-                ? `<a href="${item.url}" style="color:#2C2C2C;font-weight:600;text-decoration:none;">${esc(item.name)}</a>`
-                : `<strong style="color:#2C2C2C;">${esc(item.name)}</strong>`}${item.price ? `<span style="color:#999999;"> &middot; ${esc(item.price)}</span>` : ""}
-              ${item.url ? `<br><a href="${item.url}" style="color:#8B7355;font-size:12px;text-decoration:none;">View memorial &rarr;</a>` : ""}
-            </td>
-          </tr>`).join("");
-  return `
-      <tr><td style="padding:14px 28px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 6px 0;font-family:Arial,sans-serif;">${esc(heading)} (${items.length})</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}
-        </table>
-      </td></tr>`;
-}
 
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE INTEGRATION
+// ═══════════════════════════════════════════════════════════════════
 function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -1180,156 +1305,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
 // Render the submission detail rows shared by the business + customer emails.
 // Keeping the markup in a helper means both inboxes get the same field list,
 // so the customer copy is genuinely a record of what they sent.
-function enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls }) {
-  const contactPrefLabels = { email: "Email", phone: "Phone call", appointment: "Appointment" };
-  const rows = [];
-  if (enquiry_type) {
-    rows.push(`<tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Enquiry type</td><td style="padding:5px 0;color:#1A1A1A;">${esc(formatEnquiryTypeLabel(enquiry_type))}</td></tr>`);
-  }
-  if (location) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Cemetery</td><td style="padding:5px 0;color:#1A1A1A;">${esc(location)}</td></tr>`);
-  }
-  if (grave_number) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Grave</td><td style="padding:5px 0;color:#1A1A1A;">${esc(grave_number)}</td></tr>`);
-  }
-  if (contact_pref) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Preferred reply</td><td style="padding:5px 0;color:#1A1A1A;">${esc(contactPrefLabels[contact_pref] || contact_pref)}</td></tr>`);
-  }
-  if (Array.isArray(photo_urls) && photo_urls.length > 0) {
-    rows.push(`<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Photos attached</td><td style="padding:5px 0;color:#1A1A1A;">${photo_urls.length} file${photo_urls.length === 1 ? "" : "s"}</td></tr>`);
-  }
-  return rows.join("");
-}
 
-// Renders a 2-column thumbnail grid of clickable photo previews for the
-// business email. Uses signed URLs (1-year TTL) so the team can open the
-// full-size image straight from their inbox.
-function enquiryPhotoGallery(signedUrls) {
-  if (!Array.isArray(signedUrls) || signedUrls.length === 0) return "";
-  const cells = signedUrls.map(url => `
-    <td width="50%" valign="top" style="padding:6px;">
-      <a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;">
-        <img src="${esc(url)}" alt="Enquiry photo" width="260" style="display:block;width:100%;max-width:260px;height:auto;border:1px solid #E0DCD5;border-radius:6px;" />
-      </a>
-    </td>`);
-  // Pair cells into rows of 2
-  let rows = "";
-  for (let i = 0; i < cells.length; i += 2) {
-    rows += `<tr>${cells[i] || ""}${cells[i + 1] || `<td width="50%">&nbsp;</td>`}</tr>`;
-  }
-  return `
-      <tr><td style="padding:4px 22px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 8px 6px;font-family:Arial,sans-serif;">Photos attached</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
-        <p style="font-size:11px;color:#999999;margin:6px 6px 0;font-family:Arial,sans-serif;">Click any photo to open the full-size image. Links expire in 12 months.</p>
-      </td></tr>`;
-}
-
-function enquiryBusinessEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, photo_signed_urls, shortlistItems, submittedAt }) {
-  const hasPhotos = Array.isArray(photo_signed_urls) && photo_signed_urls.length > 0;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;padding:24px 0;">
-  <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:10px;overflow:hidden;">
-      <tr><td style="background-color:#2C2C2C;padding:18px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
-          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">${esc(formatEnquiryTypeLabel(enquiry_type))}</span></td>
-        </tr></table>
-      </td></tr>
-      <tr><td style="padding:26px 28px 4px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:22px;color:#2C2C2C;font-weight:normal;margin:0 0 4px 0;">${esc(formatEnquiryTypeLabel(enquiry_type))} enquiry</h2>
-        <p style="color:#AAAAAA;font-size:12px;margin:0;font-family:Arial,sans-serif;">Received ${esc(submittedAt)}</p>
-      </td></tr>
-      <tr><td style="padding:16px 28px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #E0DCD5;line-height:0;font-size:0;">&nbsp;</td></tr></table>
-      </td></tr>
-      <tr><td style="padding:16px 28px 0;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 12px 0;font-family:Arial,sans-serif;">Customer</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
-          <tr><td width="130" style="padding:5px 0;color:#999999;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;">Email</td><td style="padding:5px 0;"><a href="mailto:${esc(email)}" style="color:#8B7355;">${esc(email)}</a></td></tr>
-          <tr><td style="padding:5px 0;color:#999999;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
-          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
-        </table>
-      </td></tr>
-      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials shortlisted" })}
-      ${message ? `<tr><td style="padding:12px 28px ${hasPhotos ? '4px' : '28px'};">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Message</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
-        </table>
-      </td></tr>` : `<tr><td style="padding:0 28px ${hasPhotos ? '4px' : '20px'};font-size:0;line-height:0;">&nbsp;</td></tr>`}
-      ${enquiryPhotoGallery(photo_signed_urls)}
-      <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
-      <tr><td style="background-color:#F5F3F0;border-top:1px solid #E0DCD5;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:#BBBBBB;font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; London (NW11) &middot; <a href="mailto:${BUSINESS_EMAIL}" style="color:#BBBBBB;">${BUSINESS_EMAIL}</a></span>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
-}
-
-// Customer copy = receipt notice + verbatim copy of what they submitted, so
-// they can see exactly what reached us. Subject line carries the enquiry type
-// and an extra detail (grave / cemetery) so it stands out in their inbox.
-function enquiryCustomerEmail({ name, email, phone, message, enquiry_type, grave_number, location, contact_pref, photo_urls, shortlistItems, submittedAt }) {
-  const firstName = (name || "").split(" ")[0];
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F5F3F0;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3F0;padding:24px 0;">
-  <tr><td align="center">
-    <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#ffffff;border-radius:10px;overflow:hidden;">
-      <tr><td style="background-color:#2C2C2C;padding:20px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="font-family:Georgia,Times New Roman,serif;font-size:18px;color:#ffffff;">Sears Melvin <span style="opacity:0.55;font-weight:300;">Memorials</span></td>
-          <td align="right"><span style="background-color:#8B7355;color:#ffffff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-family:Arial,sans-serif;">Submission Received</span></td>
-        </tr></table>
-      </td></tr>
-      <tr><td style="padding:30px 28px 6px;">
-        <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 12px 0;">Thank you, ${esc(firstName)}.</h2>
-        <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 8px 0;font-family:Arial,sans-serif;">We've received your submission and one of our team will be in contact within one working day.</p>
-        <p style="color:#888888;font-size:13px;line-height:1.6;margin:0 0 18px 0;font-family:Arial,sans-serif;">A copy of your enquiry is below for your records.</p>
-      </td></tr>
-      <tr><td style="padding:0 28px 8px;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your details</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;font-family:Arial,sans-serif;">
-          <tr><td width="130" style="padding:5px 0;color:#999999;vertical-align:top;">Name</td><td style="padding:5px 0;color:#1A1A1A;font-weight:600;">${esc(name)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Email</td><td style="padding:5px 0;color:#1A1A1A;">${esc(email)}</td></tr>
-          <tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Phone</td><td style="padding:5px 0;color:#1A1A1A;">${esc(phone || "Not provided")}</td></tr>
-          ${enquiryDetailsRows({ enquiry_type, location, grave_number, contact_pref, photo_urls })}
-          ${submittedAt ? `<tr><td style="padding:5px 0;color:#999999;vertical-align:top;">Submitted</td><td style="padding:5px 0;color:#1A1A1A;">${esc(submittedAt)}</td></tr>` : ""}
-        </table>
-      </td></tr>
-      ${shortlistItemsBlock(shortlistItems, { heading: "Memorials you shortlisted" })}
-      ${message ? `<tr><td style="padding:14px 28px 8px;">
-        <p style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8B7355;font-weight:700;margin:0 0 10px 0;font-family:Arial,sans-serif;">Your message</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background-color:#F5F3F0;border-radius:6px;padding:14px 16px;font-size:13px;color:#1A1A1A;line-height:1.7;font-family:Arial,sans-serif;">${esc(message).replace(/\n/g,"<br>")}</td></tr>
-        </table>
-      </td></tr>` : ""}
-      <tr><td style="padding:18px 28px 24px;">
-        <p style="color:#555555;font-size:14px;line-height:1.7;margin:0 0 6px 0;font-family:Arial,sans-serif;">If you have any urgent questions, please call us on <strong style="color:#2C2C2C;">+44 20 3835 2548</strong>.</p>
-        <p style="color:#888888;font-size:13px;margin:0;line-height:1.7;font-family:Arial,sans-serif;">With care,<br><strong style="color:#2C2C2C;">The Sears Melvin Team</strong></p>
-      </td></tr>
-      <tr><td style="background-color:#1A1A1A;padding:14px 28px;text-align:center;">
-        <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:Arial,sans-serif;">Sears Melvin Memorials &middot; London (NW11) &middot; ${BUSINESS_EMAIL}</span>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SUPABASE INTEGRATION
-// ═══════════════════════════════════════════════════════════════════
 function supabaseHeaders(env) {
   return supabaseKeyHeaders(env.SUPABASE_SERVICE_KEY, {
     "Content-Type": "application/json",
@@ -2145,16 +2121,59 @@ function esc(str) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-async function sendEmail(apiKey, { from, to, subject, html }) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to, subject, html }),
-  });
-  if (!res.ok) {
-    console.error(JSON.stringify({ message: "resend_request_failed", status: res.status }));
+function isLiveSiteRequest(request) {
+  try {
+    const host = new URL(request.url).hostname.toLowerCase().replace(/\.$/, "");
+    return host === "searsmelvin.co.uk" || host === "www.searsmelvin.co.uk";
+  } catch {
+    return false;
+  }
+}
+
+function emailTimeoutMs(env) {
+  const n = Number(env?.BROCHURE_EMAIL_TIMEOUT_MS);
+  if (Number.isFinite(n) && n >= 20 && n <= 20000) return n;
+  return 15000;
+}
+
+// Returns the provider id. An id means the message was accepted for sending.
+// It does not mean delivered, received, or opened.
+async function sendEmail(apiKey, { from, to, subject, html, text }, timeoutMs = 15000) {
+  const limit = Number.isFinite(timeoutMs) && timeoutMs >= 20 && timeoutMs <= 20000 ? timeoutMs : 15000;
+  const payload = { from, to, subject, html };
+  if (text) payload.text = text;
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, limit);
+  let res;
+  try {
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ message: "resend_request_failed", error: timedOut || err?.name === "TimeoutError" || err?.name === "AbortError" ? "timeout" : "network" }));
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (timedOut) {
+    const err = new Error("timeout");
+    err.name = "TimeoutError";
+    throw err;
+  }
+  const body = await res.json().catch(() => ({}));
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!res.ok || !id) {
+    console.error(JSON.stringify({ message: "resend_request_failed", status: res.status, accepted: false }));
     throw new Error(`Resend request failed with status ${res.status}`);
   }
+  return id;
 }
 
 function jsonResponse(data, status = 200) {

@@ -423,10 +423,59 @@
         return errors;
     }
 
-    function brochureRequestPayload(fields, attribution, page) {
+    function brochureQueryTail(page, slug, name) {
+        var tail = '';
+        var path = cleanPath(page);
+        if (path) tail += '&page=' + encodeURIComponent(path);
+        var item = trackSlug(slug);
+        if (item) tail += '&item=' + encodeURIComponent(item);
+        var label = trackText(name, 120);
+        if (/[<>"]/.test(label)) label = '';
+        if (label) tail += '&name=' + encodeURIComponent(label);
+        return tail;
+    }
+
+    function readBrochureArrival(search) {
+        var from = '';
+        var page = '';
+        var item = '';
+        var label = '';
+        String(search || '').replace(/^\?/, '').split('&').forEach(function (pair) {
+            var i = pair.indexOf('=');
+            if (i < 1) return;
+            var key = pair.slice(0, i);
+            var value = '';
+            try { value = decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' ')); } catch (e) { return; }
+            if (key === 'from') from = value;
+            else if (key === 'page') page = cleanPath(value);
+            else if (key === 'item') item = trackSlug(value);
+            else if (key === 'name') label = /[<>"]/.test(value) ? '' : trackText(value, 120);
+        });
+        var source = from ? normaliseSource(from) : 'brochure_page';
+        if (!page && source === 'brochure_page') page = '/brochure';
+        return { source: source, page: page, slug: item, name: label };
+    }
+
+    function brochureThanksTitle(name) {
+        var token = String(name || '').trim().split(/\s+/)[0] || '';
+        if (!/^[A-Za-z][A-Za-z'’-]{0,40}$/.test(token)) return 'Thank you.';
+        if (token === token.toLowerCase()) token = token.charAt(0).toUpperCase() + token.slice(1);
+        return 'Thank you, ' + token + '.';
+    }
+
+    function brochureRequestPayload(fields, attribution, page, meta) {
         var name = String(fields && fields.name || '').trim();
         var email = String(fields && fields.email || '').trim();
         var phone = String(fields && fields.phone || '').trim();
+        meta = meta && typeof meta === 'object' ? meta : {};
+        var source = meta.source ? normaliseSource(meta.source) : 'brochure_page';
+        var origin = cleanPath(meta.page || '');
+        if (!origin && source === 'brochure_page') origin = cleanPath(page) || '/brochure';
+        var slug = trackSlug(meta.slug);
+        var productName = trackText(meta.name, 120);
+        var details = { brochure_source: source };
+        if (slug) details.product_slug = slug;
+        if (productName) details.product_name = productName;
         return {
             channel: 'contact',
             enquiry_type: 'brochure',
@@ -434,7 +483,9 @@
             email: email,
             phone: phone,
             message: 'Brochure request',
-            source_page: typeof page === 'string' && page.charAt(0) === '/' ? page.slice(0, 300) : '/brochure',
+            brochure_source: source,
+            source_page: origin,
+            details: details,
             attribution: attribution || null
         };
     }
@@ -637,7 +688,7 @@
         return event;
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureQueryTail: brochureQueryTail, readBrochureArrival: readBrochureArrival, brochureThanksTitle: brochureThanksTitle, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -755,18 +806,32 @@
         }
     }
 
+    function memorialOnPage() {
+        var path = cleanPath(typeof location !== 'undefined' ? location.pathname : '');
+        var match = /^\/memorials\/([a-z0-9-]{1,120})$/.exec(path);
+        var name = '';
+        if (typeof document !== 'undefined') {
+            var el = document.getElementById('productName');
+            var text = el ? trackText(el.textContent, 120) : '';
+            if (text && text.toLowerCase() !== 'memorial') name = text;
+        }
+        return { slug: match ? match[1] : '', name: name };
+    }
+
     function initBrochure(cfg) {
         var url = safeHttpUrl(cfg.brochurePdfUrl);
         sessionUtm();
         // Header nav links keep going to /brochure but tell it where the click came from.
         document.querySelectorAll('a.nav-brochure, .mobile-nav a[href="/brochure"]').forEach(function (a) {
-            a.setAttribute('href', '/brochure?from=header');
+            var here = memorialOnPage();
+            a.setAttribute('href', '/brochure?from=header' + brochureQueryTail(location.pathname, here.slug, here.name));
         });
         if (!url) return;
         // Home and listing links open the brochure form. They do not download the PDF.
         document.querySelectorAll('a[data-brochure-source]').forEach(function (a) {
             var src = normaliseSource(a.getAttribute('data-brochure-source'));
-            a.setAttribute('href', '/brochure?from=' + src);
+            var here = memorialOnPage();
+            a.setAttribute('href', '/brochure?from=' + src + brochureQueryTail(location.pathname, here.slug, here.name));
             a.removeAttribute('download');
         });
         document.querySelectorAll('[data-sm-brochure]').forEach(function (el) {
@@ -799,7 +864,8 @@
                 paintBrochureErrors(form, {});
                 if (btn) btn.disabled = true;
                 showBrochureStatus(status, 'Sending…');
-                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname);
+                var arrival = readBrochureArrival(location.search);
+                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname, arrival);
                 fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
@@ -812,7 +878,11 @@
                         root.dataLayer.push(brochureRequestEvent(src));
                         form.hidden = true;
                         var thanks = el.querySelector('[data-brochure-thanks]');
-                        if (thanks) thanks.hidden = false;
+                        if (thanks) {
+                            thanks.hidden = false;
+                            var title = thanks.querySelector('[data-brochure-thanks-title]');
+                            if (title) title.textContent = brochureThanksTitle(name);
+                        }
                     })
                     .catch(function () {
                         if (btn) btn.disabled = false;
