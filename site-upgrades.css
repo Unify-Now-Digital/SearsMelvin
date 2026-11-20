@@ -95,6 +95,72 @@ nav#navbar .logo { white-space: nowrap; }
 .sm-brochure-email-note { font-size: 0.8rem; color: var(--color-text-muted, var(--sm-color-text-muted)); margin-top: 0.6rem; }
 .sm-brochure-email-status { font-size: 0.9rem; margin-top: 0.4rem; min-height: 1.2em; }
 .sm-brochure-email button { background: transparent; cursor: pointer; font: inherit; }
+.sm-brochure-request-title { margin: 0 0 0.85rem; font-family: var(--font-display, serif); font-size: 1.35rem; font-weight: 500; color: var(--sm-color-text); }
+html body .sm-brochure-request { border-radius: var(--sm-radius-sm); }
+html body .sm-brochure-request input { display: block; width: 100%; margin: 0 0 0.85rem; }
+html body .sm-brochure-request .sm-brochure-field { margin: 0 0 0.85rem; }
+html body .sm-brochure-request .sm-brochure-field input { margin: 0; }
+html body .sm-brochure-request input[aria-invalid="true"],
+html body .sm-brochure-request input#brochureName[aria-invalid="true"]:focus,
+html body .sm-brochure-request input#brochureEmail[aria-invalid="true"]:focus {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--sm-color-error) !important;
+}
+html body .sm-brochure-request input[aria-invalid="true"]:focus-visible {
+  outline: 2px solid var(--sm-color-focus);
+  outline-offset: 2px;
+}
+html body .sm-brochure-field-error,
+html body .sm-brochure-request-status.is-error {
+  margin: 0.35rem 0 0;
+  color: var(--sm-color-error);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  line-height: 1.4;
+}
+html body .sm-brochure-field-error,
+html body .sm-brochure-request-status {
+  scroll-margin-top: 6rem;
+  scroll-margin-bottom: calc(var(--ck-nav, 79px) + 8.5rem);
+}
+html body .sm-brochure-request-status { margin: 0 0 0.85rem; }
+@media (max-width: 768px) {
+  body:has(#cookieConsent[style*="display: block"]) .sm-brochure-request {
+    margin-bottom: calc(var(--ck-nav, 79px) + 8.5rem);
+  }
+}
+html body .sm-brochure-request button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.25rem;
+  padding: 0.85rem 1.25rem;
+  border: 0;
+  border-radius: var(--sm-radius-sm);
+  background: var(--sm-color-action-primary-bg);
+  color: var(--sm-color-action-primary-text);
+  font-family: var(--sm-font-body);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body-strong);
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+html body .sm-brochure-request button[type="submit"]:hover { background: var(--sm-color-action-primary-bg-hover); }
+html body .sm-brochure-request button[type="submit"]:focus-visible { outline: 2px solid var(--sm-color-focus); outline-offset: 2px; }
+.sm-brochure-thanks { margin-top: 1.25rem; }
+.sm-brochure-thanks a {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--sm-radius-sm);
+  background: var(--sm-color-action-primary-bg);
+  color: var(--sm-color-action-primary-text);
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--sm-font-body);
+}
 
 /* Reserve the cover column so the JS meta refresh never shifts layout. */
 .sm-brochure-cover { min-width: 150px; min-height: 236px; }

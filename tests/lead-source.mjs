@@ -26,6 +26,7 @@ assert.equal(deriveLeadChannel("quote"), "RAQ");
 assert.equal(deriveLeadChannel("contact", "new-memorial"), "Contact form");
 assert.equal(deriveLeadChannel("appointment"), "Contact form");
 assert.equal(deriveLeadChannel("brochure"), "Brochure");
+assert.equal(deriveLeadChannel("contact", "brochure"), "Brochure");
 
 // Landing page: path only, never the query; junk dropped.
 assert.deepEqual(cleanLanding({ landing_page: "/memorials/kerb-sets?gclid=x#top", referrer: "www.google.com" }), { landing_page: "/memorials/kerb-sets", referrer: "www.google.com" });

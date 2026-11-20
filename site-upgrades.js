@@ -1,10 +1,10 @@
 /*
  * Small progressive enhancements shared by public pages:
  *  - Google review stars/count on elements with [data-sm-reviews] (hidden until configured)
- *  - Brochure: /brochure download + "email me a copy" ([data-sm-brochure]), direct
- *    download buttons elsewhere ([data-brochure-source]), cover thumbnail +
- *    "<N> pages · <X> MB" meta, and `brochure_download` tracking (GTM dataLayer,
- *    optional Google Ads conversion, first-party log via /api/brochure)
+ *  - Brochure: links with [data-brochure-source] open /brochure. The short form
+ *    there posts to /api/submit (channel contact, enquiry_type brochure) and
+ *    pushes `brochure_request`. The file link after that still pushes
+ *    `brochure_download` (optional Ads label stays unset).
  *  - Meet-the-team rendering on /about ([data-sm-team])
  * Pure helpers are exported on window.SMUpgrades and via module.exports for tests.
  */
@@ -360,6 +360,85 @@
         return { source: src, dataLayer: events, adsSendTo: target };
     }
 
+    function paintBrochureErrors(form, errors) {
+        var fields = [
+            { key: 'name', input: form.querySelector('[name="name"]'), message: form.querySelector('#brochureNameError') },
+            { key: 'email', input: form.querySelector('[name="email"]'), message: form.querySelector('#brochureEmailError') }
+        ];
+        var first = null;
+        var lastMessage = null;
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            var text = errors[field.key] || '';
+            if (!field.input || !field.message) continue;
+            if (text) {
+                field.input.setAttribute('aria-invalid', 'true');
+                field.input.setAttribute('aria-describedby', field.message.id);
+                field.message.hidden = false;
+                field.message.textContent = text;
+                lastMessage = field.message;
+                if (!first) first = field.input;
+            } else {
+                field.input.removeAttribute('aria-invalid');
+                field.input.removeAttribute('aria-describedby');
+                field.message.hidden = true;
+                field.message.textContent = '';
+            }
+        }
+        if (first && first.focus) {
+            try { first.focus(); } catch (e) {}
+        }
+        if (first && first.scrollIntoView) {
+            try { first.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        liftBrochureMessage(lastMessage || first);
+        return first;
+    }
+
+    function showBrochureStatus(status, text, isError) {
+        if (!status) return;
+        status.hidden = !text;
+        status.textContent = text || '';
+        if (status.classList) status.classList.toggle('is-error', !!isError && !!text);
+        if (text && status.scrollIntoView) {
+            try { status.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {}
+        }
+        if (text) liftBrochureMessage(status);
+    }
+
+    // Form success only. No Google Ads send_to. GTM can listen later.
+    function brochureRequestEvent(source) {
+        return { event: 'brochure_request', source: normaliseSource(source) };
+    }
+
+    var BROCHURE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function brochureFieldErrors(fields) {
+        var name = String(fields && fields.name || '').trim();
+        var email = String(fields && fields.email || '').trim();
+        var errors = {};
+        if (!name) errors.name = 'Please add your name.';
+        if (!email) errors.email = 'Please add your email.';
+        else if (email.length > 254 || !BROCHURE_EMAIL_RE.test(email)) errors.email = 'Please enter a valid email address.';
+        return errors;
+    }
+
+    function brochureRequestPayload(fields, attribution, page) {
+        var name = String(fields && fields.name || '').trim();
+        var email = String(fields && fields.email || '').trim();
+        var phone = String(fields && fields.phone || '').trim();
+        return {
+            channel: 'contact',
+            enquiry_type: 'brochure',
+            name: name,
+            email: email,
+            phone: phone,
+            message: 'Brochure request',
+            source_page: typeof page === 'string' && page.charAt(0) === '/' ? page.slice(0, 300) : '/brochure',
+            attribution: attribution || null
+        };
+    }
+
     function brochureMetaHtml(cfg) {
         var thumb = safeHttpUrl(cfg.brochureThumbUrl);
         var label = brochureMetaLabel(cfg.brochurePages, cfg.brochureBytes);
@@ -558,7 +637,7 @@
         return event;
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -684,16 +763,11 @@
             a.setAttribute('href', '/brochure?from=header');
         });
         if (!url) return;
-        // Home / product / listing buttons become direct downloads with cover + size.
+        // Home and listing links open the brochure form. They do not download the PDF.
         document.querySelectorAll('a[data-brochure-source]').forEach(function (a) {
             var src = normaliseSource(a.getAttribute('data-brochure-source'));
-            a.setAttribute('href', url);
-            a.setAttribute('download', '');
-            a.classList.add('sm-brochure-dl');
-            a.insertAdjacentHTML('afterbegin', brochureMetaHtml(cfg).replace(/<span class="sm-brochure-meta">[^<]*<\/span>/, ''));
-            var label = brochureMetaLabel(cfg.brochurePages, cfg.brochureBytes);
-            if (label) a.insertAdjacentHTML('beforeend', ' <span class="sm-brochure-meta">PDF · ' + esc(label) + '</span>');
-            a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });
+            a.setAttribute('href', '/brochure?from=' + src);
+            a.removeAttribute('download');
         });
         document.querySelectorAll('[data-sm-brochure]').forEach(function (el) {
             var ready = el.querySelector('[data-brochure-ready]');
@@ -708,30 +782,42 @@
                 a.setAttribute('href', url);
                 a.addEventListener('click', function () { trackBrochureDownload(cfg, src, false, false); });
             });
-            var form = ready.querySelector('form[data-brochure-email-form]');
+            var form = ready.querySelector('form[data-brochure-request]');
             if (form) form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                var input = form.querySelector('input[type="email"]');
-                var status = form.querySelector('[data-brochure-email-status]');
+                var status = form.querySelector('[data-brochure-request-status]');
                 var btn = form.querySelector('button[type="submit"]');
-                var email = (input && input.value || '').trim();
-                if (!email || (input.checkValidity && !input.checkValidity())) { if (status) status.textContent = 'Please enter a valid email address, or just download it below.'; return; }
+                var name = (form.querySelector('[name="name"]') || {}).value || '';
+                var email = (form.querySelector('[name="email"]') || {}).value || '';
+                var phone = (form.querySelector('[name="phone"]') || {}).value || '';
+                var fieldErrors = brochureFieldErrors({ name: name, email: email, phone: phone });
+                if (fieldErrors.name || fieldErrors.email) {
+                    showBrochureStatus(status, '');
+                    paintBrochureErrors(form, fieldErrors);
+                    return;
+                }
+                paintBrochureErrors(form, {});
                 if (btn) btn.disabled = true;
-                if (status) status.textContent = 'Sending…';
-                var attribution = storedAttribution(), session = sessionUtm(), utm = {};
-                UTM_KEYS.forEach(function (k) { if (attribution[k] || session[k]) utm[k] = attribution[k] || session[k]; });
-                fetch('/api/brochure', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'email', email: email, source: src, utm: utm, attribution: attribution, page: location.pathname }) })
+                showBrochureStatus(status, 'Sending…');
+                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname);
+                fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
-                        if (res.ok) {
-                            trackBrochureDownload(cfg, src, true, true);
-                            if (status) status.textContent = 'Thank you — we’ve emailed the brochure to ' + email + '. You can also download it now.';
-                            form.reset();
-                        } else if (status) status.textContent = (res.b && res.b.error) || 'Sorry, we couldn’t send that just now. Please use “Just download”.';
+                        if (!res.ok) {
+                            if (btn) btn.disabled = false;
+                            showBrochureStatus(status, (res.b && res.b.error) || 'Sorry, we could not send that just now. Please try again.', true);
+                            return;
+                        }
+                        root.dataLayer = root.dataLayer || [];
+                        root.dataLayer.push(brochureRequestEvent(src));
+                        form.hidden = true;
+                        var thanks = el.querySelector('[data-brochure-thanks]');
+                        if (thanks) thanks.hidden = false;
                     })
-                    .catch(function () { if (status) status.textContent = 'Sorry, we couldn’t send that just now. Please use “Just download”.'; })
-                    .then(function () { if (btn) btn.disabled = false; });
+                    .catch(function () {
+                        if (btn) btn.disabled = false;
+                        showBrochureStatus(status, 'Sorry, we could not send that just now. Please try again.', true);
+                    });
             });
             ready.hidden = false;
             if (pending) pending.hidden = true;
@@ -748,6 +834,24 @@
         });
         document.body.appendChild(a);
         watchFabOverlaps();
+    }
+
+    // Scroll a brochure message clear of the phone cookie strip. This does not
+    // read or write the cookie choice.
+    function liftBrochureMessage(el) {
+        try {
+            var doc = el && el.ownerDocument;
+            var view = doc && (doc.defaultView || doc.parentWindow);
+            if (!doc || !view || !el.getBoundingClientRect || !view.getComputedStyle) return;
+            var card = doc.getElementById('cookieConsent');
+            if (!card) return;
+            if (view.getComputedStyle(card).display === 'none') return;
+            var cr = card.getBoundingClientRect();
+            if (!cr || cr.height < 8) return;
+            var r = el.getBoundingClientRect();
+            var gap = r.bottom - (cr.top - 12);
+            if (gap > 0 && view.scrollBy) view.scrollBy(0, gap);
+        } catch (e) {}
     }
 
     // Keep the FAB off sticky bars and modals: hide it while a quote/search

@@ -397,8 +397,9 @@ async function enquirySideEffects({
         message      ? { key: "customer_message",  field_value: message } : null,
         enquiry_type ? { key: "enquiry_type",      field_value: enquiry_type } : null,
       ].filter(Boolean);
+      const ghlType = String(enquiry_type || "").toLowerCase() === "brochure" ? "brochure" : "enquiry";
       const contactId = await createGHLContact(env, {
-        name, email, phone, type: "enquiry",
+        name, email, phone, type: ghlType,
         cemetery: location,
         message,
         extraFields: ghlExtraFields,
@@ -408,13 +409,16 @@ async function enquirySideEffects({
       });
       if (contactId) {
         await saveEnquiryGhlContactId(env, enquiryId, contactId);
-        await createGHLOpportunity(env, {
-          contactId,
-          name: `${enquiryTypeLabel} — ${name}`,
-          monetaryValue: 0,
-          enquiry: { type: "enquiry", message },
-          source: websiteGhlLabels("enquiry").source,
-        });
+        // Brochure is a contact plus the brochure tag. It does not open a card.
+        if (ghlType !== "brochure") {
+          await createGHLOpportunity(env, {
+            contactId,
+            name: `${enquiryTypeLabel} — ${name}`,
+            monetaryValue: 0,
+            enquiry: { type: ghlType, message },
+            source: websiteGhlLabels(ghlType).source,
+          });
+        }
       }
     }),
   ].filter(Boolean));
@@ -1626,6 +1630,9 @@ export function websiteGhlLabels(type) {
   }
   if (t === "appointment") {
     return { source: "Website appointment", tags: ["website-appointment", "website-lead", "appointment"] };
+  }
+  if (t === "brochure") {
+    return { source: "Website brochure", tags: ["brochure", "website-lead"] };
   }
   // contact / shortlist / generic enquiry
   return { source: "Website enquiry", tags: ["website-enquiry", "website-lead", "enquiry"] };

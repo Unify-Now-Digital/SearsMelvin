@@ -14,6 +14,7 @@ assert.deepEqual(websiteGhlLabels("quote"), {
   tags: ["website-quote", "website-lead", "quote-request"],
 });
 assert.equal(websiteGhlLabels("enquiry").source, "Website enquiry");
+assert.deepEqual(websiteGhlLabels("brochure"), { source: "Website brochure", tags: ["brochure", "website-lead"] });
 assert.equal(websiteGhlLabels("appointment").source, "Website appointment");
 assert.equal(shouldReplaceGhlSource("chat widget", "Website quote"), true);
 assert.equal(shouldReplaceGhlSource("", "Website quote"), true);
