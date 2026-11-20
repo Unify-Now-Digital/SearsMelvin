@@ -677,10 +677,17 @@
             #shortlistNavBtn { display: none !important; }
             .mobile-menu-btn { margin-left: 0.25rem; }
             .floating-btn.shortlist { display: none; }
-            .type-browse { position: relative; }
+            /* The catalogue column is 1fr. Without a floor of 0 it grows to
+               the full chip row, overflow never starts, and the body clip
+               hides Heart, Book, Churchyard and the rest. */
+            .catalogue-container > main { min-width: 0; max-width: 100%; }
+            .type-browse { position: relative; max-width: 100%; min-width: 0; }
             .type-browse-list {
                 flex-wrap: nowrap;
                 gap: 0.5rem;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
                 overflow-x: auto;
                 overscroll-behavior-x: contain;
                 scrollbar-width: none;
@@ -698,6 +705,7 @@
                 pointer-events: none;
                 background: linear-gradient(90deg, transparent, var(--color-cream));
             }
+            .type-browse.is-scrolled-end::after { opacity: 0; }
             .type-browse-list a {
                 flex: 0 0 auto;
                 box-sizing: border-box;
@@ -2052,7 +2060,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261120" defer></script>
+    <script src="/site-globals.js?v=20261120b" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261120b" defer></script>
 </body>

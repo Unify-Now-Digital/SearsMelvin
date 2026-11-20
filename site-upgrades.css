@@ -2420,3 +2420,37 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
   content-visibility: auto;
   contain-intrinsic-size: auto 480px;
 }
+
+/* The open cookie strip pushes the brochure form down. At 768px that left
+   "Send me the brochure" under the bottom nav. Closed and desktop stay as
+   they are. The subtitle keeps its two-line reserve below 600px. */
+@media (max-width: 768px) {
+  html[data-sm-cookie="open"] body:has(#brochureRequest) main.content {
+    padding-top: 4px;
+  }
+  html[data-sm-cookie="open"] body:has(#brochureRequest) #brochureRequest {
+    padding-top: 8px;
+  }
+}
+@media (max-width: 768px) and (min-width: 600px) {
+  html[data-sm-cookie="open"] body:has(#brochureRequest) .page-header p {
+    min-height: 0;
+    margin-bottom: 4px;
+  }
+}
+
+/* After Reject, a 430px phone still had Send Message under the bottom nav.
+   The stacked rows were adding their own gap on top of each field, and the
+   message box kept the desktop 8rem height. */
+@media (max-width: 480px) {
+  html body .contact-form-wrapper .form-row {
+    gap: 0;
+    margin-bottom: 0;
+  }
+  html body textarea#message {
+    min-height: 4.5rem;
+  }
+  html body .contact-form-wrapper .form-submit {
+    margin-top: 0.5rem;
+  }
+}
