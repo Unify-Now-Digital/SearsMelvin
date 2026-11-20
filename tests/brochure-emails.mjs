@@ -16,7 +16,7 @@ const up = require("../site-upgrades.js");
 
 const SENT_AT = new Date("2026-11-20T12:13:00Z");
 const sentLine = brochureStaffStatusLine({ accepted: true, email: "alex@example.com", at: SENT_AT });
-assert.equal(sentLine, "Brochure sent to alex@example.com at 12:13 on 20 Nov 2026");
+assert.equal(sentLine, "Brochure sent to alex@example.com at 12:13 on 20 Nov 2026 UK time");
 assert.doesNotMatch(sentLine, /delivered|received|opened/i);
 assert.equal(
   brochureStaffStatusLine({ accepted: false, email: "alex@example.com", at: SENT_AT }),
@@ -55,6 +55,8 @@ assert.match(readFileSync("site-upgrades.js", "utf8"), /event: 'brochure_downloa
 assert.match(readFileSync("brochure.html", "utf8"), /A copy is also on its way to your inbox/);
 assert.match(readFileSync("brochure.html", "utf8"), /data-brochure-thanks-title/);
 assert.match(readFileSync("brochure.html", "utf8"), /data-brochure-link/);
+assert.match(readFileSync("brochure.html", "utf8"), /<label for="brochurePhone">Phone<\/label>\s*<input type="tel" id="brochurePhone" name="phone" autocomplete="tel" inputmode="tel" maxlength="40">/);
+assert.doesNotMatch(readFileSync("brochure.html", "utf8"), /brochurePhone[^>]*>Phone <span>\(optional\)<\/span>/);
 assert.match(readFileSync("site-upgrades.css", "utf8"), /\.sm-brochure-thanks a\[data-brochure-link\]/);
 assert.match(readFileSync("site-upgrades.js", "utf8"), /href', '\/brochure\?from=' \+ src/);
 
@@ -157,7 +159,7 @@ function statusLine(mail) {
   assert.equal(family.body.attachments, undefined);
   assert.doesNotMatch(family.body.subject, /We have received your enquiry/);
   assert.equal(staff.body.subject, "New Enquiry — Brochure request: Alex Taylor");
-  assert.match(statusLine(staff.body), /^Brochure sent to alex@example.com at \d{2}:\d{2} on \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+  assert.match(statusLine(staff.body), /^Brochure sent to alex@example.com at \d{2}:\d{2} on \d{1,2} [A-Z][a-z]{2} \d{4} UK time$/);
   assert.doesNotMatch(statusLine(staff.body), /delivered|received|opened/i);
   assert.match(staff.body.html, new RegExp(statusLine(staff.body).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.ok(staff.body.html.indexOf(statusLine(staff.body)) < staff.body.html.indexOf("<h1"));

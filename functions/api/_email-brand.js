@@ -118,7 +118,7 @@ export function brochureSentStamp(date) {
 export function brochureStaffStatusLine({ accepted, email, at }) {
   const address = String(email || "").trim();
   if (accepted && address) {
-    return `Brochure sent to ${address} at ${brochureSentStamp(at || new Date())}`;
+    return `Brochure sent to ${address} at ${brochureSentStamp(at || new Date())} UK time`;
   }
   return "Brochure email failed: please send it manually";
 }
