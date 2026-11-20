@@ -157,10 +157,11 @@
     
     <!-- Preload LCP hero image so the fetch starts before the parser hits the <img> tag -->
     <link rel="preload" as="image"
-          href="/images/installed/gioiosa-family-kerb-set-900w.webp"
-          imagesrcset="/images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+          href="/images/installed/gioiosa-family-kerb-set-480w.webp"
+          imagesrcset="/images/installed/gioiosa-family-kerb-set-480w.webp 480w,
+                       /images/installed/gioiosa-family-kerb-set-600w.webp 600w,
                        /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
-          imagesizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 900px"
+          imagesizes="(max-width: 768px) 260px, (max-width: 1024px) 400px, 640px"
           fetchpriority="high">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
@@ -301,8 +302,9 @@
         .btn-accent:hover { background-color: var(--color-stone); }
 
         /* width: 100% stops iOS Safari collapsing this grid item to 0. The min size is the floor if the percentage cannot resolve. */
-        .hero-visual { position: relative; width: 100%; max-width: 100%; min-width: 12rem; min-height: 12rem; animation: fadeInUp 1s 0.3s ease forwards; opacity: 0; }
-        .hero-image { width: 100%; aspect-ratio: 15/16; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px color-mix(in srgb, var(--sm-color-text) 12%, transparent); position: relative; background: linear-gradient(145deg, var(--sm-color-bg-panel-quiet) 0%, var(--sm-color-bg-panel) 100%); }
+        /* No fade on this box. It is the LCP photo. A fade holds the paint until the animation ends. */
+        .hero-visual { position: relative; width: 100%; max-width: 100%; min-width: 12rem; min-height: 12rem; opacity: 1; animation: none; }
+        .hero-image { width: 100%; aspect-ratio: 15/16; border-radius: var(--sm-radius-sm); overflow: hidden; box-shadow: 0 24px 60px color-mix(in srgb, var(--sm-color-text) 12%, transparent); position: relative; background: linear-gradient(145deg, var(--sm-color-bg-panel-quiet) 0%, var(--sm-color-bg-panel) 100%); }
         .hero-image svg { width: 100%; height: 100%; object-fit: contain; }
         .hero-image img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
         .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--sm-color-text) 30%, transparent) 100%); pointer-events: none; }
@@ -310,9 +312,9 @@
         .hero-guide-price-note { position: static; z-index: 2; display: block; width: auto; max-width: 36rem; margin: 0.75rem 0 0; text-align: center; }
         .form-status-error { display: none; margin: 0 0 0.75rem; padding: 0.75rem 1rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.95rem; }
         .form-status-error.is-visible { display: block; }
-        .floating-badge { position: absolute; top: 12px; right: 12px; bottom: auto; width: 140px; height: 140px; background-color: var(--color-accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; animation: float 4s ease-in-out infinite; z-index: 3; }
-        .floating-badge span { font-family: var(--font-display); font-size: 2rem; font-weight: 300; }
-        .floating-badge small { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
+        .floating-badge { position: absolute; top: 12px; right: 12px; bottom: auto; width: auto; height: auto; min-width: 5.5rem; padding: 0.45rem 0.7rem; background-color: var(--sm-color-bg-inverse); border-radius: var(--sm-radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--sm-color-text-inverse); text-align: center; z-index: 3; }
+        .floating-badge span { font-family: var(--sm-font-body); font-size: 1.35rem; font-weight: var(--sm-weight-body-strong); font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .floating-badge small { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sm-color-text-accent-inverse); opacity: 1; }
 
         /* Trust Bar */
         .trust-bar { background-color: var(--color-cream); padding: 0.9rem 2rem; margin-top: 60px; border-top: 1px solid var(--color-border); }
@@ -463,7 +465,7 @@
         .appt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
         .appt-row.full { grid-template-columns: 1fr; }
         .appt-group { display: flex; flex-direction: column; gap: 0.4rem; }
-        .appt-group label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+        .appt-group label { font-size: var(--sm-text-sm); font-weight: var(--sm-weight-body-strong); letter-spacing: 0; text-transform: none; color: var(--sm-color-text); }
         .appt-group input, .appt-group select, .appt-group textarea { padding: 0.8rem 1rem; border: 1.5px solid var(--color-border); border-radius: 8px; font-family: var(--font-body); font-size: 0.95rem; background: white; transition: border-color 0.3s; }
         .appt-group input:focus, .appt-group select:focus, .appt-group textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sm-color-text-accent) 8%, transparent); }
         .appt-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; cursor: pointer; }
@@ -565,9 +567,9 @@
             .hero-lead em { font-weight: 500; color: var(--color-stone); }
             .hero-description { display: none; }
             .hero-image { aspect-ratio: 5/4; }
-            .floating-badge { width: 84px; height: 84px; top: 8px; right: 8px; bottom: auto; }
+            .floating-badge { width: auto; height: auto; min-width: 0; top: 8px; right: 8px; bottom: auto; padding: 0.35rem 0.5rem; }
             .hero-image-label { bottom: 0.45rem; left: 0.45rem; right: 0.45rem; letter-spacing: 0.04em; font-size: 0.65rem; }
-            .floating-badge span { font-size: 1.25rem; }
+            .floating-badge span { font-size: 1.05rem; }
             .floating-badge small { font-size: 0.5rem; }
             .hero-buttons { gap: 0.5rem; flex-wrap: nowrap; justify-content: center; }
             .hero-buttons .btn { padding: 0.85rem 1rem; font-size: 0.78rem; flex: 1; justify-content: center; }
@@ -710,7 +712,7 @@
       }]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261120c">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261120d">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 </head>
@@ -832,13 +834,14 @@
             </div>
             <div class="hero-visual">
                 <div class="hero-image" id="heroImage">
-                    <img src="/images/installed/gioiosa-family-kerb-set.webp"
+                    <img src="/images/installed/gioiosa-family-kerb-set-600w.webp"
                          alt="Recently installed kerb-set memorial for the Gioiosa family"
-                         loading="eager" fetchpriority="high"
+                         loading="eager" fetchpriority="high" decoding="async"
                          width="1086" height="1448"
-                         srcset="/images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+                         srcset="/images/installed/gioiosa-family-kerb-set-480w.webp 480w,
+                                 /images/installed/gioiosa-family-kerb-set-600w.webp 600w,
                                  /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
-                         sizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 900px">
+                         sizes="(max-width: 768px) 260px, (max-width: 1024px) 400px, 640px">
                     <span class="hero-image-label">Recent Installation — The Gioiosa Family</span>
                 </div>
                 <div class="floating-badge">
@@ -1554,6 +1557,16 @@
             });
         }
 
+        function homepageCategoryImg(url, name) {
+            var alt = homepageEsc(name);
+            var fallback = homepageEsc(url);
+            var sized = url;
+            if (url.indexOf('/object/public/') !== -1) {
+                sized = url.replace('/object/public/', '/render/image/public/') + (url.indexOf('?') === -1 ? '?' : '&') + 'width=640&quality=68&resize=contain';
+            }
+            return '<img src="' + homepageEsc(sized) + '" alt="' + alt + '" width="640" height="640" loading="lazy" decoding="async" data-fallback="' + fallback + '" onerror="this.onerror=null;this.src=this.dataset.fallback">';
+        }
+
         function homepageImageUrl(value) {
             if (typeof value !== 'string' || value.length > 2048) return '';
             var offHost = ['', 'storage', 'v1'].join('/');
@@ -1599,7 +1612,7 @@
                         var product = categoryImageMap[cat.slug];
                         var imageUrl = product ? homepageImageUrl(product.image_url) : '';
                         var imageHtml = imageUrl
-                            ? '<img src="' + homepageEsc(imageUrl) + '" alt="' + homepageEsc(cat.name) + '" loading="lazy">'
+                            ? homepageCategoryImg(imageUrl, cat.name)
                             : '<div style="width:100%;height:100%;background:linear-gradient(145deg,var(--sm-color-bg-panel-quiet),var(--sm-color-bg-panel));"></div>';
                         var hasGuidePrice = Boolean(categoryMinPrice[cat.slug]);
                         var price = hasGuidePrice
@@ -1677,8 +1690,8 @@
                 var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
                 if (/^\/images\/installed\/[a-z0-9-]+\.webp$/.test(url)) {
                     var stem = url.replace(/\.webp$/, '');
-                    return 'src="' + e(url) + '" srcset="' + e(stem + '-600w.webp') + ' 600w, ' + e(stem + '-900w.webp')
-                        + ' 900w" sizes="(max-width: 640px) 600px, (max-width: 960px) 900px, 900px"';
+                    return 'src="' + e(stem + '-600w.webp') + '" srcset="' + e(stem + '-480w.webp') + ' 480w, ' + e(stem + '-600w.webp') + ' 600w, ' + e(stem + '-900w.webp')
+                        + ' 900w" sizes="(max-width: 640px) 280px, 320px"';
                 }
                 if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
                 return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
