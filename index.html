@@ -671,6 +671,14 @@
             .site-trust-accred { flex-wrap: wrap; gap: 0.35rem; font-size: 0.6rem; margin-top: 0.35rem; }
             .site-trust-chip { font-size: 0.65rem; padding: 0.15rem 0.45rem; }
         }
+        /* Phone script switches this bar to two columns after first paint.
+           Paint that row, and its height, in the stylesheet so main does not move. */
+        @media (max-width: 480px) {
+            .site-trust-bar { min-height: 97px; padding: 0.6rem 1rem; }
+            .site-trust-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.75rem; }
+            .site-trust-item { flex-direction: row; justify-content: flex-start; gap: 0.45rem; font-size: 0.82rem; line-height: 1.2; font-weight: 600; text-align: left; }
+            .site-trust-item svg { width: 20px; height: 20px; }
+        }
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=9">
 
