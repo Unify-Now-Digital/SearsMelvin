@@ -254,7 +254,7 @@ test("tracking smoke checks", async ({ page }) => {
   const selectEvents = await waitForEvent(page, "select_item", 5_000);
   const selectPass = selectEvents.some((event) => event === "select_item" || event === "event:select_item");
 
-  const filter = page.locator("#typeFilters label.filter-option").first();
+  const filter = page.locator('.type-browse-list a[href^="/memorials?type="]').first();
   await filter.scrollIntoViewIfNeeded();
   await filter.click({ timeout: 10_000 });
   const filterEvents = await waitForEvent(page, "filter_select", 5_000);

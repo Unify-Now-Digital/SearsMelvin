@@ -49,7 +49,43 @@ function imageAttributes(url) {
   const render = (width) => url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
     `?width=${width}&quality=70&resize=contain`;
   const srcset = [400, 800, 1200].map((width) => `${escapeHtml(render(width))} ${width}w`).join(", ");
-  return `src="${escapeHtml(render(800))}" srcset="${srcset}" sizes="(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 300px" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+  return `src="${escapeHtml(render(800))}" srcset="${srcset}" sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+}
+
+export function typeCounts(products) {
+  const visible = listableProducts(products);
+  const counts = { all: visible.length };
+  for (const product of visible) {
+    const slug = safeSlug(product.product_categories?.slug);
+    if (!slug) continue;
+    counts[slug] = (counts[slug] || 0) + 1;
+  }
+  return counts;
+}
+
+function stonesLabel(count) {
+  const n = Number(count) || 0;
+  return `All ${n} ${n === 1 ? "stone" : "stones"}`;
+}
+
+function colourWord(count) {
+  return Number(count) === 1 ? "stone colour" : "stone colours";
+}
+
+export function stoneBandMarkup(colours) {
+  const list = Array.isArray(colours) ? colours : [];
+  const swatches = list.map((colour) => {
+    const name = escapeHtml(String(colour.name || "").slice(0, 80));
+    const slug = safeSlug(colour.slug);
+    const primary = safeHex(colour.hex_primary);
+    const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
+    const imageUrl = safeImageUrl(colour.image_url);
+    const photo = imageUrl
+      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+      : "";
+    return `<div class="stone-swatch" role="listitem"${slug ? ` data-colour="${slug}"` : ""}><span class="stone-swatch-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="stone-swatch-name">${name}</span></div>`;
+  }).join("");
+  return `<div class="stone-band" id="stoneBand"><p class="stone-band-lead">Every design comes in all <span id="stoneColourCount">${list.length}</span> ${colourWord(list.length)}</p><div class="stone-swatches" id="stoneSwatches" role="list" aria-label="Stone colours">${swatches}</div><p class="stone-band-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p></div>`;
 }
 
 async function fetchCatalogue(env) {
@@ -86,17 +122,13 @@ export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
   const shown = visible.slice(0, CARD_PAGE);
   const cards = renderCards(shown, colours);
-  const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
   return { grid, count: visible.length, more: visible.length > CARD_PAGE };
 }
 
 function renderCards(products, colours) {
   const colourSlugs = colours.map((colour) => safeSlug(colour.slug)).filter(Boolean).join(",");
-  const colourShown = colours.slice(0, 8);
-  const colourExtra = colours.length - colourShown.length;
-  const colourDots = colourShown.map((colour) =>
-    `<span class="product-colour-dot" style="background:${safeHex(colour.hex_primary)};"></span>`
-  ).join("") + (colourExtra > 0 ? `<span class="product-colour-more">+${colourExtra}</span>` : "");
+  const colourDots = `<span class="product-stones">${stonesLabel(colours.length)}</span>`;
 
   return products.map((product, index) => {
     const id = safeId(product.id);
@@ -124,6 +156,7 @@ export async function onRequestGet({ request, env }) {
     return shell;
   }
   if (!catalogue || catalogue.products.length === 0) return shell;
+  const counts = typeCounts(catalogue.products);
   const requested = safeSlug(new URL(request.url).searchParams.get("type"));
   let products = catalogue.products;
   if (requested) {
@@ -138,20 +171,24 @@ export async function onRequestGet({ request, env }) {
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
     .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
-    .on("#filtersShowCount", { element(el) { el.setInnerContent(String(count)); } });
+    .on('.type-count[data-type-count="all"]', { element(el) { el.setInnerContent(String(counts.all)); } });
+  for (const slug of Object.keys(counts)) {
+    if (slug === "all") continue;
+    const value = String(counts[slug]);
+    rewriter = rewriter.on(`.type-count[data-type-count="${slug}"]`, {
+      element(el) { el.setInnerContent(value); },
+    });
+  }
   if (more) rewriter = rewriter.on("#catalogueMore", { element(el) { el.removeAttribute("hidden"); } });
+  if (!typeName) {
+    rewriter = rewriter.on(".type-browse-list a.type-all", {
+      element(el) { el.setAttribute("aria-current", "page"); },
+    });
+  }
   if (typeName) {
-    const tag = `<span class="active-filters-label">Active filters:</span><span class="filter-tag">${escapeHtml(typeName)}<button onclick="removeFilter('type', '${requested}')">&times;</button></span>`;
-    rewriter = rewriter
-      .on("#activeFilters", {
-        element(el) {
-          el.setAttribute("class", "active-filters has-filters");
-          el.setInnerContent(tag, { html: true });
-        },
-      })
-      .on(`a[href="/memorials?type=${requested}"]`, {
-        element(el) { el.setAttribute("aria-current", "page"); },
-      });
+    rewriter = rewriter.on(`a[href="/memorials?type=${requested}"]`, {
+      element(el) { el.setAttribute("aria-current", "page"); },
+    });
   }
   return rewriter.transform(shell);
 }

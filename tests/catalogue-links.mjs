@@ -128,7 +128,11 @@ assert.equal(allResponse.status, 200);
 assert.match(captured["#productsGrid"], /href="\/memorials\/lawn-headstones-0"/);
 assert.doesNotMatch(captured["#productsGrid"], /lawn-headstones-24|More memorials|range-links/);
 assert.equal(captured["#resultsCount"], "27");
-assert.equal(captured["#filtersShowCount"], "27");
+assert.equal(captured['.type-count[data-type-count="all"]'], "27");
+assert.match(captured["#productsGrid"], /id="stoneBand"/);
+assert.match(captured["#productsGrid"], /All 1 stone/);
+assert.match(captured["#productsGrid"], /Every design comes in all/);
+assert.doesNotMatch(captured["#productsGrid"], /Compare the stones|product-colour-dot/);
 assert.equal(captured["#catalogueMore"], "visible");
 assert.equal(captured["#rangeLinks"], undefined);
 
