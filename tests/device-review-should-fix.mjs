@@ -42,6 +42,16 @@ assert.match(contact, />Enquiry type </);
 assert.doesNotMatch(contact, />First Name </);
 assert.match(upgrades, /html body \.contact-form-wrapper \.form-row\.full \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
 assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
+assert.match(contact, /<form id="contactForm" aria-labelledby="contactFormTitle">/);
+assert.match(contact, /<h3 id="contactFormTitle">Send us a message<\/h3>/);
+const shortOpen = upgrades.slice(upgrades.indexOf("@media (max-width: 390px) and (max-height: 667px)"));
+const shortHeader = shortOpen.slice(shortOpen.indexOf(".form-header {"), shortOpen.indexOf(".form-group label"));
+assert.match(shortHeader, /position:\s*absolute/);
+assert.match(shortHeader, /width:\s*1px/);
+assert.match(shortHeader, /height:\s*1px/);
+assert.match(shortHeader, /clip:\s*rect\(0,\s*0,\s*0,\s*0\)/);
+assert.match(shortHeader, /clip-path:\s*inset\(50%\)/);
+assert.doesNotMatch(shortHeader, /display:\s*none/);
 
 assert.match(memorials, /<h1>Headstones, gravestones and memorials<\/h1>/);
 assert.match(memorials, /<p>Browse our memorials\. Each piece is made to your specification\.<\/p>/);
