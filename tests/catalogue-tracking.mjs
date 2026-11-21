@@ -137,6 +137,10 @@ assert.match(memorials, /catalogueGrid\.addEventListener\('pointerdown', remembe
 assert.match(memorials, /onchange="applyFilters\(this\)"/);
 assert.doesNotMatch(fnBody(memorials, "catalogueMetaNow"), /colour/);
 assert.match(memorials, /scheduleCatalogueTrack\(\)/);
+assert.match(memorials, /filterSelectEvent\(change, catalogueMatchCount, meta\)/);
+assert.doesNotMatch(memorials, /filterSelectEvent\(change, items\.length/);
+assert.doesNotMatch(memorials, /CATALOGUE_PAGE|showMoreMemorials|Show more memorials/);
+assert.match(readFileSync("docs/TRACKING.md", "utf8"), /result_count` is the full number of matching memorials/);
 const shortlistLeads = memorials.match(/event: 'sm_lead_submit'/g) || [];
 assert.equal(shortlistLeads.length, 1, "the shortlist is the only lead push on /memorials");
 const shortlistOk = memorials.slice(memorials.indexOf("if (result.ok) {", memorials.indexOf("channel: 'shortlist'")));
