@@ -25,6 +25,7 @@ import {
   cleanSlug,
   familyBrochureEmail,
   familyEnquiryEmail,
+  thanksName,
   ghlContactUrl,
   staffBrochureEmail,
   staffEnquiryEmail,
@@ -154,7 +155,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // current quote workflow upserts the person/job and creates an enquiry; it
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
-  const firstName = first_name || "";
+  const firstName = thanksName(name);
   const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
   let enquiryId = null;
   try {
@@ -479,7 +480,7 @@ async function sendFamilyBrochure(env, { name, email, source }) {
     const id = await sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: email,
-      ...familyBrochureEmail({ firstName: splitName(name).first_name || "", source }),
+      ...familyBrochureEmail({ firstName: name, source }),
     }, emailTimeoutMs(env));
     return { accepted: Boolean(id), email, at: new Date() };
   } catch {
@@ -586,7 +587,7 @@ async function handleAppointment(ctx, data, submittedAt) {
   if (showroomIso !== appointment_date || !showroomSlots.has(appointment_time) || showroomDay === 0 || showroomDay === 6)
     return jsonResponse({ ok: false, error: "Please choose a weekday from 10:00 to 14:30. The showroom is open Monday to Friday, 10am to 3pm." }, 400);
 
-  const firstName = splitName(name).first_name || "";
+  const firstName = thanksName(name);
   const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call" };
   const typeLabel = typeLabels[appointment_type] || appointment_type;
   const dateFormatted = new Date(appointment_date + "T00:00:00").toLocaleDateString("en-GB", {
@@ -1313,25 +1314,58 @@ function supabaseHeaders(env) {
   });
 }
 
-// Titles are their own word, with or without a trailing dot. "Mr and Mrs" is one
-// leading phrase. Anything left keeps the capitals the person typed.
-const NAME_TITLE = /^(?:mr|mrs|miss|ms|mx|dr|prof|sir)\.?$/i;
-const LEADING_COUPLE = /^mr\.?\s+and\s+mrs\.?(?=\s|$)/i;
-const GLUED_TITLE = /^(?:mr|mrs|miss|ms|mx|dr|prof|sir)\.(?=\S)/i;
+// A title is its own word, with or without a trailing dot, any case.
+// "Mr and Mrs" and "Dr & Mrs" stay one phrase. Capitals are kept as typed.
+const TITLE_WORD = "mr|mrs|ms|miss|mx|dr|prof|rev|sir|dame|lady|lord";
+const TITLE_TOKEN = new RegExp(`^(?:${TITLE_WORD})\\.?$`, "i");
+
+function cleanedName(full) {
+  return String(full ?? "")
+    .replace(/\p{Cc}/gu, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
+    .replace(new RegExp(`(^|\\s)(${TITLE_WORD})\\.(?=\\S)`, "gi"), "$1$2. ")
+    .replace(/\s*&\s*/g, " & ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function splitName(full) {
-  let text = String(full ?? "").trim().replace(/\s+/g, " ");
-  text = text.replace(GLUED_TITLE, "");
-  text = text.replace(LEADING_COUPLE, "").trim();
-  const parts = text.split(" ").filter(Boolean);
-  while (parts.length && NAME_TITLE.test(parts[0])) parts.shift();
+  const text = cleanedName(full);
+  const parts = text ? text.split(" ") : [];
+  let index = 0;
+  let title = "";
+  let joint = false;
+  if (
+    parts.length >= 3
+    && TITLE_TOKEN.test(parts[0])
+    && /^(?:and|&)$/i.test(parts[1])
+    && TITLE_TOKEN.test(parts[2])
+  ) {
+    title = parts.slice(0, 3).join(" ");
+    index = 3;
+    joint = true;
+  } else {
+    const titles = [];
+    while (index < parts.length && TITLE_TOKEN.test(parts[index])) titles.push(parts[index++]);
+    title = titles.join(" ");
+  }
+  const rest = parts.slice(index);
+  // No salutation column on people, and the HighLevel contact body has no title
+  // field. A couple title with only a surname is stored as the first name.
+  if (joint && rest.length === 1) {
+    return { first_name: title, last_name: rest[0], title, joint: true };
+  }
+  if (!rest.length) return { first_name: null, last_name: "-", title, joint };
   return {
-    first_name: parts[0] || null,
-    last_name: parts.length > 1 ? parts.slice(1).join(" ") : "-",
+    first_name: rest[0],
+    last_name: rest.length > 1 ? rest.slice(1).join(" ") : "-",
+    title,
+    joint,
   };
 }
 
-// HighLevel has no placeholder surname. people.last_name still uses "-".
+// HighLevel has no placeholder surname, and no title field. people.last_name still uses "-".
 export function ghlNameParts(full) {
   const { first_name, last_name } = splitName(full);
   return {
