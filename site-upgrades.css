@@ -2979,7 +2979,7 @@ html body a.category-card .guide-price-note {
    keep Send Message above the phone nav. Clip the title like a
    screen-reader-only label: it keeps no layout height, and the heading
    stays available as the form's accessible name. */
-@media (max-width: 390px) and (max-height: 667px) {
+@media (max-width: 390px) and (max-height: 700px) {
   html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
     padding-top: 0;
   }
@@ -3002,10 +3002,11 @@ html body a.category-card .guide-price-note {
   }
 }
 
-/* 320x568 and 340x600 need the fields packed so Send Message clears
-   the phone nav. 500px and under cannot fit that packing: the button
-   ends across the nav, so those heights are left unpacked below. */
-@media (max-width: 390px) and (min-height: 501px) and (max-height: 600px) {
+/* 568px through 634px can keep Send Message above the phone nav when
+   the fields are packed. Below 568px the packed form cannot, so those
+   heights use the below-fold padding instead. Above 634px the unpacked
+   form already clears the nav. */
+@media (max-width: 390px) and (min-height: 568px) and (max-height: 634px) {
   html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-fields {
     display: flex;
     flex-direction: column;
@@ -3046,7 +3047,7 @@ html body a.category-card .guide-price-note {
 
 /* A wrapped "Enquiry type" label drops Send Message into the phone nav
    around 359px and 370px. Keep every label on one line through 667px. */
-@media (max-width: 390px) and (max-height: 667px) {
+@media (max-width: 390px) and (max-height: 700px) {
   html body:has(#contactForm) .contact-form-wrapper .form-group label {
     white-space: nowrap;
   }
@@ -3076,7 +3077,7 @@ html body a.category-card .guide-price-note {
   }
 }
 
-@media (min-width: 390px) and (max-width: 390px) and (max-height: 667px) {
+@media (min-width: 390px) and (max-width: 390px) and (max-height: 700px) {
   html body:has(#contactForm) .contact-form-wrapper {
     padding-top: 0;
   }
@@ -3097,13 +3098,13 @@ html body a.category-card .guide-price-note {
   }
 }
 
-/* 540px and under cannot hold Send Message clear of the phone nav.
-   The extra space starts the button below the fold. 568px and 600px
-   keep the packed layout above. */
-@media (max-width: 480px) and (max-height: 540px) {
+/* 567px and under cannot hold the packed form clear of the phone nav.
+   The extra space starts the button below the fold. Packing begins at
+   568px, where the button can sit above the nav. */
+@media (max-width: 480px) and (max-height: 567px) {
   html body:has(#contactForm) .contact-section,
   html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
-    padding-top: 128px;
+    padding-top: 160px;
   }
 }
 

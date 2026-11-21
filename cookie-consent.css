@@ -531,10 +531,9 @@ html body #cookieConsent.sm-cookie .sm-cookie-lead {
   font-family: "DM Sans", "DM Sans Fallback", sans-serif;
 }
 
-/* The packed 568px and 600px phones use this shorter strip. 540px and
-   under stay on the normal phone strip, so Send Message can sit below
-   the fold instead of across the nav. */
-@media (max-width: 390px) and (min-height: 501px) and (max-height: 600px) {
+/* The packed 568–634px phones use this shorter strip. Shorter screens
+   stay on the normal phone strip so the button can sit below the fold. */
+@media (max-width: 390px) and (min-height: 568px) and (max-height: 634px) {
   html[data-sm-cookie="open"] { --sm-cookie-stack: 76px; }
   html body #cookieConsent.sm-cookie:not(.is-manage) {
     padding: 0 8px;

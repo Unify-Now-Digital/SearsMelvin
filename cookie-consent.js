@@ -108,10 +108,10 @@
 
   // Same heights as cookie-consent.css. Measuring the strip here let the
   // offset change again after fonts and the chat loaded. 108px is the
-  // stacked phone strip. 76px is the packed 501–600px phone. 61px is the
+  // stacked phone strip. 76px is the packed 568–634px phone. 61px is the
   // single desktop row.
   function stackHeight() {
-    if (root.matchMedia("(max-width: 390px) and (min-height: 501px) and (max-height: 600px)").matches) return 76;
+    if (root.matchMedia("(max-width: 390px) and (min-height: 568px) and (max-height: 634px)").matches) return 76;
     var w = root.innerWidth || 0;
     if (w <= 768) return 108;
     return 61;
