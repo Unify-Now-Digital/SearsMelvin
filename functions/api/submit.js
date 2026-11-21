@@ -1370,33 +1370,24 @@ async function signEnquiryPhotoUrls(env, paths) {
     .map(r => `${env.SUPABASE_URL}/storage/v1${r.signedURL}`);
 }
 
-// Best-effort: resolve a free-text cemetery name to a row in `public.cemeteries`.
-// Falls back to null so reports can flag unmatched submissions for follow-up.
-async function lookupCemeteryIdByName(env, location) {
+// Best-effort: resolve a free-text cemetery name through the shared Mason
+// function match_web_enquiry_cemetery. Quotes use the same function inside
+// create_quote. The function searches every active cemetery, not only the
+// Sears Melvin rows, and returns null when more than one matches.
+// Falls back to null so the enquiry still saves.
+export async function lookupCemeteryIdByName(env, location) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return null;
   if (!location || typeof location !== "string") return null;
   const trimmed = location.trim();
   if (trimmed.length < 3) return null;
-  const headers = supabaseHeaders(env);
-  // `cemeteries` is a shared multi-tenant table — Sears Melvin owns 6 rows, the
-  // other tenant owns ~134. Without the org filter a free-typed name could
-  // resolve to another tenant's cemetery (and its permit fee), so scope the
-  // lookup the same way partner-orders.js does. Test rows are excluded too.
-  const orgFilter = env.SM_ORG_ID ? `&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}` : "";
-  // Postgres `ilike` with the full string first (exact-ish match), then loosen.
-  const tries = [
-    `name=ilike.${encodeURIComponent(trimmed)}`,
-    `name=ilike.${encodeURIComponent(trimmed + "%")}`,
-    `name=ilike.${encodeURIComponent("%" + trimmed + "%")}`,
-  ];
-  for (const filter of tries) {
-    const url = `${env.SUPABASE_URL}/rest/v1/cemeteries?${filter}&is_active=eq.true&is_test=eq.false${orgFilter}&select=id&limit=1`;
-    const res = await fetch(url, { headers: supabaseAuthHeaders(headers) });
-    if (!res.ok) continue;
-    const rows = await res.json();
-    if (rows?.[0]?.id) return rows[0].id;
-  }
-  return null;
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/match_web_enquiry_cemetery`, {
+    method: "POST",
+    headers: supabaseHeaders(env),
+    body: JSON.stringify({ p_text: trimmed }),
+  });
+  if (!res.ok) return null;
+  const id = await res.json().catch(() => null);
+  return typeof id === "string" && id ? id : null;
 }
 
 // Upsert a retail contact into `people`, deduped by email. Never sets

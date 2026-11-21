@@ -65,16 +65,16 @@ it whenever you audit or fix something in that list.
 `cemeteries`, `people`, `products`, `orders`, `enquiries`, `invoices` and more
 are shared with another tenant. Two real bugs have come from forgetting this:
 
-- `cemeteries` holds ~6 Sears Melvin rows and ~134 belonging to the other
-  tenant. A name lookup without `organization_id=eq.${SM_ORG_ID}` can attach the
-  wrong cemetery — and the wrong permit fee — to a quote. `tests/security-smoke.mjs`
-  asserts every `cemeteries` read in `submit.js` carries the org filter.
+- Cemetery name matching calls `match_web_enquiry_cemetery` (Mason). That
+  function searches every active cemetery and returns null when more than one
+  matches. Do not put the old `organization_id` filter back on this lookup.
+  The contact page list can still show the Sears Melvin rows. A typed name is
+  matched on the server. This lookup does not add a permit fee.
 - `people` is deliberately **not** org-scoped on lookup: there is a global unique
   index on email, so the person row is shared and the *enquiry* carries the org.
   This is intentional; see the comment on `upsertPerson`.
 
-Use the existing convention:
-`const orgFilter = env.SM_ORG_ID ? \`&organization_id=eq.${encodeURIComponent(env.SM_ORG_ID)}\` : "";`
+For other tenant tables, keep an organisation filter on the query. Cemetery name matching is the exception above.
 
 ## Security conventions
 
