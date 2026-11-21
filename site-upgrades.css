@@ -638,10 +638,10 @@ body.memorial-page .footer-contact a {
   font-family: "Cormorant Fallback";
   font-style: normal;
   font-weight: 100 900;
-  src: local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times New Roman");
-  size-adjust: 95%;
-  ascent-override: 95%;
-  descent-override: 22%;
+  src: local("Times New Roman"), local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times");
+  size-adjust: 88.9%;
+  ascent-override: 103.57%;
+  descent-override: 32.06%;
   line-gap-override: 0%;
 }
 
@@ -2684,7 +2684,22 @@ html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(inp
     white-space: nowrap;
   }
   html body .mobile-bottom-nav-inner {
-    grid-template-columns: 1fr 1fr 1.1fr 1fr auto;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  /* A web-font swap used to change the phone label's width and the
+     label line box, which moved the icons and the bar. The columns and
+     the label box stay fixed, so the swap has nothing to move. */
+  html body .mobile-nav-item {
+    min-width: 0;
+    height: 62px;
+    box-sizing: border-box;
+  }
+  html body .mobile-nav-item span {
+    display: block;
+    height: 12px;
+    line-height: 12px;
+    max-width: 100%;
+    overflow: hidden;
   }
   html body .mobile-nav-item {
     min-width: 44px;
@@ -2747,8 +2762,7 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
 @media (max-width: 480px) {
   html body .contact-form-wrapper {
     padding-top: 0.25rem;
-    padding-right: 4.6rem;
-    padding-bottom: 0.2rem;
+    padding-bottom: 0.65rem;
   }
   html body .contact-form-wrapper .form-header {
     margin-bottom: 0.35rem;
@@ -2757,11 +2771,12 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     display: none;
   }
   html body .contact-form-wrapper .form-row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
     margin-bottom: 0;
   }
-  /* Name, email, and phone each take the full row, so the phone field is not under the chat bubble. */
+  /* The single Name field takes the whole row. Its height is one field,
+     the same as the old first-name and last-name pair sitting side by side. */
   html body .contact-form-wrapper .form-row.full {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2967,194 +2982,10 @@ html body a.category-card .guide-price-note {
   }
 }
 
-/* Phones through 389px with the cookie strip open are too short for the stacked
-   email and phone rows. Drop the label and header gaps so Send Message stays
-   above the phone nav. 390px keeps the looser gaps. Controls stay at least 44px. */
-@media (max-width: 389px) {
-  html body:has(#contactForm) .contact-form-wrapper {
-    padding-top: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-header,
-  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
-    line-height: 1.15;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group label {
-    margin-bottom: 0.05rem;
-    line-height: 1.15;
-  }
-}
-
-/* Short phones cannot fit the trust bar without clipping the labels.
-   Collapse it, but keep its top margin so the page still clears the
-   header and the cookie strip. The message box stays a 44px control. */
-@media (max-width: 390px) and (max-height: 740px) {
-  html body:has(#contactForm) .site-trust-bar {
-    min-height: 0 !important;
-    height: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    overflow: hidden !important;
-  }
-  html body:has(#contactForm) textarea#message {
-    min-height: 44px !important;
-    height: 44px !important;
-  }
-}
-
-/* The shortest open-strip phones cannot show the form title and still
-   keep Send Message above the phone nav. Clip the title like a
-   screen-reader-only label: it keeps no layout height, and the heading
-   stays available as the form's accessible name. */
-@media (max-width: 390px) and (max-height: 700px) {
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
-    padding-top: 0;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-header {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
-    margin-bottom: 0;
-    line-height: 1;
-    font-size: 0.7rem;
-  }
-}
-
-/* 568px through 634px can keep Send Message above the phone nav when
-   the fields are packed. Below 568px the packed form cannot, so those
-   heights use the below-fold padding instead. Above 634px the unpacked
-   form already clears the nav. */
-@media (max-width: 390px) and (min-height: 568px) and (max-height: 634px) {
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-row {
-    gap: 0;
-    margin-bottom: 0;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group,
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
-    margin: 0;
-    padding: 0;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
-    font-size: 11px;
-    line-height: 12px;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper :is(.form-input, .form-select, .form-textarea) {
-    box-sizing: border-box;
-    height: 44px;
-    min-height: 44px;
-    margin: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    line-height: 42px;
-  }
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-submit {
-    display: flex;
-    box-sizing: border-box;
-    height: 44px;
-    min-height: 44px;
-    margin-top: -2px;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-}
-
-/* A wrapped "Enquiry type" label drops Send Message into the phone nav
-   around 359px and 370px. Keep every label on one line through 667px. */
-@media (max-width: 390px) and (max-height: 700px) {
-  html body:has(#contactForm) .contact-form-wrapper .form-group label {
-    white-space: nowrap;
-  }
-}
-
-/* 390px is just outside the 389px gap collapse, so at 568px and 600px
-   the closed form sat in the phone nav. Use the same gaps there.
-   320px and screens taller than 667px stay as they are. */
-@media (min-width: 390px) and (max-width: 413px) and (min-height: 501px) and (max-height: 600px) {
-  html body:has(#contactForm) .contact-form-wrapper {
-    padding-top: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-header,
-  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group label {
-    margin-bottom: 0;
-    line-height: 1.15;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-row {
-    gap: 0;
-    margin-bottom: 0;
-  }
-}
-
-@media (min-width: 390px) and (max-width: 390px) and (max-height: 700px) {
-  html body:has(#contactForm) .contact-form-wrapper {
-    padding-top: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-header,
-  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group {
-    margin-bottom: 0;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-group label {
-    margin-bottom: 0;
-    line-height: 1.15;
-  }
-  html body:has(#contactForm) .contact-form-wrapper .form-row {
-    gap: 0;
-    margin-bottom: 0;
-  }
-}
-
-/* 567px and under cannot hold the packed form clear of the phone nav.
-   The extra space starts the button below the fold. Packing begins at
-   568px, where the button can sit above the nav. */
-@media (max-width: 480px) and (max-height: 567px) {
-  html body:has(#contactForm) .contact-section,
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
-    padding-top: 160px;
-  }
-}
-
-/* Up to 480px wide, at every height: the form starts a full viewport
-   below the section, so Send Message is below the fold. There is no
-   height cutoff to miss. The bottom padding still lets a scroll lift
-   the button clear of the nav. */
-@media (max-width: 480px) {
-  html body:has(#contactForm) .contact-section,
-  html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
-    padding-top: 100vh;
-  }
-}
-
-/* The phone nav covers the bottom of the screen. Reserve that height, the
-   safe area, and the open cookie strip, so Send Message can scroll clear. */
+/* The phone nav covers the bottom of the screen. Reserve its height and
+   the iOS safe area so a scroll can lift Send Message clear of both. */
 @media (max-width: 768px) {
   html body:has(#contactForm) {
-    padding-bottom: calc(79px + env(safe-area-inset-bottom, 0px) + var(--sm-cookie-stack, 0px));
+    padding-bottom: calc(79px + env(safe-area-inset-bottom, 0px));
   }
 }
