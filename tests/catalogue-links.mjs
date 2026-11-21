@@ -195,7 +195,12 @@ assert.doesNotMatch(html, /\.product-card \{[^}]*content-visibility/);
 assert.match(server, /aria-label="\$\{escapeHtml\(cardAccessibleName\(productName, categoryName, colours\.length, price\)\)\}"/);
 assert.match(all.grid, /aria-label="Lawn 0, lawn-headstones, All 1 stone, From £1,000"/);
 assert.match(html, /function cardAccessibleName\(name, category, stoneCount, price\)/);
-assert.match(html, /aria-label="Save memorial"/);
+assert.match(html, /aria-label="Save ' \+ escapeHtml\(productName\) \+ '"/);
+assert.match(server, /aria-label="Save \$\{escapeHtml\(productName\)\}"/);
+assert.match(server, /alt=""/);
+assert.match(server, /class="product-info" aria-hidden="true"/);
+assert.match(all.grid, /aria-label="Save Lawn 0"/);
+assert.match(all.grid, /<img [^>]*alt=""/);
 assert.match(server, /<div class="product-face">/);
 
 console.log("catalogue-links: ok");
