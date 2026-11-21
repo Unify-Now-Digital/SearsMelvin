@@ -415,7 +415,7 @@
         .product-action:hover svg { stroke: var(--color-accent); }
         .product-action.active { background: var(--color-accent); }
         .product-action.active svg { stroke: white; fill: white; }
-        .product-image { position: relative; aspect-ratio: 1/1; overflow: hidden; background: white; }
+        .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: white; }
         .product-image svg { width: 100%; height: 100%; }
         .product-image img { width: 100%; height: 100%; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
@@ -480,7 +480,6 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .catalogue-more-wrap { margin: 1rem 0 0; }
         .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
         .form-status-error.is-visible { display: block; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
@@ -656,6 +655,14 @@
             .site-trust-item svg { width: 16px; height: 16px; }
             .site-trust-item + .site-trust-item::before { display: none; }
         }
+        /* The shared phone script later sets this same two-column trust bar.
+           Painting it at this size from the start keeps the chips and cards still. */
+        @media (max-width: 480px) {
+            .site-trust-bar { padding: 0.6rem 1rem; }
+            .site-trust-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.75rem; }
+            .site-trust-item { flex-direction: row; justify-content: flex-start; gap: 0.45rem; font-size: 0.82rem; line-height: 1.2; font-weight: 600; text-align: left; }
+            .site-trust-item svg { width: 20px; height: 20px; }
+        }
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=9">
 
@@ -711,9 +718,9 @@
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 
     <style>
-        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; }
-        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; }
-        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .type-browse-list::-webkit-scrollbar { display: none; }
         .type-browse::after { content: ""; position: absolute; right: 0; bottom: 0; width: 2.5rem; height: 44px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--color-cream)); }
         .type-count { margin-left: 0.35rem; font-family: var(--sm-font-body); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
@@ -736,6 +743,7 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                flex: 0 0 44px;
                 width: 44px;
                 height: 44px;
                 margin-left: auto;
@@ -754,14 +762,18 @@
                the full chip row, overflow never starts, and the body clip
                hides Heart, Book, Churchyard and the rest. */
             .catalogue-container > main { min-width: 0; max-width: 100%; }
-            .type-browse { position: relative; max-width: 100%; min-width: 0; }
+            .type-browse { position: relative; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; }
             .type-browse-list {
                 flex-wrap: nowrap;
                 gap: 0.5rem;
                 width: 100%;
                 max-width: 100%;
                 min-width: 0;
+                height: 44px;
+                min-height: 44px;
+                max-height: 44px;
                 overflow-x: auto;
+                overflow-y: hidden;
                 overscroll-behavior-x: contain;
                 scrollbar-width: none;
                 padding: 0 2.5rem 0 0;
@@ -948,7 +960,6 @@
                         <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
-                <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -1153,6 +1164,11 @@
                 renderTypeCounts();
                 renderStoneBand();
                 if (!applyUrlFilters()) renderProducts();
+                if (pendingFilterChange) {
+                    var queuedChange = pendingFilterChange;
+                    pendingFilterChange = null;
+                    scheduleCatalogueTrack(queuedChange);
+                }
                 markTypeLinks();
                 updatePriceSortButton();
                 injectItemListJsonLd(productsData);
@@ -1254,8 +1270,36 @@
         }
 
         // ==================== RENDER PRODUCTS ====================
-        const CATALOGUE_PAGE = 24;
-        let catalogueLimit = CATALOGUE_PAGE;
+        // Every match stays in the page. The first row is eager. Later images are lazy.
+        let catalogueMatchCount = 0;
+        // A chip click before the catalogue fetch must not wipe the server cards
+        // or report a result_count of 0. The event is sent once the real total is known.
+        let pendingFilterChange = null;
+
+        function firstRowCount() {
+            if (window.matchMedia('(min-width: 1280px)').matches) return 4;
+            if (window.matchMedia('(min-width: 1024px)').matches) return 3;
+            return 2;
+        }
+
+        function tuneFirstRowImages(grid) {
+            if (!grid) return;
+            const eager = firstRowCount();
+            grid.querySelectorAll(':scope > a.product-card').forEach((card, index) => {
+                const img = card.querySelector('.product-image img');
+                if (!img) return;
+                img.decoding = 'async';
+                if (!img.getAttribute('width')) img.setAttribute('width', '800');
+                if (!img.getAttribute('height')) img.setAttribute('height', '1000');
+                const want = index < eager ? 'eager' : 'lazy';
+                if (img.getAttribute('loading') !== want) img.loading = want;
+                if (want === 'eager') {
+                    if (img.getAttribute('fetchpriority') !== 'high') img.setAttribute('fetchpriority', 'high');
+                } else if (img.hasAttribute('fetchpriority')) {
+                    img.removeAttribute('fetchpriority');
+                }
+            });
+        }
 
         function priceBand(price) {
             if (price < 1000) return 'under-1000';
@@ -1274,7 +1318,7 @@
         }
 
         function sortedCatalogue() {
-            const list = state.productsData.filter(catalogueMatches);
+            const list = listableClientProducts().filter(catalogueMatches);
             const sortValue = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'featured';
             const copy = list.slice();
             if (sortValue === 'price-low') copy.sort((a, b) => parseFloat(a.base_price) - parseFloat(b.base_price));
@@ -1283,19 +1327,15 @@
             return copy;
         }
 
-        function showMoreMemorials() {
-            catalogueLimit += CATALOGUE_PAGE;
-            renderProducts();
-        }
-
         function renderProducts() {
+            if (!state.productsData.length) return;
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
             const matched = sortedCatalogue();
-            const shown = matched.slice(0, catalogueLimit);
+            catalogueMatchCount = matched.length;
             const noResults = document.getElementById('noResults');
-            const nextSlugs = shown.map((product) => {
+            const nextSlugs = matched.map((product) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 const price = parseFloat(product.base_price);
@@ -1308,7 +1348,8 @@
             grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
 
             let productsHTML = '';
-            shown.forEach((product, index) => {
+            const eager = firstRowCount();
+            matched.forEach((product, index) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 if (!id || !slug) return;
@@ -1320,9 +1361,9 @@
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
                 const saved = state.shortlist.some(item => item.id === id);
-                const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+                const imgPriority = index < eager ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="1000" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
@@ -1341,8 +1382,7 @@
             noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
             setMemorialCount(matched.length);
-            const more = document.getElementById('catalogueMore');
-            if (more) more.hidden = matched.length <= shown.length;
+            tuneFirstRowImages(grid);
             scheduleCatalogueTrack();
         }
 
@@ -1462,7 +1502,7 @@
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push(api.viewItemListEvent(items, meta));
             queued.forEach(function (change) {
-                var filterEvent = api.filterSelectEvent(change, items.length, meta);
+                var filterEvent = api.filterSelectEvent(change, catalogueMatchCount, meta);
                 if (filterEvent) window.dataLayer.push(filterEvent);
             });
         }
@@ -1508,16 +1548,19 @@
                 if (key === 'colour' || !state.filters[key]) return;
                 state.filters[key].push(input.value);
             });
-            catalogueLimit = CATALOGUE_PAGE;
-            renderProducts();
-            updateActiveFiltersDisplay();
-            syncTypeParam(!!(options && options.push));
             var change = null;
             if (source && source.dataset && source.dataset.filter && source.dataset.filter !== 'colour') {
                 change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
             } else if (source && source.filter_name && source.filter_name !== 'colour') {
                 change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
             }
+            updateActiveFiltersDisplay();
+            syncTypeParam(!!(options && options.push));
+            if (!state.productsData.length) {
+                if (change) pendingFilterChange = change;
+                return;
+            }
+            renderProducts();
             scheduleCatalogueTrack(change);
         }
 
@@ -1891,6 +1934,7 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
+            tuneFirstRowImages(document.getElementById('productsGrid'));
             var typeList = document.querySelector('.type-browse-list');
             if (typeList) typeList.addEventListener('click', onTypeChipClick);
             window.addEventListener('popstate', function () {

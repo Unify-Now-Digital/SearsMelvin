@@ -1838,9 +1838,12 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     height: var(--header-height) !important;
     min-height: var(--header-height) !important;
     max-height: var(--header-height) !important;
-    /* 3 + 60 + 3 + the 1px rule = 67, inside the 68px lock. */
+    /* 3 + 60 + 3 + the 1px rule = 67, inside the 68px lock.
+       Side padding matches the phone script so the logo does not jump. */
     padding-top: 3px !important;
     padding-bottom: 3px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
   }
   html body nav#navbar.scrolled {
     padding-top: 3px !important;
