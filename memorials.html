@@ -1291,19 +1291,16 @@
                 if (!img) return;
                 if (!img.getAttribute('width')) img.setAttribute('width', '800');
                 if (!img.getAttribute('height')) img.setAttribute('height', '800');
-                if (index === 0) {
-                    img.decoding = 'auto';
-                    img.loading = 'eager';
-                    if (img.getAttribute('fetchpriority') !== 'high') img.setAttribute('fetchpriority', 'high');
-                } else if (index < eager) {
-                    img.decoding = 'async';
-                    img.loading = 'eager';
-                    if (img.hasAttribute('fetchpriority')) img.removeAttribute('fetchpriority');
-                } else {
-                    img.decoding = 'async';
-                    img.loading = 'lazy';
-                    if (img.hasAttribute('fetchpriority')) img.removeAttribute('fetchpriority');
-                }
+                // Do not rewrite an image that already has the right priority.
+                // Touching loading or decoding on the first photo restarts its decode.
+                const high = index === 0;
+                const eagerLoad = index < eager;
+                const wantLoading = eagerLoad ? 'eager' : 'lazy';
+                const hasHigh = img.getAttribute('fetchpriority') === 'high';
+                if (img.getAttribute('loading') !== wantLoading) img.loading = wantLoading;
+                if (high && !hasHigh) img.setAttribute('fetchpriority', 'high');
+                if (!high && hasHigh) img.removeAttribute('fetchpriority');
+                if (!high && img.decoding !== 'async') img.decoding = 'async';
             });
         }
 
@@ -1944,7 +1941,6 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
-            tuneFirstRowImages(document.getElementById('productsGrid'));
             var typeList = document.querySelector('.type-browse-list');
             if (typeList) typeList.addEventListener('click', onTypeChipClick);
             window.addEventListener('popstate', function () {
