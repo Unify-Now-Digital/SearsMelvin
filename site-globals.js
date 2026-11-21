@@ -61,6 +61,7 @@
     function chatBlockers() {
         var nodes = [];
         var chrome = [
+            document.querySelector('.stone-colour-dock'),
             document.querySelector('.mobile-bottom-bar.is-visible'),
             document.querySelector('.price-summary')
         ];
@@ -94,6 +95,7 @@
         var vh = window.innerHeight;
         var chrome = null;
         var pieces = [
+            shownRect(document.querySelector('.stone-colour-dock')),
             shownRect(document.querySelector('.mobile-bottom-bar.is-visible')),
             shownRect(document.querySelector('.price-summary'))
         ];
@@ -237,7 +239,7 @@
             if (w > 140 || h > 140) continue;
             // Don't touch our own injected favourites badge or known nav elements
             if (node.id === 'shortlistNavBtn') continue;
-            if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent'))) continue;
+            if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent') || node.classList.contains('stone-colour-dock'))) continue;
             node.style.setProperty('bottom', bottomLegacy + 'px', 'important');
             node.style.setProperty('right', '24px', 'important');
         }
