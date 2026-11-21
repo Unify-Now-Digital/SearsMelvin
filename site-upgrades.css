@@ -2934,3 +2934,26 @@ html body a.category-card .guide-price-note {
     display: none !important;
   }
 }
+
+/* A 360px phone with the cookie strip open is 36px too short for the stacked
+   email and phone rows. Drop the label and header gaps so Send Message stays
+   above the phone nav. The controls themselves stay at least 44px. */
+@media (max-width: 360px) {
+  html body:has(#contactForm) .contact-form-wrapper {
+    padding-top: 0;
+  }
+  html body:has(#contactForm) .contact-form-wrapper .form-header,
+  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
+    margin-bottom: 0;
+  }
+  html body:has(#contactForm) .contact-form-wrapper .form-header h3 {
+    line-height: 1.15;
+  }
+  html body:has(#contactForm) .contact-form-wrapper .form-group {
+    margin-bottom: 0;
+  }
+  html body:has(#contactForm) .contact-form-wrapper .form-group label {
+    margin-bottom: 0.05rem;
+    line-height: 1.15;
+  }
+}
