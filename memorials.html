@@ -596,6 +596,17 @@
                 --sm-listing-dock-bottom: calc(79px + 7px + 12px + env(safe-area-inset-bottom, 0px));
             }
         }
+        /* A coarse pointer needs a 44px target. Two rows of those need a taller bar than 80px. */
+        @media (pointer: coarse) and (min-width: 768px) {
+            body.memorials-page { --sm-listing-dock-height: 96px; }
+            .listing-stone-track {
+                grid-template-rows: 44px 44px;
+                grid-auto-columns: 44px;
+            }
+            .listing-stone-dot { width: 44px; height: 44px; }
+            .listing-stone-track .listing-stone-chip { width: 32px; height: 32px; }
+            .listing-stone-lead { min-height: 44px; }
+        }
         .filters-sidebar { position: sticky; top: calc(var(--header-height, 80px) + 8px); max-height: calc(100vh - var(--header-height, 80px) - 8px - 11.5rem); overflow: auto; height: fit-content; }
         .filters-sidebar.reveal, .filters-sidebar.reveal.visible { transform: none; }
         .filters-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); gap: 0.75rem; }
