@@ -22,7 +22,9 @@ assert.match(upgrades, /@media \(max-width: 900px\) and \(min-width: 769px\)/);
 assert.doesNotMatch(upgrades, /@media \(max-width: 900px\) and \(min-width: 600px\)/);
 assert.match(upgrades, /html body \.sm-brochure-link \{[^}]*text-transform:\s*none/);
 assert.match(upgrades, /white-space:\s*nowrap/);
-assert.match(upgrades, /grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+assert.match(upgrades, /grid-template-columns:\s*1fr 1fr 1\.1fr 1fr auto/);
+assert.match(upgrades, /scroll-margin-bottom:\s*calc\(79px \+ env\(safe-area-inset-bottom, 0px\) \+ 16px\)/);
+assert.doesNotMatch(upgrades, /html body \.mobile-nav-item span \{[^}]*overflow:\s*hidden/);
 
 assert.match(track, /sears-melvin-stacked-ink\.svg/);
 assert.match(track, /sears-melvin-stacked-ink-no-rules\.svg/);
@@ -50,7 +52,7 @@ const phoneForm = upgrades.slice(upgrades.indexOf("html body .contact-form-wrapp
 const phoneFormBlock = phoneForm.slice(0, phoneForm.indexOf("/* The phone nav covers"));
 assert.match(phoneFormBlock, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
 assert.match(phoneFormBlock, /padding-bottom:\s*0\.65rem/);
-assert.match(upgrades, /padding-bottom:\s*calc\(79px \+ env\(safe-area-inset-bottom, 0px\)\)/);
+assert.match(upgrades, /padding-bottom:\s*calc\(79px \+ 69px \+ env\(safe-area-inset-bottom, 0px\)\)/);
 const cookieCss = read("cookie-consent.css");
 const cookieJs = read("cookie-consent.js");
 assert.doesNotMatch(cookieCss, /--sm-cookie-stack:\s*76px/);

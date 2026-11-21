@@ -2684,22 +2684,18 @@ html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(inp
     white-space: nowrap;
   }
   html body .mobile-bottom-nav-inner {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr 1.1fr 1fr auto;
   }
-  /* A web-font swap used to change the phone label's width and the
-     label line box, which moved the icons and the bar. The columns and
-     the label box stay fixed, so the swap has nothing to move. */
-  html body .mobile-nav-item {
-    min-width: 0;
-    height: 62px;
-    box-sizing: border-box;
+  /* The phone column is as wide as the full number. A fixed minimum
+     keeps a web-font swap from resizing it, without clipping the text. */
+  html body .mobile-bottom-nav a[href^="tel:"] {
+    min-width: 4.85rem;
+    overflow: visible;
   }
-  html body .mobile-nav-item span {
-    display: block;
-    height: 12px;
-    line-height: 12px;
-    max-width: 100%;
-    overflow: hidden;
+  html body .mobile-bottom-nav a[href^="tel:"] span {
+    overflow: visible;
+    max-width: none;
+    height: auto;
   }
   html body .mobile-nav-item {
     min-width: 44px;
@@ -2982,10 +2978,20 @@ html body a.category-card .guide-price-note {
   }
 }
 
-/* The phone nav covers the bottom of the screen. Reserve its height and
-   the iOS safe area so a scroll can lift Send Message clear of both. */
+/* The phone nav covers the bottom of the screen. The extra page below
+   the form is the nav, the iOS toolbar's largest return (69px) and a
+   small gap, so a scroll can lift Send Message clear of both. Focusing
+   the form uses the same nav clearance plus 16px. None of this moves
+   the button on first view. */
 @media (max-width: 768px) {
+  html:has(#contactForm) {
+    scroll-padding-bottom: calc(79px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
   html body:has(#contactForm) {
-    padding-bottom: calc(79px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(79px + 69px + env(safe-area-inset-bottom, 0px));
+  }
+  html body:has(#contactForm) #contactForm,
+  html body:has(#contactForm) .form-submit {
+    scroll-margin-bottom: calc(79px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
