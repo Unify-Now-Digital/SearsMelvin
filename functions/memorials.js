@@ -163,7 +163,7 @@ function renderCards(products, colours) {
     const priority = index === 0
       ? ' loading="eager" fetchpriority="high"'
       : index < NARROW_FIRST_ROW
-        ? ' loading="eager" decoding="async"'
+        ? ' loading="eager" fetchpriority="low" decoding="async"'
         : ' loading="lazy" decoding="async"';
     const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="800" alt="${escapeHtml(productName)}"${priority}>` : "";
     const badge = product.is_featured ? `<span class="product-badge">${index === 0 ? "Popular" : "Best Value"}</span>` : "";

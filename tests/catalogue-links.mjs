@@ -82,7 +82,7 @@ for (const [index, tag] of images.entries()) {
   } else if (index < 2) {
     assert.match(tag, /loading="eager"/, index);
     assert.match(tag, /decoding="async"/, index);
-    assert.doesNotMatch(tag, /fetchpriority/, index);
+    assert.match(tag, /fetchpriority="low"/, index);
   } else {
     assert.match(tag, /loading="lazy"/, index);
     assert.match(tag, /decoding="async"/, index);
@@ -100,7 +100,7 @@ assert.match(childImages[0], /loading="eager"/);
 assert.match(childImages[0], /fetchpriority="high"/);
 assert.doesNotMatch(childImages[0], /decoding="async"/);
 assert.match(childImages[1], /loading="eager"/);
-assert.doesNotMatch(childImages[1], /fetchpriority/);
+assert.match(childImages[1], /fetchpriority="low"/);
 assert.doesNotMatch(onlyChildren.grid, /lawn-headstones|More memorials/);
 
 const captured = {};

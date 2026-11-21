@@ -1296,10 +1296,13 @@
                 const high = index === 0;
                 const eagerLoad = index < eager;
                 const wantLoading = eagerLoad ? 'eager' : 'lazy';
-                const hasHigh = img.getAttribute('fetchpriority') === 'high';
+                const wantPriority = high ? 'high' : eagerLoad ? 'low' : '';
                 if (img.getAttribute('loading') !== wantLoading) img.loading = wantLoading;
-                if (high && !hasHigh) img.setAttribute('fetchpriority', 'high');
-                if (!high && hasHigh) img.removeAttribute('fetchpriority');
+                if (wantPriority) {
+                    if (img.getAttribute('fetchpriority') !== wantPriority) img.setAttribute('fetchpriority', wantPriority);
+                } else if (img.hasAttribute('fetchpriority')) {
+                    img.removeAttribute('fetchpriority');
+                }
                 if (!high && img.decoding !== 'async') img.decoding = 'async';
             });
         }
@@ -1367,7 +1370,7 @@
                 const imgPriority = index === 0
                     ? ' loading="eager" fetchpriority="high"'
                     : index < eager
-                        ? ' loading="eager" decoding="async"'
+                        ? ' loading="eager" fetchpriority="low" decoding="async"'
                         : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
                     ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '"' + imgPriority + '>'
