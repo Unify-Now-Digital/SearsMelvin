@@ -86,14 +86,14 @@ export function greetingName(name) {
   return chars.join("");
 }
 
-// Words used after "Thank you,". A couple title stays with the surname.
+// Words used after "Thank you,". A title kept as the given name stays with the surname.
 export function thanksName(name) {
   const parsed = splitName(name);
+  if (parsed.title && parsed.first_name === parsed.title && parsed.last_name && parsed.last_name !== "-") {
+    return `${parsed.title} ${parsed.last_name}`;
+  }
   if (parsed.joint) {
     if (!parsed.first_name) return "";
-    if (parsed.first_name === parsed.title) {
-      return parsed.last_name && parsed.last_name !== "-" ? `${parsed.title} ${parsed.last_name}` : "";
-    }
     const rest = [parsed.first_name, parsed.last_name && parsed.last_name !== "-" ? parsed.last_name : ""].filter(Boolean).join(" ");
     return [parsed.title, rest].filter(Boolean).join(" ");
   }

@@ -155,6 +155,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // current quote workflow upserts the person/job and creates an enquiry; it
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
+  if (!first_name) return jsonResponse({ ok: false, error: "Please enter your name" }, 400);
   const firstName = thanksName(name);
   const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
   let enquiryId = null;
@@ -343,6 +344,7 @@ async function handleEnquiry(ctx, data, submittedAt) {
     });
     enquiryId = saved?.enquiryId || null;
   } catch (err) {
+    if (err?.message === "Please enter your name") return jsonResponse({ ok: false, error: "Please enter your name" }, 400);
     console.error(JSON.stringify({ message: "enquiry_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save enquiry. Please try again." }, 500);
   }
@@ -613,6 +615,7 @@ async function handleAppointment(ctx, data, submittedAt) {
     });
     enquiryId = saved?.enquiryId || null;
   } catch (err) {
+    if (err?.message === "Please enter your name") return jsonResponse({ ok: false, error: "Please enter your name" }, 400);
     console.error(JSON.stringify({ message: "appointment_insert_failed" }));
     return jsonResponse({ ok: false, error: "Failed to save appointment. Please try again." }, 500);
   }
@@ -1352,9 +1355,11 @@ export function splitName(full) {
   }
   const rest = parts.slice(index);
   // No salutation column on people, and the HighLevel contact body has no title
-  // field. A couple title with only a surname is stored as the first name.
-  if (joint && rest.length === 1) {
-    return { first_name: title, last_name: rest[0], title, joint: true };
+  // field. A title with one word after it is stored as the given name, and that
+  // word is the surname: "Mrs Smith" and "Mr and Mrs Smith" both work this way.
+  // Two or more words after the title are a real given name plus the surname.
+  if (title && rest.length === 1) {
+    return { first_name: title, last_name: rest[0], title, joint };
   }
   if (!rest.length) return { first_name: null, last_name: "-", title, joint };
   return {
@@ -1365,11 +1370,20 @@ export function splitName(full) {
   };
 }
 
+// people.first_name is NOT NULL. A title-only or tag-only name has nothing to store.
+function personNamePatch(first_name, last_name) {
+  if (!first_name) return null;
+  const patch = { first_name };
+  if (last_name && last_name !== "-") patch.last_name = last_name;
+  return patch;
+}
+
 // HighLevel has no placeholder surname, and no title field. people.last_name still uses "-".
 export function ghlNameParts(full) {
   const { first_name, last_name } = splitName(full);
+  if (!first_name) return { firstName: null, lastName: null };
   return {
-    firstName: first_name || "",
+    firstName: first_name,
     lastName: last_name && last_name !== "-" ? last_name : "",
   };
 }
@@ -1467,6 +1481,8 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
   const normalisedEmail = email.trim().toLowerCase();
   const headers = supabaseHeaders(env);
   const { first_name, last_name } = splitName(name);
+  const namePatch = personNamePatch(first_name, last_name);
+  if (!namePatch) throw new Error("Please enter your name");
 
   const existingRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/people?email=eq.${encodeURIComponent(normalisedEmail)}&select=id,is_customer,is_test&limit=1`,
@@ -1476,9 +1492,9 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
   const existing = (await existingRes.json())[0] || null;
 
   if (existing) {
-    const patchBody = {};
-    if (first_name) patchBody.first_name = first_name;
-    if (last_name && last_name !== "-") patchBody.last_name = last_name;
+    // A real name is always written. Skipping a parsed given name left the
+    // previous row in place, so the name the customer just sent never landed.
+    const patchBody = { ...namePatch };
     if (phone) patchBody.phone = phone;
     if (is_test && !existing.is_test) patchBody.is_test = true;
     if (Object.keys(patchBody).length > 0) {
@@ -1497,7 +1513,7 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
     body: JSON.stringify({
       organization_id: env.SM_ORG_ID,
       email: normalisedEmail,
-      first_name,
+      first_name: namePatch.first_name,
       last_name,
       phone: phone || null,
       ...(is_test ? { is_test: true } : {}),
@@ -1516,12 +1532,12 @@ export async function upsertPerson(env, { name, email, phone, is_test = false })
       if (refetch.ok) {
         const row = (await refetch.json())[0];
         if (row?.id) {
-          if (is_test && !row.is_test) {
-            const patchRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people?id=eq.${row.id}`, {
-              method: "PATCH", headers, body: JSON.stringify({ is_test: true }),
-            });
-            if (!patchRes.ok) throw new Error(`Supabase people test flag update returned ${patchRes.status}`);
-          }
+          const retryPatch = { ...namePatch };
+          if (is_test && !row.is_test) retryPatch.is_test = true;
+          const patchRes = await fetch(`${env.SUPABASE_URL}/rest/v1/people?id=eq.${row.id}`, {
+            method: "PATCH", headers, body: JSON.stringify(retryPatch),
+          });
+          if (!patchRes.ok) throw new Error(`Supabase people update returned ${patchRes.status}`);
           return { id: row.id, is_customer: !!row.is_customer };
         }
       }
@@ -1952,7 +1968,8 @@ export async function createGHLContact(env, args, fetchOverride) {
     // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
     // Contact `source` + tags are ours: Website quote / enquiry / appointment.
     body: JSON.stringify({
-      locationId: env.GHL_LOCATION_ID, firstName: ghlFirstName, lastName: ghlLastName,
+      locationId: env.GHL_LOCATION_ID,
+      ...(ghlFirstName ? { firstName: ghlFirstName, lastName: ghlLastName } : {}),
       email, phone: phone || undefined, source: labels.source, tags: dedupedTags, customFields,
     }),
   });
@@ -2045,6 +2062,11 @@ export function validateSubmission(input, organizationId) {
     return { ok: false, error: "A valid name is required" };
   }
   data.name = data.name.trim();
+  // Titles and tags alone are not a name. people.first_name is NOT NULL, so
+  // reject here instead of inserting null or sending HighLevel an empty first name.
+  if (!splitName(data.name).first_name) {
+    return { ok: false, error: "Please enter your name" };
+  }
   if (data.email !== undefined && data.email !== null && data.email !== "") {
     if (typeof data.email !== "string") return { ok: false, error: "Invalid email address" };
     data.email = data.email.trim().toLowerCase();
