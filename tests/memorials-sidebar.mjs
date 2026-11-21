@@ -34,18 +34,22 @@ assert.match(html, /@media \(min-width: 1024px\) \{ \.products-grid \{ grid-temp
 assert.match(html, /@media \(min-width: 1280px\) \{ \.products-grid \{ grid-template-columns: repeat\(4, 1fr\); \} \}/);
 assert.match(html, /@media \(max-width: 1200px\) \{ \.products-grid \{ grid-template-columns: repeat\(2, 1fr\); \} \}/);
 
-assert.match(html, /id="stoneBand"/);
+assert.match(html, /id="listingStoneDock"/);
+assert.doesNotMatch(html, /id="stoneBand"/);
 assert.match(html, /Every design comes in all/);
 assert.match(html, /The From price is for a standard stone\. Premium and natural stones cost a little more\./);
-assert.match(html, /grid-template-rows:\s*4\.25rem 4\.25rem/);
-assert.match(html, /grid-row:\s*2/);
+assert.match(html, /All designs in/);
+assert.match(html, /position:\s*fixed/);
+assert.match(html, /--sm-listing-dock-height:\s*56px/);
+assert.match(html, /width:\s*28px/);
 assert.match(html, /font-variant-numeric:\s*tabular-nums/);
 assert.doesNotMatch(html, /font-family:\s*[^;]*monospace/);
 assert.doesNotMatch(html, /Compare the stones/);
 assert.match(html, /All ' \+ n \+ \(n === 1 \? ' stone' : ' stones'\)/);
 
 assert.match(server, /function stoneBandMarkup/);
-assert.match(server, /Every design comes in all/);
+assert.match(server, /listing-stone-dot/);
+assert.doesNotMatch(server, /id="stoneBand"/);
 assert.match(server, /product-stones/);
 assert.doesNotMatch(server, /product-colour-dot|filtersShowCount|Compare the stones/);
 assert.match(html, /\['type', 'price'\]/);

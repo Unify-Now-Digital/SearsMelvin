@@ -129,9 +129,10 @@ assert.match(captured["#productsGrid"], /href="\/memorials\/lawn-headstones-0"/)
 assert.doesNotMatch(captured["#productsGrid"], /lawn-headstones-24|More memorials|range-links/);
 assert.equal(captured["#resultsCount"], "27");
 assert.equal(captured['.type-count[data-type-count="all"]'], "27");
-assert.match(captured["#productsGrid"], /id="stoneBand"/);
+assert.doesNotMatch(captured["#productsGrid"], /id="stoneBand"|listing-stone-dot/);
 assert.match(captured["#productsGrid"], /All 1 stone/);
-assert.match(captured["#productsGrid"], /Every design comes in all/);
+assert.match(captured["#listingStoneTrack"], /data-slug="blue-pearl"/);
+assert.equal(captured[".stone-colour-count"], "1");
 assert.doesNotMatch(captured["#productsGrid"], /Compare the stones|product-colour-dot/);
 assert.equal(captured["#catalogueMore"], "visible");
 assert.equal(captured["#rangeLinks"], undefined);
