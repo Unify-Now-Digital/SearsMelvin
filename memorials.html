@@ -398,7 +398,8 @@
             #productsGrid { min-height: 34rem; }
         }
         @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; content-visibility: auto; contain-intrinsic-size: auto 180px 420px; }
+        .products-grid > .product-card:nth-child(-n + 4) { content-visibility: visible; contain-intrinsic-size: none; }
         .product-card:nth-child(1) { animation-delay: 0s; }
         .product-card:nth-child(2) { animation-delay: 0.05s; }
         .product-card:nth-child(3) { animation-delay: 0.1s; }
@@ -1288,15 +1289,20 @@
             grid.querySelectorAll(':scope > a.product-card').forEach((card, index) => {
                 const img = card.querySelector('.product-image img');
                 if (!img) return;
-                img.decoding = 'async';
                 if (!img.getAttribute('width')) img.setAttribute('width', '800');
                 if (!img.getAttribute('height')) img.setAttribute('height', '1000');
-                const want = index < eager ? 'eager' : 'lazy';
-                if (img.getAttribute('loading') !== want) img.loading = want;
-                if (want === 'eager') {
+                if (index === 0) {
+                    img.decoding = 'auto';
+                    img.loading = 'eager';
                     if (img.getAttribute('fetchpriority') !== 'high') img.setAttribute('fetchpriority', 'high');
-                } else if (img.hasAttribute('fetchpriority')) {
-                    img.removeAttribute('fetchpriority');
+                } else if (index < eager) {
+                    img.decoding = 'async';
+                    img.loading = 'eager';
+                    if (img.hasAttribute('fetchpriority')) img.removeAttribute('fetchpriority');
+                } else {
+                    img.decoding = 'async';
+                    img.loading = 'lazy';
+                    if (img.hasAttribute('fetchpriority')) img.removeAttribute('fetchpriority');
                 }
             });
         }
@@ -1361,9 +1367,13 @@
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
                 const saved = state.shortlist.some(item => item.id === id);
-                const imgPriority = index < eager ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+                const imgPriority = index === 0
+                    ? ' loading="eager" fetchpriority="high"'
+                    : index < eager
+                        ? ' loading="eager" decoding="async"'
+                        : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="1000" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="1000" alt="' + escapeHtml(productName) + '"' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';

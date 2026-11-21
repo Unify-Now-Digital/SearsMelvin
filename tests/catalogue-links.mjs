@@ -73,14 +73,19 @@ assert.equal(all.more, undefined);
 const images = cardImages(all.grid);
 assert.equal(images.length, 27);
 for (const [index, tag] of images.entries()) {
-  assert.match(tag, /decoding="async"/, index);
   assert.match(tag, /width="800"/, index);
   assert.match(tag, /height="1000"/, index);
-  if (index < 2) {
+  if (index === 0) {
     assert.match(tag, /loading="eager"/, index);
     assert.match(tag, /fetchpriority="high"/, index);
+    assert.doesNotMatch(tag, /decoding="async"/, index);
+  } else if (index < 2) {
+    assert.match(tag, /loading="eager"/, index);
+    assert.match(tag, /decoding="async"/, index);
+    assert.doesNotMatch(tag, /fetchpriority/, index);
   } else {
     assert.match(tag, /loading="lazy"/, index);
+    assert.match(tag, /decoding="async"/, index);
     assert.doesNotMatch(tag, /fetchpriority/, index);
   }
 }
@@ -92,7 +97,10 @@ assert.match(onlyChildren.grid, /Child&#039;s book|Child&#39;s book/);
 assert.equal(onlyChildren.more, undefined);
 const childImages = cardImages(onlyChildren.grid);
 assert.match(childImages[0], /loading="eager"/);
+assert.match(childImages[0], /fetchpriority="high"/);
+assert.doesNotMatch(childImages[0], /decoding="async"/);
 assert.match(childImages[1], /loading="eager"/);
+assert.doesNotMatch(childImages[1], /fetchpriority/);
 assert.doesNotMatch(onlyChildren.grid, /lawn-headstones|More memorials/);
 
 const captured = {};
@@ -115,6 +123,7 @@ globalThis.HTMLRewriter = class extends Original {
       setInnerContent(value) { captured[selector] = value; },
       setAttribute(name, value) { captured[`${selector}@${name}`] = value; },
       removeAttribute() { captured[selector] = "visible"; },
+      append(value) { captured[`${selector}@append`] = value; },
     });
     return super.on(selector, handler);
   }
@@ -166,5 +175,10 @@ assert.match(captured["#productsGrid"], /Every design comes in all/);
 assert.doesNotMatch(captured["#productsGrid"], /Compare the stones|product-colour-dot/);
 assert.equal(captured["#catalogueMore"], undefined);
 assert.equal(captured["#rangeLinks"], undefined);
+assert.match(captured["head@append"], /rel="preload" as="image"/);
+assert.match(captured["head@append"], /fetchpriority="high"/);
+assert.match(captured["head@append"], /lawn-headstones-0/);
+assert.match(html, /content-visibility:\s*auto/);
+assert.match(html, /nth-child\(-n \+ 4\)/);
 
 console.log("catalogue-links: ok");

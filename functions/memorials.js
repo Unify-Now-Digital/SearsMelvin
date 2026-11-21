@@ -42,14 +42,30 @@ function safeImageUrl(value) {
   }
 }
 
-function imageAttributes(url) {
-  if (!new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url)) {
-    return `src="${escapeHtml(url)}"`;
-  }
-  const render = (width) => url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
+const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+
+function isBucketImage(url) {
+  return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url);
+}
+
+function renderImageUrl(url, width) {
+  return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
     `?width=${width}&quality=70&resize=contain`;
-  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(render(width))} ${width}w`).join(", ");
-  return `src="${escapeHtml(render(800))}" srcset="${srcset}" sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+}
+
+function imageAttributes(url) {
+  if (!isBucketImage(url)) return `src="${escapeHtml(url)}"`;
+  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  return `src="${escapeHtml(renderImageUrl(url, 800))}" srcset="${srcset}" sizes="${IMAGE_SIZES}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+}
+
+function imagePreload(url) {
+  if (!url) return "";
+  if (!isBucketImage(url)) {
+    return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
+  }
+  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  return `<link rel="preload" as="image" href="${escapeHtml(renderImageUrl(url, 800))}" imagesrcset="${srcset}" imagesizes="${IMAGE_SIZES}" fetchpriority="high">`;
 }
 
 export function typeCounts(products) {
@@ -141,8 +157,14 @@ function renderCards(products, colours) {
     const productName = String(product.name || "").slice(0, 120);
     const imageUrl = safeImageUrl(product.image_url);
     const priceRange = price < 1000 ? "under-1000" : price >= 3000 ? "over-3000" : price < 1500 ? "1000-1500" : price < 2000 ? "1500-2000" : "2000-3000";
-    const priority = index < NARROW_FIRST_ROW ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
-    const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="1000" alt="${escapeHtml(productName)}" decoding="async"${priority}>` : "";
+    // Only the first photo is high priority, and it is not decoding="async":
+    // async decode was holding the largest paint until after the file had arrived.
+    const priority = index === 0
+      ? ' loading="eager" fetchpriority="high"'
+      : index < NARROW_FIRST_ROW
+        ? ' loading="eager" decoding="async"'
+        : ' loading="lazy" decoding="async"';
+    const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="1000" alt="${escapeHtml(productName)}"${priority}>` : "";
     const badge = product.is_featured ? `<span class="product-badge">${index === 0 ? "Popular" : "Best Value"}</span>` : "";
     return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p></div></a>`;
   }).join("");
@@ -164,7 +186,9 @@ export async function onRequestGet({ request, env }) {
     const filtered = products.filter((product) => safeSlug(product.product_categories?.slug) === requested);
     if (filtered.length) products = filtered;
   }
+  const visible = listableProducts(products);
   const { grid, count } = catalogueInjection(products, catalogue.colours);
+  const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";
@@ -180,6 +204,7 @@ export async function onRequestGet({ request, env }) {
       element(el) { el.setInnerContent(value); },
     });
   }
+  if (preload) rewriter = rewriter.on("head", { element(el) { el.append(preload, { html: true }); } });
   if (!typeName) {
     rewriter = rewriter.on(".type-browse-list a.type-all", {
       element(el) { el.setAttribute("aria-current", "page"); },
