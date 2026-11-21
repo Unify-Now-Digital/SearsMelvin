@@ -349,7 +349,8 @@ html body .site-trust-item span { font-size: 0.875rem; }
 html body .footer-links a, html body .sm-footer-contact a, html body .sm-footer-track a,
 html body .sm-footer-terms a, html body .sm-footer-privacy a { font-size: 1rem; }
 html body .footer-contact, html body .footer-contact a { font-size: 0.9375rem; }
-html body .footer-copy, html body .footer-container .footer-legal { font-size: 0.875rem !important; line-height: 1.6; }
+html body footer:not(.footer-b) .footer-copy,
+html body footer:not(.footer-b) .footer-legal { font-size: 0.875rem !important; line-height: 1.6; }
 html body .footer-accreditations .accred-label,
 html body .footer-accreditations .accred-note,
 html body .footer-accreditations .accred-logo--footer .accred-text { font-size: 0.8125rem; }
@@ -1464,27 +1465,66 @@ html body .footer-accreditations.sm-accred-tight {
   border-top: 0;
 }
 
-/* Option B. Scoped so the catalogue index keeps its own footer.
-   Logo stays at 262px so the MEMORIALS rules still read at 1×.
-   Phone tap targets are 44px below 701px. 744 and 1280 stay compact. */
+/* Option A. From 701px the phone, email and London lines sit in the
+   showroom column, under the address and hours. Type is 15px / 1.6.
+   Legal and accreditation text is 13px / 1.6, inset on a wide screen so
+   the save heart, back-to-top and chat button stay off the words.
+   The catalogue gap is 12px of section padding plus 12px of footer
+   margin. Home already sits flush, so the footer margin stays 0 there.
+   Contact, FAQ, resources, the care guide and quote lose the old 4rem
+   and keep about 24px under the last section. */
+
+html body .catalogue {
+  padding-bottom: 12px;
+}
+
+html body:has(.catalogue) footer.footer-b {
+  margin-top: 12px;
+}
+
+html body .contact-section,
+html body .faq-section,
+html body .resources-section,
+html body .care-section {
+  padding-bottom: 24px;
+}
+
+html body .quote-container {
+  margin-bottom: 24px;
+}
+
 html body footer.footer-b {
   background-color: var(--sm-color-bg-inverse);
   color: var(--sm-color-text-inverse);
   font-family: var(--sm-font-body);
   font-weight: var(--sm-weight-body);
-  font-size: var(--sm-text-xs);
-  line-height: var(--sm-leading-snug);
-  padding: 14px 28px 10px;
+  font-size: var(--sm-text-sm);
+  line-height: 1.6;
+  letter-spacing: normal;
+  text-align: left;
+  padding: 16px 32px 12px;
+  margin-top: 0;
 }
 
 html body footer.footer-b .footer-container {
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(262px, 1.15fr) minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: 10px 20px;
+  grid-template-columns: minmax(200px, 0.9fr) minmax(0, 1.25fr) minmax(220px, 1fr);
+  gap: 12px 32px;
   align-items: start;
   text-align: left;
+}
+
+html body footer.footer-b .footer-brand,
+html body footer.footer-b .footer-explore,
+html body footer.footer-b .footer-showroom,
+html body footer.footer-b .footer-base {
+  width: auto;
+  text-align: left;
+  border: 0;
+  margin: 0;
+  padding: 0;
 }
 
 html body footer.footer-b .footer-logo {
@@ -1492,47 +1532,21 @@ html body footer.footer-b .footer-logo {
   width: 262px;
   max-width: 100%;
   height: auto;
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0;
   line-height: 0;
 }
 
-html body footer.footer-b .footer-contact {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 0.75rem;
-  margin: 0;
-  font-size: var(--sm-text-xs);
-  line-height: 1.3;
-}
-
-html body footer.footer-b .footer-contact a {
-  color: var(--sm-color-text-inverse);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 2px;
-  border-radius: var(--sm-radius-sm);
-}
-
-html body footer.footer-b .footer-contact > span {
-  flex-basis: 100%;
-  color: var(--sm-color-text-inverse-muted);
-  padding: 2px 0 0;
-}
-
 html body footer.footer-b .footer-heading {
-  margin: 0 0 2px;
+  margin: 0 0 8px;
   padding: 0;
   border: 0;
   font-family: var(--sm-font-display);
   font-weight: var(--sm-weight-display);
   font-style: normal;
-  font-size: 1.125rem;
-  line-height: var(--sm-leading-tight);
-  letter-spacing: var(--sm-tracking-heading);
+  font-size: var(--sm-text-lg);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   text-transform: none;
   color: var(--sm-color-text-accent-inverse);
 }
@@ -1543,7 +1557,7 @@ html body footer.footer-b .footer-links {
   margin: 0;
   padding: 0;
   columns: 2;
-  column-gap: 1rem;
+  column-gap: 1.5rem;
   width: auto;
   max-width: none;
 }
@@ -1559,33 +1573,89 @@ html body footer.footer-b .footer-links a {
   color: var(--sm-color-text-inverse);
   text-decoration: none;
   display: inline-flex;
+  justify-content: flex-start;
   align-items: center;
-  min-height: 26px;
-  padding: 0 2px;
+  width: auto;
+  min-height: 28px;
+  min-width: 0;
+  padding: 1px 0;
   border-radius: var(--sm-radius-sm);
   font-family: var(--sm-font-body);
-  font-size: var(--sm-text-xs);
+  font-size: var(--sm-text-sm);
   font-weight: var(--sm-weight-body);
-  line-height: 1.3;
+  line-height: 1.6;
+  letter-spacing: normal;
+  text-align: left;
 }
 
 html body footer.footer-b .footer-showroom p {
-  margin: 0;
+  margin: 0 0 2px;
+  max-width: 22rem;
   color: var(--sm-color-text-inverse);
   font-family: var(--sm-font-body);
-  font-size: var(--sm-text-xs);
+  font-size: var(--sm-text-sm);
   font-weight: var(--sm-weight-body);
-  line-height: 1.35;
+  line-height: 1.6;
 }
 
 html body footer.footer-b .footer-showroom .footer-hours {
+  margin-bottom: 10px;
+  color: var(--sm-color-text-inverse-muted);
+}
+
+html body footer.footer-b .footer-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0;
+  margin: 0;
+  font-size: var(--sm-text-sm);
+  line-height: 1.6;
+}
+
+html body footer.footer-b .footer-contact a {
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: auto;
+  margin: 0;
+  min-height: 28px;
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--sm-radius-sm);
+  color: var(--sm-color-text-inverse);
+  font-size: var(--sm-text-sm);
+  font-weight: var(--sm-weight-body);
+  letter-spacing: normal;
+  line-height: 1.6;
+  text-decoration: none;
+}
+
+html body footer.footer-b .footer-contact a[href^="tel:"] {
+  font-size: 1rem;
+  font-weight: var(--sm-weight-body-strong);
+}
+
+html body footer.footer-b .footer-contact a[href^="mailto:"] {
+  text-decoration: underline;
+  text-decoration-color: var(--sm-color-text-accent-inverse);
+  text-underline-offset: 0.2em;
+}
+
+html body footer.footer-b .footer-contact > span {
+  flex-basis: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  padding: 0;
+  text-align: left;
   color: var(--sm-color-text-inverse-muted);
 }
 
 html body footer.footer-b .footer-base {
   grid-column: 1 / -1;
-  margin: 0;
-  padding-top: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid color-mix(in srgb, var(--sm-color-text-inverse) 22%, var(--sm-color-bg-inverse));
   text-align: center;
 }
@@ -1593,12 +1663,13 @@ html body footer.footer-b .footer-base {
 html body footer.footer-b .footer-copy,
 html body footer.footer-b .footer-legal {
   width: auto;
-  margin: 2px 0 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
+  max-width: none;
+  margin: 4px auto 0;
+  padding: 0 120px;
+  border: 0;
   text-align: center;
-  font-size: 0.75rem !important;
-  line-height: 1.4 !important;
+  font-size: var(--sm-text-xs);
+  line-height: 1.6;
   color: var(--sm-color-text-inverse-muted);
   opacity: 1;
 }
@@ -1609,11 +1680,12 @@ html body footer.footer-b .footer-accreditations {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  margin: 0 0 2px;
-  padding: 0;
+  gap: 8px 12px;
+  width: auto;
+  max-width: none;
+  margin: 0 auto 4px;
+  padding: 0 120px;
   border: 0;
-  gap: 4px 8px;
 }
 
 html body footer.footer-b .footer-accreditations .accred-label,
@@ -1623,10 +1695,13 @@ html body footer.footer-b .footer-accreditations .accred-text {
   text-transform: none;
   letter-spacing: 0.02em;
   font-weight: var(--sm-weight-body-strong);
+  font-size: var(--sm-text-xs);
+  line-height: 1.6;
   color: var(--sm-color-text-inverse-muted);
 }
 
 html body footer.footer-b .footer-accreditations .accred-label {
+  display: inline;
   color: var(--sm-color-text-accent-inverse);
   letter-spacing: var(--sm-tracking-label-compact);
 }
@@ -1640,118 +1715,47 @@ html body footer.footer-b .footer-accreditations .accred-logo--footer {
 
 html body footer.footer-b .footer-accreditations .accred-logo--footer img {
   display: block;
-  height: 26px;
+  height: 28px;
   width: auto;
   flex-shrink: 0;
+}
+
+html body footer.footer-b .footer-accreditations .accred-text,
+html body footer.footer-b .footer-accreditations .accred-note {
+  margin: 0;
+  max-width: none;
+  width: auto;
 }
 
 html body footer.footer-b .footer-accreditations .accred-note::before {
   content: none;
 }
 
-@media (max-width: 900px) {
+/* Tablet. Logo and showroom on the left, Explore on the right. */
+@media (min-width: 701px) and (max-width: 900px) {
   html body footer.footer-b {
-    padding: 12px 18px 10px;
+    padding: 20px 24px 20px;
   }
 
   html body footer.footer-b .footer-container {
-    gap: 8px 12px;
-  }
-}
-
-/* The product page forces a stacked footer up to 768px. Option B keeps its grid. */
-@media (max-width: 768px) {
-  html body footer.footer-b {
-    padding: 12px 18px 10px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 16px 28px;
   }
 
-  html body footer.footer-b .footer-container {
-    display: grid !important;
-    grid-template-columns: minmax(262px, 1.15fr) minmax(0, 1fr) minmax(0, 1.05fr) !important;
-  }
+  html body footer.footer-b .footer-brand { grid-column: 1; grid-row: 1; }
+  html body footer.footer-b .footer-showroom { grid-column: 1; grid-row: 2; }
+  html body footer.footer-b .footer-explore { grid-column: 2; grid-row: 1 / 3; }
+  html body footer.footer-b .footer-base { grid-column: 1 / -1; grid-row: 3; }
+  html body footer.footer-b .footer-logo { width: 240px; }
 
-  html body footer.footer-b .footer-links {
-    display: block !important;
-    columns: 2 !important;
-    gap: 0 !important;
-    margin: 0 !important;
-  }
-
-  html body footer.footer-b .footer-links a {
-    min-height: 26px !important;
-    padding: 0 2px !important;
-  }
-
-  html body footer.footer-b .footer-nav-secondary,
-  html body footer.footer-b .sm-footer-secondary {
-    display: list-item !important;
-  }
-}
-
-@media (max-width: 700px) {
-  html body footer.footer-b {
-    padding: 12px 16px 4px !important;
-  }
-
-  html body footer.footer-b .footer-container {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 6px !important;
-  }
-
-  html body footer.footer-b .footer-brand {
-    text-align: left;
-  }
-
-  html body footer.footer-b .footer-logo {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  html body footer.footer-b .footer-contact {
-    justify-content: flex-start;
-  }
-
-  html body footer.footer-b .footer-links {
-    display: block !important;
-    columns: 2 !important;
-    gap: 0 !important;
-    column-gap: 0.75rem !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  html body footer.footer-b .footer-links a,
-  html body footer.footer-b .footer-contact a {
-    display: flex !important;
-    align-items: center;
-    box-sizing: border-box;
-    min-height: 44px !important;
-    min-width: 44px !important;
-  }
-
-  html body footer.footer-b .footer-contact a {
-    padding: 0 4px 0 0 !important;
-  }
-
-  html body footer.footer-b .footer-links a {
-    width: 100%;
-    padding: 0 !important;
-  }
-
-  html body footer.footer-b .footer-nav-secondary,
-  html body footer.footer-b .sm-footer-secondary {
-    display: list-item !important;
-  }
-
-  html body footer.footer-b .footer-base {
-    padding-top: 6px;
-  }
-
-  html body footer.footer-b .footer-heading {
-    margin-bottom: 0;
+  html body footer.footer-b .footer-accreditations,
+  html body footer.footer-b .footer-copy,
+  html body footer.footer-b .footer-legal {
+    max-width: 520px;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
@@ -1942,28 +1946,42 @@ html body p.service-area-line-compact { display: none; }
 }
 
 /* ==========================================================================
-   Phone footer, option A. Centred, with rules between the groups.
-   Body text is 14–16px. The accreditation line and the legal block are
-   separate. Desktop and tablet keep the three-column footer.
+   Phone footer. Centred stack, 16px rhythm, 40px RQMF mark.
+   The showroom box is dropped so the contact lines can sit back under
+   the logo. The tel link stays one text node.
    ========================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   html body footer.footer-b {
-    padding: 40px 24px 28px !important;
+    padding: 28px 20px 64px;
     text-align: center;
     font-size: 1rem;
+    line-height: 1.65;
   }
 
   html body footer.footer-b .footer-container {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0 !important;
-    text-align: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    text-align: center;
   }
+
+  html body footer.footer-b .footer-showroom {
+    display: contents;
+  }
+
+  html body footer.footer-b .footer-brand { order: 1; }
+  html body footer.footer-b .footer-contact { order: 2; }
+  html body footer.footer-b .footer-explore { order: 3; }
+  html body footer.footer-b .footer-showroom > .footer-heading { order: 4; }
+  html body footer.footer-b .footer-showroom > p:not(.footer-hours) { order: 5; }
+  html body footer.footer-b .footer-showroom > .footer-hours { order: 6; }
+  html body footer.footer-b .footer-base { order: 7; }
 
   html body footer.footer-b .footer-brand,
   html body footer.footer-b .footer-explore,
-  html body footer.footer-b .footer-showroom,
+  html body footer.footer-b .footer-showroom > .footer-heading,
+  html body footer.footer-b .footer-showroom > p,
   html body footer.footer-b .footer-base {
     width: 100%;
     text-align: center;
@@ -1973,44 +1991,42 @@ html body p.service-area-line-compact { display: none; }
     width: 262px;
     max-width: 100%;
     height: auto;
-    margin: 0 auto 24px;
+    margin: 0 auto 16px;
   }
 
   html body footer.footer-b .footer-contact {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    margin: 0 !important;
-    font-size: 1rem !important;
-    line-height: 1.4 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   html body footer.footer-b .footer-contact a {
-    display: flex !important;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-    min-height: 44px !important;
-    padding: 0 4px !important;
-    color: var(--sm-color-text-inverse);
+    margin: 0 auto;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 4px;
     font-size: 1rem;
+    letter-spacing: normal;
   }
 
   html body footer.footer-b .footer-contact a[href^="tel:"] {
-    font-family: var(--sm-font-body);
+    font-size: 1.375rem;
     font-weight: var(--sm-weight-body-strong);
-    font-size: 1.375rem !important;
     letter-spacing: 0.02em;
     line-height: 1.2;
     text-decoration: none;
   }
 
   html body footer.footer-b .footer-contact a[href^="mailto:"] {
-    font-size: 1rem !important;
     text-decoration: underline;
     text-decoration-color: var(--sm-color-text-accent-inverse);
     text-underline-offset: 4px;
@@ -2018,70 +2034,69 @@ html body p.service-area-line-compact { display: none; }
 
   html body footer.footer-b .footer-contact > span {
     flex-basis: auto;
-    font-size: var(--sm-text-sm) !important;
-    line-height: 1.4;
-    text-align: center;
-    color: var(--sm-color-text-inverse-muted);
+    font-size: var(--sm-text-sm);
+    line-height: 1.5;
     padding: 0;
+    text-align: center;
   }
 
   html body footer.footer-b .footer-explore,
-  html body footer.footer-b .footer-showroom {
+  html body footer.footer-b .footer-showroom > .footer-heading {
     border-top: 1px solid var(--sm-color-border-inverse);
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 16px;
+    padding-top: 16px;
   }
 
   html body footer.footer-b .footer-heading {
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-weight-display);
     font-size: var(--sm-text-card-title);
     line-height: 1.2;
-    color: var(--sm-color-text-accent-inverse);
-    margin: 0 0 12px;
+    margin: 0 0 10px;
+  }
+
+  html body footer.footer-b .footer-showroom > .footer-heading {
+    margin: 16px 0 10px;
   }
 
   html body footer.footer-b .footer-links {
-    display: block !important;
-    columns: 2 !important;
-    column-gap: 16px !important;
-    width: 100% !important;
-    max-width: 300px !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
+    display: block;
+    columns: 2;
+    column-gap: 16px;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 0;
   }
 
   html body footer.footer-b .footer-links a {
-    display: flex !important;
+    display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     width: 100%;
-    min-height: 44px !important;
-    padding: 0 !important;
-    font-family: var(--sm-font-body);
-    font-size: 1rem !important;
-    font-weight: var(--sm-weight-body);
-    line-height: 1.3;
-    color: var(--sm-color-text-inverse);
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1.4;
+    letter-spacing: normal;
     text-align: center;
   }
 
   html body footer.footer-b .footer-showroom p {
-    font-size: 1rem !important;
-    line-height: 1.5;
-    color: var(--sm-color-text-inverse);
+    font-size: 1rem;
+    line-height: 1.65;
     margin: 0 0 6px;
+    max-width: none;
   }
 
   html body footer.footer-b .footer-showroom .footer-hours {
-    font-size: var(--sm-text-sm) !important;
-    color: var(--sm-color-text-inverse-muted);
+    font-size: var(--sm-text-sm);
     margin: 0;
   }
 
   html body footer.footer-b .footer-base {
     border-top: 0;
-    margin-top: 24px;
+    margin-top: 16px;
     padding-top: 0;
   }
 
@@ -2092,8 +2107,9 @@ html body p.service-area-line-compact { display: none; }
     justify-content: center;
     gap: 8px;
     width: 100%;
+    max-width: none;
     margin: 0;
-    padding: 24px 0 0;
+    padding: 16px 0 0;
     border: 0;
     border-top: 1px solid var(--sm-color-border-inverse);
   }
@@ -2104,25 +2120,25 @@ html body p.service-area-line-compact { display: none; }
 
   html body footer.footer-b .footer-accreditations .accred-text {
     font-size: 1rem;
-    line-height: 1.3;
-  }
-
-  html body footer.footer-b .footer-accreditations .accred-logo--footer img {
-    height: 56px;
-    width: auto;
+    line-height: 1.4;
   }
 
   html body footer.footer-b .footer-accreditations .accred-logo--footer {
     justify-content: center;
   }
 
+  html body footer.footer-b .footer-accreditations .accred-logo--footer img {
+    height: 40px;
+    width: auto;
+  }
+
   html body footer.footer-b .footer-accreditations .accred-note {
     display: block;
     width: 100%;
-    max-width: 300px;
-    margin: 14px auto 0;
+    max-width: 22rem;
+    margin: 8px auto 0;
     font-size: 0.875rem;
-    line-height: 1.5;
+    line-height: 1.6;
     text-align: center;
   }
 
@@ -2133,24 +2149,36 @@ html body p.service-area-line-compact { display: none; }
 
   html body footer.footer-b .footer-copy,
   html body footer.footer-b .footer-legal {
-    font-size: 0.875rem !important;
-    line-height: 1.6 !important;
+    font-size: 0.875rem;
+    line-height: 1.6;
     text-align: center;
-    color: var(--sm-color-text-inverse-muted);
+    max-width: 22rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   html body footer.footer-b .footer-copy {
-    max-width: 330px;
-    margin: 24px auto 0 !important;
-    padding: 24px 0 0 !important;
-    border-top: 1px solid var(--sm-color-border-inverse) !important;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sm-color-border-inverse);
   }
 
   html body footer.footer-b .footer-legal {
-    max-width: 330px;
-    margin: 10px auto 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
+    margin-top: 8px;
+    padding-top: 0;
+    border: 0;
+  }
+}
+
+/* 44px targets on a touch screen up to 1024px. Wider touch keeps the
+   desktop row height. Phones already set 44px for every pointer. */
+@media (max-width: 1024px) and (pointer: coarse) {
+  html body footer.footer-b .footer-links a,
+  html body footer.footer-b .footer-contact a {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 

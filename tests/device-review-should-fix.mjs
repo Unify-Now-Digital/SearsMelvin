@@ -38,7 +38,7 @@ assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
 assert.match(memorials, /<h1>Headstones, gravestones and memorials<\/h1>/);
 assert.match(memorials, /<p>Browse our memorials\. Each piece is made to your specification\.<\/p>/);
 assert.doesNotMatch(memorials, /<h1[^>]*class="[^"]*reveal/);
-assert.match(read("chat-widget.css"), /height:\s*80px/);
+assert.match(read("chat-widget.css"), /html body::after \{[^}]*height:\s*16px/);
 assert.match(upgrades, /html body \.mobile-nav-item\.primary span \{[^}]*text-transform:\s*none/);
 assert.match(upgrades, /html body \.mobile-nav-item\.primary \.nav-icon-bg \{[^}]*border-radius:\s*var\(--sm-radius-sm\)/);
 
