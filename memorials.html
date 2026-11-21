@@ -416,7 +416,7 @@
         .product-action:hover svg { stroke: var(--color-accent); }
         .product-action.active { background: var(--color-accent); }
         .product-action.active svg { stroke: white; fill: white; }
-        .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: white; }
+        .product-image { position: relative; aspect-ratio: 1/1; overflow: hidden; background: white; }
         .product-image svg { width: 100%; height: 100%; }
         .product-image img { width: 100%; height: 100%; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
@@ -1290,7 +1290,7 @@
                 const img = card.querySelector('.product-image img');
                 if (!img) return;
                 if (!img.getAttribute('width')) img.setAttribute('width', '800');
-                if (!img.getAttribute('height')) img.setAttribute('height', '1000');
+                if (!img.getAttribute('height')) img.setAttribute('height', '800');
                 if (index === 0) {
                     img.decoding = 'auto';
                     img.loading = 'eager';
@@ -1373,7 +1373,7 @@
                         ? ' loading="eager" decoding="async"'
                         : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="1000" alt="' + escapeHtml(productName) + '"' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '"' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
