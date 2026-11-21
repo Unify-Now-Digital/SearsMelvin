@@ -64,8 +64,9 @@ function imagePreload(url) {
   if (!isBucketImage(url)) {
     return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
   }
-  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
-  return `<link rel="preload" as="image" href="${escapeHtml(renderImageUrl(url, 800))}" imagesrcset="${srcset}" imagesizes="${IMAGE_SIZES}" fetchpriority="high">`;
+  // The phone picks the 400px file. Preload that exact URL so it is not
+  // queued behind the 800px fallback while the sizes are worked out.
+  return `<link rel="preload" as="image" href="${escapeHtml(renderImageUrl(url, 400))}" fetchpriority="high">`;
 }
 
 export function typeCounts(products) {
