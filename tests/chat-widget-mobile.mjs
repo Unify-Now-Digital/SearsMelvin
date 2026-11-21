@@ -20,7 +20,7 @@ assert.doesNotMatch(css, /pointer-events:\s*none/, "the launcher must not disabl
 assert.doesNotMatch(css, /sm-chat-arrive[^;}]*6s/, "the 6 second delay must stay gone");
 assert.doesNotMatch(css, /PR #[0-9a-fA-F]{3,8}\b/, "a PR number must not look like a hex colour");
 assert.match(css, /@keyframes sm-chat-arrive \{[\s\S]*to \{ opacity: 1; \}/);
-assert.match(css, /html body::after \{[^}]*height:\s*80px/, "pages need room to scroll clear of the bubble");
+assert.match(css, /html body::after \{[^}]*height:\s*16px/, "the spacer under the footer stays short");
 const globals = readFileSync("site-globals.js", "utf8");
 assert.match(globals, /bottom-right/);
 assert.match(globals, /--sm-chat-bottom/);

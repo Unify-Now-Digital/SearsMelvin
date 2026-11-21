@@ -136,12 +136,12 @@ html body chat-widget {
     }
 }
 
-/* The bubble covers the right edge. This spacer is the room that lets
-   the last row scroll clear of it. It is in the stylesheet, so the
-   page does not jump when the widget arrives. */
+/* Footer padding clears the legal lines. This short spacer is the room
+   under the footer. It is in the stylesheet, so the page does not jump
+   when the widget arrives. */
 html body::after {
     content: "";
     display: block;
-    height: 80px;
+    height: 16px;
     clear: both;
 }

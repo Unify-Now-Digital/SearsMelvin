@@ -31,7 +31,7 @@
 .nav-accred .accred-link { border-bottom: 0; font-size: 0.64rem; }
 .page-header-accred .accred-note { color: var(--color-text-muted, var(--sm-color-text-muted)); }
 /* Footer: one centred row, label · logo + number · note */
-.footer-accreditations { column-gap: 0.9rem !important; row-gap: 0.35rem !important; }
+footer:not(.footer-b) .footer-accreditations { column-gap: 0.9rem !important; row-gap: 0.35rem !important; }
 .footer-accreditations .accred-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: inherit; opacity: 0.7; }
 .footer-accreditations .accred-logo--footer { gap: 0.55rem; color: inherit; }
 .footer-accreditations .accred-logo--footer img { height: 26px; }

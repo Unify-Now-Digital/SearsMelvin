@@ -380,7 +380,7 @@
     function compactFooter() {
         // The memorial product page has a purpose-built responsive footer.
         // Do not inject the generic footer rules over its mobile layout.
-        // Option B owns its own spacing. Leave that footer alone.
+        // Option A owns its own spacing. Leave that footer alone.
         if (document.body && document.body.classList.contains('memorial-page')) return;
         var footer = document.querySelector('footer');
         if (footer && footer.classList.contains('footer-b')) return;

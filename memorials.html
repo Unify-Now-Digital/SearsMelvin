@@ -476,7 +476,7 @@
         .save-toast a { color: var(--sm-color-text-accent); text-decoration: underline; }
         @keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
         .save-btn.animate svg { animation: heartPop 0.4s ease; }
-        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); margin-top: 4rem; }
+        footer { padding: 3rem 2rem; background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse-muted); }
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
@@ -498,7 +498,6 @@
         @media (min-width: 1280px) { .products-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (max-width: 900px) {
             .filters-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; height: 100dvh; max-height: none; background: var(--color-cream); z-index: 200; padding: 1.25rem 1.25rem 0; overflow: hidden; transition: left 0.3s ease; display: flex; flex-direction: column; }
-            .catalogue .sm-brochure-cta { padding-left: 5.5rem; }
             .filters-sidebar.open { left: 0; }
             .filters-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; padding-bottom: 1rem; }
             .filters-close { display: inline-flex; }
@@ -657,7 +656,7 @@
             .site-trust-item + .site-trust-item::before { display: none; }
         }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=9">
+    <link rel="stylesheet" href="/chat-widget.css?v=10">
 
     <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
@@ -706,9 +705,9 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261120g">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261121a">
     <link rel="stylesheet" href="/cookie-consent.css">
-    <link rel="stylesheet" href="/accreditations.css?v=20261013b">
+    <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
     <style>
         .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; }
@@ -1959,11 +1958,6 @@
         <div class="footer-container">
             <div class="footer-brand">
                 <img class="footer-logo" src="/images/brand/logo/sears-melvin-stacked-soft-bronze.svg" alt="Sears Melvin Memorials" width="262" height="66">
-                <div class="footer-contact">
-                    <a href="tel:+442038352548">020 3835 2548</a>
-                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
-                    <span>London</span>
-                </div>
             </div>
             <div class="footer-explore">
                 <h2 class="footer-heading">Explore</h2>
@@ -1993,6 +1987,11 @@
                 <h2 class="footer-heading">Visit our Finchley showroom</h2>
                 <p>1 The Market Place, Falloden Way, NW11 6LB</p>
                 <p class="footer-hours">Monday to Friday, 10am to 3pm</p>
+                <div class="footer-contact">
+                    <a href="tel:+442038352548">020 3835 2548</a>
+                    <!--email_off--><a href="mailto:info@searsmelvin.co.uk">info@searsmelvin.co.uk</a><!--/email_off-->
+                    <span>London</span>
+                </div>
             </div>
             <div class="footer-base">
                 <!-- Professional Memberships -->
