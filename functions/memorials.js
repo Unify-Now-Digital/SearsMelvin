@@ -1,4 +1,4 @@
-/** Server-render the first page of memorial cards. Further designs stay on the grid behind "Show more memorials". */
+/** Server-render every listed memorial. The phone's first row is eager; later images are lazy. */
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 
@@ -42,14 +42,36 @@ function safeImageUrl(value) {
   }
 }
 
-function imageAttributes(url) {
-  if (!new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url)) {
-    return `src="${escapeHtml(url)}"`;
-  }
-  const render = (width) => url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
+const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+
+function isBucketImage(url) {
+  return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url);
+}
+
+function renderImageUrl(url, width) {
+  return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
     `?width=${width}&quality=70&resize=contain`;
-  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(render(width))} ${width}w`).join(", ");
-  return `src="${escapeHtml(render(800))}" srcset="${srcset}" sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+}
+
+function imageSources(url) {
+  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  return { src: escapeHtml(renderImageUrl(url, 800)), srcset, sizes: IMAGE_SIZES };
+}
+
+function imageAttributes(url) {
+  if (!isBucketImage(url)) return `src="${escapeHtml(url)}"`;
+  const { src, srcset, sizes } = imageSources(url);
+  return `src="${src}" srcset="${srcset}" sizes="${sizes}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+}
+
+function imagePreload(url) {
+  if (!url) return "";
+  if (!isBucketImage(url)) {
+    return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
+  }
+  // Same src, srcset and sizes as the first card, so the browser fetches one file.
+  const { src, srcset, sizes } = imageSources(url);
+  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
 }
 
 export function typeCounts(products) {
@@ -66,6 +88,11 @@ export function typeCounts(products) {
 function stonesLabel(count) {
   const n = Number(count) || 0;
   return `All ${n} ${n === 1 ? "stone" : "stones"}`;
+}
+
+function cardAccessibleName(name, category, stoneCount, price) {
+  const amount = Number(price).toLocaleString("en-GB");
+  return `${name}, ${category}, ${stonesLabel(stoneCount)}, From £${amount}`;
 }
 
 function colourWord(count) {
@@ -101,7 +128,9 @@ async function fetchCatalogue(env) {
   return Array.isArray(products) && Array.isArray(colours) ? { products, colours } : null;
 }
 
-const CARD_PAGE = 24;
+// Two columns is the first row below 1024px. memorials.html raises this
+// to three or four once it knows the viewport. Later images stay lazy.
+const NARROW_FIRST_ROW = 2;
 
 export function listableProducts(products) {
   const seen = new Set();
@@ -120,10 +149,9 @@ export function listableProducts(products) {
 
 export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
-  const shown = visible.slice(0, CARD_PAGE);
-  const cards = renderCards(shown, colours);
+  const cards = renderCards(visible, colours);
   const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
-  return { grid, count: visible.length, more: visible.length > CARD_PAGE };
+  return { grid, count: visible.length };
 }
 
 function renderCards(products, colours) {
@@ -140,10 +168,16 @@ function renderCards(products, colours) {
     const productName = String(product.name || "").slice(0, 120);
     const imageUrl = safeImageUrl(product.image_url);
     const priceRange = price < 1000 ? "under-1000" : price >= 3000 ? "over-3000" : price < 1500 ? "1000-1500" : price < 2000 ? "1500-2000" : "2000-3000";
-    const priority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
-    const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="800" alt="${escapeHtml(productName)}" decoding="async"${priority}>` : "";
-    const badge = product.is_featured ? `<span class="product-badge">${index === 0 ? "Popular" : "Best Value"}</span>` : "";
-    return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p></div></a>`;
+    // Only the first photo is high priority, and it is not decoding="async":
+    // async decode was holding the largest paint until after the file had arrived.
+    const priority = index === 0
+      ? ' loading="eager" fetchpriority="high"'
+      : index < NARROW_FIRST_ROW
+        ? ' loading="eager" fetchpriority="low" decoding="async"'
+        : ' loading="lazy" decoding="async"';
+    const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="800" alt=""${priority}>` : "";
+    const badge = product.is_featured ? `<span class="product-badge" aria-hidden="true">${index === 0 ? "Popular" : "Best Value"}</span>` : "";
+    return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}" aria-label="${escapeHtml(cardAccessibleName(productName, categoryName, colours.length, price))}"><div class="product-face"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save ${escapeHtml(productName)}" aria-label="Save ${escapeHtml(productName)}"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info" aria-hidden="true"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p></div></div></a>`;
   }).join("");
 }
 
@@ -163,7 +197,9 @@ export async function onRequestGet({ request, env }) {
     const filtered = products.filter((product) => safeSlug(product.product_categories?.slug) === requested);
     if (filtered.length) products = filtered;
   }
-  const { grid, count, more } = catalogueInjection(products, catalogue.colours);
+  const visible = listableProducts(products);
+  const { grid, count } = catalogueInjection(products, catalogue.colours);
+  const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";
@@ -179,7 +215,7 @@ export async function onRequestGet({ request, env }) {
       element(el) { el.setInnerContent(value); },
     });
   }
-  if (more) rewriter = rewriter.on("#catalogueMore", { element(el) { el.removeAttribute("hidden"); } });
+  if (preload) rewriter = rewriter.on("head", { element(el) { el.append(preload, { html: true }); } });
   if (!typeName) {
     rewriter = rewriter.on(".type-browse-list a.type-all", {
       element(el) { el.setAttribute("aria-current", "page"); },

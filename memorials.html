@@ -402,13 +402,14 @@
             #productsGrid { min-height: 34rem; }
         }
         @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; }
-        .product-card:nth-child(1) { animation-delay: 0s; }
-        .product-card:nth-child(2) { animation-delay: 0.05s; }
-        .product-card:nth-child(3) { animation-delay: 0.1s; }
-        .product-card:nth-child(4) { animation-delay: 0.15s; }
-        .product-card:nth-child(5) { animation-delay: 0.2s; }
-        .product-card:nth-child(6) { animation-delay: 0.25s; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; }
+        .products-grid > .product-card:nth-child(-n + 4) { opacity: 1; }
+        .product-card:nth-child(1) .product-face { animation-delay: 0s; }
+        .product-card:nth-child(2) .product-face { animation-delay: 0.05s; }
+        .product-card:nth-child(3) .product-face { animation-delay: 0.1s; }
+        .product-card:nth-child(4) .product-face { animation-delay: 0.15s; }
+        .product-card:nth-child(5) .product-face { animation-delay: 0.2s; }
+        .product-card:nth-child(6) .product-face { animation-delay: 0.25s; }
         .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px color-mix(in srgb, var(--sm-color-text) 12%, transparent); }
         .product-card.hidden { display: none; }
         .product-actions { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 5; opacity: 0; transform: translateX(10px); transition: all 0.3s; }
@@ -419,7 +420,12 @@
         .product-action:hover svg { stroke: var(--color-accent); }
         .product-action.active { background: var(--color-accent); }
         .product-action.active svg { stroke: white; fill: white; }
-        .product-image { position: relative; aspect-ratio: 1/1; overflow: hidden; background: white; }
+        .product-face { content-visibility: auto; contain-intrinsic-size: auto 175px 395px; min-height: 395px; animation: cardFadeIn 0.4s ease forwards; }
+        .products-grid > .product-card:nth-child(-n + 4) .product-face { content-visibility: visible; contain-intrinsic-size: none; animation: none; opacity: 1; }
+        @media (min-width: 768px) { .product-face { contain-intrinsic-size: auto 358px 590px; min-height: 590px; } }
+        @media (min-width: 1024px) { .product-face { contain-intrinsic-size: auto 302px 520px; min-height: 520px; } }
+        @media (min-width: 1280px) { .product-face { contain-intrinsic-size: auto 324px 547px; min-height: 547px; } }
+        .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: white; }
         .product-image svg { width: 100%; height: 100%; }
         .product-image img { width: 100%; height: 100%; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
@@ -484,7 +490,6 @@
         .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
         .footer-logo { font-family: var(--font-display); font-size: 1.25rem; color: white; }
         .footer-logo span { font-weight: 300; opacity: 0.5; }
-        .catalogue-more-wrap { margin: 1rem 0 0; }
         .form-status-error { display: none; margin: 0 0 0.5rem; padding: 0.6rem 0.75rem; background: var(--sm-color-error-surface); color: var(--sm-color-error); border: 2px solid var(--sm-color-error); border-radius: 2px; font-size: 0.85rem; }
         .form-status-error.is-visible { display: block; }
         .footer-links { display: flex; gap: 2rem; list-style: none; flex-wrap: wrap; }
@@ -659,6 +664,14 @@
             .site-trust-item svg { width: 16px; height: 16px; }
             .site-trust-item + .site-trust-item::before { display: none; }
         }
+        /* The shared phone script later sets this same two-column trust bar.
+           Painting it at this size from the start keeps the chips and cards still. */
+        @media (max-width: 480px) {
+            .site-trust-bar { padding: 0.6rem 1rem; }
+            .site-trust-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.75rem; }
+            .site-trust-item { flex-direction: row; justify-content: flex-start; gap: 0.45rem; font-size: 0.82rem; line-height: 1.2; font-weight: 600; text-align: left; }
+            .site-trust-item svg { width: 20px; height: 20px; }
+        }
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=10">
 
@@ -714,9 +727,9 @@
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
     <style>
-        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; }
-        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; }
-        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .type-browse-list::-webkit-scrollbar { display: none; }
         .type-browse::after { content: ""; position: absolute; right: 0; bottom: 0; width: 2.5rem; height: 44px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--color-cream)); }
         .type-count { margin-left: 0.35rem; font-family: var(--sm-font-body); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
@@ -739,6 +752,7 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                flex: 0 0 44px;
                 width: 44px;
                 height: 44px;
                 margin-left: auto;
@@ -757,14 +771,18 @@
                the full chip row, overflow never starts, and the body clip
                hides Heart, Book, Churchyard and the rest. */
             .catalogue-container > main { min-width: 0; max-width: 100%; }
-            .type-browse { position: relative; max-width: 100%; min-width: 0; }
+            .type-browse { position: relative; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; }
             .type-browse-list {
                 flex-wrap: nowrap;
                 gap: 0.5rem;
                 width: 100%;
                 max-width: 100%;
                 min-width: 0;
+                height: 44px;
+                min-height: 44px;
+                max-height: 44px;
                 overflow-x: auto;
+                overflow-y: hidden;
                 overscroll-behavior-x: contain;
                 scrollbar-width: none;
                 padding: 0 2.5rem 0 0;
@@ -951,7 +969,6 @@
                         <button type="button" onclick="clearAllFilters()">Clear all filters</button>
                     </div>
                 </div>
-                <p class="catalogue-more-wrap"><button type="button" class="btn btn-secondary" id="catalogueMore" hidden onclick="showMoreMemorials()">Show more memorials</button></p>
                 <div class="sm-brochure-cta">
                     <p><strong>Still deciding?</strong>Take our brochure away to read at your own pace, or ask us for a quote when you're ready.</p>
                     <a href="/brochure" class="sm-brochure-link" data-brochure-source="listing">Download the brochure</a>
@@ -1156,6 +1173,11 @@
                 renderTypeCounts();
                 renderStoneBand();
                 if (!applyUrlFilters()) renderProducts();
+                if (pendingFilterChange) {
+                    var queuedChange = pendingFilterChange;
+                    pendingFilterChange = null;
+                    scheduleCatalogueTrack(queuedChange);
+                }
                 markTypeLinks();
                 updatePriceSortButton();
                 injectItemListJsonLd(productsData);
@@ -1235,6 +1257,10 @@
             return 'All ' + n + (n === 1 ? ' stone' : ' stones');
         }
 
+        function cardAccessibleName(name, category, stoneCount, price) {
+            return name + ', ' + category + ', ' + stoneLine(stoneCount) + ', From £' + Number(price).toLocaleString();
+        }
+
         function renderStoneBand() {
             const total = state.colours.length;
             const countEl = document.getElementById('stoneColourCount');
@@ -1257,8 +1283,41 @@
         }
 
         // ==================== RENDER PRODUCTS ====================
-        const CATALOGUE_PAGE = 24;
-        let catalogueLimit = CATALOGUE_PAGE;
+        // Every match stays in the page. The first row is eager. Later images are lazy.
+        let catalogueMatchCount = 0;
+        // A chip click before the catalogue fetch must not wipe the server cards
+        // or report a result_count of 0. The event is sent once the real total is known.
+        let pendingFilterChange = null;
+
+        function firstRowCount() {
+            if (window.matchMedia('(min-width: 1280px)').matches) return 4;
+            if (window.matchMedia('(min-width: 1024px)').matches) return 3;
+            return 2;
+        }
+
+        function tuneFirstRowImages(grid) {
+            if (!grid) return;
+            const eager = firstRowCount();
+            grid.querySelectorAll(':scope > a.product-card').forEach((card, index) => {
+                const img = card.querySelector('.product-image img');
+                if (!img) return;
+                if (!img.getAttribute('width')) img.setAttribute('width', '800');
+                if (!img.getAttribute('height')) img.setAttribute('height', '800');
+                // Do not rewrite an image that already has the right priority.
+                // Touching loading or decoding on the first photo restarts its decode.
+                const high = index === 0;
+                const eagerLoad = index < eager;
+                const wantLoading = eagerLoad ? 'eager' : 'lazy';
+                const wantPriority = high ? 'high' : eagerLoad ? 'low' : '';
+                if (img.getAttribute('loading') !== wantLoading) img.loading = wantLoading;
+                if (wantPriority) {
+                    if (img.getAttribute('fetchpriority') !== wantPriority) img.setAttribute('fetchpriority', wantPriority);
+                } else if (img.hasAttribute('fetchpriority')) {
+                    img.removeAttribute('fetchpriority');
+                }
+                if (!high && img.decoding !== 'async') img.decoding = 'async';
+            });
+        }
 
         function priceBand(price) {
             if (price < 1000) return 'under-1000';
@@ -1277,7 +1336,7 @@
         }
 
         function sortedCatalogue() {
-            const list = state.productsData.filter(catalogueMatches);
+            const list = listableClientProducts().filter(catalogueMatches);
             const sortValue = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'featured';
             const copy = list.slice();
             if (sortValue === 'price-low') copy.sort((a, b) => parseFloat(a.base_price) - parseFloat(b.base_price));
@@ -1286,19 +1345,15 @@
             return copy;
         }
 
-        function showMoreMemorials() {
-            catalogueLimit += CATALOGUE_PAGE;
-            renderProducts();
-        }
-
         function renderProducts() {
+            if (!state.productsData.length) return;
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
             const matched = sortedCatalogue();
-            const shown = matched.slice(0, catalogueLimit);
+            catalogueMatchCount = matched.length;
             const noResults = document.getElementById('noResults');
-            const nextSlugs = shown.map((product) => {
+            const nextSlugs = matched.map((product) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 const price = parseFloat(product.base_price);
@@ -1311,7 +1366,8 @@
             grid.querySelectorAll('.product-card[data-id]').forEach(card => card.remove());
 
             let productsHTML = '';
-            shown.forEach((product, index) => {
+            const eager = firstRowCount();
+            matched.forEach((product, index) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 if (!id || !slug) return;
@@ -1323,16 +1379,20 @@
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
                 const saved = state.shortlist.some(item => item.id === id);
-                const imgPriority = index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
+                const imgPriority = index === 0
+                    ? ' loading="eager" fetchpriority="high"'
+                    : index < eager
+                        ? ' loading="eager" fetchpriority="low" decoding="async"'
+                        : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
                     : '';
                 let badge = '';
-                if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';
-                else if (product.is_featured) badge = '<span class="product-badge">Best Value</span>';
+                if (product.is_featured && index === 0) badge = '<span class="product-badge" aria-hidden="true">Popular</span>';
+                else if (product.is_featured) badge = '<span class="product-badge" aria-hidden="true">Best Value</span>';
                 const colourDots = '<span class="product-stones">' + stoneLine(state.colours.length) + '</span>';
 
-                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '"><div class="product-actions"><button class="product-action save-btn' + (saved ? ' active' : '') + '" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save" aria-label="Save memorial"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></a>';
+                productsHTML += '<a href="/memorials/' + slug + '" class="product-card" data-id="' + id + '" data-type="' + categorySlug + '" data-colours="' + state.colours.map(c => safeSlug(c.slug)).filter(Boolean).join(',') + '" data-price="' + priceRange + '" data-price-value="' + price + '" data-name="' + escapeHtml(productName) + '" data-image="' + escapeHtml(imageUrl) + '" data-slug="' + slug + '" aria-label="' + escapeHtml(cardAccessibleName(productName, categoryName, state.colours.length, price)) + '"><div class="product-face"><div class="product-actions"><button class="product-action save-btn' + (saved ? ' active' : '') + '" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save ' + escapeHtml(productName) + '" aria-label="Save ' + escapeHtml(productName) + '"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">' + productImage + badge + '</div><div class="product-info" aria-hidden="true"><span class="product-category">' + escapeHtml(categoryName) + '</span><h3 class="product-name">' + escapeHtml(productName) + '</h3><div class="product-meta"><div class="product-colours">' + colourDots + '</div></div><p class="product-price">From <strong>£' + price.toLocaleString() + '</strong></p></div></div></a>';
             });
 
             const band = document.getElementById('stoneBand');
@@ -1344,8 +1404,7 @@
             noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
             setMemorialCount(matched.length);
-            const more = document.getElementById('catalogueMore');
-            if (more) more.hidden = matched.length <= shown.length;
+            tuneFirstRowImages(grid);
             scheduleCatalogueTrack();
         }
 
@@ -1465,7 +1524,7 @@
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push(api.viewItemListEvent(items, meta));
             queued.forEach(function (change) {
-                var filterEvent = api.filterSelectEvent(change, items.length, meta);
+                var filterEvent = api.filterSelectEvent(change, catalogueMatchCount, meta);
                 if (filterEvent) window.dataLayer.push(filterEvent);
             });
         }
@@ -1511,16 +1570,19 @@
                 if (key === 'colour' || !state.filters[key]) return;
                 state.filters[key].push(input.value);
             });
-            catalogueLimit = CATALOGUE_PAGE;
-            renderProducts();
-            updateActiveFiltersDisplay();
-            syncTypeParam(!!(options && options.push));
             var change = null;
             if (source && source.dataset && source.dataset.filter && source.dataset.filter !== 'colour') {
                 change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
             } else if (source && source.filter_name && source.filter_name !== 'colour') {
                 change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
             }
+            updateActiveFiltersDisplay();
+            syncTypeParam(!!(options && options.push));
+            if (!state.productsData.length) {
+                if (change) pendingFilterChange = change;
+                return;
+            }
+            renderProducts();
             scheduleCatalogueTrack(change);
         }
 
