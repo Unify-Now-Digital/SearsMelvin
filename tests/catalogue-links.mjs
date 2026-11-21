@@ -192,7 +192,10 @@ assert.equal(
 assert.match(html, /\.product-face \{[^}]*content-visibility:\s*auto/);
 assert.match(html, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
 assert.doesNotMatch(html, /\.product-card \{[^}]*content-visibility/);
-assert.match(server, /aria-label="\$\{escapeHtml\(productName\)\}"/);
+assert.match(server, /aria-label="\$\{escapeHtml\(cardAccessibleName\(productName, categoryName, colours\.length, price\)\)\}"/);
+assert.match(all.grid, /aria-label="Lawn 0, lawn-headstones, All 1 stone, From £1,000"/);
+assert.match(html, /function cardAccessibleName\(name, category, stoneCount, price\)/);
+assert.match(html, /aria-label="Save memorial"/);
 assert.match(server, /<div class="product-face">/);
 
 console.log("catalogue-links: ok");
