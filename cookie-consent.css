@@ -530,3 +530,44 @@ html body #cookieConsent.sm-cookie .sm-cookie-manage,
 html body #cookieConsent.sm-cookie .sm-cookie-lead {
   font-family: "DM Sans", "DM Sans Fallback", sans-serif;
 }
+
+/* A 320px screen at 568px still had the 108px strip, and Send Message sat
+   inside the phone nav. This height keeps the 44px buttons and the full
+   sentence. Taller phones, including 320x640, stay on 108px. */
+@media (max-width: 359px) and (max-height: 600px) {
+  html[data-sm-cookie="open"] { --sm-cookie-stack: 76px; }
+  html body #cookieConsent.sm-cookie:not(.is-manage) {
+    padding: 0 8px;
+  }
+  html body #cookieConsent:not(.is-manage) .sm-cookie-choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+  }
+  html body #cookieConsent:not(.is-manage) .sm-cookie-lead--phone {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    margin: 0;
+    font-size: 12px;
+    line-height: 14px;
+  }
+  html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 9.5rem;
+    max-width: none;
+    height: 44px;
+    max-height: 44px;
+  }
+  html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
+    flex: 0 0 auto;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+  }
+}

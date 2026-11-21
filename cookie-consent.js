@@ -106,10 +106,12 @@
     return box;
   }
 
-  // Same heights as the head script and cookie-consent.css. Measuring the
-  // strip here let the offset change again after fonts and the chat loaded.
-  // 108px is the stacked phone strip. 61px is the single desktop row.
+  // Same heights as cookie-consent.css. Measuring the strip here let the
+  // offset change again after fonts and the chat loaded. 108px is the
+  // stacked phone strip. 76px is the 320-wide screen at 600px or shorter.
+  // 61px is the single desktop row.
   function stackHeight() {
+    if (root.matchMedia("(max-width: 359px) and (max-height: 600px)").matches) return 76;
     var w = root.innerWidth || 0;
     if (w <= 768) return 108;
     return 61;

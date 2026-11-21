@@ -3002,6 +3002,48 @@ html body a.category-card .guide-price-note {
   }
 }
 
+/* 320x568 with the strip open still put all of Send Message inside the
+   phone nav. Pack the fields only at this height. 320x640 and every
+   wider phone keep the spacing above. Controls stay at least 44px. */
+@media (max-width: 359px) and (max-height: 600px) {
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-row {
+    gap: 0;
+    margin-bottom: 0;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group,
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
+    margin: 0;
+    padding: 0;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
+    font-size: 11px;
+    line-height: 12px;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper :is(.form-input, .form-select, .form-textarea) {
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 42px;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-submit {
+    display: flex;
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
 /* The phone nav covers the bottom of the screen. Reserve that height, the
    safe area, and the open cookie strip, so Send Message can scroll clear. */
 @media (max-width: 768px) {
