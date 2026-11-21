@@ -1257,10 +1257,6 @@ html body :is(.product-name, .category-info h3) {
   color: var(--sm-color-text);
 }
 
-html body h3.product-name {
-  min-height: calc(1.2em * 2);
-}
-
 html body .product-category {
   color: var(--sm-color-text);
 }
@@ -1305,14 +1301,7 @@ html body .gallery-main {
 }
 
 html body .product-image img,
-html body .product-image svg {
-  aspect-ratio: 4 / 5;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-}
-
+html body .product-image svg,
 html body .gallery-main img {
   object-fit: contain;
   object-position: center;
