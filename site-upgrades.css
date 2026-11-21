@@ -2492,10 +2492,10 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
   }
 }
 
-/* A 360px phone with the cookie strip open is 36px too short for the stacked
+/* Phones through 389px with the cookie strip open are too short for the stacked
    email and phone rows. Drop the label and header gaps so Send Message stays
-   above the phone nav. The controls themselves stay at least 44px. */
-@media (max-width: 360px) {
+   above the phone nav. 390px keeps the looser gaps. Controls stay at least 44px. */
+@media (max-width: 389px) {
   html body:has(#contactForm) .contact-form-wrapper {
     padding-top: 0;
   }
