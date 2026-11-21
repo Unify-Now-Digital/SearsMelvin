@@ -138,6 +138,8 @@ assert.match(memorials, /onchange="applyFilters\(this\)"/);
 assert.doesNotMatch(fnBody(memorials, "catalogueMetaNow"), /colour/);
 assert.match(memorials, /scheduleCatalogueTrack\(\)/);
 assert.match(memorials, /filterSelectEvent\(change, catalogueMatchCount, meta\)/);
+assert.match(memorials, /pendingFilterChange/);
+assert.match(memorials, /if \(!state\.productsData\.length\) return;/);
 assert.doesNotMatch(memorials, /filterSelectEvent\(change, items\.length/);
 assert.doesNotMatch(memorials, /CATALOGUE_PAGE|showMoreMemorials|Show more memorials/);
 assert.match(readFileSync("docs/TRACKING.md", "utf8"), /result_count` is the full number of matching memorials/);

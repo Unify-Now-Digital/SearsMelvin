@@ -1151,6 +1151,11 @@
                 renderTypeCounts();
                 renderStoneBand();
                 if (!applyUrlFilters()) renderProducts();
+                if (pendingFilterChange) {
+                    var queuedChange = pendingFilterChange;
+                    pendingFilterChange = null;
+                    scheduleCatalogueTrack(queuedChange);
+                }
                 markTypeLinks();
                 updatePriceSortButton();
                 injectItemListJsonLd(productsData);
@@ -1254,6 +1259,9 @@
         // ==================== RENDER PRODUCTS ====================
         // Every match stays in the page. The first row is eager. Later images are lazy.
         let catalogueMatchCount = 0;
+        // A chip click before the catalogue fetch must not wipe the server cards
+        // or report a result_count of 0. The event is sent once the real total is known.
+        let pendingFilterChange = null;
 
         function firstRowCount() {
             if (window.matchMedia('(min-width: 1280px)').matches) return 4;
@@ -1307,6 +1315,7 @@
         }
 
         function renderProducts() {
+            if (!state.productsData.length) return;
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
@@ -1526,15 +1535,19 @@
                 if (key === 'colour' || !state.filters[key]) return;
                 state.filters[key].push(input.value);
             });
-            renderProducts();
-            updateActiveFiltersDisplay();
-            syncTypeParam(!!(options && options.push));
             var change = null;
             if (source && source.dataset && source.dataset.filter && source.dataset.filter !== 'colour') {
                 change = { filter_name: source.dataset.filter, filter_value: source.value, selected: !!source.checked };
             } else if (source && source.filter_name && source.filter_name !== 'colour') {
                 change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
             }
+            updateActiveFiltersDisplay();
+            syncTypeParam(!!(options && options.push));
+            if (!state.productsData.length) {
+                if (change) pendingFilterChange = change;
+                return;
+            }
+            renderProducts();
             scheduleCatalogueTrack(change);
         }
 
