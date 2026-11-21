@@ -402,8 +402,11 @@
             #productsGrid { min-height: 34rem; }
         }
         @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; content-visibility: auto; contain-intrinsic-size: auto 180px 420px; }
+        .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px color-mix(in srgb, var(--sm-color-text) 6%, transparent); transition: transform 0.4s ease, box-shadow 0.4s ease; display: block; position: relative; animation: cardFadeIn 0.4s ease forwards; content-visibility: auto; contain-intrinsic-size: auto 177px 374px; }
         .products-grid > .product-card:nth-child(-n + 4) { content-visibility: visible; contain-intrinsic-size: none; animation: none; opacity: 1; }
+        @media (min-width: 768px) { .product-card { contain-intrinsic-size: auto 360px 592px; } }
+        @media (min-width: 1024px) { .product-card { contain-intrinsic-size: auto 304px 522px; } }
+        @media (min-width: 1280px) { .product-card { contain-intrinsic-size: auto 326px 549px; } }
         .product-card:nth-child(1) { animation-delay: 0s; }
         .product-card:nth-child(2) { animation-delay: 0.05s; }
         .product-card:nth-child(3) { animation-delay: 0.1s; }

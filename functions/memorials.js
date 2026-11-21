@@ -53,10 +53,15 @@ function renderImageUrl(url, width) {
     `?width=${width}&quality=70&resize=contain`;
 }
 
+function imageSources(url) {
+  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  return { src: escapeHtml(renderImageUrl(url, 800)), srcset, sizes: IMAGE_SIZES };
+}
+
 function imageAttributes(url) {
   if (!isBucketImage(url)) return `src="${escapeHtml(url)}"`;
-  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
-  return `src="${escapeHtml(renderImageUrl(url, 800))}" srcset="${srcset}" sizes="${IMAGE_SIZES}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
+  const { src, srcset, sizes } = imageSources(url);
+  return `src="${src}" srcset="${srcset}" sizes="${sizes}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
 }
 
 function imagePreload(url) {
@@ -64,9 +69,9 @@ function imagePreload(url) {
   if (!isBucketImage(url)) {
     return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
   }
-  // The phone picks the 400px file. Preload that exact URL so it is not
-  // queued behind the 800px fallback while the sizes are worked out.
-  return `<link rel="preload" as="image" href="${escapeHtml(renderImageUrl(url, 400))}" fetchpriority="high">`;
+  // Same src, srcset and sizes as the first card, so the browser fetches one file.
+  const { src, srcset, sizes } = imageSources(url);
+  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
 }
 
 export function typeCounts(products) {
