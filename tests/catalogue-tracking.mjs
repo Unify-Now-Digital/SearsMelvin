@@ -61,6 +61,7 @@ assert.deepEqual(filter, {
   active_filter: "type:lawn-headstones",
 });
 assert.equal(up.filterSelectEvent({ filter_name: "sort", filter_value: "price-low", selected: true }, 10, meta), null);
+assert.equal(up.filterSelectEvent({ filter_name: "colour", filter_value: "black", selected: true }, 10, meta), null);
 assert.equal(up.filterSelectEvent({ filter_name: "type", filter_value: "Lawn Headstones", selected: true }, 10, meta), null);
 
 const collapsed = up.collapseFilterChanges([
@@ -134,6 +135,7 @@ assert.match(memorials, /catalogueGrid\.addEventListener\('click', catalogueSele
 assert.match(memorials, /catalogueGrid\.addEventListener\('auxclick', catalogueSelectFromEvent, true\)/);
 assert.match(memorials, /catalogueGrid\.addEventListener\('pointerdown', rememberCatalogueCard, true\)/);
 assert.match(memorials, /onchange="applyFilters\(this\)"/);
+assert.doesNotMatch(fnBody(memorials, "catalogueMetaNow"), /colour/);
 assert.match(memorials, /scheduleCatalogueTrack\(\)/);
 const shortlistLeads = memorials.match(/event: 'sm_lead_submit'/g) || [];
 assert.equal(shortlistLeads.length, 1, "the shortlist is the only lead push on /memorials");

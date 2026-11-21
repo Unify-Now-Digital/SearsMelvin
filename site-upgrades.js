@@ -517,7 +517,7 @@
     var ITEM_LIST_NAME = 'Memorials';
     var LIST_CONTEXT_KEY = 'sm_list_context';
     var LIST_CONTEXT_TTL_MS = 12 * 60 * 60 * 1000;
-    var FILTER_NAMES = { type: 1, colour: 1, price: 1, clear: 1 };
+    var FILTER_NAMES = { type: 1, price: 1, clear: 1 };
 
     function trackText(value, max) {
         var s = String(value == null ? '' : value).replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim();
