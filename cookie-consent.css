@@ -408,6 +408,19 @@ html[data-sm-cookie="open"] { --sm-cookie-stack: 61px; }
   html[data-sm-cookie="open"] { --sm-cookie-stack: 108px; }
 }
 
+/* The shortest phones keep the 44px buttons and the full consent
+   sentence, with less padding around them, so the contact form can
+   clear the phone nav. */
+@media (max-width: 768px) and (max-height: 667px) {
+  html[data-sm-cookie="open"] { --sm-cookie-stack: 92px; }
+  html body #cookieConsent.sm-cookie:not(.is-manage) {
+    padding: 4px 12px;
+  }
+  html body #cookieConsent:not(.is-manage) .sm-cookie-choice {
+    gap: 2px;
+  }
+}
+
 /* The actions row is a fixed size so a font swap cannot move it or the page. */
 html body #cookieConsent:not(.is-manage) .sm-cookie-actions {
   height: var(--sm-target-min);

@@ -2959,42 +2959,36 @@ html body a.category-card .guide-price-note {
   }
 }
 
-/* Short phones: the trust bar and the message box are what still push
-   Send Message under the nav. Compact both. Controls stay at 44px. */
+/* Short phones cannot fit the trust bar without clipping the labels.
+   Collapse it, but keep its top margin so the page still clears the
+   header and the cookie strip. The message box stays a 44px control. */
 @media (max-width: 390px) and (max-height: 740px) {
   html body:has(#contactForm) .site-trust-bar {
     min-height: 0 !important;
-    padding: 0.15rem 0.5rem !important;
-  }
-  html body:has(#contactForm) .site-trust-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0.1rem 0.35rem !important;
-  }
-  html body:has(#contactForm) .site-trust-item {
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    min-width: 0 !important;
-    gap: 0.25rem !important;
-    font-size: 0.58rem !important;
-    line-height: 1.05 !important;
-    font-weight: 600 !important;
-    text-align: left !important;
-  }
-  html body:has(#contactForm) .site-trust-item span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap !important;
-  }
-  html body:has(#contactForm) .site-trust-item svg {
-    width: 14px !important;
-    height: 14px !important;
-    flex: none;
+    height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
   }
   html body:has(#contactForm) textarea#message {
     min-height: 44px !important;
     height: 44px !important;
+  }
+}
+
+/* The shortest open-strip phones still need the form title gone, or
+   Send Message sits inside the phone nav. */
+@media (max-width: 390px) and (max-height: 667px) {
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-section {
+    padding-top: 0;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-header {
+    display: none;
+  }
+  html[data-sm-cookie="open"] body:has(#contactForm) .contact-form-wrapper .form-group label {
+    margin-bottom: 0;
+    line-height: 1;
+    font-size: 0.7rem;
   }
 }
 
