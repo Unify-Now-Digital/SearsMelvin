@@ -4,6 +4,8 @@
  * A provider id means the message was accepted for sending. It does not mean
  * delivered, received, or opened. This module never reads delivery events.
  */
+// Loaded for the greeting only. Called when the email is built, after both modules have finished loading.
+import { splitName } from "./submit.js";
 const SITE = "https://searsmelvin.co.uk";
 const LOGO = `${SITE}/images/brand/logo/sears-melvin-stacked-ink.png`;
 const COVER = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=10.1`;
@@ -490,7 +492,7 @@ function photoBlock(urls) {
 export function familyEnquiryEmail({
   name, email, phone, message, enquiryTypeLabel, location, graveNumber, contactPref, photoCount, shortlistItems,
 } = {}) {
-  const hello = greetingName(name);
+  const hello = greetingName(splitName(name).first_name);
   const title = hello ? `Thank you, ${hello}.` : "Thank you.";
   const prefs = { email: "Email", phone: "Phone call", appointment: "Appointment" };
   const fields = [

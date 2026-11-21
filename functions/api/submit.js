@@ -147,7 +147,6 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
         : "Unable to verify the current memorial price. Please try again.",
     }, error instanceof QuotePricingError ? error.status : 503);
   }
-  const firstName = name.split(" ")[0];
   const stoneHex = STONE_COLOURS[product.colour] || "#8B7355";
   const cemeteryOrLocation = cemetery || location || null;
 
@@ -155,6 +154,7 @@ async function handleQuoteRequest(ctx, data, submittedAt) {
   // current quote workflow upserts the person/job and creates an enquiry; it
   // deliberately does not create an invoice or customer-editable order.
   const { first_name, last_name } = splitName(name);
+  const firstName = first_name || "";
   const testFlag = isTestSubmission({ name, firstName: first_name, lastName: last_name, email, phone, message, ...cleanAttribution(data.attribution) });
   let enquiryId = null;
   try {
@@ -480,7 +480,7 @@ async function sendFamilyBrochure(env, { name, email, source }) {
     const id = await sendEmail(env.RESEND_API_KEY, {
       from: `${BUSINESS_NAME} <${FROM_EMAIL}>`,
       to: email,
-      ...familyBrochureEmail({ firstName: name, source }),
+      ...familyBrochureEmail({ firstName: splitName(name).first_name || "", source }),
     }, emailTimeoutMs(env));
     return { accepted: Boolean(id), email, at: new Date() };
   } catch {
@@ -588,7 +588,7 @@ async function handleAppointment(ctx, data, submittedAt) {
   if (showroomIso !== appointment_date || !showroomSlots.has(appointment_time) || showroomDay === 0 || showroomDay === 6)
     return jsonResponse({ ok: false, error: "Please choose a weekday from 10:00 to 14:30. The showroom is open Monday to Friday, 10am to 3pm." }, 400);
 
-  const firstName = name.split(" ")[0];
+  const firstName = splitName(name).first_name || "";
   const typeLabels = { showroom: "Showroom Visit (NW11)", phone: "Phone Consultation", video: "Video Call" };
   const typeLabel = typeLabels[appointment_type] || appointment_type;
   const dateFormatted = new Date(appointment_date + "T00:00:00").toLocaleDateString("en-GB", {
@@ -828,7 +828,7 @@ function appointmentCustomerEmail({ firstName, typeLabel, dateFormatted, appoint
       <div style="text-align:center;margin-bottom:2rem;">
         <h1 style="color:#2C2C2C;font-size:1.5rem;">Appointment Request Received</h1>
       </div>
-      <p style="color:#666;line-height:1.8;">Dear ${firstName},</p>
+      <p style="color:#666;line-height:1.8;">${firstName ? `Dear ${firstName},` : "Hello,"}</p>
       <p style="color:#666;line-height:1.8;">Thank you for requesting a <strong>${typeLabel.toLowerCase()}</strong>. We've received your request for:</p>
       <div style="background:#FAF8F5;border-radius:8px;padding:1.25rem;margin:1.5rem 0;border-left:4px solid #8B7355;">
         <p style="margin:0;color:#2C2C2C;font-weight:600;">${dateFormatted} at ${appointment_time}</p>
@@ -1198,7 +1198,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
         <!-- Thank you message -->
         <tr>
           <td style="padding:30px 28px 0;">
-            <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">Thank you, ${esc(firstName)}.</h2>
+            <h2 style="font-family:Georgia,Times New Roman,serif;font-size:23px;color:#2C2C2C;font-weight:normal;margin:0 0 14px 0;">${firstName ? `Thank you, ${esc(firstName)}.` : "Thank you."}</h2>
             <p style="color:#555555;font-size:15px;line-height:1.7;margin:0 0 22px 0;font-family:Arial,sans-serif;">We've received your quote request for <strong style="color:#2C2C2C;">${esc(product.name || "your memorial")}</strong> and our team will be in touch within one working day.</p>
           </td>
         </tr>
@@ -1345,11 +1345,30 @@ function supabaseHeaders(env) {
   });
 }
 
-function splitName(full) {
-  const parts = (full || "").trim().split(/\s+/);
+// Titles are their own word, with or without a trailing dot. "Mr and Mrs" is one
+// leading phrase. Anything left keeps the capitals the person typed.
+const NAME_TITLE = /^(?:mr|mrs|miss|ms|mx|dr|prof|sir)\.?$/i;
+const LEADING_COUPLE = /^mr\.?\s+and\s+mrs\.?(?=\s|$)/i;
+const GLUED_TITLE = /^(?:mr|mrs|miss|ms|mx|dr|prof|sir)\.(?=\S)/i;
+
+export function splitName(full) {
+  let text = String(full ?? "").trim().replace(/\s+/g, " ");
+  text = text.replace(GLUED_TITLE, "");
+  text = text.replace(LEADING_COUPLE, "").trim();
+  const parts = text.split(" ").filter(Boolean);
+  while (parts.length && NAME_TITLE.test(parts[0])) parts.shift();
   return {
     first_name: parts[0] || null,
     last_name: parts.length > 1 ? parts.slice(1).join(" ") : "-",
+  };
+}
+
+// HighLevel has no placeholder surname. people.last_name still uses "-".
+export function ghlNameParts(full) {
+  const { first_name, last_name } = splitName(full);
+  return {
+    firstName: first_name || "",
+    lastName: last_name && last_name !== "-" ? last_name : "",
   };
 }
 
@@ -1971,7 +1990,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     console.error(JSON.stringify({ message: "ghl_contact_skipped_missing_env", has_key: !!env.GHL_API_KEY, has_location: !!env.GHL_LOCATION_ID }));
     return null;
   }
-  const parts = name.trim().split(" ");
+  const { firstName: ghlFirstName, lastName: ghlLastName } = ghlNameParts(name);
   const labels = websiteGhlLabels(type);
   const tags = [...labels.tags, ...leadTags(lead)];
   if (isGoogleAdsLead(lead)) tags.push("source-google-ads");
@@ -2007,7 +2026,7 @@ export async function createGHLContact(env, args, fetchOverride) {
     // GHL API v2's attributionSource is read-only and is set only by GHL tracking.
     // Contact `source` + tags are ours: Website quote / enquiry / appointment.
     body: JSON.stringify({
-      locationId: env.GHL_LOCATION_ID, firstName: parts[0], lastName: parts.slice(1).join(" ") || "",
+      locationId: env.GHL_LOCATION_ID, firstName: ghlFirstName, lastName: ghlLastName,
       email, phone: phone || undefined, source: labels.source, tags: dedupedTags, customFields,
     }),
   });
@@ -2025,7 +2044,7 @@ export async function createGHLContact(env, args, fetchOverride) {
       const existingBody = await existingRes.json();
       const existing = existingBody?.contact || existingBody || {};
       const fields = [...fillOnlyCustomFields(existing.customFields, trackedFields), ...lastTouchFields];
-      const update = returningContactUpdate(existing, { firstName: parts[0], lastName: parts.slice(1).join(" "), phone });
+      const update = returningContactUpdate(existing, { firstName: ghlFirstName, lastName: ghlLastName, phone });
       if (fields.length) update.customFields = fields;
       // Relabel chat-widget (or blank) contacts that later submit a website form.
       if (shouldReplaceGhlSource(existing.source, labels.source)) update.source = labels.source;
@@ -2096,6 +2115,13 @@ export function validateSubmission(input, organizationId) {
     return { ok: false, error: "Invalid enquiry type" };
   }
   data.channel = channel;
+  // A cached contact page still posts firstName/lastName (or first_name/last_name)
+  // and may not send the combined name. Join those when name is missing.
+  if (typeof data.name !== "string" || !data.name.trim()) {
+    const part = (value) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "");
+    const combined = [part(data.firstName) || part(data.first_name), part(data.lastName) || part(data.last_name)].filter(Boolean).join(" ");
+    if (combined) data.name = combined;
+  }
   if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 120) {
     return { ok: false, error: "A valid name is required" };
   }

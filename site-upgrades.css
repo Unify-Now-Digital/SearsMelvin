@@ -2728,6 +2728,10 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     gap: 0.5rem;
     margin-bottom: 0;
   }
+  /* One field in a row (the contact name) stays full width. Email and phone stay side by side so Send Message still clears the phone nav. */
+  html body .contact-form-wrapper .form-row.full {
+    grid-template-columns: minmax(0, 1fr);
+  }
   html body textarea#message {
     min-height: 2.75rem;
     height: 2.75rem;

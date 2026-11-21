@@ -30,9 +30,17 @@ assert.match(track, /\.track-header \{[^}]*background:\s*var\(--sm-color-bg\)/);
 assert.match(track, /Send my portal link/);
 assert.doesNotMatch(track, /Sears Melvin <span>Memorials<\/span>/);
 
-assert.match(contact, />First name </);
+assert.match(contact, /id="contactName"/);
+assert.match(contact, /name="name"/);
+assert.match(contact, /autocomplete="name"/);
+assert.match(contact, /maxlength="120"/);
+assert.match(contact, /placeholder="Your name"/);
+assert.match(contact, />Name </);
+assert.doesNotMatch(contact, />First name </);
+assert.doesNotMatch(contact, />Last name </);
 assert.match(contact, />Enquiry type </);
 assert.doesNotMatch(contact, />First Name </);
+assert.match(upgrades, /html body \.contact-form-wrapper \.form-row\.full \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
 assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
 
 assert.match(memorials, /<h1>Headstones, gravestones and memorials<\/h1>/);
