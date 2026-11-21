@@ -415,14 +415,14 @@
         .product-action:hover svg { stroke: var(--color-accent); }
         .product-action.active { background: var(--color-accent); }
         .product-action.active svg { stroke: white; fill: white; }
-        .product-image { position: relative; aspect-ratio: 1/1; overflow: hidden; background: white; }
+        .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: white; }
         .product-image svg { width: 100%; height: 100%; }
-        .product-image img { width: 100%; height: 100%; object-fit: contain; }
+        .product-image img { width: 100%; height: 100%; aspect-ratio: 4 / 5; object-fit: contain; }
         .product-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 0.7rem; background: var(--color-accent); color: white; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; }
         .product-badge.new { background: var(--color-success); }
         .product-info { padding: 1.25rem; }
-        .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.3rem; display: block; }
-        .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; }
+        .product-category { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-dark); margin-bottom: 0.3rem; display: block; min-height: calc(1.35em * 2); }
+        .product-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-stone); margin-bottom: 0.5rem; line-height: 1.3; min-height: calc(1.2em * 2); }
         .product-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
         .product-colours { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
         .product-colour-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px color-mix(in srgb, var(--sm-color-text) 20%, transparent); flex: 0 0 auto; }
@@ -655,6 +655,14 @@
             .site-trust-item svg { width: 16px; height: 16px; }
             .site-trust-item + .site-trust-item::before { display: none; }
         }
+        /* The shared phone script later sets this same two-column trust bar.
+           Painting it at this size from the start keeps the chips and cards still. */
+        @media (max-width: 480px) {
+            .site-trust-bar { padding: 0.6rem 1rem; }
+            .site-trust-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.75rem; }
+            .site-trust-item { flex-direction: row; justify-content: flex-start; gap: 0.45rem; font-size: 0.82rem; line-height: 1.2; font-weight: 600; text-align: left; }
+            .site-trust-item svg { width: 20px; height: 20px; }
+        }
 </style>
     <link rel="stylesheet" href="/chat-widget.css?v=9">
 
@@ -710,9 +718,9 @@
     <link rel="stylesheet" href="/accreditations.css?v=20261013b">
 
     <style>
-        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; }
-        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; }
-        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .catalogue-toolbar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0 0 0.75rem; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse { position: relative; flex: 1 1 auto; min-width: 0; max-width: 100%; margin: 0; height: 44px; min-height: 44px; max-height: 44px; }
+        .type-browse-list { display: flex; flex-wrap: nowrap; gap: 0.5rem; list-style: none; padding: 0 2.5rem 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .type-browse-list::-webkit-scrollbar { display: none; }
         .type-browse::after { content: ""; position: absolute; right: 0; bottom: 0; width: 2.5rem; height: 44px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--color-cream)); }
         .type-count { margin-left: 0.35rem; font-family: var(--sm-font-body); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
@@ -735,6 +743,7 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                flex: 0 0 44px;
                 width: 44px;
                 height: 44px;
                 margin-left: auto;
@@ -753,14 +762,18 @@
                the full chip row, overflow never starts, and the body clip
                hides Heart, Book, Churchyard and the rest. */
             .catalogue-container > main { min-width: 0; max-width: 100%; }
-            .type-browse { position: relative; max-width: 100%; min-width: 0; }
+            .type-browse { position: relative; max-width: 100%; min-width: 0; height: 44px; min-height: 44px; max-height: 44px; }
             .type-browse-list {
                 flex-wrap: nowrap;
                 gap: 0.5rem;
                 width: 100%;
                 max-width: 100%;
                 min-width: 0;
+                height: 44px;
+                min-height: 44px;
+                max-height: 44px;
                 overflow-x: auto;
+                overflow-y: hidden;
                 overscroll-behavior-x: contain;
                 scrollbar-width: none;
                 padding: 0 2.5rem 0 0;
@@ -1277,7 +1290,7 @@
                 if (!img) return;
                 img.decoding = 'async';
                 if (!img.getAttribute('width')) img.setAttribute('width', '800');
-                if (!img.getAttribute('height')) img.setAttribute('height', '800');
+                if (!img.getAttribute('height')) img.setAttribute('height', '1000');
                 const want = index < eager ? 'eager' : 'lazy';
                 if (img.getAttribute('loading') !== want) img.loading = want;
                 if (want === 'eager') {
@@ -1350,7 +1363,7 @@
                 const saved = state.shortlist.some(item => item.id === id);
                 const imgPriority = index < eager ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="1000" alt="' + escapeHtml(productName) + '" decoding="async"' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge">Popular</span>';

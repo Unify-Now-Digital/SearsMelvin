@@ -75,7 +75,7 @@ assert.equal(images.length, 27);
 for (const [index, tag] of images.entries()) {
   assert.match(tag, /decoding="async"/, index);
   assert.match(tag, /width="800"/, index);
-  assert.match(tag, /height="800"/, index);
+  assert.match(tag, /height="1000"/, index);
   if (index < 2) {
     assert.match(tag, /loading="eager"/, index);
     assert.match(tag, /fetchpriority="high"/, index);
