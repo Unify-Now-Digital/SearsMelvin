@@ -68,24 +68,21 @@ function stonesLabel(count) {
   return `All ${n} ${n === 1 ? "stone" : "stones"}`;
 }
 
-function colourWord(count) {
-  return Number(count) === 1 ? "stone colour" : "stone colours";
+function stoneButton(colour) {
+  const name = escapeHtml(String(colour.name || "").slice(0, 80));
+  const slug = safeSlug(colour.slug);
+  const primary = safeHex(colour.hex_primary);
+  const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
+  const imageUrl = safeImageUrl(colour.image_url);
+  const photo = imageUrl
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="64" height="64" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+    : "";
+  return `<button type="button" class="listing-stone-dot" data-slug="${slug}" data-name="${name}" data-primary="${primary}" data-secondary="${secondary}"${imageUrl ? ` data-image="${escapeHtml(imageUrl)}"` : ""} aria-label="${name || "Stone colour"}"><span class="listing-stone-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span></button>`;
 }
 
 export function stoneBandMarkup(colours) {
   const list = Array.isArray(colours) ? colours : [];
-  const swatches = list.map((colour) => {
-    const name = escapeHtml(String(colour.name || "").slice(0, 80));
-    const slug = safeSlug(colour.slug);
-    const primary = safeHex(colour.hex_primary);
-    const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-    const imageUrl = safeImageUrl(colour.image_url);
-    const photo = imageUrl
-      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
-      : "";
-    return `<div class="stone-swatch" role="listitem"${slug ? ` data-colour="${slug}"` : ""}><span class="stone-swatch-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="stone-swatch-name">${name}</span></div>`;
-  }).join("");
-  return `<div class="stone-band" id="stoneBand"><p class="stone-band-lead">Every design comes in all <span id="stoneColourCount">${list.length}</span> ${colourWord(list.length)}</p><div class="stone-swatches" id="stoneSwatches" role="list" aria-label="Stone colours">${swatches}</div><p class="stone-band-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p></div>`;
+  return list.map(stoneButton).join("");
 }
 
 async function fetchCatalogue(env) {
@@ -122,8 +119,8 @@ export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
   const shown = visible.slice(0, CARD_PAGE);
   const cards = renderCards(shown, colours);
-  const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
-  return { grid, count: visible.length, more: visible.length > CARD_PAGE };
+  const grid = `${cards}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  return { grid, dock: stoneBandMarkup(colours), count: visible.length, more: visible.length > CARD_PAGE };
 }
 
 function renderCards(products, colours) {
@@ -163,13 +160,15 @@ export async function onRequestGet({ request, env }) {
     const filtered = products.filter((product) => safeSlug(product.product_categories?.slug) === requested);
     if (filtered.length) products = filtered;
   }
-  const { grid, count, more } = catalogueInjection(products, catalogue.colours);
+  const { grid, dock, count, more } = catalogueInjection(products, catalogue.colours);
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";
   // The canonical stays the link in the shell (/memorials), including when ?type= is set.
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
+    .on("#listingStoneTrack", { element(el) { el.setInnerContent(dock, { html: true }); } })
+    .on(".stone-colour-count", { element(el) { el.setInnerContent(String(catalogue.colours.length)); } })
     .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
     .on('.type-count[data-type-count="all"]', { element(el) { el.setInnerContent(String(counts.all)); } });
   for (const slug of Object.keys(counts)) {
