@@ -406,7 +406,7 @@
            leaving the button half covered. */
         @media (max-width: 480px) {
             .contact-section { padding-top: 0.2rem; }
-            .form-group { margin-bottom: 0.35rem; }
+            .form-group { margin-bottom: 0.15rem; }
             .form-textarea { min-height: 64px; }
             .contact-section .service-area-line-compact { display: none; }
         }
@@ -1238,6 +1238,29 @@
                 errEl.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnHTML;
+            }
+            // Same rule as splitName in functions/api/submit.js: a title or a tag
+            // with no word after it is not a name.
+            function contactNameHasWord(value) {
+                const title = /^(?:mr|mrs|ms|miss|mx|dr|prof|rev|sir|dame|lady|lord)\.?$/i;
+                let text = String(value || '')
+                    .replace(/\p{Cc}/gu, '')
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/[<>]/g, '')
+                    .replace(/(^|\s)(mr|mrs|ms|miss|mx|dr|prof|rev|sir|dame|lady|lord)\.(?=\S)/gi, '$1$2. ')
+                    .replace(/\s*&\s*/g, ' & ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!text) return false;
+                const parts = text.split(' ');
+                let index = 0;
+                if (parts.length >= 3 && title.test(parts[0]) && /^(?:and|&)$/i.test(parts[1]) && title.test(parts[2])) index = 3;
+                else while (index < parts.length && title.test(parts[index])) index += 1;
+                return index < parts.length;
+            }
+            if (!contactNameHasWord(name)) {
+                showInlineError('Please enter your name');
+                return;
             }
             if (!enquiryType) {
                 showInlineError('Please choose an enquiry type at the top of the form.');

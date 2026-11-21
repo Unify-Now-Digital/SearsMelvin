@@ -2715,7 +2715,8 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
 @media (max-width: 480px) {
   html body .contact-form-wrapper {
     padding-top: 0.25rem;
-    padding-bottom: 0.65rem;
+    padding-right: 4.6rem;
+    padding-bottom: 0.2rem;
   }
   html body .contact-form-wrapper .form-header {
     margin-bottom: 0.35rem;
@@ -2724,11 +2725,11 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     display: none;
   }
   html body .contact-form-wrapper .form-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
     margin-bottom: 0;
   }
-  /* One field in a row (the contact name) stays full width. Email and phone stay side by side so Send Message still clears the phone nav. */
+  /* Name, email, and phone each take the full row, so the phone field is not under the chat bubble. */
   html body .contact-form-wrapper .form-row.full {
     grid-template-columns: minmax(0, 1fr);
   }
