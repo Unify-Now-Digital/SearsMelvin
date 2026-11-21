@@ -189,7 +189,10 @@ assert.equal(
   captured["head@append"].match(/imagesizes="([^"]+)"/)[1],
   firstImg.match(/sizes="([^"]+)"/)[1],
 );
-assert.match(html, /content-visibility:\s*auto/);
-assert.match(html, /nth-child\(-n \+ 4\)/);
+assert.match(html, /\.product-face \{[^}]*content-visibility:\s*auto/);
+assert.match(html, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
+assert.doesNotMatch(html, /\.product-card \{[^}]*content-visibility/);
+assert.match(server, /aria-label="\$\{escapeHtml\(productName\)\}"/);
+assert.match(server, /<div class="product-face">/);
 
 console.log("catalogue-links: ok");
