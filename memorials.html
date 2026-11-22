@@ -1939,21 +1939,28 @@
 
         function markTypeLinks() {
             const type = state.filters.type.length === 1 ? state.filters.type[0] : '';
-            let current = null;
             document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
                 const isCurrent = !!type && link.getAttribute('href') === '/memorials?type=' + type;
-                if (isCurrent) { link.setAttribute('aria-current', 'page'); current = link; }
+                if (isCurrent) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             document.querySelectorAll('.type-browse-list a.type-all').forEach((link) => {
-                if (!type) { link.setAttribute('aria-current', 'page'); current = link; }
+                if (!type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             // Narrow phones clip chip labels past the fade; keep the selected
-            // chip fully on screen. Harmless on desktop, where the row never
-            // overflows and scrollIntoView has nothing to do.
-            if (current && current.scrollIntoView) {
-                current.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+            // chip fully visible by scrolling only the chip row sideways.
+            // Never scroll the document (footer links share the same hrefs).
+            const list = document.querySelector('.type-browse-list');
+            const chip = list && list.querySelector('a[aria-current="page"]');
+            if (list && chip && list.scrollWidth > list.clientWidth) {
+                const pad = 16;
+                const lr = list.getBoundingClientRect();
+                const cr = chip.getBoundingClientRect();
+                const left = cr.left - lr.left + list.scrollLeft;
+                const right = left + cr.width;
+                if (left - pad < list.scrollLeft) list.scrollLeft = Math.max(0, left - pad);
+                else if (right + pad > list.scrollLeft + list.clientWidth) list.scrollLeft = right + pad - list.clientWidth;
             }
         }
 
