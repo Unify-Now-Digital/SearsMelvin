@@ -135,24 +135,44 @@
         return out;
     }
 
+    // True only when `fresh` carries a click ID that actually marks a NEW ad
+    // click: the stored record is missing, has no click ID of its own, or a
+    // click ID fresh carries differs from the matching stored one. A URL that
+    // merely repeats the same click ID (e.g. url_passthrough decorating an
+    // internal link with the still-current gclid) is not a new click.
+    function isNewClick(stored, fresh) {
+        var hasFreshClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
+        if (!hasFreshClick) return false;
+        if (!stored || typeof stored !== 'object') return true;
+        var hasStoredClick = CLICK_KEYS.some(function (k) { return !!stored[k]; });
+        if (!hasStoredClick) return true;
+        return CLICK_KEYS.some(function (k) { return fresh[k] && stored[k] !== fresh[k]; });
+    }
+
     // Merge fresh params into the stored record. First touch wins for 90 days:
-    // a later visit with only UTMs fills missing values without overwriting. A new
-    // ad click (any click ID) replaces it wholesale and restarts the 90 days.
-    // Expired records drop.
+    // a later visit with only UTMs, or url_passthrough redecorating the same
+    // click ID, fills missing values without overwriting. Only a genuinely new
+    // ad click (per isNewClick) replaces the record wholesale and restarts the
+    // 90 days. Expired records drop.
     function mergeAttribution(stored, fresh, now) {
         var valid = stored && typeof stored === 'object' && typeof stored.ts === 'number' && (now - stored.ts) < ATTR_TTL_MS;
-        var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
-        if (valid && !hasClick) {
-            var filled = null;
-            UTM_KEYS.forEach(function (k) {
-                if (!stored[k] && fresh[k]) {
-                    if (!filled) filled = Object.assign({}, stored);
-                    filled[k] = fresh[k];
-                }
-            });
-            return filled || stored;
+        var newClick = isNewClick(valid ? stored : null, fresh);
+        if (!newClick) {
+            if (valid) {
+                var filled = null;
+                UTM_KEYS.forEach(function (k) {
+                    if (!stored[k] && fresh[k]) {
+                        if (!filled) filled = Object.assign({}, stored);
+                        filled[k] = fresh[k];
+                    }
+                });
+                return filled || stored;
+            }
+            if (!Object.keys(fresh).length) return null;
+            var rec0 = { ts: now };
+            ATTR_KEYS.forEach(function (k) { if (fresh[k]) rec0[k] = fresh[k]; });
+            return rec0;
         }
-        if (!Object.keys(fresh).length) return null;
         var rec = { ts: now };
         ATTR_KEYS.forEach(function (k) { if (fresh[k]) rec[k] = fresh[k]; });
         return rec;
@@ -165,8 +185,13 @@
         return out;
     }
 
+    // Last touch is a wholesale replace on any fresh click or UTM, EXCEPT a
+    // url_passthrough revisit that repeats the same click ID and carries no
+    // UTMs of its own — that must not wipe the UTMs already recorded as last touch.
     function mergeLastAttribution(stored, fresh, now) {
         if (!fresh || !Object.keys(fresh).length) return stored;
+        var hasUtm = UTM_KEYS.some(function (k) { return !!fresh[k]; });
+        if (!hasUtm && !isNewClick(stored, fresh)) return stored;
         return Object.assign({ ts: now }, fresh);
     }
 
@@ -688,7 +713,7 @@
         return event;
     }
 
-    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, brochureQueryTail: brochureQueryTail, readBrochureArrival: readBrochureArrival, brochureThanksTitle: brochureThanksTitle, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
+    var api = { fabAllowed: fabAllowed, fabHtml: fabHtml, normaliseSource: normaliseSource, brochureMetaLabel: brochureMetaLabel, readUtm: readUtm, adsConversionTarget: adsConversionTarget, brochureEvents: brochureEvents, brochureFieldErrors: brochureFieldErrors, paintBrochureErrors: paintBrochureErrors, showBrochureStatus: showBrochureStatus, liftBrochureMessage: liftBrochureMessage, brochureRequestEvent: brochureRequestEvent, brochureRequestPayload: brochureRequestPayload, fillMissingUtm: fillMissingUtm, brochureQueryTail: brochureQueryTail, readBrochureArrival: readBrochureArrival, brochureThanksTitle: brochureThanksTitle, brochureMetaHtml: brochureMetaHtml, readAttribution: readAttribution, mergeAttribution: mergeAttribution, mergeLastAttribution: mergeLastAttribution, isNewClick: isNewClick, attributionFields: attributionFields, readGclAwGclid: readGclAwGclid, resolveClickIntentAttribution: resolveClickIntentAttribution, clickIntentEventId: clickIntentEventId, clickIntentBody: clickIntentBody, clickIntentPayload: clickIntentPayload, dispatchClickIntent: dispatchClickIntent, ATTR_TTL_MS: ATTR_TTL_MS, cleanPath: cleanPath, referrerHost: referrerHost, mergeLanding: mergeLanding, isAdVisit: isAdVisit, normalisePhone: normalisePhone, displayPhone: displayPhone, phoneFor: phoneFor, esc: esc, isProductionHost: isProductionHost, reviewsConfigured: reviewsConfigured, reviewsHtml: reviewsHtml, visibleTeam: visibleTeam, teamHtml: teamHtml, safeHttpUrl: safeHttpUrl, ITEM_LIST_ID: ITEM_LIST_ID, LIST_CONTEXT_KEY: LIST_CONTEXT_KEY, LIST_CONTEXT_TTL_MS: LIST_CONTEXT_TTL_MS, viewItemListEvent: viewItemListEvent, selectItemEvent: selectItemEvent, filterSelectEvent: filterSelectEvent, collapseFilterChanges: collapseFilterChanges, listContextRecord: listContextRecord, readListContext: readListContext, applyListContext: applyListContext };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof document === 'undefined') return;
     root.SMUpgrades = api;
@@ -703,7 +728,10 @@
         try { storedLp = JSON.parse(localStorage.getItem(LANDING_STORE) || 'null'); } catch (_e) {}
         var rec = mergeAttribution(stored, fresh, now);
         storedLast = mergeLastAttribution(storedLast, fresh, now);
-        var hasClick = CLICK_KEYS.some(function (k) { return !!fresh[k]; });
+        // Against the stored sm_attr (before merge), not just "fresh has a click
+        // ID" — a url_passthrough-decorated internal page load repeats the same
+        // click ID and must not restart the landing page / referrer either.
+        var hasClick = isNewClick(stored, fresh);
         var lp = mergeLanding(storedLp, location.pathname, referrerHost(document.referrer, location.hostname), hasClick, now);
         try {
             if (rec) localStorage.setItem(ATTR_STORE, JSON.stringify(rec));
@@ -776,6 +804,16 @@
         try { stored = JSON.parse(sessionStorage.getItem('sm_utm') || '{}') || {}; } catch (_e) {}
         if (Object.keys(fresh).length) { stored = fresh; try { sessionStorage.setItem('sm_utm', JSON.stringify(fresh)); } catch (_e) {} }
         return stored;
+    }
+
+    // Fills any utm_* missing from `attribution` (e.g. wiped by a url_passthrough
+    // click-ID revisit before this fix) from the same session UTM store the
+    // brochure download beacon uses, without overwriting anything already set.
+    function fillMissingUtm(attribution, session) {
+        var out = attribution && typeof attribution === 'object' ? Object.assign({}, attribution) : {};
+        session = session && typeof session === 'object' ? session : {};
+        UTM_KEYS.forEach(function (k) { if (!out[k] && session[k]) out[k] = session[k]; });
+        return out;
     }
 
     function logBrochure(body) {
@@ -865,7 +903,8 @@
                 if (btn) btn.disabled = true;
                 showBrochureStatus(status, 'Sending…');
                 var arrival = readBrochureArrival(location.search);
-                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, storedAttribution(), location.pathname, arrival);
+                var attribution = fillMissingUtm(storedAttribution(), sessionUtm());
+                var payload = brochureRequestPayload({ name: name, email: email, phone: phone }, attribution, location.pathname, arrival);
                 fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok && b.ok, b: b }; }); })
                     .then(function (res) {
