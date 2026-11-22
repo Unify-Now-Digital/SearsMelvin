@@ -1,7 +1,9 @@
 // Mobile-only permanent stone colour strip on /memorials (<=767px). Desktop
 // and tablet (>=768px) keep main's #stoneBand inside #productsGrid untouched.
-// The strip's lead box is a plain element (not a button) — it does not open
-// anything; aria-live spans announce the selected colour's name and price.
+// The strip's lead box (left) is a plain element (not a button) showing the
+// selected colour at a larger size — it does not open anything; aria-live
+// spans announce the selected colour's name and price. The right side scrolls
+// two rows of small swatch buttons.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { premiumColourSurcharge, stoneInlineMarkup, stoneInlineLeadMarkup, catalogueInjection } from "../functions/memorials.js";
@@ -45,17 +47,34 @@ const mobileCss = html.slice(html.indexOf("/* Mobile compact stone strip."), htm
 assert.match(mobileCss, /@media \(max-width: 767px\)/);
 assert.match(mobileCss, /position:\s*sticky/);
 assert.match(mobileCss, /top:\s*var\(--header-height,\s*68px\)/);
+// Two scrolling rows of plain 44x44 swatches at the strip height (Arin
+// t2420u, 22 Nov follow-up), a fixed-width lead column with a 56px photo for
+// the selected colour, and no per-swatch name annotation.
 assert.match(mobileCss, /height:\s*104px/);
 assert.match(mobileCss, /grid-template-rows:\s*44px 44px/);
 assert.match(mobileCss, /grid-auto-columns:\s*44px/);
-assert.match(mobileCss, /width:\s*44px/);
-assert.match(mobileCss, /height:\s*44px/);
-assert.match(mobileCss, /width:\s*80px/);
-assert.match(mobileCss, /height:\s*80px/);
+const swatchRule = mobileCss.slice(mobileCss.indexOf(".listing-stone-inline-swatch {"), mobileCss.indexOf(".listing-stone-inline-swatch:focus-visible"));
+assert.match(swatchRule, /width:\s*44px/);
+assert.match(swatchRule, /height:\s*44px/);
+assert.doesNotMatch(mobileCss, /\[aria-pressed="true"\]::after/);
+assert.doesNotMatch(mobileCss, /data-sm-price/);
+assert.doesNotMatch(html, /syncListingInlineSwatchPrice/);
+assert.doesNotMatch(mobileCss, /width:\s*80px/);
+assert.doesNotMatch(mobileCss, /height:\s*80px/);
 assert.match(mobileCss, /overscroll-behavior-x:\s*contain/);
 assert.match(mobileCss, /scrollbar-width:\s*none/);
 assert.match(mobileCss, /\.products-grid > \.stone-band \{ display: none; \}/);
 assert.doesNotMatch(mobileCss, /chat-widget|floating-btn/);
+
+// Lead column: visible (not clipped off-screen), fixed footprint so
+// selecting a different colour never shifts layout.
+const leadRule = mobileCss.slice(mobileCss.indexOf(".listing-stone-inline-lead {"), mobileCss.indexOf(".listing-stone-inline-lead-photo {"));
+assert.match(leadRule, /flex:\s*0 0 88px/);
+assert.doesNotMatch(leadRule, /clip:/);
+const leadPhotoRule = mobileCss.slice(mobileCss.indexOf(".listing-stone-inline-lead-photo {"), mobileCss.indexOf(".listing-stone-inline-lead-meta {"));
+assert.match(leadPhotoRule, /width:\s*56px/);
+assert.match(leadPhotoRule, /height:\s*56px/);
+assert.match(mobileCss, /-webkit-line-clamp:\s*2/);
 
 // At >=768px the band-hiding rule must not apply — only inside the 767 query.
 const before767 = html.slice(0, html.indexOf("@media (max-width: 767px)"));
@@ -116,10 +135,10 @@ assert.ok(noteAt > html.indexOf('<div class="results-header">') && noteAt < html
 
 // Phone card faces are held at the measured tallest card for each width band,
 // and the same value is the content-visibility reserve (no grow or shrink on paint).
-assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 5 \/ 12 \+ 153px\)/);
+assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 5 \/ 12 \+ 114px\)/);
 assert.match(mobileCss, /min-height:\s*var\(--sm-card-face\)/);
 assert.match(mobileCss, /contain-intrinsic-height:\s*auto var\(--sm-card-face\)/);
-for (const [band, extra] of [["376px) and (max-width: 442px", 163], ["443px) and (max-width: 478px", 147], ["479px) and (max-width: 767px", 118]]) {
+for (const [band, extra] of [["375px) and (max-width: 767px", 93]]) {
   const at = html.indexOf("@media (min-width: " + band + ")");
   assert.ok(at > -1, "missing card band " + band);
   assert.match(html.slice(at, at + 200), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 5 / 12 \\+ " + extra + "px\\)"));
