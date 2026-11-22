@@ -565,6 +565,70 @@
     <link rel="stylesheet" href="/site-upgrades.css?v=20261122c">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
+    <style id="sm-contact-form-compact">
+        /* Phone-only contact form compaction. Does not change the header,
+           trust bar, breadcrumb or other shared chrome. Desktop (>=768px)
+           is unchanged. */
+        @media (max-width: 767px) {
+            html body .contact-section {
+                padding: 0.08rem 0.75rem 1.15rem;
+            }
+            html body #enquiry-form.contact-form-wrapper {
+                /* Extra padding-right leaves a gutter for the closed chat bubble. */
+                padding: 0.15rem 4.75rem 0.55rem 0.7rem;
+            }
+            html body #contactForm .form-header {
+                margin-bottom: 0.25rem;
+            }
+            html body #contactForm .form-header h3 {
+                font-size: 1.05rem;
+                margin-bottom: 0.1rem;
+            }
+            html body #contactForm .form-group {
+                margin-bottom: 0.25rem;
+            }
+            html body #contactForm .form-group label {
+                margin-bottom: 0.12rem;
+                font-size: 0.75rem;
+            }
+            html body #contactForm .form-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.4rem;
+                margin-bottom: 0;
+            }
+            html body #contactForm :is(.form-input, .form-select),
+            html body #contactForm :is(input, select):not([type="file"]):not([type="hidden"]) {
+                box-sizing: border-box;
+                min-height: 44px;
+                height: 44px;
+                padding: 0.4rem 0.65rem;
+                font-size: 16px;
+                line-height: 1.3;
+            }
+            html body #contactForm textarea#message,
+            html body #contactForm .form-textarea {
+                box-sizing: border-box;
+                height: auto;
+                min-height: 6.5rem;
+                padding: 0.45rem 0.65rem;
+                font-size: 16px;
+                line-height: 1.4;
+                resize: vertical;
+            }
+            html body #contactForm .form-submit {
+                margin-top: 0.3rem;
+                min-height: 44px;
+                padding: 0.6rem 0.75rem;
+                font-size: 16px;
+            }
+            html body #contactForm .form-footer {
+                margin-top: 0.35rem;
+            }
+            html body #contactForm .file-upload-zone {
+                padding: 0.85rem 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
@@ -777,7 +841,7 @@
                         <!-- Message -->
                         <div class="form-group">
                             <label for="message">Your message <span class="required">*</span></label>
-                            <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
+                            <textarea id="message" name="message" class="form-textarea" rows="4" placeholder="Tell us about your requirements, or any questions you have..." required></textarea>
                         </div>
 
                         <button type="submit" class="form-submit">
@@ -1441,5 +1505,6 @@
     <script src="/site-globals.js?v=20261122" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261122a" defer></script>
+
 </body>
 </html>
