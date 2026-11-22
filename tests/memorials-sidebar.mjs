@@ -36,7 +36,8 @@ assert.match(html, /@media \(max-width: 1200px\) \{ \.products-grid \{ grid-temp
 
 assert.match(html, /id="stoneBand"/);
 assert.match(html, /Every design comes in all/);
-assert.match(html, /The From price is for a standard stone\. Premium and natural stones cost a little more\./);
+assert.doesNotMatch(html, /The From price is for a standard stone/);
+assert.doesNotMatch(html, /stone-band-note/);
 assert.match(html, /grid-template-rows:\s*4\.25rem 4\.25rem/);
 assert.match(html, /\.products-grid > \.stone-band \{[\s\S]*?grid-row:\s*1;/);
 assert.match(html, /\.products-grid > \.stone-band \{[\s\S]*?margin-bottom:\s*var\(--sm-space-4\);/);

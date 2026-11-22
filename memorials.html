@@ -346,7 +346,7 @@
             color: var(--sm-color-text);
             border-radius: var(--sm-radius-sm);
             padding: var(--sm-space-3) var(--sm-space-4);
-            min-height: 17.5rem;
+            min-height: 13.3375rem;
         }
         .stone-band-lead {
             margin: 0 0 var(--sm-space-3);
@@ -390,22 +390,12 @@
             overflow: hidden;
             color: var(--sm-color-text);
         }
-        .stone-band-note {
-            margin: var(--sm-space-3) 0 0;
-            font-family: var(--sm-font-body);
-            font-size: var(--sm-text-xs);
-            line-height: 1.4;
-            color: var(--sm-color-text-muted);
-            min-height: calc(1.4em * 3);
-        }
         @media (min-width: 768px) {
-            .products-grid > .stone-band { min-height: 15.75rem; }
+            .products-grid > .stone-band { min-height: 12.725rem; }
             .stone-band-lead { min-height: 1.35em; }
-            .stone-band-note { min-height: calc(1.4em * 2); }
         }
         @media (min-width: 1024px) {
-            .products-grid > .stone-band { min-height: 14.5rem; }
-            .stone-band-note { min-height: 1.4em; }
+            .products-grid > .stone-band { min-height: 12.6125rem; }
         }
         @media (min-width: 901px) and (max-width: 1100px) {
             #productsGrid { min-height: 34rem; }
@@ -731,7 +721,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261122g">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261122h">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -742,6 +732,12 @@
         .type-browse-list::-webkit-scrollbar { display: none; }
         .type-browse::after { content: ""; position: absolute; right: 0; bottom: 0; width: 2.5rem; height: 44px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--color-cream)); }
         .type-count { margin-left: 0.35rem; font-family: var(--sm-font-body); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+        /* Icons, short labels and the Filter cue are phone-only (Option A,
+           <=767px). Above that, chips stay plain text with a count, same as
+           before — these stay display:none so desktop/tablet are unchanged. */
+        .type-browse-list a .type-icon,
+        .type-browse-list a .type-label-short,
+        .type-filter-cue { display: none; }
         .price-sort { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: 1px solid var(--sm-color-border-decorative); border-radius: var(--sm-radius-sm); background: var(--sm-color-bg-surface); color: var(--sm-color-text); cursor: pointer; }
         .price-sort svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
         .price-sort[data-sort="price-low"] .price-sort-down,
@@ -838,8 +834,7 @@
         }
         /* Mobile compact stone strip. Desktop and tablet keep the #stoneBand
            inside #productsGrid untouched. */
-        .listing-stone-inline,
-        .listing-stone-inline-note { display: none; }
+        .listing-stone-inline { display: none; }
         @media (max-width: 767px) {
             /* Shrink the page-title area so the strip clears the bottom nav
                at small phone heights (320x568). Text content is unchanged. */
@@ -871,6 +866,100 @@
             html body:has(.catalogue) header.page-header .page-header-phone-line { display: block; font-size: 13px; line-height: 1.25; min-height: 0; margin: 0 auto; white-space: nowrap; }
             .catalogue { padding-top: 0.15rem; }
             .catalogue-toolbar { margin-bottom: 0.5rem; }
+            /* Type chips, Option A: a small line icon above a short label,
+               with a leading sticky "Filter" cue. Row grows 44px -> 56px to
+               fit the two-line chip; full names stay in the DOM (the link's
+               accessible name) but hide visually in favour of the icon. */
+            .catalogue-toolbar,
+            .type-browse,
+            .type-browse-list { height: 56px; min-height: 56px; max-height: 56px; }
+            .type-browse::after { height: 56px; }
+            .type-browse-list { gap: 0.3rem; align-items: center; scroll-padding-inline: 72px 2.5rem; }
+            .price-sort { align-self: center; }
+            .type-filter-cue {
+                display: flex;
+                flex: 0 0 auto;
+                align-items: stretch;
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                background: var(--color-cream);
+                padding-right: 4px;
+                margin-right: 4px; /* All chip rests >=8px clear of the cue at scrollLeft 0 */
+            }
+            .type-filter-tab {
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                width: 48px;
+                height: 56px;
+                min-height: 44px;
+                padding: 4px 6px 3px 0;
+                border-right: 1px solid var(--sm-color-border-decorative);
+                font-family: var(--sm-font-body);
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1.15;
+                color: var(--sm-color-text-accent-strong);
+                white-space: nowrap;
+                pointer-events: none;
+            }
+            .type-filter-tab .type-icon {
+                width: 18px;
+                height: 18px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.7;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex: 0 0 auto;
+            }
+            .type-browse-list a {
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                height: 56px;
+                min-height: 44px;
+                min-width: 52px;
+                padding: 4px 6px 3px;
+                border-radius: 8px;
+            }
+            .type-browse-list a .type-icon {
+                display: block;
+                width: 22px;
+                height: 22px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.6;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex: 0 0 auto;
+            }
+            .type-browse-list a .type-label-full {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                clip-path: inset(50%);
+                white-space: nowrap;
+                border: 0;
+            }
+            .type-browse-list a .type-count { display: none; }
+            .type-browse-list a .type-label-short {
+                display: block;
+                font-size: 12px;
+                line-height: 1.15;
+                letter-spacing: 0;
+                text-align: center;
+                font-family: var(--sm-font-body);
+            }
             /* The permanent stone strip is now the one sticky bar under the
                header; two stickies stacked would overlap. */
             .results-header { position: static; top: auto; z-index: auto; margin: 0 0 0.2rem; padding: 0; background: transparent; border-bottom: 0; }
@@ -914,9 +1003,9 @@
                 display: block;
                 position: relative;
                 overflow: hidden;
-                width: 56px;
-                height: 56px;
-                flex: 0 0 56px;
+                width: 70px;
+                height: 70px;
+                flex: 0 0 70px;
                 margin: 0 0 2px;
                 border-radius: var(--sm-radius-sm);
                 border: 1px solid var(--sm-color-border-decorative);
@@ -941,15 +1030,6 @@
                 line-height: 1.1;
                 text-align: center;
                 color: var(--sm-color-text);
-            }
-            .listing-stone-inline-lead-price {
-                display: block;
-                width: 100%;
-                font-family: var(--sm-font-body);
-                font-size: 11px;
-                line-height: 1.1;
-                text-align: center;
-                color: var(--sm-color-text-muted);
             }
             /* Two scrolling rows of plain 44x44 tap targets — the selected
                colour's name now lives in the lead column, not under its
@@ -1014,16 +1094,6 @@
                 background: linear-gradient(90deg, transparent, var(--sm-color-bg-surface));
             }
             main > .catalogue-toolbar { margin-top: 4px; }
-            .listing-stone-inline-note {
-                display: block;
-                margin: 0 0 6px;
-                padding: 0;
-                font-family: var(--sm-font-body);
-                font-size: var(--sm-text-xs);
-                font-weight: var(--sm-weight-body);
-                line-height: 1.3;
-                color: var(--sm-color-text-muted);
-            }
             /* Hide the desktop/tablet stone band inside the grid; the strip
                above replaces it on phones. */
             .products-grid > .stone-band { display: none; }
@@ -1163,7 +1233,7 @@
         <h1>Headstones, gravestones and memorials</h1>
         <p>Browse our memorials. Each piece is made to your specification.</p>
         <p class="service-area-line">We serve families across Greater London.</p>
-        <p class="page-header-phone-line">Made to your specification for Greater London families.</p>
+        <p class="page-header-phone-line">Made to your specification for London families.</p>
     </header>
 
     <section class="catalogue">
@@ -1174,22 +1244,22 @@
                     <span class="listing-stone-inline-lead-photo" id="listingStoneInlineLeadPhoto"></span>
                     <span class="listing-stone-inline-lead-meta">
                         <span class="listing-stone-inline-lead-name" id="listingStoneInlineLeadName" aria-live="polite"></span>
-                        <span class="listing-stone-inline-lead-price" id="listingStoneInlineLeadPrice" aria-live="polite"></span>
                     </span>
                 </div>
                 <div class="listing-stone-inline-row" id="listingStoneInlineRow"></div>
             </section>
             <div class="catalogue-toolbar">
-            <nav class="type-browse" aria-label="Browse by type">
+            <nav class="type-browse" aria-label="Filter by type">
                 <ul class="type-browse-list">
-                <li><a class="type-all" href="/memorials">All memorials <span class="type-count" data-type-count="all"></span></a></li>
-                <li><a href="/memorials?type=lawn-headstones">Lawn headstones <span class="type-count" data-type-count="lawn-headstones"></span></a></li>
-                <li><a href="/memorials?type=kerb-sets">Kerb sets <span class="type-count" data-type-count="kerb-sets"></span></a></li>
-                <li><a href="/memorials?type=heart-memorials">Heart memorials <span class="type-count" data-type-count="heart-memorials"></span></a></li>
-                <li><a href="/memorials?type=book-memorials">Book memorials <span class="type-count" data-type-count="book-memorials"></span></a></li>
-                <li><a href="/memorials?type=churchyard-memorials">Churchyard memorials <span class="type-count" data-type-count="churchyard-memorials"></span></a></li>
-                <li><a href="/memorials?type=cremation-memorials">Cremation memorials <span class="type-count" data-type-count="cremation-memorials"></span></a></li>
-                <li><a href="/memorials?type=childrens-memorials">Children's memorials <span class="type-count" data-type-count="childrens-memorials"></span></a></li>
+                <li class="type-filter-cue" aria-hidden="true"><span class="type-filter-tab"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7.4V18l-3.6 2v-7.6L4 5z"/></svg><span class="type-filter-word">Filter</span></span></li>
+                <li><a class="type-all" href="/memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg><span class="type-label-full">All memorials</span><span class="type-label-short" aria-hidden="true">All</span> <span class="type-count" data-type-count="all"></span></a></li>
+                <li><a href="/memorials?type=lawn-headstones"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20V9.5C7 6.6 9.1 4.5 12 4.5S17 6.6 17 9.5V20"/><path d="M5.5 20h13"/></svg><span class="type-label-full">Lawn headstones</span><span class="type-label-short" aria-hidden="true">Lawn</span> <span class="type-count" data-type-count="lawn-headstones"></span></a></li>
+                <li><a href="/memorials?type=kerb-sets"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5.5h6v9H9z"/><path d="M5 14.5h14V20H5z"/></svg><span class="type-label-full">Kerb sets</span><span class="type-label-short" aria-hidden="true">Kerb</span> <span class="type-count" data-type-count="kerb-sets"></span></a></li>
+                <li><a href="/memorials?type=heart-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19S4.8 13.8 3.6 9.7C2.7 6.8 4.6 4.5 7.4 4.5c1.7 0 3 .9 3.8 2.2h.6c.8-1.3 2.1-2.2 3.8-2.2 2.8 0 4.7 2.3 3.8 5.2C19.2 13.8 12 19 12 19z"/><path d="M8 20.5h8"/></svg><span class="type-label-full">Heart memorials</span><span class="type-label-short" aria-hidden="true">Heart</span> <span class="type-count" data-type-count="heart-memorials"></span></a></li>
+                <li><a href="/memorials?type=book-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5v13"/><path d="M12 6.5C10 5.4 7.5 5 5 5.5v13c2.5-.5 5-.1 7 1"/><path d="M12 6.5C14 5.4 16.5 5 19 5.5v13c-2.5-.5-5-.1-7 1"/></svg><span class="type-label-full">Book memorials</span><span class="type-label-short" aria-hidden="true">Book</span> <span class="type-count" data-type-count="book-memorials"></span></a></li>
+                <li><a href="/memorials?type=churchyard-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v2.5"/><path d="M10.2 5h3.6"/><path d="M8 9.5L12 5.5 16 9.5V12h4v8.5H4V12h4V9.5z"/><path d="M11 20.5v-5h2v5"/></svg><span class="type-label-full">Churchyard memorials</span><span class="type-label-short" aria-hidden="true">Churchyard</span> <span class="type-count" data-type-count="churchyard-memorials"></span></a></li>
+                <li><a href="/memorials?type=cremation-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8v1.8H8z"/><path d="M10 5.3h4c3.4 1.2 4.5 3.8 4.5 7 0 3.6-2.5 5.7-6.5 6.2v2"/><path d="M10 5.3C6.6 6.5 5.5 9.1 5.5 12.3c0 3.6 2.5 5.7 6.5 6.2"/><path d="M8.5 20.5h7"/></svg><span class="type-label-full">Cremation memorials</span><span class="type-label-short" aria-hidden="true">Cremation</span> <span class="type-count" data-type-count="cremation-memorials"></span></a></li>
+                <li><a href="/memorials?type=childrens-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15"/><path d="M12 8C8.2 4.8 4.5 6.2 5.8 11.2 4.6 16.2 8.2 17 12 13.5"/><path d="M12 8c3.8-3.2 7.5-1.8 6.2 3.2 1.2 5-2.4 5.8-6.2 2.3"/></svg><span class="type-label-full">Children's memorials</span><span class="type-label-short" aria-hidden="true">Children</span> <span class="type-count" data-type-count="childrens-memorials"></span></a></li>
                 </ul>
             </nav>
             <button type="button" class="price-sort" id="priceSort" data-sort="featured" aria-pressed="false" aria-label="Usual order" onclick="cyclePriceSort()">
@@ -1220,7 +1290,6 @@
                         <span class="results-count">Showing <span id="resultsCount">...</span> memorials</span>
                     </div>
                 </div>
-                <p class="listing-stone-inline-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p>
                 <div class="products-grid" id="productsGrid">
                     <div id="productsLoading" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
                         <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--color-accent); fill: none; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
@@ -1230,7 +1299,6 @@
                     <div class="stone-band" id="stoneBand">
                         <p class="stone-band-lead">Every design comes in all <span id="stoneColourCount"></span> stone colours</p>
                         <div class="stone-swatches" id="stoneSwatches" role="list" aria-label="Stone colours"></div>
-                        <p class="stone-band-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p>
                     </div>
                     <div class="no-results" id="noResults" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
@@ -1563,32 +1631,8 @@
 
         var listingInlineSelectedSlug = '';
 
-        // Per-colour surcharge overrides, keyed by stone_colours.slug. Mirrors
-        // functions/memorials.js premiumColourSurcharge (display-only; the
-        // quote itself is priced server-side at submit time).
-        var LISTING_COLOUR_SURCHARGE_OVERRIDES = Object.freeze({
-            'crystal-white': Object.freeze({ 'kerb-sets': 1050, 'cremation-memorials': 90, 'default': 500 })
-        });
-
-        function listingColourSurcharge(colourSlug) {
-            var categorySlug = state.filters.type.length === 1 ? state.filters.type[0] : '';
-            var key = String(colourSlug || '').trim().toLowerCase();
-            var override = key ? LISTING_COLOUR_SURCHARGE_OVERRIDES[key] : undefined;
-            if (override) {
-                return Object.hasOwn(override, categorySlug) ? override[categorySlug] : override.default;
-            }
-            if (categorySlug === 'kerb-sets') return 550;
-            if (categorySlug === 'cremation-memorials') return 90;
-            return 200;
-        }
-
         function listingColourTier(colour) {
             return colour.tier || (colour.is_premium ? 'premium' : 'standard');
-        }
-
-        function listingInlinePriceLabel(colour) {
-            if (listingColourTier(colour) === 'standard') return 'Included';
-            return '+£' + listingColourSurcharge(colour.slug);
         }
 
         function listingColourBySlug(slug) {
@@ -1626,8 +1670,7 @@
             var lead = document.getElementById('listingStoneInlineLead');
             var photo = document.getElementById('listingStoneInlineLeadPhoto');
             var nameEl = document.getElementById('listingStoneInlineLeadName');
-            var priceEl = document.getElementById('listingStoneInlineLeadPrice');
-            if (!lead || !photo || !nameEl || !priceEl) return;
+            if (!lead || !photo || !nameEl) return;
             const name = String(colour.name || '').slice(0, 80) || 'Stone colour';
             const primaryHex = safeHex(colour.hex_primary);
             const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
@@ -1636,16 +1679,10 @@
                 : safeImageUrl(colour.image_url);
             photo.style.background = 'linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ')';
             photo.innerHTML = imageUrl
-                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="56" height="56" decoding="async" onerror="this.remove()">'
+                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="70" height="70" decoding="async" onerror="this.remove()">'
                 : '';
             nameEl.textContent = name;
-            priceEl.textContent = listingInlinePriceLabel(colour);
             lead.setAttribute('data-slug', listingInlineSelectedSlug);
-        }
-
-        function updateListingInlineLeadPrice() {
-            var colour = listingColourBySlug(listingInlineSelectedSlug) || (state.colours && state.colours[0]);
-            if (colour) renderListingInlineLead(colour);
         }
 
         function selectListingInlineSwatch(button) {
@@ -1973,7 +2010,6 @@
                 change = { filter_name: source.filter_name, filter_value: source.filter_value, selected: !!source.selected };
             }
             updateActiveFiltersDisplay();
-            updateListingInlineLeadPrice();
             syncTypeParam(!!(options && options.push));
             if (!state.productsData.length) {
                 if (change) pendingFilterChange = change;
@@ -2016,16 +2052,23 @@
             // chip fully visible by scrolling only the chip row sideways.
             // Never scroll the document (footer links share the same hrefs).
             const list = document.querySelector('.type-browse-list');
-            const chip = list && list.querySelector('a[aria-current="page"]');
-            if (list && chip && list.scrollWidth > list.clientWidth) {
-                const pad = 16;
-                const lr = list.getBoundingClientRect();
-                const cr = chip.getBoundingClientRect();
-                const left = cr.left - lr.left + list.scrollLeft;
-                const right = left + cr.width;
-                if (left - pad < list.scrollLeft) list.scrollLeft = Math.max(0, left - pad);
-                else if (right + pad > list.scrollLeft + list.clientWidth) list.scrollLeft = right + pad - list.clientWidth;
-            }
+            keepChipInView(list, list && list.querySelector('a[aria-current="page"]'));
+        }
+
+        // Chromium's focus scrolling ignores scroll-padding-inline, so it only
+        // scrolls the minimum to bring a chip inside the raw scrollport —
+        // which can leave it under the sticky cue or the right-hand fade.
+        // Never scroll the document (footer links share the same hrefs).
+        function keepChipInView(list, chip) {
+            if (!list || !chip || list.scrollWidth <= list.clientWidth) return;
+            const lr = list.getBoundingClientRect();
+            const cue = list.querySelector('.type-filter-cue');
+            const cr0 = cue ? cue.getBoundingClientRect() : null;
+            const minLeft = (cr0 && cr0.width > 0) ? cr0.right + 8 : lr.left + 16;
+            const maxRight = lr.right - 40;
+            const cr = chip.getBoundingClientRect();
+            if (cr.left < minLeft) list.scrollLeft = Math.max(0, list.scrollLeft - (minLeft - cr.left));
+            else if (cr.right > maxRight) list.scrollLeft = list.scrollLeft + (cr.right - maxRight);
         }
 
         function onTypeChipClick(event) {
@@ -2368,7 +2411,14 @@
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             var typeList = document.querySelector('.type-browse-list');
-            if (typeList) typeList.addEventListener('click', onTypeChipClick);
+            if (typeList) {
+                typeList.addEventListener('click', onTypeChipClick);
+                typeList.addEventListener('focusin', function (event) {
+                    const link = event.target && event.target.closest ? event.target.closest('a') : null;
+                    if (!link || !typeList.contains(link)) return;
+                    requestAnimationFrame(() => keepChipInView(typeList, link));
+                });
+            }
             setupListingInline();
             window.addEventListener('popstate', function () {
                 const params = new URLSearchParams(window.location.search);
