@@ -393,6 +393,14 @@ html body .page-header p { font-size: var(--sm-text-body); max-width: var(--sm-m
   html body .product-category { font-size: 0.75rem; }
 }
 
+.sm-form-privacy-link {
+  display: inline-block;
+  padding-block: 12px;
+  margin-block: -12px;
+  padding-inline: 2px;
+  margin-inline: -2px;
+}
+
 /* Contact */
 html body .form-group label { font-size: 0.875rem; letter-spacing: 0.04em; }
 html body .contact-method-content h4 { font-size: 1rem; }
