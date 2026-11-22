@@ -44,7 +44,10 @@ for (const [slug, full] of Object.entries(FULL)) {
   const href = slug === "all" ? "/memorials" : `/memorials?type=${slug}`;
   const link = links.find((a) => a.includes(`href="${href}"`));
   assert.ok(link, `missing chip for ${slug}`);
-  assert.match(link, new RegExp(`aria-label="${full.replace(/'/g, "&#039;|'")}"`), `${slug} aria-label`);
+  // No fixed aria-label: the accessible name comes from content (full label
+  // + visible count on desktop), so it isn't stuck at "Kerb sets" when the
+  // chip shows "Kerb sets 33".
+  assert.doesNotMatch(link, /aria-label="/, `${slug} should not have a fixed aria-label`);
   assert.match(link, /<svg class="type-icon"[^>]*aria-hidden="true"/, `${slug} icon`);
   assert.match(link, new RegExp(`<span class="type-label-full">${full}</span>`), `${slug} full label text`);
   assert.match(link, new RegExp(`<span class="type-label-short" aria-hidden="true">${SHORT[slug]}</span>`), `${slug} short label`);
@@ -68,13 +71,28 @@ const phoneBlock = html.slice(html.indexOf('@media (max-width: 767px) {\n       
 const optionA = phoneBlock.slice(phoneBlock.indexOf("Option A"), phoneBlock.indexOf("/* The permanent stone strip"));
 assert.match(optionA, /\.catalogue-toolbar,\s*\n\s*\.type-browse,\s*\n\s*\.type-browse-list \{ height: 56px; min-height: 56px; max-height: 56px; \}/);
 assert.match(optionA, /\.type-browse::after \{ height: 56px; \}/);
-assert.match(optionA, /\.type-browse-list \{ gap: 0\.3rem; align-items: center; \}/);
+assert.match(
+  optionA,
+  /\.type-browse-list \{ gap: 0\.3rem; align-items: center; scroll-padding-inline: 72px 2\.5rem; \}/,
+);
 assert.match(optionA, /min-width:\s*52px/);
 assert.match(optionA, /border-radius:\s*8px/);
 assert.match(optionA, /gap:\s*2px/);
 assert.match(optionA, /min-height:\s*44px/);
 assert.match(optionA, /width:\s*48px/);
 assert.match(optionA, /\.type-filter-tab \{/);
+
+// The sticky Filter cue covers roughly x 0-64 on phones; a chip scrolled in
+// from the left must clear it. .type-label-full is sr-only clipped (not
+// display:none) so it stays in the accessible-name text while invisible,
+// and the row's own scroll-padding-inline-start also clears the cue for
+// focus scrolling.
+assert.match(
+  optionA,
+  /\.type-browse-list a \.type-label-full \{\s*position: absolute;\s*width: 1px;\s*height: 1px;\s*padding: 0;\s*margin: -1px;\s*overflow: hidden;\s*clip: rect\(0, 0, 0, 0\);\s*clip-path: inset\(50%\);\s*white-space: nowrap;\s*border: 0;\s*\}/,
+);
+assert.doesNotMatch(optionA, /\.type-browse-list a \.type-label-full[^{]*\{[^}]*display:\s*none/);
+assert.match(optionA, /\.type-browse-list a \.type-count \{ display: none; \}/);
 
 // ---- Intro copy (Arin t2441u): drop "Greater" from the phone line ----
 assert.match(html, /<p class="page-header-phone-line">Made to your specification for London families\.<\/p>/);
@@ -83,5 +101,29 @@ assert.doesNotMatch(html, /specification for Greater London families/);
 // ---- Header logo link: >=44px tap area on phones, no visual change ----
 const upgrades = readFileSync(new URL("../site-upgrades.css", import.meta.url), "utf8");
 assert.match(upgrades, /html body #navbar \.logo \{\s*min-height: 44px;\s*\}/);
+
+// ---- FIX: a chip scrolled in from the left must clear the sticky Filter
+// cue (it covers ~x 0-64 on phones). markTypeLinks measures the cue's own
+// width for the left inset instead of a fixed 16px, so it tracks the cue's
+// real rendered width rather than assuming it.
+const markTypeLinksFn = html.slice(
+  html.indexOf("function markTypeLinks()"),
+  html.indexOf("function onTypeChipClick"),
+);
+assert.match(
+  markTypeLinksFn,
+  /const cue = list\.querySelector\('\.type-filter-cue'\);/,
+  "markTypeLinks must measure the Filter cue",
+);
+assert.match(
+  markTypeLinksFn,
+  /cue\.getBoundingClientRect\(\)\.width/,
+  "markTypeLinks must read the cue's rendered width",
+);
+assert.match(
+  markTypeLinksFn,
+  /left - padL < list\.scrollLeft/,
+  "the measured cue width must drive the left-branch inset",
+);
 
 console.log("type-chips-option-a: ok");

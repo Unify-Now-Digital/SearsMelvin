@@ -874,7 +874,7 @@
             .type-browse,
             .type-browse-list { height: 56px; min-height: 56px; max-height: 56px; }
             .type-browse::after { height: 56px; }
-            .type-browse-list { gap: 0.3rem; align-items: center; }
+            .type-browse-list { gap: 0.3rem; align-items: center; scroll-padding-inline: 72px 2.5rem; }
             .price-sort { align-self: center; }
             .type-filter-cue {
                 display: flex;
@@ -939,7 +939,18 @@
                 stroke-linejoin: round;
                 flex: 0 0 auto;
             }
-            .type-browse-list a .type-label-full,
+            .type-browse-list a .type-label-full {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                clip-path: inset(50%);
+                white-space: nowrap;
+                border: 0;
+            }
             .type-browse-list a .type-count { display: none; }
             .type-browse-list a .type-label-short {
                 display: block;
@@ -1241,14 +1252,14 @@
             <nav class="type-browse" aria-label="Filter by type">
                 <ul class="type-browse-list">
                 <li class="type-filter-cue" aria-hidden="true"><span class="type-filter-tab"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7.4V18l-3.6 2v-7.6L4 5z"/></svg><span class="type-filter-word">Filter</span></span></li>
-                <li><a class="type-all" href="/memorials" aria-label="All memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg><span class="type-label-full">All memorials</span><span class="type-label-short" aria-hidden="true">All</span> <span class="type-count" data-type-count="all"></span></a></li>
-                <li><a href="/memorials?type=lawn-headstones" aria-label="Lawn headstones"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20V9.5C7 6.6 9.1 4.5 12 4.5S17 6.6 17 9.5V20"/><path d="M5.5 20h13"/></svg><span class="type-label-full">Lawn headstones</span><span class="type-label-short" aria-hidden="true">Lawn</span> <span class="type-count" data-type-count="lawn-headstones"></span></a></li>
-                <li><a href="/memorials?type=kerb-sets" aria-label="Kerb sets"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5.5h6v9H9z"/><path d="M5 14.5h14V20H5z"/></svg><span class="type-label-full">Kerb sets</span><span class="type-label-short" aria-hidden="true">Kerb</span> <span class="type-count" data-type-count="kerb-sets"></span></a></li>
-                <li><a href="/memorials?type=heart-memorials" aria-label="Heart memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19S4.8 13.8 3.6 9.7C2.7 6.8 4.6 4.5 7.4 4.5c1.7 0 3 .9 3.8 2.2h.6c.8-1.3 2.1-2.2 3.8-2.2 2.8 0 4.7 2.3 3.8 5.2C19.2 13.8 12 19 12 19z"/><path d="M8 20.5h8"/></svg><span class="type-label-full">Heart memorials</span><span class="type-label-short" aria-hidden="true">Heart</span> <span class="type-count" data-type-count="heart-memorials"></span></a></li>
-                <li><a href="/memorials?type=book-memorials" aria-label="Book memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5v13"/><path d="M12 6.5C10 5.4 7.5 5 5 5.5v13c2.5-.5 5-.1 7 1"/><path d="M12 6.5C14 5.4 16.5 5 19 5.5v13c-2.5-.5-5-.1-7 1"/></svg><span class="type-label-full">Book memorials</span><span class="type-label-short" aria-hidden="true">Book</span> <span class="type-count" data-type-count="book-memorials"></span></a></li>
-                <li><a href="/memorials?type=churchyard-memorials" aria-label="Churchyard memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v2.5"/><path d="M10.2 5h3.6"/><path d="M8 9.5L12 5.5 16 9.5V12h4v8.5H4V12h4V9.5z"/><path d="M11 20.5v-5h2v5"/></svg><span class="type-label-full">Churchyard memorials</span><span class="type-label-short" aria-hidden="true">Churchyard</span> <span class="type-count" data-type-count="churchyard-memorials"></span></a></li>
-                <li><a href="/memorials?type=cremation-memorials" aria-label="Cremation memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8v1.8H8z"/><path d="M10 5.3h4c3.4 1.2 4.5 3.8 4.5 7 0 3.6-2.5 5.7-6.5 6.2v2"/><path d="M10 5.3C6.6 6.5 5.5 9.1 5.5 12.3c0 3.6 2.5 5.7 6.5 6.2"/><path d="M8.5 20.5h7"/></svg><span class="type-label-full">Cremation memorials</span><span class="type-label-short" aria-hidden="true">Cremation</span> <span class="type-count" data-type-count="cremation-memorials"></span></a></li>
-                <li><a href="/memorials?type=childrens-memorials" aria-label="Children's memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15"/><path d="M12 8C8.2 4.8 4.5 6.2 5.8 11.2 4.6 16.2 8.2 17 12 13.5"/><path d="M12 8c3.8-3.2 7.5-1.8 6.2 3.2 1.2 5-2.4 5.8-6.2 2.3"/></svg><span class="type-label-full">Children's memorials</span><span class="type-label-short" aria-hidden="true">Children</span> <span class="type-count" data-type-count="childrens-memorials"></span></a></li>
+                <li><a class="type-all" href="/memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg><span class="type-label-full">All memorials</span><span class="type-label-short" aria-hidden="true">All</span> <span class="type-count" data-type-count="all"></span></a></li>
+                <li><a href="/memorials?type=lawn-headstones"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20V9.5C7 6.6 9.1 4.5 12 4.5S17 6.6 17 9.5V20"/><path d="M5.5 20h13"/></svg><span class="type-label-full">Lawn headstones</span><span class="type-label-short" aria-hidden="true">Lawn</span> <span class="type-count" data-type-count="lawn-headstones"></span></a></li>
+                <li><a href="/memorials?type=kerb-sets"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5.5h6v9H9z"/><path d="M5 14.5h14V20H5z"/></svg><span class="type-label-full">Kerb sets</span><span class="type-label-short" aria-hidden="true">Kerb</span> <span class="type-count" data-type-count="kerb-sets"></span></a></li>
+                <li><a href="/memorials?type=heart-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19S4.8 13.8 3.6 9.7C2.7 6.8 4.6 4.5 7.4 4.5c1.7 0 3 .9 3.8 2.2h.6c.8-1.3 2.1-2.2 3.8-2.2 2.8 0 4.7 2.3 3.8 5.2C19.2 13.8 12 19 12 19z"/><path d="M8 20.5h8"/></svg><span class="type-label-full">Heart memorials</span><span class="type-label-short" aria-hidden="true">Heart</span> <span class="type-count" data-type-count="heart-memorials"></span></a></li>
+                <li><a href="/memorials?type=book-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5v13"/><path d="M12 6.5C10 5.4 7.5 5 5 5.5v13c2.5-.5 5-.1 7 1"/><path d="M12 6.5C14 5.4 16.5 5 19 5.5v13c-2.5-.5-5-.1-7 1"/></svg><span class="type-label-full">Book memorials</span><span class="type-label-short" aria-hidden="true">Book</span> <span class="type-count" data-type-count="book-memorials"></span></a></li>
+                <li><a href="/memorials?type=churchyard-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v2.5"/><path d="M10.2 5h3.6"/><path d="M8 9.5L12 5.5 16 9.5V12h4v8.5H4V12h4V9.5z"/><path d="M11 20.5v-5h2v5"/></svg><span class="type-label-full">Churchyard memorials</span><span class="type-label-short" aria-hidden="true">Churchyard</span> <span class="type-count" data-type-count="churchyard-memorials"></span></a></li>
+                <li><a href="/memorials?type=cremation-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8v1.8H8z"/><path d="M10 5.3h4c3.4 1.2 4.5 3.8 4.5 7 0 3.6-2.5 5.7-6.5 6.2v2"/><path d="M10 5.3C6.6 6.5 5.5 9.1 5.5 12.3c0 3.6 2.5 5.7 6.5 6.2"/><path d="M8.5 20.5h7"/></svg><span class="type-label-full">Cremation memorials</span><span class="type-label-short" aria-hidden="true">Cremation</span> <span class="type-count" data-type-count="cremation-memorials"></span></a></li>
+                <li><a href="/memorials?type=childrens-memorials"><svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15"/><path d="M12 8C8.2 4.8 4.5 6.2 5.8 11.2 4.6 16.2 8.2 17 12 13.5"/><path d="M12 8c3.8-3.2 7.5-1.8 6.2 3.2 1.2 5-2.4 5.8-6.2 2.3"/></svg><span class="type-label-full">Children's memorials</span><span class="type-label-short" aria-hidden="true">Children</span> <span class="type-count" data-type-count="childrens-memorials"></span></a></li>
                 </ul>
             </nav>
             <button type="button" class="price-sort" id="priceSort" data-sort="featured" aria-pressed="false" aria-label="Usual order" onclick="cyclePriceSort()">
@@ -2044,11 +2055,14 @@
             const chip = list && list.querySelector('a[aria-current="page"]');
             if (list && chip && list.scrollWidth > list.clientWidth) {
                 const pad = 16;
+                const cue = list.querySelector('.type-filter-cue');
+                const cueW = cue ? cue.getBoundingClientRect().width : 0;
+                const padL = cueW > 0 ? cueW + 8 : pad;
                 const lr = list.getBoundingClientRect();
                 const cr = chip.getBoundingClientRect();
                 const left = cr.left - lr.left + list.scrollLeft;
                 const right = left + cr.width;
-                if (left - pad < list.scrollLeft) list.scrollLeft = Math.max(0, left - pad);
+                if (left - padL < list.scrollLeft) list.scrollLeft = Math.max(0, left - padL);
                 else if (right + pad > list.scrollLeft + list.clientWidth) list.scrollLeft = right + pad - list.clientWidth;
             }
         }
