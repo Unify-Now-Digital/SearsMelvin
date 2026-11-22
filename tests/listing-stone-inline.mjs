@@ -57,9 +57,16 @@ assert.match(mobileCss, /scrollbar-width:\s*none/);
 assert.match(mobileCss, /\.products-grid > \.stone-band \{ display: none; \}/);
 assert.doesNotMatch(mobileCss, /chat-widget|floating-btn/);
 
-// At >=768px the band-hiding rule must not apply — only inside the 767 query.
-const before767 = html.slice(0, html.indexOf("@media (max-width: 767px)"));
-assert.doesNotMatch(before767, /\.products-grid > \.stone-band \{ display: none; \}/);
+// Phones still hide the in-grid band. Desktop option B also hides it at ≥768
+// (the Colour pill replaces the standing colour block). The unscoped
+// .desktop-colour rule is display:none so phones stay unchanged.
+assert.match(mobileCss, /\.products-grid > \.stone-band \{ display: none; \}/);
+const desktopColourCssStart = html.indexOf("/* Desktop colour pill (option B).");
+assert.ok(desktopColourCssStart > -1, "desktop colour CSS missing");
+const desktopColourCss = html.slice(desktopColourCssStart, html.indexOf("/* Mobile compact stone strip."));
+assert.match(desktopColourCss, /@media \(min-width: 768px\)/);
+assert.match(desktopColourCss, /\.products-grid > \.stone-band \{ display: none; \}/);
+assert.match(desktopColourCss, /\.desktop-colour \{ display: none; \}/);
 
 // ---- Server markup ----
 assert.match(server, /function stoneInlineMarkup/);

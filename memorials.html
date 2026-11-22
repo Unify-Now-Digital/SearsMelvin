@@ -826,6 +826,216 @@
             .catalogue { padding-top: 0.45rem; }
             .catalogue-toolbar { margin-bottom: 0.6rem; }
         }
+
+        /* Desktop colour pill (option B). Hidden on phones; shown at ≥768px. */
+        .desktop-colour { display: none; }
+        @media (min-width: 768px) {
+            .products-grid > .stone-band { display: none; }
+            .catalogue-container { max-width: 1400px; }
+            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+            .catalogue-toolbar {
+                position: sticky;
+                top: calc(var(--header-height, 80px) + var(--sm-cookie-stack, 0px));
+                z-index: 60;
+                box-sizing: content-box;
+                height: 44px;
+                min-height: 44px;
+                max-height: 44px;
+                margin: 0 -2rem 0.75rem;
+                padding: 0.55rem 2rem;
+                background: var(--color-cream);
+                border-bottom: 1px solid var(--sm-color-border-decorative);
+            }
+            .desktop-colour {
+                display: flex;
+                position: relative;
+                flex: 0 0 auto;
+                align-items: stretch;
+                height: 44px;
+                min-height: 44px;
+            }
+            .desktop-colour-group {
+                display: inline-flex;
+                align-items: stretch;
+                height: 44px;
+                min-height: 44px;
+            }
+            .desktop-colour-btn,
+            .desktop-colour-clear {
+                box-sizing: border-box;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 44px;
+                min-height: 44px;
+                min-width: 44px;
+                margin: 0;
+                padding: 0 0.85rem;
+                border: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm);
+                background: var(--sm-color-bg-surface);
+                color: var(--sm-color-text);
+                font-family: var(--sm-font-body);
+                font-size: inherit;
+                line-height: 1;
+                white-space: nowrap;
+                cursor: pointer;
+            }
+            .desktop-colour-btn { gap: 0.45rem; max-width: 16rem; }
+            .desktop-colour-btn-label { overflow: hidden; text-overflow: ellipsis; }
+            .desktop-colour-btn-chip {
+                display: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 2px;
+                border: 1px solid color-mix(in srgb, var(--sm-color-text) 25%, transparent);
+                background-size: cover;
+                background-position: center;
+                flex: 0 0 18px;
+            }
+            .desktop-colour.is-selected .desktop-colour-btn-chip { display: block; }
+            .desktop-colour-caret { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; flex: 0 0 12px; }
+            .desktop-colour-btn[aria-expanded="true"] .desktop-colour-caret { transform: rotate(180deg); }
+            .desktop-colour-clear { display: none; width: 44px; padding: 0; border-left-width: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+            .desktop-colour.is-selected .desktop-colour-clear { display: inline-flex; }
+            .desktop-colour.is-selected .desktop-colour-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+            .type-browse-list a[aria-current="page"],
+            .desktop-colour.is-selected .desktop-colour-btn,
+            .desktop-colour.is-selected .desktop-colour-clear {
+                border-color: var(--sm-color-text);
+                background: var(--sm-color-text);
+                color: var(--sm-color-bg);
+            }
+            .desktop-colour-btn:focus-visible,
+            .desktop-colour-clear:focus-visible {
+                outline: 2px solid var(--sm-color-border-strong);
+                outline-offset: 2px;
+                z-index: 1;
+            }
+            .desktop-colour-popover {
+                display: none;
+                position: fixed;
+                z-index: 80;
+                box-sizing: border-box;
+                width: min(36rem, calc(100vw - 2rem));
+                max-height: min(28rem, calc(100vh - var(--header-height, 80px) - 5rem));
+                overflow: auto;
+                padding: 0.9rem 1rem 1rem;
+                background: var(--sm-color-bg-surface);
+                color: var(--sm-color-text);
+                border: 1px solid var(--sm-color-border-decorative);
+                border-radius: var(--sm-radius-sm);
+                box-shadow: 0 8px 24px color-mix(in srgb, var(--sm-color-text) 16%, transparent);
+            }
+            .desktop-colour-popover.is-open { display: block; }
+            .desktop-colour-popover-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
+            .desktop-colour-popover-title {
+                margin: 0;
+                font-family: var(--sm-font-body);
+                font-size: 0.8rem;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: var(--sm-color-text);
+            }
+            .desktop-colour-popover-clear {
+                flex: 0 0 auto;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                background: none;
+                color: var(--color-accent-dark, var(--sm-color-text));
+                font-family: var(--sm-font-body);
+                font-size: 0.8rem;
+                cursor: pointer;
+                min-height: 44px;
+                min-width: 44px;
+                text-decoration: underline;
+            }
+            .desktop-colour-popover-clear[hidden] { display: none; }
+            .desktop-colour-selected {
+                margin: 0 0 0.75rem;
+                min-height: 1.3em;
+                font-family: var(--sm-font-body);
+                font-size: 0.9rem;
+                color: var(--sm-color-text);
+            }
+            .desktop-colour-grid {
+                display: grid;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 0.35rem 0.5rem;
+            }
+            .desktop-colour-swatch {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.3rem;
+                margin: 0;
+                padding: 0.2rem 0.15rem 0.35rem;
+                border: 0;
+                background: none;
+                color: inherit;
+                font-family: var(--sm-font-body);
+                cursor: pointer;
+                min-width: 0;
+                min-height: 44px;
+            }
+            .desktop-colour-swatch-hit {
+                box-sizing: border-box;
+                width: 44px;
+                height: 44px;
+                border-radius: var(--sm-radius-sm);
+                border: 1px solid var(--sm-color-border-decorative);
+                overflow: hidden;
+                position: relative;
+                flex: 0 0 44px;
+            }
+            .desktop-colour-swatch[aria-pressed="true"] .desktop-colour-swatch-hit {
+                box-shadow: 0 0 0 2px var(--sm-color-bg-surface), 0 0 0 4px var(--sm-color-text);
+            }
+            .desktop-colour-swatch:focus-visible { outline: 2px solid var(--sm-color-border-strong); outline-offset: 2px; }
+            .desktop-colour-swatch-name {
+                width: 100%;
+                font-size: 0.6875rem;
+                line-height: 1.2;
+                text-align: center;
+                color: var(--color-text-muted, var(--sm-color-text-muted));
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .desktop-colour-swatch[aria-pressed="true"] .desktop-colour-swatch-name { color: var(--sm-color-text); font-weight: 600; }
+            .desktop-colour-note {
+                margin: 0.85rem 0 0;
+                font-family: var(--sm-font-body);
+                font-size: var(--sm-text-xs, 0.75rem);
+                line-height: 1.4;
+                color: var(--color-text-muted, var(--sm-color-text-muted));
+            }
+        }
+        @media (min-width: 768px) and (max-width: 768px) {
+            /* Catalogue horizontal padding is 0.75rem at this exact width. */
+            .catalogue-toolbar {
+                margin-left: -0.75rem;
+                margin-right: -0.75rem;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+        }
+        @media (min-width: 1024px) {
+            .products-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 1280px) {
+            .catalogue-container { max-width: 1520px; }
+            .products-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (min-width: 1680px) {
+            .catalogue-container { max-width: 1760px; }
+            .products-grid { grid-template-columns: repeat(5, 1fr); }
+            .product-face { contain-intrinsic-size: auto 304px 520px; min-height: 520px; }
+        }
+
         /* Mobile compact stone strip. Desktop and tablet keep the #stoneBand
            inside #productsGrid untouched. */
         .listing-stone-inline,
@@ -1127,7 +1337,28 @@
                 <li><a href="/memorials?type=childrens-memorials">Children's memorials <span class="type-count" data-type-count="childrens-memorials"></span></a></li>
                 </ul>
             </nav>
-            <button type="button" class="price-sort" id="priceSort" data-sort="featured" aria-pressed="false" aria-label="Usual order" onclick="cyclePriceSort()">
+            <div class="desktop-colour" id="desktopColour">
+                <div class="desktop-colour-group">
+                    <button type="button" class="desktop-colour-btn" id="desktopColourBtn" aria-expanded="false" aria-controls="desktopColourPopover" aria-haspopup="dialog" aria-pressed="false">
+                        <span class="desktop-colour-btn-chip" id="desktopColourBtnChip" hidden></span>
+                        <span class="desktop-colour-btn-label" id="desktopColourBtnLabel">Colour</span>
+                        <svg class="desktop-colour-caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4"/></svg>
+                    </button>
+                    <button type="button" class="desktop-colour-clear" id="desktopColourClear" hidden aria-label="Clear colour">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                    </button>
+                </div>
+                <div class="desktop-colour-popover" id="desktopColourPopover" role="dialog" aria-labelledby="desktopColourPopoverTitle" hidden>
+                    <div class="desktop-colour-popover-head">
+                        <h2 class="desktop-colour-popover-title" id="desktopColourPopoverTitle">All <span id="desktopColourCount"></span> stone colours</h2>
+                        <button type="button" class="desktop-colour-popover-clear" id="desktopColourPopoverClear" hidden>Clear colour</button>
+                    </div>
+                    <p class="desktop-colour-selected" id="desktopColourSelected" aria-live="polite"></p>
+                    <div class="desktop-colour-grid" id="desktopColourGrid"></div>
+                    <p class="desktop-colour-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p>
+                </div>
+            </div>
+                        <button type="button" class="price-sort" id="priceSort" data-sort="featured" aria-pressed="false" aria-label="Usual order" onclick="cyclePriceSort()">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path class="price-sort-up" d="M8 16V6M5 9l3-3 3 3"/><path class="price-sort-down" d="M16 8v10M13 15l3 3 3-3"/></svg>
             </button>
             <div class="sort-dropdown">
@@ -1378,6 +1609,7 @@
                 renderTypeCounts();
                 renderStoneBand();
                 setupListingInline();
+                setupDesktopColour();
                 fillListingInlineRow();
                 initListingInlineLead();
                 if (!applyUrlFilters()) renderProducts();
@@ -1579,18 +1811,17 @@
         }
 
         function updateListingInlineLeadPrice() {
-            var colour = listingColourBySlug(listingInlineSelectedSlug) || (state.colours && state.colours[0]);
+            var colour = listingColourBySlug(listingInlineSelectedSlug) || (listingPhone() && state.colours && state.colours[0]);
             if (colour) renderListingInlineLead(colour);
+            else if (!listingPhone()) {
+                /* Desktop may have no colour selected; still refresh popover prices. */
+            }
+            refreshDesktopColourPrices();
         }
 
         function selectListingInlineSwatch(button) {
             if (!button) return;
-            var colour = listingColourBySlug(safeSlug(button.getAttribute('data-slug')));
-            if (!colour) return;
-            renderListingInlineLead(colour);
-            document.querySelectorAll('#listingStoneInlineRow .listing-stone-inline-swatch').forEach(function (el) {
-                el.setAttribute('aria-pressed', el === button ? 'true' : 'false');
-            });
+            selectListingColour(safeSlug(button.getAttribute('data-slug')));
         }
 
         function setupListingInline() {
@@ -1598,7 +1829,7 @@
             if (!section) return;
             var lead = document.getElementById('listingStoneInlineLead');
             var leadSlug = lead ? safeSlug(lead.getAttribute('data-slug')) : '';
-            if (!listingInlineSelectedSlug && leadSlug) listingInlineSelectedSlug = leadSlug;
+            if (!listingInlineSelectedSlug && leadSlug && listingPhone()) listingInlineSelectedSlug = leadSlug;
             if (section.dataset.bound) return;
             section.dataset.bound = '1';
             section.addEventListener('click', function (event) {
@@ -1609,9 +1840,285 @@
         }
 
         function initListingInlineLead() {
-            var colour = (listingInlineSelectedSlug && listingColourBySlug(listingInlineSelectedSlug)) || (state.colours && state.colours[0]);
+            var colour = (listingInlineSelectedSlug && listingColourBySlug(listingInlineSelectedSlug)) || (listingPhone() && state.colours && state.colours[0]);
             if (colour) renderListingInlineLead(colour);
+            updateDesktopColourPill();
         }
+
+
+        // ==================== DESKTOP COLOUR PILL ====================
+        // Shown at ≥768px only (CSS). Shares listingInlineSelectedSlug and
+        // the price helpers with the phone strip. Desktop defaults to no
+        // colour selected; the phone lead still falls back to the first colour.
+        var desktopColourOpen = false;
+        var desktopColourLastFocus = null;
+        var DESKTOP_COLOUR_COLS = 6;
+
+        function listingDesktop() {
+            return window.matchMedia('(min-width: 768px)').matches;
+        }
+
+        function desktopColourButtonHtml(colour, pressed) {
+            const name = escapeHtml(String(colour.name || '').slice(0, 80));
+            const slug = safeSlug(colour.slug);
+            const primaryHex = safeHex(colour.hex_primary);
+            const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
+            const imageUrl = (typeof stoneColourImageUrl === 'function')
+                ? stoneColourImageUrl(colour)
+                : safeImageUrl(colour.image_url);
+            const photo = imageUrl
+                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                : '';
+            const label = name || 'Stone colour';
+            const tier = escapeHtml(listingColourTier(colour));
+            const price = escapeHtml(listingInlinePriceLabel(colour));
+            return '<button type="button" class="desktop-colour-swatch" data-slug="' + slug + '" data-name="' + name + '" data-primary="' + primaryHex + '" data-secondary="' + secondaryHex + '" data-tier="' + tier + '" data-price="' + price + '"' + (imageUrl ? ' data-image="' + escapeHtml(imageUrl) + '"' : '') + ' aria-label="' + label + '" aria-pressed="' + (pressed ? 'true' : 'false') + '"><span class="desktop-colour-swatch-hit' + (photo ? ' has-photo' : '') + '" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');">' + photo + '</span><span class="desktop-colour-swatch-name">' + name + '</span></button>';
+        }
+
+        function fillDesktopColourGrid() {
+            const grid = document.getElementById('desktopColourGrid');
+            const countEl = document.getElementById('desktopColourCount');
+            if (countEl && state.colours) countEl.textContent = String(state.colours.length);
+            if (!grid || !state.colours || !state.colours.length) return;
+            const selected = listingDesktop() ? listingInlineSelectedSlug : '';
+            grid.innerHTML = state.colours.map(function (c) {
+                return desktopColourButtonHtml(c, !!selected && safeSlug(c.slug) === selected);
+            }).join('');
+        }
+
+        function refreshDesktopColourPrices() {
+            const grid = document.getElementById('desktopColourGrid');
+            if (!grid) return;
+            grid.querySelectorAll('.desktop-colour-swatch').forEach(function (btn) {
+                var colour = listingColourBySlug(safeSlug(btn.getAttribute('data-slug')));
+                if (!colour) return;
+                btn.setAttribute('data-price', listingInlinePriceLabel(colour));
+            });
+            updateDesktopColourPill();
+        }
+
+        function updateDesktopColourPill() {
+            var wrap = document.getElementById('desktopColour');
+            var btn = document.getElementById('desktopColourBtn');
+            var label = document.getElementById('desktopColourBtnLabel');
+            var chip = document.getElementById('desktopColourBtnChip');
+            var clearBtn = document.getElementById('desktopColourClear');
+            var popClear = document.getElementById('desktopColourPopoverClear');
+            var selectedEl = document.getElementById('desktopColourSelected');
+            if (!wrap || !btn || !label) return;
+            var colour = listingDesktop() ? listingColourBySlug(listingInlineSelectedSlug) : null;
+            var selected = !!colour;
+            wrap.classList.toggle('is-selected', selected);
+            btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            if (selected) {
+                label.textContent = colour.name || 'Colour';
+                btn.setAttribute('aria-label', 'Colour, ' + (colour.name || '') + ', ' + listingInlinePriceLabel(colour));
+                if (chip) {
+                    const primaryHex = safeHex(colour.hex_primary);
+                    const secondaryHex = safeHex(colour.hex_secondary || colour.hex_primary);
+                    const imageUrl = (typeof stoneColourImageUrl === 'function')
+                        ? stoneColourImageUrl(colour)
+                        : safeImageUrl(colour.image_url);
+                    chip.hidden = false;
+                    chip.style.background = 'linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ')';
+                    if (imageUrl) chip.style.backgroundImage = 'url("' + imageUrl + '")';
+                    else chip.style.backgroundImage = '';
+                }
+                if (clearBtn) clearBtn.hidden = false;
+                if (popClear) popClear.hidden = false;
+                if (selectedEl) selectedEl.textContent = (colour.name || '') + ' · ' + listingInlinePriceLabel(colour);
+            } else {
+                label.textContent = 'Colour';
+                btn.setAttribute('aria-label', 'Colour');
+                if (chip) { chip.hidden = true; chip.style.backgroundImage = ''; }
+                if (clearBtn) clearBtn.hidden = true;
+                if (popClear) popClear.hidden = true;
+                if (selectedEl) selectedEl.textContent = 'Select a colour to see its name and price.';
+            }
+            document.querySelectorAll('#desktopColourGrid .desktop-colour-swatch').forEach(function (el) {
+                el.setAttribute('aria-pressed', (selected && safeSlug(el.getAttribute('data-slug')) === listingInlineSelectedSlug) ? 'true' : 'false');
+            });
+        }
+
+        function positionDesktopColourPopover() {
+            var pop = document.getElementById('desktopColourPopover');
+            var btn = document.getElementById('desktopColourBtn');
+            if (!pop || !btn || !desktopColourOpen) return;
+            var rect = btn.getBoundingClientRect();
+            var width = pop.offsetWidth || Math.min(576, window.innerWidth - 32);
+            var left = Math.min(Math.max(16, rect.right - width), window.innerWidth - width - 16);
+            var top = rect.bottom + 8;
+            var maxH = Math.min(448, window.innerHeight - top - 16);
+            if (maxH < 200 && rect.top > 240) {
+                maxH = Math.min(448, rect.top - 16);
+                top = Math.max(16, rect.top - 8 - maxH);
+            }
+            pop.style.left = left + 'px';
+            pop.style.top = top + 'px';
+            pop.style.maxHeight = maxH + 'px';
+        }
+
+        function desktopColourFocusables() {
+            var pop = document.getElementById('desktopColourPopover');
+            if (!pop) return [];
+            return Array.from(pop.querySelectorAll('button:not([hidden])')).filter(function (el) {
+                return !el.disabled && el.getAttribute('hidden') === null;
+            });
+        }
+
+        function closeDesktopColourPopover() {
+            var pop = document.getElementById('desktopColourPopover');
+            var btn = document.getElementById('desktopColourBtn');
+            if (!desktopColourOpen) return;
+            desktopColourOpen = false;
+            if (pop) {
+                pop.classList.remove('is-open');
+                pop.hidden = true;
+            }
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (desktopColourLastFocus && typeof desktopColourLastFocus.focus === 'function') {
+                desktopColourLastFocus.focus();
+            }
+            desktopColourLastFocus = null;
+        }
+
+        function openDesktopColourPopover() {
+            var pop = document.getElementById('desktopColourPopover');
+            var btn = document.getElementById('desktopColourBtn');
+            if (!pop || !btn || !listingDesktop()) return;
+            fillDesktopColourGrid();
+            updateDesktopColourPill();
+            desktopColourLastFocus = document.activeElement;
+            desktopColourOpen = true;
+            pop.hidden = false;
+            pop.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            positionDesktopColourPopover();
+            var target = pop.querySelector('.desktop-colour-swatch[aria-pressed="true"]') || pop.querySelector('.desktop-colour-swatch');
+            if (target) target.focus();
+        }
+
+        function toggleDesktopColourPopover() {
+            if (desktopColourOpen) closeDesktopColourPopover();
+            else openDesktopColourPopover();
+        }
+
+        function clearDesktopColour() {
+            selectListingColour('');
+            updateDesktopColourPill();
+        }
+
+        function selectListingColour(slug) {
+            var key = safeSlug(slug);
+            if (!key) {
+                listingInlineSelectedSlug = '';
+                document.querySelectorAll('#listingStoneInlineRow .listing-stone-inline-swatch').forEach(function (el) {
+                    el.setAttribute('aria-pressed', 'false');
+                });
+                if (listingPhone()) {
+                    var fallback = state.colours && state.colours[0];
+                    if (fallback) renderListingInlineLead(fallback);
+                }
+                updateDesktopColourPill();
+                return;
+            }
+            var colour = listingColourBySlug(key);
+            if (!colour) return;
+            renderListingInlineLead(colour);
+            document.querySelectorAll('#listingStoneInlineRow .listing-stone-inline-swatch').forEach(function (el) {
+                el.setAttribute('aria-pressed', safeSlug(el.getAttribute('data-slug')) === key ? 'true' : 'false');
+            });
+            updateDesktopColourPill();
+        }
+
+        function onDesktopColourKeydown(event) {
+            if (!desktopColourOpen) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeDesktopColourPopover();
+                return;
+            }
+            var pop = document.getElementById('desktopColourPopover');
+            if (!pop || !pop.contains(event.target)) return;
+            var items = Array.from(pop.querySelectorAll('.desktop-colour-swatch'));
+            if (event.key === 'Tab') {
+                var focusables = desktopColourFocusables();
+                if (!focusables.length) return;
+                var first = focusables[0];
+                var last = focusables[focusables.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+                return;
+            }
+            if (!items.length) return;
+            var idx = items.indexOf(event.target);
+            if (idx < 0) return;
+            var next = idx;
+            if (event.key === 'ArrowRight') next = (idx + 1) % items.length;
+            else if (event.key === 'ArrowLeft') next = (idx - 1 + items.length) % items.length;
+            else if (event.key === 'ArrowDown') next = Math.min(items.length - 1, idx + DESKTOP_COLOUR_COLS);
+            else if (event.key === 'ArrowUp') next = Math.max(0, idx - DESKTOP_COLOUR_COLS);
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = items.length - 1;
+            else return;
+            event.preventDefault();
+            items[next].focus();
+        }
+
+        function setupDesktopColour() {
+            var wrap = document.getElementById('desktopColour');
+            var btn = document.getElementById('desktopColourBtn');
+            var clearBtn = document.getElementById('desktopColourClear');
+            var popClear = document.getElementById('desktopColourPopoverClear');
+            var grid = document.getElementById('desktopColourGrid');
+            if (!wrap || !btn || wrap.dataset.bound) {
+                fillDesktopColourGrid();
+                updateDesktopColourPill();
+                return;
+            }
+            wrap.dataset.bound = '1';
+            btn.addEventListener('click', function (event) {
+                event.preventDefault();
+                toggleDesktopColourPopover();
+            });
+            if (clearBtn) clearBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                clearDesktopColour();
+            });
+            if (popClear) popClear.addEventListener('click', function (event) {
+                event.preventDefault();
+                clearDesktopColour();
+            });
+            if (grid) grid.addEventListener('click', function (event) {
+                var swatch = event.target.closest && event.target.closest('.desktop-colour-swatch');
+                if (!swatch) return;
+                event.preventDefault();
+                selectListingColour(safeSlug(swatch.getAttribute('data-slug')));
+                closeDesktopColourPopover();
+            });
+            document.addEventListener('keydown', onDesktopColourKeydown);
+            document.addEventListener('pointerdown', function (event) {
+                if (!desktopColourOpen) return;
+                if (wrap.contains(event.target)) return;
+                closeDesktopColourPopover();
+            });
+            window.addEventListener('resize', function () {
+                if (!listingDesktop()) closeDesktopColourPopover();
+                else if (desktopColourOpen) positionDesktopColourPopover();
+            });
+            window.addEventListener('scroll', function () {
+                if (desktopColourOpen) positionDesktopColourPopover();
+            }, true);
+            fillDesktopColourGrid();
+            updateDesktopColourPill();
+        }
+
 
         // ==================== RENDER PRODUCTS ====================
         // Every match stays in the page. The first row is eager. Later images are lazy.
@@ -2291,6 +2798,7 @@
             var typeList = document.querySelector('.type-browse-list');
             if (typeList) typeList.addEventListener('click', onTypeChipClick);
             setupListingInline();
+            setupDesktopColour();
             window.addEventListener('popstate', function () {
                 const params = new URLSearchParams(window.location.search);
                 const typeParam = safeSlug(params.get('type'));
