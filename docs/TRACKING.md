@@ -111,15 +111,41 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 - `site-upgrades.js` reads `gclid`, `gbraid`, `wbraid` and `utm_source/medium/campaign/term/content`
   on every page load and stores them in `localStorage.sm_attr` for **90 days**.
   **First touch wins**; only a **new click ID** replaces the record (UTM-only revisits don't).
+- Consent mode's `url_passthrough: true` (page-level `gtag('set', …)` from #257, rule 6) decorates every internal
+  link on an ad landing with the *same* click IDs the landing page had — clicking a
+  product from `/memorials?gclid=A` lands on `/memorials/the-castell?gclid=A` with no
+  `utm_*`. That is not a new ad click: `isNewClick(stored, fresh)` (exported from
+  `site-upgrades.js`) is true only when `fresh` has a click ID that is actually new
+  — the stored record is missing/expired, has no click ID of its own, or a click ID
+  `fresh` carries differs from the matching stored one. `mergeAttribution`,
+  `mergeLastAttribution` (`sm_attr_last`) and the `hasClick` passed into `mergeLanding`
+  (`sm_lp`, landing page + referrer host) all key off `isNewClick` rather than "the URL
+  has a click ID at all", so a decorated internal page load fills missing UTMs (or does
+  nothing) instead of wiping first-touch UTMs, replacing last touch, or restarting the
+  landing page. A genuinely different click ID still replaces all three as before.
 - `track.html` also loads `site-upgrades.js` so customer-portal landings capture the
   same click IDs. It does not need `site-config.js`; the portal has no enhancement
   targets and the shared script's brochure FAB is home-only.
 - Every form sends `attribution: SMUpgrades.getAttribution()`: contact, quote (memorial), shortlist,
-  home appointment and brochure email.
+  home appointment and brochure email. The brochure request form additionally fills any
+  `utm_*` missing from that attribution (e.g. one wiped by a same-click `url_passthrough`
+  revisit, before the fix above, or simply never captured into `sm_attr`) from
+  `sessionUtm()` — the same `sessionStorage.sm_utm` source the brochure *download* beacon
+  already uses — via the pure helper `fillMissingUtm(attribution, session)`. It only fills
+  gaps; a UTM already present in the attribution is never overwritten.
 - `functions/api/submit.js` cleans it (`cleanAttribution`) and writes it to the Supabase
   `enquiries` columns `gclid, gbraid, wbraid, utm_*` (migration `2026-10-14-add-enquiry-attribution.sql`;
   quotes: PATCH of the enquiry returned by `create_quote`), and to the GHL contact custom fields
   `contact.contactgclid / contactgbraid / contactwbraid / contactutm_*` (resolved by key).
+- The cleaned external referrer host (`cleanLanding(attribution).referrer`, from `sm_lp`) is
+  also written to `enquiries.referrer` — migration `2026-11-22-enquiries-referrer.sql`
+  (**not applied yet**). `createEnquiry` (contact/shortlist/appointment/brochure) sends
+  it inline; on a 400 that names `referrer` only that column is dropped and the insert
+  retried (a bare `PGRST204` naming none of the optional columns still drops all of
+  them, as before), so the lead is never lost and last-touch/`lead_channel` survive. Quotes never put it in the
+  `create_quote` payload; `saveEnquiryAttribution`'s PATCH fallback sends it in its own
+  separate best-effort PATCH (logging `enquiry_referrer_column_missing` on failure) so a
+  missing column there can't block the main attribution PATCH.
 - `functions/api/brochure.js` sets the same GHL fields on the brochure upsert (SM PIT).
 - Direct brochure-download beacons also send the stored `gclid` to the Worker. The
   counter stores only a validated `gclid` and a server-side SHA-256 user-agent hash
@@ -208,7 +234,7 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
 ## Lead source, channel and landing page (Oct 2026)
 - **Client** (`site-upgrades.js`):
   - `localStorage.sm_lp` = `{ts, landing_page, referrer}`: the first-touch path with no query, plus the external referrer host. Kept 90 days; a new click ID restarts it.
-  - `getAttribution()` now also returns `landing_page` and `referrer`.
+  - `getAttribution()` now also returns `landing_page` and `referrer`. `referrer` is the external host only (never the full URL, which can carry search terms); it is stored on `enquiries.referrer` once migration `2026-11-22-enquiries-referrer.sql` is applied.
   - An ad visit (gclid/gbraid/wbraid, or `utm_medium` cpc/ppc/paid*) sets the first-party cookie `sm_ad=1` (Max-Age 90 days, SameSite=Lax, Secure).
 - **Server** (`submit.js`) derives these itself and never trusts the page:
   - `lead_source`: a click ID, or utm google + cpc, gives Google Ads. A search-engine referrer or utm_medium=organic gives Organic. Anything else is Unknown. Funeral director, Referral and Repeat are set only by staff.

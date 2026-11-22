@@ -1518,6 +1518,8 @@ export async function createEnquiry(env, payload) {
     ...cleanLastAttribution(payload.attribution),
     ...leadColumns(payload.attribution, { withChannel: true }),
   };
+  const referrer = cleanLanding(payload.attribution).referrer;
+  if (referrer) enqBody.referrer = referrer;
   const post = (body) => fetch(`${env.SUPABASE_URL}/rest/v1/enquiries`, {
     method: "POST",
     headers: { ...supabaseHeaders(env), Prefer: "return=representation" },
@@ -1525,17 +1527,30 @@ export async function createEnquiry(env, payload) {
   });
   let currentBody = enqBody;
   let enqRes = await post(currentBody);
-  // Until Mason migration 20261015120000 adds enquiries.lead_channel, PostgREST
-  // rejects the unknown column (PGRST204): never lose the lead — retry without it.
-  for (let attempt = 0; !enqRes.ok && enqRes.status === 400 && attempt < 2; attempt += 1) {
+  // Until the relevant Mason migrations are applied (lead_channel: 20261015120000;
+  // referrer: 2026-11-22), PostgREST rejects the unknown column (PGRST204):
+  // never lose the lead — retry without it, one drop per attempt.
+  for (let attempt = 0; !enqRes.ok && enqRes.status === 400 && attempt < 3; attempt += 1) {
     const error = await enqRes.clone().text().catch(() => "");
     let nextBody = currentBody;
-    if (/PGRST204|last_/.test(error) && LAST_ATTRIBUTION_KEYS.some((key) => key in nextBody)) {
+    // PostgREST names the missing column ("Could not find the 'referrer' column…").
+    // Drop only the named optional column(s), so a missing `referrer` column
+    // never costs the last-touch or lead_channel values. A bare PGRST204 that
+    // names none of them falls back to dropping all optional columns (old behaviour).
+    const namesLast = /last_(gclid|gbraid|wbraid|utm_)/.test(error);
+    const namesChannel = /lead_channel/.test(error);
+    const namesReferrer = /referrer/.test(error);
+    const bare = /PGRST204/.test(error) && !namesLast && !namesChannel && !namesReferrer;
+    if ((namesLast || bare) && LAST_ATTRIBUTION_KEYS.some((key) => key in nextBody)) {
       nextBody = Object.fromEntries(Object.entries(nextBody).filter(([key]) => !LAST_ATTRIBUTION_KEYS.includes(key)));
     }
-    if (/PGRST204|lead_channel/.test(error) && "lead_channel" in nextBody) {
+    if ((namesChannel || bare) && "lead_channel" in nextBody) {
       const { lead_channel: _drop, ...withoutChannel } = nextBody;
       nextBody = withoutChannel;
+    }
+    if ((namesReferrer || bare) && "referrer" in nextBody) {
+      const { referrer: _drop, ...withoutReferrer } = nextBody;
+      nextBody = withoutReferrer;
     }
     if (nextBody === currentBody) break;
     currentBody = nextBody;
@@ -1570,16 +1585,31 @@ export async function saveEnquiryAttribution(env, enquiryId, attribution) {
     }
   }
   const lastCols = cleanLastAttribution(attribution);
-  if (!Object.keys(lastCols).length) return;
+  if (Object.keys(lastCols).length) {
+    try {
+      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
+        method: "PATCH",
+        headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+        body: JSON.stringify(lastCols),
+      });
+      if (!res.ok) console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing", status: res.status }));
+    } catch {
+      console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing" }));
+    }
+  }
+  // Separate best-effort PATCH: a missing `referrer` column (migration not yet
+  // applied) must never break the attribution PATCH above.
+  const referrer = cleanLanding(attribution).referrer;
+  if (!referrer) return;
   try {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}`, {
       method: "PATCH",
       headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
-      body: JSON.stringify(lastCols),
+      body: JSON.stringify({ referrer }),
     });
-    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing", status: res.status }));
+    if (!res.ok) console.error(JSON.stringify({ message: "enquiry_referrer_column_missing", status: res.status }));
   } catch {
-    console.error(JSON.stringify({ message: "enquiry_last_touch_columns_missing" }));
+    console.error(JSON.stringify({ message: "enquiry_referrer_column_missing" }));
   }
 }
 
