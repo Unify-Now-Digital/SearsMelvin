@@ -45,13 +45,14 @@ const mobileCss = html.slice(html.indexOf("/* Mobile compact stone strip."), htm
 assert.match(mobileCss, /@media \(max-width: 767px\)/);
 assert.match(mobileCss, /position:\s*sticky/);
 assert.match(mobileCss, /top:\s*var\(--header-height,\s*68px\)/);
-// One compact row: ~64px strip, a 44px lead swatch, and one scrolling row
-// of 44px swatches (not the old 104px / two-row grid).
-assert.match(mobileCss, /height:\s*64px/);
-assert.doesNotMatch(mobileCss, /104px/);
-assert.doesNotMatch(mobileCss, /grid-template-rows:\s*44px 44px/);
+// Two rows of swatches at the #295 height (Arin t2420u), the selected
+// colour's name written under its square, and no 80px lead photo tile.
+assert.match(mobileCss, /height:\s*104px/);
+assert.match(mobileCss, /grid-template-rows:\s*50px 50px/);
+assert.match(mobileCss, /grid-auto-columns:\s*44px/);
 assert.match(mobileCss, /width:\s*44px/);
-assert.match(mobileCss, /height:\s*44px/);
+assert.match(mobileCss, /height:\s*50px/);
+assert.match(mobileCss, /\[aria-pressed="true"\]::after \{\s*content:\s*attr\(data-name\)/);
 assert.doesNotMatch(mobileCss, /width:\s*80px/);
 assert.doesNotMatch(mobileCss, /height:\s*80px/);
 assert.match(mobileCss, /overscroll-behavior-x:\s*contain/);
