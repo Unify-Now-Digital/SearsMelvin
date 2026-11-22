@@ -84,7 +84,7 @@ try {
     assert.equal(calls.some((call) => call.url.includes("/rest/v1/enquiries")), false);
   }
 
-  // Supabase failures remain best-effort, including a missing migration.
+  // Supabase failures remain best-effort, including (defensively) a schema without the columns.
   {
     console.error = () => {};
     console.warn = () => {};

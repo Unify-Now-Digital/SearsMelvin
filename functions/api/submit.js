@@ -1635,8 +1635,9 @@ export async function saveEnquiryGhlContactId(env, enquiryId, contactId) {
  * Best-effort, idempotent write-back of the GHL opportunity onto the enquiry
  * row. Matches the enquiry by id (never email) and only fills a null
  * ghl_opportunity_id, so an existing link is never overwritten. Never throws.
- * Columns: migrations/2026-11-22-enquiries-ghl-opportunity-id.sql (NOT applied
- * yet): until then PostgREST rejects the PATCH and this logs + skips.
+ * Both columns (ghl_opportunity_id text, ghl_synced_at timestamptz) already
+ * exist on Mason App public.enquiries (shared with other Mason sync paths), so
+ * deploying this starts writing straight away; no column migration is needed.
  */
 export async function saveEnquiryGhlOpportunityId(
   env,
@@ -1660,8 +1661,9 @@ export async function saveEnquiryGhlOpportunityId(
     if (res.ok) return "saved";
     if (res.status === 400) {
       const text = await res.text().catch(() => "");
-      // PGRST204: unknown column in the body; 42703: unknown column in the
-      // is.null filter. Both mean the migration isn't applied yet: skip.
+      // Defensive only (the columns exist in Mason App today): a schema without
+      // them (e.g. a stale/preview DB) returns PGRST204 (unknown column in the
+      // body) or 42703 (unknown column in the is.null filter). Log and skip.
       if (/PGRST204|42703|ghl_opportunity_id|ghl_synced_at/i.test(text)) {
         console.warn(JSON.stringify({ message: "enquiry_ghl_opportunity_columns_missing" }));
         return "columns-missing";

@@ -1,6 +1,7 @@
 // End-to-end (mocked fetch): /api/submit saves the GHL opportunity id onto the
 // enquiry row for contact, quote (waitUntil) and appointment submissions;
-// brochure stays note-only; a failed write-back or missing column never fails
+// brochure stays note-only; a failed write-back (or, defensively, a schema
+// without the columns) never fails
 // the lead. No live GHL or Supabase calls.
 import assert from "node:assert/strict";
 import { onRequestPost, createGHLOpportunity } from "../functions/api/submit.js";
@@ -160,7 +161,8 @@ try {
     }
   }
 
-  // 8) Migration not applied (PGRST204 body / 42703 filter) → skip gracefully.
+  // 8) Defensive: a schema without the columns (PGRST204 body / 42703 filter) → skip gracefully.
+  //    (The columns already exist in Mason App; this guards stale/preview DBs.)
   for (const mode of ["missing", "missing-filter"]) {
     const r = await post(contactBody, { writeBack: mode });
     assert.equal(r.json.ok, true);
