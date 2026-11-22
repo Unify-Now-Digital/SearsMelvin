@@ -470,24 +470,38 @@ body:has(#navbar) { display: flow-root; }
 }
 
 /* One-row phone trust bar on inner pages (the bar itself, not the home
-   page). Each page ships its own 4-column/2-column <style> block for this
-   bar, and site-globals.js layers a 2-column override on top at <=480px;
-   !important plus one extra :not() here outranks all of that without
-   editing every page. index.html is the only template with a bare .hero
-   section, so :not(:has(.hero)) is what keeps the home page on its own
-   layout untouched; :not(.memorial-page) skips the single-product page,
-   which does not use this bar. */
+   page) — Option A: a single 30px horizontally-scrolling row, a right-edge
+   fade peek, short labels and bronze icons swapped in by site-globals.js
+   (shapeInnerPhoneTrustBar). Each page ships its own 4-column/2-column
+   <style> block for this bar, and site-globals.js layers a 2-column
+   override on top at <=480px; !important plus one extra :not() here
+   outranks all of that without editing every page. index.html is the only
+   template with a bare .hero section, so :not(:has(.hero)) is what keeps
+   the home page on its own layout untouched; :not(.memorial-page) skips
+   the single-product page, which does not use this bar. The bar's height
+   is locked to 30px so the JS enhance pass (icons/labels swapped after
+   first paint) cannot move the header or the bar — see
+   tests/header-offset.mjs and tests/trust-bar-a.mjs. */
 @media (max-width: 767px) {
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar {
-    padding: 6px 12px !important;
-    min-height: 0 !important;
+    position: relative !important;
+    padding: 0 12px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-row {
     display: flex !important;
     grid-template-columns: none !important;
     flex-wrap: nowrap !important;
+    align-items: center !important;
+    height: 30px !important;
     overflow-x: auto !important;
-    gap: 14px !important;
+    overflow-y: hidden !important;
+    gap: 6px !important;
+    padding-right: 24px !important;
     scrollbar-width: none !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -495,10 +509,12 @@ body:has(#navbar) { display: flow-root; }
     display: none !important;
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item {
+    position: relative !important;
     flex: 0 0 auto !important;
     flex-direction: row !important;
+    align-items: center !important;
     justify-content: flex-start !important;
-    gap: 6px !important;
+    gap: 5px !important;
     font-size: 12px !important;
     line-height: 1.2 !important;
     font-weight: 600 !important;
@@ -508,14 +524,40 @@ body:has(#navbar) { display: flow-root; }
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item span {
     display: inline !important;
+    font-size: 12px !important;
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item svg {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
     flex-shrink: 0 !important;
+    stroke: var(--color-accent) !important;
   }
+  /* Small dot between items, in the row's gap, instead of the desktop
+     vertical rule. */
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item + .site-trust-item::before {
-    display: none !important;
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    left: -4.5px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    width: 3px !important;
+    height: 3px !important;
+    margin-top: -1.5px !important;
+    border-radius: 50% !important;
+    background: var(--color-border) !important;
+  }
+  /* Right-edge fade so the next item visibly peeks rather than cutting
+     off sharply. */
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 28px !important;
+    background: linear-gradient(to right, transparent, var(--color-cream)) !important;
+    pointer-events: none !important;
   }
 }
 

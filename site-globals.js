@@ -650,6 +650,90 @@
         menu.setAttribute('data-sm-phone-menu', '1');
     }
 
+    // Option A phone trust bar (inner pages only, <=767px): swap the full
+    // sentences for short labels and the desktop icons for smaller bronze
+    // ones, so the bar fits a single 30px row. The home page (bare .hero)
+    // and the single-product page keep the shared markup untouched, as do
+    // widths above the breakpoint. Full sentences move to aria-label so
+    // screen readers still get them. Originals are saved per item so the
+    // swap can be undone exactly when the viewport grows back past 767px
+    // (tests/header-offset.mjs resizes one tab across both sides of that
+    // line and expects the sentences back).
+    var TRUST_BAR_ITEMS = {
+        '30-year fixing guarantee': { short: '30-year guarantee', icon: 'shield' },
+        'fixing included': { short: 'Fixing included', icon: 'spanner' },
+        'we help with your permit': { short: 'Permit help', icon: 'clipboard' },
+        'we reply within one working day': { short: '1-day reply', icon: 'clock' }
+    };
+    var TRUST_BAR_ICON_PATHS = {
+        shield: '<path d="M12 3.2L5 6.2v6.1c0 4.6 3.1 7.8 7 9.2 3.9-1.4 7-4.6 7-9.2V6.2l-7-3z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/>',
+        spanner: '<path d="M15.2 5.2a3.6 3.6 0 0 0-5 5L5 15.4V19h3.6l5.2-5.2a3.6 3.6 0 0 0 5-5l-2.4 2.4-1.6-1.6 2.4-2.4z"/>',
+        clipboard: '<path d="M8.5 4.5h7v2h-7z"/><path d="M10 3.5h4v2h-4z"/><rect x="6.5" y="5.5" width="11" height="15" rx="1.4"/><path d="M9.2 13.2l2 2 3.8-3.9"/>',
+        clock: '<circle cx="12" cy="12" r="8.3"/><path d="M12 7.6V12l3.3 2"/>'
+    };
+
+    function buildTrustBarIcon(name) {
+        var holder = document.createElement('div');
+        holder.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+            'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+            (TRUST_BAR_ICON_PATHS[name] || '') + '</svg>';
+        return holder.firstChild;
+    }
+
+    function shapeInnerPhoneTrustBar() {
+        if (document.body.classList.contains('memorial-page')) return;
+        if (document.querySelector('.hero')) return;
+        var path = window.location.pathname;
+        if (path === '/' || path === '') return;
+
+        var bar = document.querySelector('.site-trust-bar');
+        if (!bar || bar.getAttribute('data-sm-trust-bound')) return;
+        bar.setAttribute('data-sm-trust-bound', '1');
+
+        var items = bar.querySelectorAll('.site-trust-item');
+        if (!items.length) return;
+
+        function apply() {
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var span = item.querySelector('span');
+                if (!span) continue;
+                if (!item.getAttribute('data-sm-trust-original')) {
+                    item.setAttribute('data-sm-trust-original', item.innerHTML);
+                }
+                var full = (span.textContent || '').trim();
+                var info = TRUST_BAR_ITEMS[full.toLowerCase()];
+                if (!info) continue;
+                item.setAttribute('aria-label', full);
+                var svg = item.querySelector('svg');
+                var icon = buildTrustBarIcon(info.icon);
+                if (svg && svg.parentNode === item) item.replaceChild(icon, svg);
+                else item.insertBefore(icon, item.firstChild);
+                span.textContent = info.short;
+            }
+        }
+
+        function restore() {
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var original = item.getAttribute('data-sm-trust-original');
+                if (original) {
+                    item.innerHTML = original;
+                    item.removeAttribute('aria-label');
+                }
+            }
+        }
+
+        var mq = window.matchMedia('(max-width: 767px)');
+        function sync() {
+            if (mq.matches) apply();
+            else restore();
+        }
+        sync();
+        if (mq.addEventListener) mq.addEventListener('change', sync);
+        else if (mq.addListener) mq.addListener(sync);
+    }
+
     function ensureSkipLink() {
         if (document.querySelector('a.sm-skip-link')) return;
         var main = document.querySelector('main');
@@ -706,6 +790,7 @@
         applyPublicResponsiveBaseline();
         keepMobileMenuStateAccessible();
         shapePhoneMenu();
+        shapeInnerPhoneTrustBar();
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });
