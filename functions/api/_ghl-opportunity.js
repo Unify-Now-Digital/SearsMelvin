@@ -125,7 +125,7 @@ export async function flagReturningCustomer(env, contactId, { won, enquiry, subm
  * already moved to Quoted or Invoiced must not be dragged back by a new
  * submission. A contact with a won opportunity gets a tag + note instead.
  *
- * Returns the decision ({ action, ... }) for logging/tests.
+ * Returns the decision ({ action, ..., opportunityId }) for logging/tests.
  */
 export async function upsertWebsiteOpportunity(env, {
   contactId, name, monetaryValue, pipelineId, defaultStageId, enquiry, source, submittedAt,
@@ -144,7 +144,7 @@ export async function upsertWebsiteOpportunity(env, {
       enquiry: { title: name, guidePrice: monetaryValue, ...enquiry },
       submittedAt,
     });
-    return decision;
+    return { ...decision, opportunityId: null };
   }
 
   if (decision.action === "update") {
@@ -164,7 +164,7 @@ export async function upsertWebsiteOpportunity(env, {
       body: JSON.stringify(update),
     });
     if (!res.ok) throw new Error(`GHL Opportunity update returned ${res.status}`);
-    return decision;
+    return { ...decision, opportunityId: decision.existing.id };
   }
 
   const res = await fetch(`${GHL_BASE}/opportunities/`, {
@@ -181,5 +181,6 @@ export async function upsertWebsiteOpportunity(env, {
     }),
   });
   if (!res.ok) throw new Error(`GHL Opportunity returned ${res.status}`);
-  return decision;
+  const body = await res.json().catch(() => null);
+  return { ...decision, opportunityId: body?.opportunity?.id || body?.id || null };
 }

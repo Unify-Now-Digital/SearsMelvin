@@ -241,6 +241,7 @@ async function quoteSideEffects({
       if (contactId) {
         await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
+          enquiryId,
           contactId,
           name: `${product.name || "Memorial"} — ${name}`,
           monetaryValue: parseFloat(product.price) || 0,
@@ -526,6 +527,7 @@ async function syncEnquiryContact(env, {
     } else {
       try {
         await createGHLOpportunity(env, {
+          enquiryId,
           contactId,
           name: `${enquiryTypeLabel} — ${name}`,
           monetaryValue: 0,
@@ -670,6 +672,7 @@ async function appointmentSideEffects({
       if (contactId) {
         await saveEnquiryGhlContactId(env, enquiryId, contactId);
         await createGHLOpportunity(env, {
+          enquiryId,
           contactId,
           name: `${typeLabel} — ${name}`,
           monetaryValue: 0,
@@ -1628,6 +1631,52 @@ export async function saveEnquiryGhlContactId(env, enquiryId, contactId) {
   }
 }
 
+/**
+ * Best-effort, idempotent write-back of the GHL opportunity onto the enquiry
+ * row. Matches the enquiry by id (never email) and only fills a null
+ * ghl_opportunity_id, so an existing link is never overwritten. Never throws.
+ * Both columns (ghl_opportunity_id text, ghl_synced_at timestamptz) already
+ * exist on Mason App public.enquiries (shared with other Mason sync paths), so
+ * deploying this starts writing straight away; no column migration is needed.
+ */
+export async function saveEnquiryGhlOpportunityId(
+  env,
+  enquiryId,
+  opportunityId,
+  { fetchImpl = fetch, now = () => new Date() } = {},
+) {
+  if (!enquiryId || !opportunityId || !env.SUPABASE_URL) return "skipped";
+  try {
+    const res = await fetchImpl(
+      `${env.SUPABASE_URL}/rest/v1/enquiries?id=eq.${encodeURIComponent(enquiryId)}&ghl_opportunity_id=is.null`,
+      {
+        method: "PATCH",
+        headers: { ...supabaseHeaders(env), Prefer: "return=minimal" },
+        body: JSON.stringify({
+          ghl_opportunity_id: String(opportunityId),
+          ghl_synced_at: now().toISOString(),
+        }),
+      },
+    );
+    if (res.ok) return "saved";
+    if (res.status === 400) {
+      const text = await res.text().catch(() => "");
+      // Defensive only (the columns exist in Mason App today): a schema without
+      // them (e.g. a stale/preview DB) returns PGRST204 (unknown column in the
+      // body) or 42703 (unknown column in the is.null filter). Log and skip.
+      if (/PGRST204|42703|ghl_opportunity_id|ghl_synced_at/i.test(text)) {
+        console.warn(JSON.stringify({ message: "enquiry_ghl_opportunity_columns_missing" }));
+        return "columns-missing";
+      }
+    }
+    console.error(JSON.stringify({ message: "enquiry_ghl_opportunity_id_save_failed", status: res.status }));
+    return "failed";
+  } catch {
+    console.error(JSON.stringify({ message: "enquiry_ghl_opportunity_id_save_failed" }));
+    return "failed";
+  }
+}
+
 /** Contact source + tags for website forms (Supabase is SoT; GHL is a mirror). */
 export function websiteGhlLabels(type) {
   const t = String(type || "").toLowerCase();
@@ -1986,9 +2035,9 @@ export async function createGHLContact(env, args, fetchOverride) {
  * a WON opportunity gets a `returning-customer-enquiry` tag + note instead of a
  * new card; won opportunities are never written from here.
  */
-async function createGHLOpportunity(env, { contactId, name, monetaryValue, enquiry, source }) {
+export async function createGHLOpportunity(env, { enquiryId, contactId, name, monetaryValue, enquiry, source }) {
   if (!env.GHL_API_KEY || !env.GHL_LOCATION_ID || !contactId) return;
-  return upsertWebsiteOpportunity(env, {
+  const result = await upsertWebsiteOpportunity(env, {
     contactId,
     name,
     monetaryValue,
@@ -1998,6 +2047,13 @@ async function createGHLOpportunity(env, { contactId, name, monetaryValue, enqui
     source,
     submittedAt: new Date(),
   });
+  // Best-effort (never throws). Runs only after a successful GHL create or
+  // open-card update, inside the caller's waitUntil task, so it can't delay
+  // or fail the submission. Returning customers get no opportunity id.
+  if (result?.opportunityId) {
+    await saveEnquiryGhlOpportunityId(env, enquiryId, result.opportunityId);
+  }
+  return result;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

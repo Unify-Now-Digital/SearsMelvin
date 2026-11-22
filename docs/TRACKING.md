@@ -146,6 +146,12 @@ ghl_chat_submission, click_to_call) are configured in GA4 Admin; confirm there b
   `create_quote` payload; `saveEnquiryAttribution`'s PATCH fallback sends it in its own
   separate best-effort PATCH (logging `enquiry_referrer_column_missing` on failure) so a
   missing column there can't block the main attribution PATCH.
+- Successful website opportunity creates and open-card reuses are written back to
+  `enquiries.ghl_opportunity_id` with `enquiries.ghl_synced_at`. Both columns
+  **already exist** in Mason App (shared with other Mason sync paths), so deploying
+  the JS starts writing straight away. The PATCH matches the enquiry id and only
+  fills a null opportunity id. `2026-11-22-enquiries-ghl-opportunity-id.sql` only
+  adds an optional partial index (not applied); its rollback drops only that index.
 - `functions/api/brochure.js` sets the same GHL fields on the brochure upsert (SM PIT).
 - Direct brochure-download beacons also send the stored `gclid` to the Worker. The
   counter stores only a validated `gclid` and a server-side SHA-256 user-agent hash
