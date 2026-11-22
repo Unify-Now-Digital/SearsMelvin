@@ -42,7 +42,7 @@ function safeImageUrl(value) {
   }
 }
 
-const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, (max-width: 1679px) 25vw, 20vw";
 
 function isBucketImage(url) {
   return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url);
@@ -151,6 +151,26 @@ export function stoneInlineMarkup(colours) {
   return list.map((colour, index) => stoneInlineButton(colour, index === 0)).join("");
 }
 
+function desktopColourButton(colour) {
+  const name = escapeHtml(String(colour.name || "").slice(0, 80));
+  const slug = safeSlug(colour.slug);
+  const primary = safeHex(colour.hex_primary);
+  const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
+  const imageUrl = safeImageUrl(colour.image_url);
+  const photo = imageUrl
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+    : "";
+  const label = name || "Stone colour";
+  const tier = escapeHtml(colourTier(colour));
+  const price = escapeHtml(colourPriceLabel(colour, ""));
+  return `<button type="button" class="desktop-colour-swatch" data-slug="${slug}" data-name="${name}" data-primary="${primary}" data-secondary="${secondary}" data-tier="${tier}" data-price="${price}"${imageUrl ? ` data-image="${escapeHtml(imageUrl)}"` : ""} aria-label="${label}" aria-pressed="false"><span class="desktop-colour-swatch-hit${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="desktop-colour-swatch-name">${name}</span></button>`;
+}
+
+export function desktopColourGridMarkup(colours) {
+  const list = Array.isArray(colours) ? colours : [];
+  return list.map(desktopColourButton).join("");
+}
+
 // The lead box shows the default-selected colour (first in display order) so
 // the strip paints with no layout shift before the client's tap handler runs.
 export function stoneInlineLeadMarkup(colour, categorySlug) {
@@ -200,7 +220,7 @@ async function fetchCatalogue(env) {
 }
 
 // Two columns is the first row below 1024px. memorials.html raises this
-// to three or four once it knows the viewport. Later images stay lazy.
+// to three, four or five once it knows the viewport. Later images stay lazy.
 const NARROW_FIRST_ROW = 2;
 
 export function listableProducts(products) {
@@ -225,8 +245,10 @@ export function catalogueInjection(products, colours, categorySlug = "") {
   return {
     grid,
     inline: stoneInlineMarkup(colours),
+    desktop: desktopColourGridMarkup(colours),
     lead: stoneInlineLeadMarkup(colours[0], categorySlug),
     count: visible.length,
+    colourCount: Array.isArray(colours) ? colours.length : 0,
   };
 }
 
@@ -274,7 +296,7 @@ export async function onRequestGet({ request, env }) {
     if (filtered.length) products = filtered;
   }
   const visible = listableProducts(products);
-  const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours, requested);
+  const { grid, inline, desktop, lead, count, colourCount } = catalogueInjection(products, catalogue.colours, requested);
   const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
@@ -283,6 +305,8 @@ export async function onRequestGet({ request, env }) {
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
     .on("#listingStoneInlineRow", { element(el) { el.setInnerContent(inline, { html: true }); } })
+    .on("#desktopColourGrid", { element(el) { el.setInnerContent(desktop, { html: true }); } })
+    .on("#desktopColourCount", { element(el) { el.setInnerContent(String(colourCount)); } })
     .on("#listingStoneInlineLead", { element(el) { el.setAttribute("data-slug", lead.slug); } })
     .on("#listingStoneInlineLeadPhoto", {
       element(el) {
