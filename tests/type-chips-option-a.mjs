@@ -102,28 +102,40 @@ assert.doesNotMatch(html, /specification for Greater London families/);
 const upgrades = readFileSync(new URL("../site-upgrades.css", import.meta.url), "utf8");
 assert.match(upgrades, /html body #navbar \.logo \{\s*min-height: 44px;\s*\}/);
 
-// ---- FIX: a chip scrolled in from the left must clear the sticky Filter
-// cue (it covers ~x 0-64 on phones). markTypeLinks measures the cue's own
-// width for the left inset instead of a fixed 16px, so it tracks the cue's
-// real rendered width rather than assuming it.
-const markTypeLinksFn = html.slice(
+// ---- FIX: keyboard focus must also clear the sticky Filter cue and the
+// right-hand fade. Chromium's focus scrolling ignores scroll-padding-inline,
+// so keepChipInView is computed in viewport coordinates (not scroll-padding)
+// and called from both markTypeLinks and a focusin listener on the chip row.
+const markTypeLinksAndHelper = html.slice(
   html.indexOf("function markTypeLinks()"),
   html.indexOf("function onTypeChipClick"),
 );
 assert.match(
-  markTypeLinksFn,
+  markTypeLinksAndHelper,
+  /function keepChipInView\(list, chip\)/,
+  "keepChipInView must be defined next to markTypeLinks",
+);
+assert.match(
+  markTypeLinksAndHelper,
   /const cue = list\.querySelector\('\.type-filter-cue'\);/,
-  "markTypeLinks must measure the Filter cue",
+  "keepChipInView must measure the Filter cue",
 );
 assert.match(
-  markTypeLinksFn,
-  /cue\.getBoundingClientRect\(\)\.width/,
-  "markTypeLinks must read the cue's rendered width",
+  markTypeLinksAndHelper,
+  /maxRight = lr\.right - 40/,
+  "keepChipInView must use a 40px right inset to clear the fade",
 );
 assert.match(
-  markTypeLinksFn,
-  /left - padL < list\.scrollLeft/,
-  "the measured cue width must drive the left-branch inset",
+  markTypeLinksAndHelper,
+  /keepChipInView\(list, list && list\.querySelector\('a\[aria-current="page"\]'\)\);/,
+  "markTypeLinks must call keepChipInView",
+);
+
+const initBlock = html.slice(html.indexOf("// ==================== INIT"));
+assert.match(
+  initBlock,
+  /typeList\.addEventListener\('focusin', function \(event\) \{[\s\S]*?requestAnimationFrame\(\(\) => keepChipInView\(typeList, link\)\);/,
+  "a focusin listener on the type list must call keepChipInView inside requestAnimationFrame",
 );
 
 console.log("type-chips-option-a: ok");

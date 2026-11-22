@@ -2052,19 +2052,23 @@
             // chip fully visible by scrolling only the chip row sideways.
             // Never scroll the document (footer links share the same hrefs).
             const list = document.querySelector('.type-browse-list');
-            const chip = list && list.querySelector('a[aria-current="page"]');
-            if (list && chip && list.scrollWidth > list.clientWidth) {
-                const pad = 16;
-                const cue = list.querySelector('.type-filter-cue');
-                const cueW = cue ? cue.getBoundingClientRect().width : 0;
-                const padL = cueW > 0 ? cueW + 8 : pad;
-                const lr = list.getBoundingClientRect();
-                const cr = chip.getBoundingClientRect();
-                const left = cr.left - lr.left + list.scrollLeft;
-                const right = left + cr.width;
-                if (left - padL < list.scrollLeft) list.scrollLeft = Math.max(0, left - padL);
-                else if (right + pad > list.scrollLeft + list.clientWidth) list.scrollLeft = right + pad - list.clientWidth;
-            }
+            keepChipInView(list, list && list.querySelector('a[aria-current="page"]'));
+        }
+
+        // Chromium's focus scrolling ignores scroll-padding-inline, so it only
+        // scrolls the minimum to bring a chip inside the raw scrollport —
+        // which can leave it under the sticky cue or the right-hand fade.
+        // Never scroll the document (footer links share the same hrefs).
+        function keepChipInView(list, chip) {
+            if (!list || !chip || list.scrollWidth <= list.clientWidth) return;
+            const lr = list.getBoundingClientRect();
+            const cue = list.querySelector('.type-filter-cue');
+            const cr0 = cue ? cue.getBoundingClientRect() : null;
+            const minLeft = (cr0 && cr0.width > 0) ? cr0.right + 8 : lr.left + 16;
+            const maxRight = lr.right - 40;
+            const cr = chip.getBoundingClientRect();
+            if (cr.left < minLeft) list.scrollLeft = Math.max(0, list.scrollLeft - (minLeft - cr.left));
+            else if (cr.right > maxRight) list.scrollLeft = list.scrollLeft + (cr.right - maxRight);
         }
 
         function onTypeChipClick(event) {
@@ -2407,7 +2411,14 @@
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
             var typeList = document.querySelector('.type-browse-list');
-            if (typeList) typeList.addEventListener('click', onTypeChipClick);
+            if (typeList) {
+                typeList.addEventListener('click', onTypeChipClick);
+                typeList.addEventListener('focusin', function (event) {
+                    const link = event.target && event.target.closest ? event.target.closest('a') : null;
+                    if (!link || !typeList.contains(link)) return;
+                    requestAnimationFrame(() => keepChipInView(typeList, link));
+                });
+            }
             setupListingInline();
             window.addEventListener('popstate', function () {
                 const params = new URLSearchParams(window.location.search);
