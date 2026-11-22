@@ -251,6 +251,10 @@
         .breadcrumb a { color: var(--color-accent-dark); }
         .page-header h1 { font-size: 1.9rem; margin-bottom: 0.3rem; line-height: 1.2; }
         .page-header p { font-size: 0.95rem; line-height: 1.5; max-width: 620px; margin: 0 auto; font-weight: 600; color: var(--color-stone); }
+        /* Phone-only merge of the two intro lines into one; see the
+           max-width:767px block below. Hidden on desktop/tablet so the
+           two original <p> tags (kept for SEO) are what renders there. */
+        .page-header-phone-line { display: none; }
         .floating-actions { position: fixed; bottom: 2rem; left: 24px; right: auto; display: flex; flex-direction: column; gap: 0.75rem; z-index: 80; }
         .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px color-mix(in srgb, var(--sm-color-text) 15%, transparent); transition: all 0.3s; }
         .floating-btn svg { width: 24px; height: 24px; stroke-width: 2; fill: none; }
@@ -260,6 +264,11 @@
         .floating-btn.shortlist:hover svg { stroke: var(--color-accent); }
         .floating-btn.scroll-top { background: var(--color-stone); opacity: 0; pointer-events: none; transform: translateY(20px); }
         .floating-btn.scroll-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        /* Phones: the sticky stone strip is always stuck once the page is
+           scrolled past 500px (where this button appears), and the bottom
+           nav already has Home, so the floating button only covered card
+           prices on /memorials. Hidden on phones; desktop/tablet keep it. */
+        @media (max-width: 767px) { html body #scrollTopBtn.floating-btn.scroll-top { display: none; } }
         .floating-btn.scroll-top svg { stroke: white; }
         .catalogue { padding: 3rem 2rem; }
         .catalogue-container { max-width: 1400px; margin: 0 auto; }
@@ -722,7 +731,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261122d">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261122e">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -839,15 +848,17 @@
                extra element to win. Breadcrumb links keep their 44px target. */
             html body:has(.catalogue) header.page-header { padding: 0.35rem 0.75rem 0.5rem; }
             html body:has(.catalogue) header.page-header .breadcrumb { margin-bottom: 0; }
-            html body:has(.catalogue) header.page-header h1 { font-size: 1.625rem; line-height: 1.15; min-height: 2.3em; margin: 0 0 0.25rem; }
-            html body:has(.catalogue) header.page-header p,
-            html body:has(.catalogue) header.page-header p:first-of-type { font-size: 0.9375rem; line-height: 1.35; min-height: 0; margin: 0 auto; }
-            html body:has(.catalogue) header.page-header p.service-area-line { margin-top: 0.2rem; }
+            html body:has(.catalogue) header.page-header h1 { font-size: 1.5rem; line-height: 1.12; min-height: 2.24em; margin: 0 0 0.2rem; }
+            /* The two SEO <p> lines stay in the DOM but hide on phones;
+               one merged line replaces them visually (same meaning, no
+               new claims). Desktop/tablet keep the two-line original. */
+            html body:has(.catalogue) header.page-header > p:not(.page-header-phone-line) { display: none; }
+            html body:has(.catalogue) header.page-header .page-header-phone-line { display: block; font-size: 0.9375rem; line-height: 1.35; min-height: 0; margin: 0 auto; }
             .catalogue { padding-top: 0.4rem; }
             .catalogue-toolbar { margin-bottom: 0.5rem; }
             /* The permanent stone strip is now the one sticky bar under the
                header; two stickies stacked would overlap. */
-            .results-header { position: static; top: auto; z-index: auto; margin: 0 0 0.5rem; padding: 0; background: transparent; border-bottom: 0; }
+            .results-header { position: static; top: auto; z-index: auto; margin: 0 0 0.2rem; padding: 0; background: transparent; border-bottom: 0; }
             /* Permanent strip — never expands or collapses. Sticks flush under
                the fixed header; the lead box is fixed-size so nothing shifts
                while the colour, name and price are filled in. */
@@ -858,31 +869,37 @@
                 z-index: 40;
                 align-items: stretch;
                 box-sizing: border-box;
-                height: 104px;
+                height: 64px;
                 margin: 0 -0.75rem;
                 background: var(--sm-color-bg-surface);
                 border-top: 1px solid var(--sm-color-border-decorative);
                 border-bottom: 1px solid var(--sm-color-border-decorative);
             }
+            /* Compact pill: a 44px swatch plus one line of "Name · Price".
+               The lead used to be an 80px photo tile with a two-line name —
+               that was the bulk of the old, taller two-row strip. */
             .listing-stone-inline-lead {
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                flex: 0 1 auto;
-                max-width: calc(100% - 144px);
+                /* Does not shrink: the swatch row already has its own
+                   horizontal scroll, so a tight viewport should show fewer
+                   swatches at once rather than truncate the stone name. */
+                flex: 0 0 auto;
+                max-width: calc(100% - 80px);
                 min-width: 0;
                 height: 100%;
                 margin: 0;
-                padding: 10px 8px 10px 12px;
+                padding: 0 8px 0 12px;
                 border-right: 1px solid var(--sm-color-border-decorative);
                 font-family: var(--sm-font-body);
                 color: var(--sm-color-text);
             }
             .listing-stone-inline-lead-photo {
                 display: block;
-                width: 80px;
-                height: 80px;
-                flex: 0 0 80px;
+                width: 44px;
+                height: 44px;
+                flex: 0 0 44px;
                 border: 1px solid var(--sm-color-border-control);
                 border-radius: var(--sm-radius-sm);
                 overflow: hidden;
@@ -891,41 +908,42 @@
             }
             .listing-stone-inline-lead-meta {
                 display: flex;
-                flex-direction: column;
-                gap: 2px;
+                align-items: baseline;
+                gap: 5px;
+                flex: 1 1 auto;
                 min-width: 0;
             }
             .listing-stone-inline-lead-name {
                 display: block;
-                min-height: 1.25em;
+                min-height: 1.2em;
+                max-width: 100%;
                 font-size: var(--sm-text-sm);
                 font-weight: var(--sm-weight-body-strong);
-                line-height: 1.25;
-                /* Two lines so names such as "Bahama Blue" are not cut at 320px. */
-                display: -webkit-box;
-                -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
+                line-height: 1.2;
+                white-space: nowrap;
                 overflow: hidden;
-                overflow-wrap: anywhere;
+                text-overflow: ellipsis;
             }
             .listing-stone-inline-lead-price {
                 display: block;
-                min-height: 1.3em;
+                min-height: 1.2em;
+                flex: 0 0 auto;
                 font-size: var(--sm-text-xs);
                 font-weight: var(--sm-weight-body);
-                line-height: 1.3;
+                line-height: 1.2;
                 color: var(--sm-color-text-muted);
                 font-variant-numeric: tabular-nums;
+                white-space: nowrap;
             }
+            .listing-stone-inline-lead-price::before { content: "\00b7"; margin-right: 5px; }
+            .listing-stone-inline-lead-price:empty::before { content: none; }
+            /* One scrolling row of 44px swatches (was two stacked rows). */
             .listing-stone-inline-row {
                 position: relative;
-                display: grid;
-                grid-auto-flow: column;
-                grid-template-rows: 44px 44px;
-                grid-auto-columns: 44px;
-                align-content: center;
+                display: flex;
+                align-items: center;
                 gap: 6px;
-                flex: 1 1 144px;
+                flex: 1 1 94px;
                 min-width: 0;
                 height: 100%;
                 padding: 0 1.75rem 0 8px;
@@ -938,6 +956,7 @@
             .listing-stone-inline-row::-webkit-scrollbar { display: none; }
             .listing-stone-inline-swatch {
                 display: block;
+                flex: 0 0 44px;
                 width: 44px;
                 height: 44px;
                 margin: 0;
@@ -972,10 +991,10 @@
                 pointer-events: none;
                 background: linear-gradient(90deg, transparent, var(--sm-color-bg-surface));
             }
-            main > .catalogue-toolbar { margin-top: 8px; }
+            main > .catalogue-toolbar { margin-top: 6px; }
             .listing-stone-inline-note {
                 display: block;
-                margin: 0 0 8px;
+                margin: 0 0 6px;
                 padding: 0;
                 font-family: var(--sm-font-body);
                 font-size: var(--sm-text-xs);
@@ -998,7 +1017,7 @@
                tallest info panel for the band (measured on all 147 cards in
                Chromium and WebKit). The same value is the content-visibility
                reserve, so cards neither grow nor shrink when they paint. */
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 153px); }
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 114px); }
             .product-face {
                 min-height: var(--sm-card-face);
                 contain-intrinsic-width: auto 175px;
@@ -1009,17 +1028,35 @@
             html body a.product-card .product-name { margin-bottom: 0.2rem; line-height: 1.2; }
             html body a.product-card .product-stones { margin-bottom: 0.2rem; line-height: 1.2; display: block; }
             html body a.product-card .product-price { margin: 0; line-height: 1.2; }
+            /* Denser phone cards (Arin, 22 Nov: "too tall, empty space below
+               the price"). The held face height is the TALLEST card in the
+               band, and the tallest ones were cards whose category label
+               wrapped to two lines plus a two-line name. So: category on one
+               line (ellipsis; the card's aria-label still carries it), a
+               slightly smaller title clamped to two lines, and the stones
+               line sitting right on top of the price. The band extras below
+               were re-measured on all 147 cards in Chromium and WebKit. */
+            html body a.product-card .product-info { padding: 6px 8px 7px; }
+            html body a.product-card .product-category { margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            html body a.product-card h3.product-name { font-size: 1.125rem; line-height: 1.15; margin-bottom: 2px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+            html body a.product-card .product-meta { margin-bottom: 0; }
+            html body a.product-card .product-stones { margin-bottom: 0; line-height: 1.15; }
+            html body a.product-card .product-price { line-height: 1.15; }
         }
-        /* Name and category lines wrap differently as cards widen, so the
-           held info height steps with the viewport. */
-        @media (min-width: 376px) and (max-width: 442px) {
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 163px); }
+        /* Held info height per width band (22 Nov re-measure, all 147 cards,
+           Chromium + WebKit, natural heights): the category is one line now,
+           so the only thing that changes the panel is a two-line name. Up to
+           ~363px "The Twin Sweetheart"/"The Knaresborough" wrap (113.2px ->
+           +114px, the base rule above); from 364px every name fits on one
+           line (92.5px -> +93px). The band starts at 375px so the 364-374
+           edge keeps the safe, taller reserve. */
+        @media (min-width: 375px) and (max-width: 767px) {
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 93px); }
         }
-        @media (min-width: 443px) and (max-width: 478px) {
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 147px); }
-        }
-        @media (min-width: 479px) and (max-width: 767px) {
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 118px); }
+        /* Narrowest phones: tighter tracking so more of a long category
+           label ("Churchyard memorials") shows before the ellipsis. */
+        @media (max-width: 374px) {
+            html body a.product-card .product-category { letter-spacing: 0.03em; }
         }
     </style>
 </head>
@@ -1100,6 +1137,7 @@
         <h1>Headstones, gravestones and memorials</h1>
         <p>Browse our memorials. Each piece is made to your specification.</p>
         <p class="service-area-line">We serve families across Greater London.</p>
+        <p class="page-header-phone-line">Each memorial is made to your specification, for families across Greater London.</p>
     </header>
 
     <section class="catalogue">
@@ -2609,7 +2647,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261122d" defer></script>
+    <script src="/site-globals.js?v=20261122e" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261122a" defer></script>
 </body>

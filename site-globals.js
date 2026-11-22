@@ -63,6 +63,8 @@
     // content, not controls, but a live audit found the launcher landing on
     // top of them on short phones. liftClear() already walks this same list
     // to clear quote/brochure controls, so the fix is to list them here too.
+    // .product-price covers the /memorials catalogue cards scrolling behind
+    // the fixed bubble; shownRect already discards the ~140 off-screen ones.
     function chatBlockers() {
         var nodes = [];
         var chrome = [
@@ -82,7 +84,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a, #listingStoneInline, #phoneColourSlot, .hero h1');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a, #listingStoneInline, #phoneColourSlot, .hero h1, .product-price');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);

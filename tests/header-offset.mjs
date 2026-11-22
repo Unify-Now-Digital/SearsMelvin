@@ -227,7 +227,11 @@ async function main() {
           await evalJson(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
           const row = await evalJson(MEASURE);
           const where = `${path} ${width}px zoom ${zoom}`;
-          const expected = width <= 768 ? 68 : 80;
+          // True phones (<=767) got a further step down from 68 to 58, with
+          // the logo shrinking in tiers (200/185/165) to match; 768+ is
+          // unchanged. See the --header-height comment in site-upgrades.css.
+          const expected = width <= 767 ? 58 : width <= 768 ? 68 : 80;
+          const expectedLogoFloor = width > 767 ? 240 : width > 430 ? 200 : width > 375 ? 185 : 165;
           if (row.display !== "none" && row.gap < -0.5) {
             failures.push(`${where}: trust top ${row.barTop} is above header bottom ${row.navBottom} (gap ${row.gap})`);
           }
@@ -243,8 +247,8 @@ async function main() {
           if (width > 768 && zoom === 1 && row.logoSrc.includes("no-rules")) {
             failures.push(`${where}: wide desktop must keep the logo with rules`);
           }
-          if (zoom === 1 && row.logoW + 0.5 < 240) {
-            failures.push(`${where}: logo width ${row.logoW} is under 240`);
+          if (zoom === 1 && row.logoW + 0.5 < expectedLogoFloor) {
+            failures.push(`${where}: logo width ${row.logoW} is under ${expectedLogoFloor}`);
           }
           const again = await evalJson(MEASURE);
           if (Math.abs(again.navBottom - row.navBottom) > 0.5 || Math.abs(again.barTop - row.barTop) > 0.5) {

@@ -445,6 +445,10 @@ html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.75rem; letter-sp
    about 1px over it on a wide desktop. Mobile stays 68px. */
 :root { --header-height: 80px; }
 @media (max-width: 768px) { :root { --header-height: 68px; } }
+/* Phones only: a shorter bar buys back vertical space above the fold.
+   Every sticky offset below (trust bar, results toolbar, stone strip,
+   breadcrumb) reads this same variable, so they shrink with it. */
+@media (max-width: 767px) { :root { --header-height: 58px; } }
 html { scroll-padding-top: var(--header-height); }
 /* Keep the trust-bar margin inside the body after the homepage load
    animation drops its transform. A transformed body holds the margin;
@@ -463,6 +467,56 @@ body:has(#navbar) { display: flow-root; }
 .breadcrumb-bar { padding-top: calc(var(--header-height) + var(--sm-cookie-stack, 0px)); }
 @media (max-width: 768px) {
   .mobile-nav.active { max-height: calc(100dvh - var(--header-height)); overflow-y: auto; }
+}
+
+/* One-row phone trust bar on inner pages (the bar itself, not the home
+   page). Each page ships its own 4-column/2-column <style> block for this
+   bar, and site-globals.js layers a 2-column override on top at <=480px;
+   !important plus one extra :not() here outranks all of that without
+   editing every page. index.html is the only template with a bare .hero
+   section, so :not(:has(.hero)) is what keeps the home page on its own
+   layout untouched; :not(.memorial-page) skips the single-product page,
+   which does not use this bar. */
+@media (max-width: 767px) {
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar {
+    padding: 6px 12px !important;
+    min-height: 0 !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-row {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 14px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-row::-webkit-scrollbar {
+    display: none !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item {
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    padding: 0 !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item span {
+    display: inline !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex-shrink: 0 !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item + .site-trust-item::before {
+    display: none !important;
+  }
 }
 
 /* 44px tap targets named in the same audit. */
@@ -1890,6 +1944,36 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   html body #navbar .logo img {
     width: 240px;
     height: 60px;
+    max-height: calc(var(--header-height) - 7px);
+  }
+}
+
+/* True phones: a further step down, in line with the 58px --header-height
+   set above. Three tiers keep the logo legible (roughly 150-180px at 320,
+   up to ~200px at 430) while the bar stays short. Same aspect ratio as the
+   240x60 box above (262:66) so the stacked wordmark never looks stretched. */
+@media (max-width: 767px) {
+  html body nav#navbar {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+  }
+  html body #navbar .logo img {
+    width: 200px;
+    height: 50px;
+    max-height: calc(var(--header-height) - 7px);
+  }
+}
+@media (max-width: 430px) {
+  html body #navbar .logo img {
+    width: 185px;
+    height: 46px;
+    max-height: calc(var(--header-height) - 7px);
+  }
+}
+@media (max-width: 375px) {
+  html body #navbar .logo img {
+    width: 165px;
+    height: 41px;
     max-height: calc(var(--header-height) - 7px);
   }
 }
