@@ -1,8 +1,11 @@
 // Option A phone trust bar: one 30px horizontally-scrolling row with short
 // labels and a peek of the next item, on inner pages only. The home page
 // keeps its 2x2 layout and full sentences at every width, and the
-// single-product page never gets the one-row treatment. Full sentences
-// move to aria-label so screen readers are unaffected by the short labels.
+// single-product page never gets the one-row treatment. Full sentences move
+// to a visually-hidden .sm-trust-sr span (not aria-label on the item, a
+// plain div ARIA 1.2 won't expose) so screen readers are unaffected by the
+// short labels, and the row gets tabindex/role=group/aria-label so keyboard
+// users can reach items past the visible edge.
 //
 // Needs Chrome (google-chrome or CHROME_PATH). Modelled on
 // tests/header-offset.mjs (same local static server + CDP pattern).
@@ -125,12 +128,14 @@ const MEASURE = `(() => {
   const rowStyle = getComputedStyle(row);
   const items = [...document.querySelectorAll('.site-trust-item')].map((item) => {
     const r = item.getBoundingClientRect();
-    const span = item.querySelector('span');
+    const span = item.querySelector('span:not(.sm-trust-sr)');
+    const sr = item.querySelector('.sm-trust-sr');
     return {
       left: r.left,
       right: r.right,
       width: r.width,
       text: span ? span.textContent.trim() : '',
+      srText: sr ? sr.textContent.trim() : '',
       ariaLabel: item.getAttribute('aria-label') || '',
     };
   });
@@ -143,6 +148,9 @@ const MEASURE = `(() => {
     windowRight: rowRect.right,
     docScrollWidth: document.documentElement.scrollWidth,
     docClientWidth: document.documentElement.clientWidth,
+    rowTabindex: row.getAttribute('tabindex'),
+    rowRole: row.getAttribute('role'),
+    rowAriaLabel: row.getAttribute('aria-label'),
     items,
   };
 })()`;
@@ -211,8 +219,10 @@ async function main() {
       return row.items.filter((it) => it.left < row.windowRight - 0.5 && it.right > row.windowRight + 0.5).length;
     }
 
-    // /memorials at 390: one 30px row, short labels, full sentences in
-    // aria-label, 3 items fully visible, a 4th peeking, no page scroll.
+    // /memorials at 390: one 30px row, short labels, full sentences in a
+    // visually-hidden .sm-trust-sr span (not aria-label on the item), 3
+    // items fully visible, a 4th peeking, no page scroll, and the row is
+    // reachable/announced as a keyboard group.
     await open("/memorials.html");
     let row = await resize(390, true);
     if (Math.abs(row.barHeight - 30) > 2) failures.push(`/memorials 390: bar height ${row.barHeight}, expected ~30`);
@@ -220,13 +230,17 @@ async function main() {
     for (const label of ["30-year guarantee", "Fixing included", "Permit help", "1-day reply"]) {
       if (!shortLabels390.includes(label)) failures.push(`/memorials 390: missing short label "${label}" (have ${shortLabels390.join(", ")})`);
     }
-    const ariaLabels390 = row.items.map((it) => it.ariaLabel);
-    for (const sentence of ["30-year fixing guarantee", "We help with your permit", "We reply within one working day"]) {
-      if (!ariaLabels390.includes(sentence)) failures.push(`/memorials 390: missing aria-label "${sentence}" (have ${ariaLabels390.join(" | ")})`);
+    const srTexts390 = row.items.map((it) => it.srText);
+    for (const sentence of ["30-year fixing guarantee", "fixing included", "we help with your permit", "we reply within one working day"]) {
+      if (!srTexts390.some((text) => text.toLowerCase() === sentence)) failures.push(`/memorials 390: missing hidden sr text "${sentence}" (have ${srTexts390.join(" | ")})`);
     }
+    if (row.items.some((it) => it.ariaLabel)) failures.push(`/memorials 390: items must not use aria-label for the full sentence (plain divs don't expose it)`);
     if (fullyVisibleCount(row) < 3) failures.push(`/memorials 390: only ${fullyVisibleCount(row)} items fully visible, expected >=3`);
     if (peekingCount(row) < 1) failures.push(`/memorials 390: no item peeks past the visible row`);
     if (row.docScrollWidth > row.docClientWidth + 1) failures.push(`/memorials 390: page scrolls sideways (${row.docScrollWidth} > ${row.docClientWidth})`);
+    if (row.rowTabindex !== "0") failures.push(`/memorials 390: row tabindex is "${row.rowTabindex}", expected "0"`);
+    if (row.rowRole !== "group") failures.push(`/memorials 390: row role is "${row.rowRole}", expected "group"`);
+    if (row.rowAriaLabel !== "Our promises") failures.push(`/memorials 390: row aria-label is "${row.rowAriaLabel}", expected "Our promises"`);
 
     // /memorials at 320: narrower phone, still one row, at least 2 full
     // labels visible plus a peek, no page scroll.
@@ -237,24 +251,48 @@ async function main() {
     if (row.docScrollWidth > row.docClientWidth + 1) failures.push(`/memorials 320: page scrolls sideways (${row.docScrollWidth} > ${row.docClientWidth})`);
 
     // Same tab, resize up to 1280: full sentences must come back, no
-    // one-row short-label treatment.
+    // one-row short-label treatment, and the phone-only sr spans/keyboard
+    // attrs must be gone.
     row = await resize(1280, false);
     const fullTexts1280 = row.items.map((it) => it.text);
     for (const sentence of ["30-year fixing guarantee", "We help with your permit", "We reply within one working day"]) {
       if (!fullTexts1280.includes(sentence)) failures.push(`/memorials 1280 (after resize from 390): sentence "${sentence}" not restored (have ${fullTexts1280.join(" | ")})`);
     }
     if (row.items.some((it) => it.ariaLabel)) failures.push(`/memorials 1280: aria-label should be cleared again on desktop`);
+    if (row.items.some((it) => it.srText)) failures.push(`/memorials 1280: .sm-trust-sr should not remain on desktop`);
+    if (row.rowTabindex !== null || row.rowRole !== null || row.rowAriaLabel !== null) {
+      failures.push(`/memorials 1280: row keyboard attrs should be removed on desktop (tabindex=${row.rowTabindex}, role=${row.rowRole}, aria-label=${row.rowAriaLabel})`);
+    }
     if (Math.abs(row.barHeight - 30) < 2) failures.push(`/memorials 1280: bar still looks like the 30px phone row (height ${row.barHeight})`);
 
-    // A fresh load at 1280 (not just a resize) also keeps full sentences.
+    // Resize the same tab back down to 390: Option A must reapply cleanly
+    // (idempotent — no duplicate icons/sr spans, short labels back).
+    row = await resize(390, true);
+    const reappliedShort = row.items.map((it) => it.text);
+    for (const label of ["30-year guarantee", "Fixing included", "Permit help", "1-day reply"]) {
+      if (!reappliedShort.includes(label)) failures.push(`/memorials 390 (reapplied): missing short label "${label}" (have ${reappliedShort.join(", ")})`);
+    }
+    if (row.items.some((it) => !it.srText)) failures.push(`/memorials 390 (reapplied): every item should have hidden sr text`);
+    if (row.rowTabindex !== "0" || row.rowRole !== "group" || row.rowAriaLabel !== "Our promises") {
+      failures.push(`/memorials 390 (reapplied): row keyboard attrs missing (tabindex=${row.rowTabindex}, role=${row.rowRole}, aria-label=${row.rowAriaLabel})`);
+    }
+    if (Math.abs(row.barHeight - 30) > 2) failures.push(`/memorials 390 (reapplied): bar height ${row.barHeight}, expected ~30`);
+
+    // A fresh load at 1280 (not just a resize) also keeps full sentences
+    // and never adds the phone-only sr spans/keyboard attrs.
     await open("/memorials.html");
     row = await resize(1280, false);
     const freshTexts1280 = row.items.map((it) => it.text);
     for (const sentence of ["30-year fixing guarantee", "We help with your permit", "We reply within one working day"]) {
       if (!freshTexts1280.includes(sentence)) failures.push(`/memorials 1280 (fresh load): sentence "${sentence}" missing (have ${freshTexts1280.join(" | ")})`);
     }
+    if (row.items.some((it) => it.srText)) failures.push(`/memorials 1280 (fresh load): .sm-trust-sr should not be added on desktop`);
+    if (row.rowTabindex !== null || row.rowRole !== null || row.rowAriaLabel !== null) {
+      failures.push(`/memorials 1280 (fresh load): row should not get keyboard attrs on desktop`);
+    }
 
-    // Home page at 390: untouched 2x2, full sentences, ~97px bar.
+    // Home page at 390: untouched 2x2, full sentences, ~97px bar, none of
+    // Option A's sr spans / aria-label / row keyboard attrs.
     await open("/");
     row = await resize(390, true);
     if (Math.abs(row.barHeight - 97) > 8) failures.push(`/ 390: bar height ${row.barHeight}, expected ~97`);
@@ -264,6 +302,10 @@ async function main() {
       if (!homeTexts390.includes(sentence)) failures.push(`/ 390: full sentence "${sentence}" missing (have ${homeTexts390.join(" | ")})`);
     }
     if (row.items.some((it) => it.ariaLabel)) failures.push(`/ 390: home page items should not get aria-label rewrites`);
+    if (row.items.some((it) => it.srText)) failures.push(`/ 390: home page items should not get .sm-trust-sr rewrites`);
+    if (row.rowRole === "group" || row.rowAriaLabel === "Our promises" || row.rowTabindex === "0") {
+      failures.push(`/ 390: home page row should not pick up Option A's role=group/aria-label/tabindex`);
+    }
 
     // Product page (memorial.html): Option A must not apply even though
     // the shared markup and script are present.

@@ -526,6 +526,18 @@ body:has(#navbar) { display: flow-root; }
     display: inline !important;
     font-size: 12px !important;
   }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item .sm-trust-sr {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-row:focus-visible {
+    outline: 2px solid var(--sm-color-focus) !important;
+    outline-offset: -2px;
+  }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item svg {
     width: 16px !important;
     height: 16px !important;

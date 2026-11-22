@@ -654,11 +654,16 @@
     // sentences for short labels and the desktop icons for smaller bronze
     // ones, so the bar fits a single 30px row. The home page (bare .hero)
     // and the single-product page keep the shared markup untouched, as do
-    // widths above the breakpoint. Full sentences move to aria-label so
-    // screen readers still get them. Originals are saved per item so the
-    // swap can be undone exactly when the viewport grows back past 767px
-    // (tests/header-offset.mjs resizes one tab across both sides of that
-    // line and expects the sentences back).
+    // widths above the breakpoint. The full sentence stays readable to
+    // screen readers via a visually-hidden .sm-trust-sr span (not an
+    // aria-label on .site-trust-item — that's a plain div, and ARIA 1.2
+    // does not expose aria-label on elements without a role). The row
+    // gets tabindex/role=group/aria-label so keyboard users who can't
+    // scroll with touch can still reach items past the visible edge.
+    // Originals are saved per item so the swap can be undone exactly when
+    // the viewport grows back past 767px (tests/header-offset.mjs resizes
+    // one tab across both sides of that line and expects the sentences
+    // back).
     var TRUST_BAR_ITEMS = {
         '30-year fixing guarantee': { short: '30-year guarantee', icon: 'shield' },
         'fixing included': { short: 'Fixing included', icon: 'spanner' },
@@ -692,11 +697,17 @@
 
         var items = bar.querySelectorAll('.site-trust-item');
         if (!items.length) return;
+        var row = bar.querySelector('.site-trust-row');
 
         function apply() {
+            if (row) {
+                row.setAttribute('tabindex', '0');
+                row.setAttribute('role', 'group');
+                row.setAttribute('aria-label', 'Our promises');
+            }
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
-                var span = item.querySelector('span');
+                var span = item.querySelector('span:not(.sm-trust-sr)');
                 if (!span) continue;
                 if (!item.getAttribute('data-sm-trust-original')) {
                     item.setAttribute('data-sm-trust-original', item.innerHTML);
@@ -704,16 +715,27 @@
                 var full = (span.textContent || '').trim();
                 var info = TRUST_BAR_ITEMS[full.toLowerCase()];
                 if (!info) continue;
-                item.setAttribute('aria-label', full);
                 var svg = item.querySelector('svg');
                 var icon = buildTrustBarIcon(info.icon);
                 if (svg && svg.parentNode === item) item.replaceChild(icon, svg);
                 else item.insertBefore(icon, item.firstChild);
                 span.textContent = info.short;
+                span.setAttribute('aria-hidden', 'true');
+                if (!item.querySelector('.sm-trust-sr')) {
+                    var sr = document.createElement('span');
+                    sr.className = 'sm-trust-sr';
+                    sr.textContent = full;
+                    item.appendChild(sr);
+                }
             }
         }
 
         function restore() {
+            if (row) {
+                row.removeAttribute('tabindex');
+                row.removeAttribute('role');
+                row.removeAttribute('aria-label');
+            }
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
                 var original = item.getAttribute('data-sm-trust-original');
