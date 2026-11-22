@@ -628,6 +628,12 @@
                 padding: 0.85rem 0.75rem;
             }
         }
+        /* Very narrow phones: one column so placeholders are not clipped. */
+        @media (max-width: 359px) {
+            html body #contactForm .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
