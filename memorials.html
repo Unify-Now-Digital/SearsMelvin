@@ -971,10 +971,11 @@
                 pointer-events: none;
                 background: linear-gradient(90deg, transparent, var(--sm-color-bg-surface));
             }
+            main > .catalogue-toolbar { margin-top: 8px; }
             .listing-stone-inline-note {
                 display: block;
-                margin: 6px 0 0;
-                padding: 0 0.75rem;
+                margin: 0 0 8px;
+                padding: 0;
                 font-family: var(--sm-font-body);
                 font-size: var(--sm-text-xs);
                 font-weight: var(--sm-weight-body);
@@ -991,12 +992,33 @@
             html body .product-image img { object-fit: contain; }
             /* main reserves 395px per card for content-visibility; match the
                shorter card so unrendered cards do not leave gaps. */
-            .product-face { min-height: 0; contain-intrinsic-size: auto 175px 270px; }
+            /* Every card face is held at the tallest painted card for this
+               width: the 6:5 photo ((100vw - 40px) / 2 * 5 / 6) plus the
+               tallest info panel for the band (measured on all 147 cards in
+               Chromium and WebKit). The same value is the content-visibility
+               reserve, so cards neither grow nor shrink when they paint. */
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 153px); }
+            .product-face {
+                min-height: var(--sm-card-face);
+                contain-intrinsic-width: auto 175px;
+                contain-intrinsic-height: auto var(--sm-card-face);
+            }
             html body a.product-card .product-info { padding: 8px 10px 10px; }
             html body a.product-card .product-category { margin-bottom: 0.15rem; line-height: 1.2; }
             html body a.product-card .product-name { margin-bottom: 0.2rem; line-height: 1.2; }
             html body a.product-card .product-stones { margin-bottom: 0.2rem; line-height: 1.2; display: block; }
             html body a.product-card .product-price { margin: 0; line-height: 1.2; }
+        }
+        /* Name and category lines wrap differently as cards widen, so the
+           held info height steps with the viewport. */
+        @media (min-width: 376px) and (max-width: 442px) {
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 163px); }
+        }
+        @media (min-width: 443px) and (max-width: 478px) {
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 147px); }
+        }
+        @media (min-width: 479px) and (max-width: 767px) {
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 118px); }
         }
     </style>
 </head>
@@ -1090,9 +1112,8 @@
                         <span class="listing-stone-inline-lead-price" id="listingStoneInlineLeadPrice" aria-live="polite"></span>
                     </span>
                 </div>
-                <div class="listing-stone-inline-row" id="listingStoneInlineRow" role="list"></div>
+                <div class="listing-stone-inline-row" id="listingStoneInlineRow"></div>
             </section>
-            <p class="listing-stone-inline-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p>
             <div class="catalogue-toolbar">
             <nav class="type-browse" aria-label="Browse by type">
                 <ul class="type-browse-list">
@@ -1134,6 +1155,7 @@
                         <span class="results-count">Showing <span id="resultsCount">...</span> memorials</span>
                     </div>
                 </div>
+                <p class="listing-stone-inline-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p>
                 <div class="products-grid" id="productsGrid">
                     <div id="productsLoading" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
                         <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: var(--color-accent); fill: none; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>

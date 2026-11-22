@@ -106,4 +106,23 @@ assert.equal(injected.lead.price, "+£550");
 assert.match(injected.inline, /data-slug="blue-pearl"/);
 assert.match(injected.grid, /id="stoneBand"/);
 
+// The swatch row is a plain group of buttons (no list role without items).
+assert.doesNotMatch(html, /id="listingStoneInlineRow"[^>]*role="list"/);
+
+// The From-price note sits with the cards, below the results line, so it is
+// not parked under the bottom bar at 320x568.
+const noteAt = html.indexOf('<p class="listing-stone-inline-note">');
+assert.ok(noteAt > html.indexOf('<div class="results-header">') && noteAt < html.indexOf('<div class="products-grid" id="productsGrid">'));
+
+// Phone card faces are held at the measured tallest card for each width band,
+// and the same value is the content-visibility reserve (no grow or shrink on paint).
+assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 5 \/ 12 \+ 153px\)/);
+assert.match(mobileCss, /min-height:\s*var\(--sm-card-face\)/);
+assert.match(mobileCss, /contain-intrinsic-height:\s*auto var\(--sm-card-face\)/);
+for (const [band, extra] of [["376px) and (max-width: 442px", 163], ["443px) and (max-width: 478px", 147], ["479px) and (max-width: 767px", 118]]) {
+  const at = html.indexOf("@media (min-width: " + band + ")");
+  assert.ok(at > -1, "missing card band " + band);
+  assert.match(html.slice(at, at + 200), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 5 / 12 \\+ " + extra + "px\\)"));
+}
+
 console.log("listing-stone-inline: ok");
