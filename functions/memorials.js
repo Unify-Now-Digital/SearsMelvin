@@ -99,6 +99,77 @@ function colourWord(count) {
   return Number(count) === 1 ? "stone colour" : "stone colours";
 }
 
+// Per-colour surcharge overrides, keyed by stone_colours.slug. Mirrors the
+// authoritative pricing in functions/api/_quote-pricing.js — this copy is
+// display-only (the mobile listing strip); the actual quote is priced
+// server-side.
+const COLOUR_SURCHARGE_OVERRIDES = Object.freeze({
+  "crystal-white": Object.freeze({
+    "kerb-sets": 1050,
+    "cremation-memorials": 90,
+    "default": 500,
+  }),
+});
+
+export function premiumColourSurcharge(categorySlug, colourSlug) {
+  const key = String(colourSlug || "").trim().toLowerCase();
+  const override = key ? COLOUR_SURCHARGE_OVERRIDES[key] : undefined;
+  if (override) {
+    if (Object.hasOwn(override, categorySlug)) return override[categorySlug];
+    return override.default;
+  }
+  if (categorySlug === "kerb-sets") return 550;
+  if (categorySlug === "cremation-memorials") return 90;
+  return 200;
+}
+
+function colourTier(colour) {
+  return colour.tier || (colour.is_premium ? "premium" : "standard");
+}
+
+function colourPriceLabel(colour, categorySlug) {
+  if (colourTier(colour) === "standard") return "Included";
+  return `+£${premiumColourSurcharge(categorySlug, colour.slug)}`;
+}
+
+function stoneInlineButton(colour, pressed) {
+  const name = escapeHtml(String(colour.name || "").slice(0, 80));
+  const slug = safeSlug(colour.slug);
+  const primary = safeHex(colour.hex_primary);
+  const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
+  const imageUrl = safeImageUrl(colour.image_url);
+  const photo = imageUrl
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+    : "";
+  const label = name || "Stone colour";
+  const tier = escapeHtml(colourTier(colour));
+  return `<button type="button" class="listing-stone-inline-swatch" data-slug="${slug}" data-name="${name}" data-primary="${primary}" data-secondary="${secondary}" data-tier="${tier}"${imageUrl ? ` data-image="${escapeHtml(imageUrl)}"` : ""} aria-label="${label}" aria-pressed="${pressed ? "true" : "false"}"><span class="listing-stone-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span></button>`;
+}
+
+export function stoneInlineMarkup(colours) {
+  const list = Array.isArray(colours) ? colours : [];
+  return list.map((colour, index) => stoneInlineButton(colour, index === 0)).join("");
+}
+
+// The lead box shows the default-selected colour (first in display order) so
+// the strip paints with no layout shift before the client's tap handler runs.
+export function stoneInlineLeadMarkup(colour, categorySlug) {
+  if (!colour) return { photoStyle: "", photoInner: "", name: "", price: "", slug: "" };
+  const primary = safeHex(colour.hex_primary);
+  const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
+  const imageUrl = safeImageUrl(colour.image_url);
+  const photoInner = imageUrl
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="80" height="80" decoding="async" onerror="this.remove()">`
+    : "";
+  return {
+    photoStyle: `background:linear-gradient(145deg, ${primary}, ${secondary})`,
+    photoInner,
+    name: String(colour.name || "").slice(0, 80) || "Stone colour",
+    price: colourPriceLabel(colour, categorySlug),
+    slug: safeSlug(colour.slug),
+  };
+}
+
 export function stoneBandMarkup(colours) {
   const list = Array.isArray(colours) ? colours : [];
   const swatches = list.map((colour) => {
@@ -147,11 +218,16 @@ export function listableProducts(products) {
   return out;
 }
 
-export function catalogueInjection(products, colours) {
+export function catalogueInjection(products, colours, categorySlug = "") {
   const visible = listableProducts(products);
   const cards = renderCards(visible, colours);
   const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
-  return { grid, count: visible.length };
+  return {
+    grid,
+    inline: stoneInlineMarkup(colours),
+    lead: stoneInlineLeadMarkup(colours[0], categorySlug),
+    count: visible.length,
+  };
 }
 
 function renderCards(products, colours) {
@@ -198,7 +274,7 @@ export async function onRequestGet({ request, env }) {
     if (filtered.length) products = filtered;
   }
   const visible = listableProducts(products);
-  const { grid, count } = catalogueInjection(products, catalogue.colours);
+  const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours, requested);
   const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
@@ -206,6 +282,16 @@ export async function onRequestGet({ request, env }) {
   // The canonical stays the link in the shell (/memorials), including when ?type= is set.
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
+    .on("#listingStoneInlineRow", { element(el) { el.setInnerContent(inline, { html: true }); } })
+    .on("#listingStoneInlineLead", { element(el) { el.setAttribute("data-slug", lead.slug); } })
+    .on("#listingStoneInlineLeadPhoto", {
+      element(el) {
+        el.setAttribute("style", lead.photoStyle);
+        el.setInnerContent(lead.photoInner, { html: true });
+      },
+    })
+    .on("#listingStoneInlineLeadName", { element(el) { el.setInnerContent(lead.name); } })
+    .on("#listingStoneInlineLeadPrice", { element(el) { el.setInnerContent(lead.price); } })
     .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
     .on('.type-count[data-type-count="all"]', { element(el) { el.setInnerContent(String(counts.all)); } });
   for (const slug of Object.keys(counts)) {
