@@ -155,9 +155,37 @@ const MEASURE = `(() => {
   };
 })()`;
 
+// Focused-row read: outline-offset must be -2px (so the ring draws inside
+// the 30px row, not under the fixed header) and the right-edge fade must
+// hide while the row has the ring, or it paints over it.
+const FOCUS_MEASURE = `(() => {
+  const row = document.querySelector('.site-trust-row');
+  const bar = document.querySelector('.site-trust-bar');
+  const isRowFocused = document.activeElement === row;
+  const focusVisible = row ? row.matches(':focus-visible') : false;
+  const rowStyle = row ? getComputedStyle(row) : null;
+  const afterStyle = bar ? getComputedStyle(bar, '::after') : null;
+  return {
+    isRowFocused,
+    focusVisible,
+    outlineOffset: rowStyle ? rowStyle.outlineOffset : null,
+    afterDisplay: afterStyle ? afterStyle.display : null,
+  };
+})()`;
+
 async function main() {
   const chrome = chromePath();
   assert.ok(chrome, "Chrome is required for tests/trust-bar-a.mjs. Set CHROME_PATH or install google-chrome.");
+
+  const failures = [];
+
+  // The global focus-ring rule sets outline-offset with !important, so the
+  // row rule must also carry !important or the global one wins and the
+  // ring draws outside the row. Lock that in the source directly.
+  const cssSource = readFileSync(join(ROOT, "site-upgrades.css"), "utf8");
+  if (!cssSource.includes("outline-offset: -2px !important")) {
+    failures.push(`site-upgrades.css: missing "outline-offset: -2px !important" on the inner-page trust row focus rule`);
+  }
 
   const server = await startServer();
   const { port } = server.address();
@@ -175,7 +203,6 @@ async function main() {
     "about:blank",
   ], { stdio: "ignore" });
 
-  const failures = [];
   let client;
   try {
     const version = await waitForJson(debugPort);
@@ -219,6 +246,18 @@ async function main() {
       return row.items.filter((it) => it.left < row.windowRight - 0.5 && it.right > row.windowRight + 0.5).length;
     }
 
+    // Keyboard Tab presses (not a programmatic .focus()) so :focus-visible
+    // applies the way it would for a real keyboard user.
+    async function tabToRow(maxPresses = 60) {
+      for (let i = 0; i < maxPresses; i++) {
+        await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
+        await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
+        const onRow = await evalJson(`document.activeElement === document.querySelector('.site-trust-row')`);
+        if (onRow) return true;
+      }
+      return false;
+    }
+
     // /memorials at 390: one 30px row, short labels, full sentences in a
     // visually-hidden .sm-trust-sr span (not aria-label on the item), 3
     // items fully visible, a 4th peeking, no page scroll, and the row is
@@ -241,6 +280,17 @@ async function main() {
     if (row.rowTabindex !== "0") failures.push(`/memorials 390: row tabindex is "${row.rowTabindex}", expected "0"`);
     if (row.rowRole !== "group") failures.push(`/memorials 390: row role is "${row.rowRole}", expected "group"`);
     if (row.rowAriaLabel !== "Our promises") failures.push(`/memorials 390: row aria-label is "${row.rowAriaLabel}", expected "Our promises"`);
+
+    // /memorials at 390: reaching the row via Tab must give it a focus ring
+    // that draws inside the 30px row (outline-offset -2px) with the
+    // right-edge fade hidden, not painted over the ring.
+    const reachedRow = await tabToRow();
+    if (!reachedRow) failures.push(`/memorials 390: could not reach the trust row via Tab key`);
+    const focusState = await evalJson(FOCUS_MEASURE);
+    if (!focusState.focusVisible) failures.push(`/memorials 390: trust row is not :focus-visible after Tab (isRowFocused=${focusState.isRowFocused})`);
+    if (focusState.outlineOffset !== "-2px") failures.push(`/memorials 390: focused row outline-offset is "${focusState.outlineOffset}", expected "-2px"`);
+    if (focusState.afterDisplay !== "none") failures.push(`/memorials 390: trust bar ::after display is "${focusState.afterDisplay}" while row is focused, expected "none"`);
+    await evalJson(`document.activeElement && document.activeElement.blur()`);
 
     // /memorials at 320: narrower phone, still one row, at least 2 full
     // labels visible plus a peek, no page scroll.

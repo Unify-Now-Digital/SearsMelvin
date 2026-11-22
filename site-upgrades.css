@@ -536,7 +536,7 @@ body:has(#navbar) { display: flow-root; }
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-row:focus-visible {
     outline: 2px solid var(--sm-color-focus) !important;
-    outline-offset: -2px;
+    outline-offset: -2px !important;
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-item svg {
     width: 16px !important;
@@ -570,6 +570,10 @@ body:has(#navbar) { display: flow-root; }
     width: 28px !important;
     background: linear-gradient(to right, transparent, var(--color-cream)) !important;
     pointer-events: none !important;
+  }
+  /* Keep the fade from painting over the focus ring. */
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar:has(.site-trust-row:focus-visible)::after {
+    display: none !important;
   }
 }
 
