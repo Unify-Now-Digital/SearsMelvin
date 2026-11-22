@@ -722,7 +722,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261122c">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261122d">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -787,6 +787,7 @@
                 scrollbar-width: none;
                 padding: 0 2.5rem 0 0;
                 -webkit-overflow-scrolling: touch;
+                scroll-padding-inline: 0 2.5rem;
             }
             .type-browse-list::-webkit-scrollbar { display: none; }
             .type-browse::after {
@@ -1939,14 +1940,28 @@
         function markTypeLinks() {
             const type = state.filters.type.length === 1 ? state.filters.type[0] : '';
             document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
-                const current = !!type && link.getAttribute('href') === '/memorials?type=' + type;
-                if (current) link.setAttribute('aria-current', 'page');
+                const isCurrent = !!type && link.getAttribute('href') === '/memorials?type=' + type;
+                if (isCurrent) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             document.querySelectorAll('.type-browse-list a.type-all').forEach((link) => {
                 if (!type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
+            // Narrow phones clip chip labels past the fade; keep the selected
+            // chip fully visible by scrolling only the chip row sideways.
+            // Never scroll the document (footer links share the same hrefs).
+            const list = document.querySelector('.type-browse-list');
+            const chip = list && list.querySelector('a[aria-current="page"]');
+            if (list && chip && list.scrollWidth > list.clientWidth) {
+                const pad = 16;
+                const lr = list.getBoundingClientRect();
+                const cr = chip.getBoundingClientRect();
+                const left = cr.left - lr.left + list.scrollLeft;
+                const right = left + cr.width;
+                if (left - pad < list.scrollLeft) list.scrollLeft = Math.max(0, left - pad);
+                else if (right + pad > list.scrollLeft + list.clientWidth) list.scrollLeft = right + pad - list.clientWidth;
+            }
         }
 
         function onTypeChipClick(event) {
@@ -2594,7 +2609,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261122" defer></script>
+    <script src="/site-globals.js?v=20261122d" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261122a" defer></script>
 </body>
