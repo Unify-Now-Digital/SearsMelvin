@@ -722,7 +722,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261122c">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261122d">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -787,6 +787,7 @@
                 scrollbar-width: none;
                 padding: 0 2.5rem 0 0;
                 -webkit-overflow-scrolling: touch;
+                scroll-padding-inline: 0 2.5rem;
             }
             .type-browse-list::-webkit-scrollbar { display: none; }
             .type-browse::after {
@@ -1938,15 +1939,22 @@
 
         function markTypeLinks() {
             const type = state.filters.type.length === 1 ? state.filters.type[0] : '';
+            let current = null;
             document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
-                const current = !!type && link.getAttribute('href') === '/memorials?type=' + type;
-                if (current) link.setAttribute('aria-current', 'page');
+                const isCurrent = !!type && link.getAttribute('href') === '/memorials?type=' + type;
+                if (isCurrent) { link.setAttribute('aria-current', 'page'); current = link; }
                 else link.removeAttribute('aria-current');
             });
             document.querySelectorAll('.type-browse-list a.type-all').forEach((link) => {
-                if (!type) link.setAttribute('aria-current', 'page');
+                if (!type) { link.setAttribute('aria-current', 'page'); current = link; }
                 else link.removeAttribute('aria-current');
             });
+            // Narrow phones clip chip labels past the fade; keep the selected
+            // chip fully on screen. Harmless on desktop, where the row never
+            // overflows and scrollIntoView has nothing to do.
+            if (current && current.scrollIntoView) {
+                current.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+            }
         }
 
         function onTypeChipClick(event) {
@@ -2594,7 +2602,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261122" defer></script>
+    <script src="/site-globals.js?v=20261122d" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261122a" defer></script>
 </body>

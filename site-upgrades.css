@@ -424,10 +424,15 @@ html body main p { max-width: var(--sm-measure); }
 /* Cookie banner text (shown on first visit) */
 html body .cookie-banner p, html body [class*=cookie] p { font-size: 0.9375rem; }
 html body .floating-badge { background-color: var(--sm-color-bg-inverse); color: var(--sm-color-text-inverse); border-radius: var(--sm-radius-sm); }
-html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.625rem; letter-spacing: 0; white-space: nowrap; }
+/* Kept as the full number, not "Call": the ad-visitor number swap
+   (swapPhone in site-upgrades.js) rewrites tel: hrefs AND any text node
+   showing "020 3835 2548", and tests/site-upgrades.mjs plus
+   tests/visual/tracking.spec.ts assert every tel: link shows the number.
+   A "Call" label would leave this tab out of the visible swap. */
+html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.75rem; letter-spacing: -0.02em; white-space: nowrap; }
 @media (max-width: 320px) {
   html body .mobile-bottom-nav a.mobile-nav-item:last-child { padding-left: 0; padding-right: 0; }
-  html body .mobile-nav-item span.mobile-nav-phone { font-size: 0.5625rem; }
+  html body .mobile-nav-item span.mobile-nav-phone { letter-spacing: -0.03em; }
 }
 
 /* ---- Header offset ----
@@ -1219,6 +1224,27 @@ html body #searchInput {
   color: var(--sm-color-text);
 }
 
+/* At 320px the icon + input + close button row had no shrink floor on the
+   input and no fixed width on the close button, so the button was pushed
+   off the right edge of the screen. */
+@media (max-width: 480px) {
+  html body .search-input-wrapper {
+    gap: 0.5rem;
+  }
+  html body .search-modal .search-input,
+  html body #searchInput {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  html body .search-close-btn {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    justify-content: center;
+  }
+}
+
 /* ==========================================================================
    S6 — cards.
    The photo stays rectangular. The heart stays a separate 44px square.
@@ -1868,6 +1894,19 @@ html body #navbar .nav-links a[href^="tel:"]::before {
   }
 }
 
+/* /memorials only: the header also carries the shortlist heart next to the
+   menu button. Below ~344px, logo(240) + heart(44) + menu(44) overflowed
+   past the right edge, clipping the menu button's hit area. Shrinking the
+   logo (the only item here without a 44px tap-target floor) buys back
+   enough room for the heart and menu to both stay fully on screen. */
+@media (max-width: 350px) {
+  html body:has(.sm-header-heart) #navbar .logo img {
+    width: 170px;
+    height: 43px;
+    max-height: calc(var(--header-height) - 7px);
+  }
+}
+
 @media (max-width: 900px) and (min-width: 769px) {
   html body #navbar .nav-links {
     display: flex !important;
@@ -2462,6 +2501,26 @@ html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(inp
   }
   html body .mobile-bottom-nav-inner {
     grid-template-columns: 1fr 1fr 1.1fr 1fr auto;
+  }
+  html body .mobile-nav-item {
+    min-width: 44px;
+  }
+}
+
+/* Device review, should-fix, continued: a few more sub-44px controls found
+   on a live mobile pass. Scoped to phone widths so desktop is untouched. */
+@media (max-width: 767px) {
+  /* Grow the hit area to 44px without moving anything: the padding is
+     cancelled by an equal negative margin. */
+  html body .grief-card a {
+    display: inline-block;
+    padding-block: 12px;
+    margin-block: -12px;
+  }
+  html body .search-quick-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 

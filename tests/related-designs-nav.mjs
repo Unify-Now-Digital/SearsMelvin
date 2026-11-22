@@ -17,7 +17,7 @@ assert.match(slug, /\/memorials\?type=/);
 assert.doesNotMatch(slug, /\/memorials\/type\//);
 assert.match(slug, /See all /);
 assert.match(memorial, /min-height: 8\.75rem/);
-assert.match(memorial, /#phoneColourSlot\[hidden\] \{ display: block !important; min-height: 19rem; \}/);
+assert.match(memorial, /#phoneColourSlot\[hidden\] \{ display: block !important; min-height: 19rem; padding-bottom: calc\(150px \+ env\(safe-area-inset-bottom\)\); \}/);
 assert.match(memorial, /memorials\?type=/);
 assert.doesNotMatch(memorial, /\/memorials\/type\//);
 const fade = memorial.match(/@keyframes fadeInUp \{[^}]+\}/);

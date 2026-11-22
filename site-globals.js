@@ -58,6 +58,11 @@
         return a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
     }
 
+    // #listingStoneInline (the sticky /memorials colour strip), #phoneColourSlot
+    // (the product-page phone colour picker) and the home .hero h1 are static
+    // content, not controls, but a live audit found the launcher landing on
+    // top of them on short phones. liftClear() already walks this same list
+    // to clear quote/brochure controls, so the fix is to list them here too.
     function chatBlockers() {
         var nodes = [];
         var chrome = [
@@ -77,7 +82,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a');
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a, #listingStoneInline, #phoneColourSlot, .hero h1');
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);
