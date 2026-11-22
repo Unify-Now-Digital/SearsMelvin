@@ -900,9 +900,12 @@
                 font-size: var(--sm-text-sm);
                 font-weight: var(--sm-weight-body-strong);
                 line-height: 1.25;
-                white-space: nowrap;
+                /* Two lines so names such as "Bahama Blue" are not cut at 320px. */
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
                 overflow: hidden;
-                text-overflow: ellipsis;
+                overflow-wrap: anywhere;
             }
             .listing-stone-inline-lead-price {
                 display: block;
