@@ -1738,8 +1738,18 @@
             // Re-measure once images load (their intrinsic size may shift layout)
             track.querySelectorAll('img').forEach(img => img.addEventListener('load', measure, { once: true }));
 
-            new IntersectionObserver(entries => { onscreen = entries[0].isIntersecting; }, { threshold: 0.05 }).observe(marquee);
-            document.addEventListener('visibilitychange', () => { last = performance.now(); });
+            // Only run the frame loop while the strip is on screen and the tab is
+            // visible. It used to run every frame from load, which kept the phone
+            // main thread busy while the hero photo was trying to paint.
+            let looping = false;
+            const startLoop = () => {
+                if (looping || !onscreen || document.hidden) return;
+                looping = true; last = performance.now();
+                requestAnimationFrame(tick);
+            };
+            onscreen = false;
+            new IntersectionObserver(entries => { onscreen = entries[0].isIntersecting; startLoop(); }, { threshold: 0.05 }).observe(marquee);
+            document.addEventListener('visibilitychange', () => { last = performance.now(); startLoop(); });
 
             const wrap = () => {
                 if (!singleWidth) return;
@@ -1755,9 +1765,9 @@
                 }
                 wrap();
                 track.style.transform = 'translate3d(' + (-offset) + 'px,0,0)';
+                if (!onscreen || document.hidden) { looping = false; return; }
                 requestAnimationFrame(tick);
             }
-            requestAnimationFrame(tick);
 
             // Drag with pointer events
             let startX = 0, startOffset = 0, moved = 0, activePointer = null;
