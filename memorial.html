@@ -1754,21 +1754,21 @@
             <div class="quote-form-body">
                 <form id="quoteForm" novalidate>
                     <div class="quote-form-group">
-                        <label>Your name <span class="quote-required">*</span></label>
+                        <label for="qName">Your name <span class="quote-required">*</span></label>
                         <input type="text" id="qName" placeholder="Your name" required autocomplete="name">
                     </div>
                     <div class="quote-form-row">
                         <div class="quote-form-group">
-                            <label>Email address</label>
-                            <input type="email" id="qEmail" placeholder="your@email.com" autocomplete="email">
+                            <label for="qEmail">Email address</label>
+                            <input type="email" id="qEmail" placeholder="your@email.com" autocomplete="email" inputmode="email">
                         </div>
                         <div class="quote-form-group">
-                            <label>Phone number</label>
+                            <label for="qPhone">Phone number</label>
                             <input type="tel" id="qPhone" placeholder="07123 456 789" autocomplete="tel" inputmode="tel">
                         </div>
                     </div>
                     <div class="quote-form-group">
-                        <label>Cemetery <span style="font-weight:400">(optional)</span></label>
+                        <label for="qCemeteryInput">Cemetery <span style="font-weight:400">(optional)</span></label>
                         <div class="cem-autocomplete">
                             <input type="text" id="qCemeteryInput" placeholder="Search cemetery name, or leave blank if you’re unsure" autocomplete="off" aria-autocomplete="list" aria-controls="qCemSuggestions">
                             <div class="cem-suggestions" id="qCemSuggestions"></div>
