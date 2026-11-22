@@ -1957,6 +1957,13 @@ html body #navbar .nav-links a[href^="tel:"]::before {
     padding-top: 3px !important;
     padding-bottom: 3px !important;
   }
+  /* The logo link's box otherwise matches the shrunk logo image exactly
+     (as little as 41px tall at 375px), under the 44px tap target floor.
+     min-height alone grows the hit area around the image, which stays
+     centered at its exact set size — nothing stretches or shifts. */
+  html body #navbar .logo {
+    min-height: 44px;
+  }
   html body #navbar .logo img {
     width: 200px;
     height: 50px;
