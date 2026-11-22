@@ -164,26 +164,85 @@
 
     var placingChat = false;
 
+    var CHAT_OPEN_Z = 2000;
+
+    // Space taken by the product price bar or the phone bottom nav. Used
+    // only for the open panel box, not for closed bubble placement.
+    function openChromeBottom() {
+        var vh = window.innerHeight;
+        var chrome = null;
+        var pieces = [
+            shownRect(document.querySelector('.mobile-bottom-bar.is-visible')),
+            shownRect(document.querySelector('.price-summary'))
+        ];
+        if (phoneWidth()) pieces.push(shownRect(document.querySelector('.mobile-bottom-nav')));
+        for (var i = 0; i < pieces.length; i++) {
+            var rect = pieces[i];
+            if (!rect || rect.bottom < vh - 30) continue;
+            if (!chrome || rect.top < chrome.top) chrome = rect;
+        }
+        return chrome ? Math.max(0, Math.ceil(vh - chrome.top)) : 0;
+    }
+
+    function setImportant(el, name, value) {
+        if (el.style.getPropertyValue(name) === value && el.style.getPropertyPriority(name) === 'important') return;
+        el.style.setProperty(name, value, 'important');
+    }
+
+    function setRootVar(name, value) {
+        var root = document.documentElement.style;
+        if (root.getPropertyValue(name) === value) return;
+        root.setProperty(name, value);
+    }
+
+    function finishPlacing() {
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(function () { placingChat = false; });
+        } else {
+            placingChat = false;
+        }
+    }
+
+    function pinChatHostOpen(el) {
+        if (el.position !== 'bottom-right') el.position = 'bottom-right';
+        if (el.classList && !el.classList.contains('sm-chat-open')) el.classList.add('sm-chat-open');
+        var openBottom = openChromeBottom();
+        setRootVar('--sm-chat-open-bottom', openBottom + 'px');
+        setImportant(el, 'position', 'fixed');
+        setImportant(el, 'margin', '0');
+        setImportant(el, 'transform', 'none');
+        setImportant(el, 'pointer-events', 'auto');
+        setImportant(el, 'z-index', String(CHAT_OPEN_Z));
+        setImportant(el, 'top', '0px');
+        setImportant(el, 'left', '0px');
+        setImportant(el, 'right', '0px');
+        setImportant(el, 'bottom', openBottom + 'px');
+        setImportant(el, 'width', 'auto');
+        setImportant(el, 'height', 'calc(100dvh - ' + openBottom + 'px)');
+    }
+
     function pinChatHost(el, bottom) {
         if (el.position !== 'bottom-right') el.position = 'bottom-right';
+        if (el.classList && el.classList.contains('sm-chat-open')) el.classList.remove('sm-chat-open');
         var px = Math.round(bottom) + 'px';
-        document.documentElement.style.setProperty('--sm-chat-bottom', px);
-        el.style.setProperty('position', 'fixed', 'important');
-        el.style.setProperty('top', 'auto', 'important');
-        el.style.setProperty('left', 'auto', 'important');
-        el.style.setProperty('right', '0px', 'important');
-        el.style.setProperty('bottom', px, 'important');
-        el.style.setProperty('width', '0px', 'important');
-        el.style.setProperty('height', '0px', 'important');
-        el.style.setProperty('margin', '0', 'important');
-        el.style.setProperty('transform', 'translateZ(0)', 'important');
-        el.style.setProperty('pointer-events', 'auto', 'important');
-        el.style.setProperty('z-index', '70', 'important');
+        setRootVar('--sm-chat-bottom', px);
+        setImportant(el, 'position', 'fixed');
+        setImportant(el, 'top', 'auto');
+        setImportant(el, 'left', 'auto');
+        setImportant(el, 'right', '0px');
+        setImportant(el, 'bottom', px);
+        setImportant(el, 'width', '0px');
+        setImportant(el, 'height', '0px');
+        setImportant(el, 'margin', '0');
+        setImportant(el, 'transform', 'translateZ(0)');
+        setImportant(el, 'pointer-events', 'auto');
+        setImportant(el, 'z-index', '70');
     }
 
     function applyWidgetPosition() {
         if (placingChat) return;
         placingChat = true;
+        var open = false;
         try {
             var hosts = document.querySelectorAll('chat-widget');
             if (hosts.length) {
@@ -191,18 +250,34 @@
                 var withPrompt = !phone;
                 var h;
                 for (h = 0; h < hosts.length; h++) {
+                    if (hosts[h].active) open = true;
                     if (phone && !hosts[h].active && hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
                 }
-                var bottom = stackBottom(withPrompt);
-                if (withPrompt && chatHits(bottom, true)) {
-                    for (h = 0; h < hosts.length; h++) {
-                        if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                if (open && phone) {
+                    // Do not re-apply the 0x0 closed pin, and do not change
+                    // --sm-chat-bottom, so the bubble returns to the same spot.
+                    for (h = 0; h < hosts.length; h++) pinChatHostOpen(hosts[h]);
+                } else if (open) {
+                    // The desktop card already works with the closed corner pin.
+                    var closedBottom = parseFloat(document.documentElement.style.getPropertyValue('--sm-chat-bottom'));
+                    if (isNaN(closedBottom)) closedBottom = 16;
+                    for (h = 0; h < hosts.length; h++) pinChatHost(hosts[h], closedBottom);
+                } else {
+                    var bottom = stackBottom(withPrompt);
+                    if (withPrompt && chatHits(bottom, true)) {
+                        for (h = 0; h < hosts.length; h++) {
+                            if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                        }
+                        bottom = stackBottom(false);
                     }
-                    bottom = stackBottom(false);
+                    for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
                 }
-                for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
             }
         } catch (e) {}
+        if (open) {
+            finishPlacing();
+            return;
+        }
         var bottomLegacy = pickWidgetBottom();
         var nodes = document.body ? document.body.children : [];
         for (var i = 0; i < nodes.length; i++) {
@@ -217,7 +292,7 @@
             deeper[j].style.setProperty('bottom', bottomLegacy + 'px', 'important');
             deeper[j].style.setProperty('right', '24px', 'important');
         }
-        placingChat = false;
+        finishPlacing();
         // Heuristic fallback: any small fixed element pinned to the bottom-right
         // corner is almost certainly the chat bubble (regardless of class/tag).
         var direct = document.body ? document.body.children : [];
@@ -268,6 +343,28 @@
             applyWidgetPosition();
             if (++ticks >= 20) clearInterval(poll);
         }, 500);
+        // The widget's active flag is a property, not a light-DOM attribute,
+        // so the observer can miss an open or close. Watch that flag and
+        // only re-apply when it changes. While it is open,
+        // applyWidgetPosition keeps the open box and does not re-apply the
+        // zero-size closed pin. A click on the host also syncs immediately.
+        var lastChatOpen = null;
+        setInterval(function () {
+            var hosts = document.querySelectorAll('chat-widget');
+            var isOpen = false;
+            for (var i = 0; i < hosts.length; i++) {
+                if (hosts[i].active) isOpen = true;
+            }
+            if (lastChatOpen === isOpen) return;
+            lastChatOpen = isOpen;
+            applyWidgetPosition();
+        }, 250);
+        document.addEventListener('click', function (ev) {
+            var t = ev.target;
+            if (!t || !t.closest || !t.closest('chat-widget')) return;
+            setTimeout(applyWidgetPosition, 0);
+            setTimeout(applyWidgetPosition, 100);
+        }, true);
     }
 
     function readShortlist() {

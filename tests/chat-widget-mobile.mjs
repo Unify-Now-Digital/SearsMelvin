@@ -26,6 +26,23 @@ assert.match(globals, /bottom-right/);
 assert.match(globals, /--sm-chat-bottom/);
 assert.match(globals, /showPrompt/);
 
+const openRule = css.match(/html body chat-widget\.sm-chat-open \{([\s\S]*?)\n\}/);
+assert.ok(openRule, "open host needs a real in-viewport box");
+assert.match(openRule[1], /transform:\s*none !important/);
+assert.match(openRule[1], /z-index:\s*2000 !important/);
+assert.match(openRule[1], /height:\s*calc\(100dvh - var\(--sm-chat-open-bottom, 0px\)\)/);
+assert.match(openRule[1], /--sm-chat-open-bottom/);
+assert.doesNotMatch(openRule[1], /translateZ\(0\)/);
+assert.doesNotMatch(openRule[1], /width:\s*0/);
+
+assert.match(globals, /sm-chat-open/);
+assert.match(globals, /--sm-chat-open-bottom/);
+assert.match(globals, /function pinChatHostOpen/);
+assert.match(globals, /CHAT_OPEN_Z = 2000/);
+assert.match(globals, /setImportant\(el, 'transform', 'none'\)/);
+assert.match(globals, /setImportant\(el, 'width', '0px'\)/);
+assert.match(globals, /setImportant\(el, 'transform', 'translateZ\(0\)'\)/);
+
 const pages = readdirSync(".").filter((name) => name.endsWith(".html"));
 let navPages = 0;
 for (const name of pages) {
