@@ -12,6 +12,17 @@ const end = html.indexOf("function keepChipInView");
 assert.ok(start > 0 && end > start, "markTypeLinks/chipTypeFromHref block not found");
 const source = html.slice(start, end);
 
+// Static checks on onTypeChipClick: it must reuse chipTypeFromHref instead of
+// hand-rolling a [?&]type= regex.
+{
+  const clickStart = html.indexOf("function onTypeChipClick");
+  const clickEnd = html.indexOf("function removeFilter");
+  assert.ok(clickStart > 0 && clickEnd > clickStart, "onTypeChipClick not found");
+  const clickSource = html.slice(clickStart, clickEnd);
+  assert.ok(clickSource.includes("chipTypeFromHref("), "onTypeChipClick must call chipTypeFromHref");
+  assert.ok(!/\[\?&\]type=/.test(clickSource), "onTypeChipClick must not hand-roll a type= regex");
+}
+
 function makeLink(href, { inList = false, current = false } = {}) {
   const attrs = { href };
   if (current) attrs["aria-current"] = "page";
@@ -36,11 +47,11 @@ function makeLink(href, { inList = false, current = false } = {}) {
 
 let list;
 
-function buildDom(chipHrefs, { footerHref, staleCurrentIndex } = {}) {
+function buildDom(chipHrefs, { footerHrefs = [], staleCurrentIndex } = {}) {
   const listLinks = chipHrefs.map((href, i) =>
     makeLink(href, { inList: true, current: i === staleCurrentIndex })
   );
-  const footerLinks = footerHref ? [makeLink(footerHref, { inList: false })] : [];
+  const footerLinks = footerHrefs.map((href) => makeLink(href, { inList: false }));
   const allLinks = [...listLinks, ...footerLinks];
   const keepChipInViewCalls = [];
   list = {
@@ -56,8 +67,8 @@ function buildDom(chipHrefs, { footerHref, staleCurrentIndex } = {}) {
   const document = {
     querySelectorAll(selector) {
       if (selector === ".type-browse-list a") return listLinks;
-      if (selector === 'a[href^="/memorials?type="]') {
-        return allLinks.filter((l) => (l.getAttribute("href") || "").startsWith("/memorials?type="));
+      if (selector === 'a[href*="type="]') {
+        return allLinks.filter((l) => (l.getAttribute("href") || "").includes("type="));
       }
       return [];
     },
@@ -69,12 +80,11 @@ function buildDom(chipHrefs, { footerHref, staleCurrentIndex } = {}) {
   return { listLinks, footerLinks, document, keepChipInViewCalls };
 }
 
-function run(typeFilter, chipHrefs, opts = {}) {
-  const { listLinks, footerLinks, document, keepChipInViewCalls } = buildDom(chipHrefs, opts);
+function makeContext(document, keepChipInViewCalls, typeFilter) {
   const context = {
     URL,
     state: { filters: { type: typeFilter } },
-    location: { origin: "https://searsmelvin.co.uk" },
+    location: { origin: "https://searsmelvin.co.uk", hostname: "searsmelvin.co.uk" },
     document,
     keepChipInView(l, chip) {
       keepChipInViewCalls.push({ list: l, chip });
@@ -82,6 +92,12 @@ function run(typeFilter, chipHrefs, opts = {}) {
   };
   vm.createContext(context);
   vm.runInContext(`${source}\nthis.markTypeLinks = markTypeLinks;`, context);
+  return context;
+}
+
+function run(typeFilter, chipHrefs, opts = {}) {
+  const { listLinks, footerLinks, document, keepChipInViewCalls } = buildDom(chipHrefs, opts);
+  const context = makeContext(document, keepChipInViewCalls, typeFilter);
   context.markTypeLinks();
   return { listLinks, footerLinks, keepChipInViewCalls };
 }
@@ -122,13 +138,13 @@ const CHIPS = [
 // comparison and is unaffected by chips being rewritten absolute.
 {
   const { footerLinks } = run(["childrens-memorials"], CHIPS, {
-    footerHref: "/memorials?type=childrens-memorials",
+    footerHrefs: ["/memorials?type=childrens-memorials"],
   });
   assert.equal(footerLinks[0].getAttribute("aria-current"), "page", "matching footer link must be current");
 }
 {
   const { footerLinks } = run(["lawn-headstones"], CHIPS, {
-    footerHref: "/memorials?type=childrens-memorials",
+    footerHrefs: ["/memorials?type=childrens-memorials"],
   });
   assert.equal(footerLinks[0].getAttribute("aria-current"), null, "non-matching footer link must not be current");
 }
@@ -138,6 +154,54 @@ const CHIPS = [
   const { keepChipInViewCalls, listLinks } = run(["childrens-memorials"], CHIPS);
   assert.equal(keepChipInViewCalls.length, 1);
   assert.equal(keepChipInViewCalls[0].chip, listLinks[2]);
+}
+
+// FIX 1: a footer link whose href GTM rewrote to absolute (with &_gl=...)
+// after the fact must still be found by the broader a[href*="type="]
+// selector, and must have its stale aria-current cleared when the filter
+// moves on — not just the links the selector happened to catch at page load.
+{
+  const footerHrefs = [
+    "/memorials?type=lawn-headstones", // lawn1
+    "/memorials?type=lawn-headstones", // lawn2
+    "/memorials?type=childrens-memorials", // children
+  ];
+  const { listLinks, footerLinks, document, keepChipInViewCalls } = buildDom(CHIPS, { footerHrefs });
+  const context = makeContext(document, keepChipInViewCalls, ["lawn-headstones"]);
+
+  context.markTypeLinks();
+  assert.equal(footerLinks[0].getAttribute("aria-current"), "page", "footer lawn1 must be current");
+  assert.equal(footerLinks[1].getAttribute("aria-current"), "page", "footer lawn2 must be current");
+  assert.equal(footerLinks[2].getAttribute("aria-current"), null, "footer children must not be current yet");
+
+  // GTM decorates lawn1's href on touchstart, turning it absolute with _gl.
+  footerLinks[0].setAttribute("href", "https://searsmelvin.co.uk/memorials?type=lawn-headstones&_gl=1*abc");
+
+  // Selecting Children's must still find and clear the now-absolute lawn1
+  // link, and mark the children footer link current.
+  context.state.filters.type = ["childrens-memorials"];
+  context.markTypeLinks();
+  assert.equal(footerLinks[0].getAttribute("aria-current"), null, "rewritten footer lawn1 must be cleared");
+  assert.equal(footerLinks[1].getAttribute("aria-current"), null, "footer lawn2 must be cleared");
+  assert.equal(footerLinks[2].getAttribute("aria-current"), "page", "footer children must now be current");
+}
+
+// Nit: a cross-host link outside the chip row (same path/query shape) must
+// never be marked, even when its type matches the selected filter.
+{
+  const { footerLinks } = run(["childrens-memorials"], CHIPS, {
+    footerHrefs: ["https://other.example/memorials?type=childrens-memorials"],
+  });
+  assert.equal(footerLinks[0].getAttribute("aria-current"), null, "cross-host link must never be marked");
+}
+
+// Nit: www redirects to the apex today, so a www chip href must still match.
+{
+  const { listLinks } = run(
+    ["lawn-headstones"],
+    ["https://www.searsmelvin.co.uk/memorials?type=lawn-headstones&_gl=abc"]
+  );
+  assert.equal(listLinks[0].getAttribute("aria-current"), "page", "www chip href must still match the apex host");
 }
 
 console.log("chip-active-absolute-url: ok");
