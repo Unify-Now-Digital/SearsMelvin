@@ -81,7 +81,7 @@ for (const name of pages) {
   if (!html.includes('id="cookieConsent"')) continue;
   banners += 1;
   assert.match(html, /href="\/cookie-consent\.css"/, `${name}: cookie stylesheet missing`);
-  assert.match(html, /src="\/cookie-consent\.js"/, `${name}: cookie script missing`);
+  assert.match(html, /src="\/cookie-consent\.js(\?v=\w+)?"/, `${name}: cookie script missing`);
   assert.match(html, /Your cookie choices/, `${name}: desktop heading missing`);
   assert.match(html, /We use cookies for analytics and ads, only if you agree\./, `${name}: phone copy missing`);
   assert.match(html, /id="cookieAccept"/, `${name}: Accept missing`);

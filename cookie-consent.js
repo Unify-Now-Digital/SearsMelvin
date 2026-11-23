@@ -72,6 +72,11 @@
     if (byClick && (choice.analytics || choice.ads)) {
       root.dataLayer.push({ event: 'consent_granted_by_click' });
     }
+    try {
+      root.dispatchEvent(new root.CustomEvent('sm-cookie-consent', {
+        detail: { analytics: !!choice.analytics, ads: !!choice.ads }
+      }));
+    } catch (e) {}
   }
 
   function readStored() {
