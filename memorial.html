@@ -986,6 +986,165 @@
             }
         }
 
+        /* True phones only (767px and below). 768px and wider keep the rules above.
+           Option 1A: the colour picker is a labelled grid. The chosen colour
+           stays large on top. Every group name and surcharge is visible, and
+           the swatches wrap, so the strip never scrolls sideways.
+           The PR 302 150px bottom gap is dropped. The body's bottom padding
+           (72px + safe area, under the 1024px rules) already clears the
+           69px price bar, so nothing ends up behind it.
+           While the slot is still hidden (before the data fetch fills it),
+           it reserves the filled grid's height, so filling it does not push
+           the page down. Heights measured at 375-430px (770px) and 320px
+           (927px). Once filled, the slot sizes to its content. */
+        @media (max-width: 767px) {
+            .phone-colour-slot { min-height: 0; padding-bottom: 0.5rem; }
+            #phoneColourSlot[hidden] { min-height: 770px; padding-bottom: 0.5rem; }
+            .phone-colour-slot .stone-colour-preview { gap: 0.85rem; margin: 0 0 0.85rem; padding: 0.6rem; }
+            .phone-colour-slot .stone-colour-preview-frame { width: 96px; height: 96px; }
+            .phone-colour-slot .colour-options {
+                display: block;
+                overflow: visible;
+                width: auto;
+                margin: 0;
+                padding: 0;
+            }
+            .phone-colour-slot .colour-group,
+            .phone-colour-slot .colour-tier,
+            .phone-colour-slot .colour-tier.colour-tier-crystal {
+                display: block;
+                margin: 0 0 0.75rem;
+                padding: 0;
+                border: 0;
+                background: none;
+            }
+            .phone-colour-slot .colour-group-label,
+            .phone-colour-slot .colour-tier summary,
+            .phone-colour-slot .colour-tier.colour-tier-crystal summary {
+                flex-wrap: wrap;
+                align-items: baseline;
+                gap: 0.4rem;
+                height: auto;
+                margin: 0 0 0.5rem;
+                padding: 0 0 0.4rem;
+                border-bottom: 1px solid var(--color-border);
+                font-size: 0.75rem;
+                font-weight: var(--sm-weight-body-strong);
+                color: var(--sm-color-text);
+                white-space: normal;
+            }
+            .phone-colour-slot .colour-group-tag-full { display: inline; }
+            .phone-colour-slot .colour-group-tag-short { display: none; }
+            .phone-colour-slot .colour-group-note,
+            .phone-colour-slot .colour-tier.colour-tier-crystal .colour-group-note {
+                margin-left: 0;
+                color: var(--sm-color-text-accent);
+            }
+            .phone-colour-slot .colour-swatch-row {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+                gap: 0.55rem 0.35rem;
+                align-items: start;
+            }
+            .phone-colour-slot .colour-option { min-width: 0; }
+            .phone-colour-slot .colour-wrapper { gap: 0.25rem; }
+            .phone-colour-slot .colour-name {
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+                overflow: hidden;
+                max-width: 100%;
+                min-width: 0;
+                line-height: 1.2;
+            }
+
+            /* Option 2C: a one-line "‹ Category" back link, then the kicker,
+               then the title and price on one row. The visible trail only;
+               the breadcrumb JSON-LD is unchanged. The parent crumb is the
+               third-from-last child in both the server and client markup. */
+            body.memorial-page .breadcrumb-bar { padding-bottom: 0.5rem; }
+            body.memorial-page .breadcrumb {
+                flex-wrap: nowrap;
+                align-items: center;
+                min-height: 0;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+            body.memorial-page .breadcrumb > * { display: none; }
+            body.memorial-page .breadcrumb > a:nth-last-child(3) {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.3rem;
+                min-height: 44px;
+            }
+            body.memorial-page .breadcrumb > a:nth-last-child(3)::before {
+                content: '\2039';
+                content: '\2039' / '';
+                font-size: 1.15em;
+                line-height: 1;
+            }
+            /* .product-info is display: contents, so its children sit in this
+               flex box. Wrapping rows let the title and price share one row;
+               a long name pushes the price onto the next line. */
+            .product-container { flex-flow: row wrap; gap: 0.75rem 0.6rem; }
+            .product-container > *,
+            .product-info > * { flex: 0 0 100%; }
+            #productCategory { margin-bottom: 0.15rem; }
+            #productName {
+                flex: 1 1 auto;
+                width: auto;
+                min-width: 0;
+                margin: 0;
+                font-size: 1.35rem;
+                line-height: 1.2;
+                align-self: baseline;
+            }
+            #productTitlePrice {
+                flex: 0 0 auto;
+                width: auto;
+                margin: 0 0 0 auto;
+                font-size: 0.85rem;
+                text-align: right;
+                white-space: nowrap;
+                align-self: baseline;
+            }
+
+            /* Option 3A: the PR 307 trust-bar icons (site-globals.js
+               TRUST_BAR_ICON_PATHS, 24 viewBox, stroke 1.7, round caps) as
+               CSS masks. No new DOM, no new requests. */
+            .product-guarantees ul { display: flex; flex-direction: column; gap: 0.75rem; }
+            .product-guarantees li,
+            .product-guarantees > p { display: flex; align-items: flex-start; gap: 0.6rem; }
+            .product-guarantees li::before,
+            .product-guarantees > p::before {
+                content: '';
+                flex: 0 0 20px;
+                width: 20px;
+                height: 20px;
+                margin-top: 0.1rem;
+                background-color: var(--sm-color-text-accent);
+                -webkit-mask: var(--sm-guarantee-icon) center / contain no-repeat;
+                mask: var(--sm-guarantee-icon) center / contain no-repeat;
+            }
+            /* shield: structural fixing */
+            .product-guarantees li:nth-child(1) { --sm-guarantee-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.2L5 6.2v6.1c0 4.6 3.1 7.8 7 9.2 3.9-1.4 7-4.6 7-9.2V6.2l-7-3z'/%3E%3Cpath d='M8.6 12.2l2.3 2.3 4.6-4.8'/%3E%3C/svg%3E"); }
+            /* spanner: workmanship */
+            .product-guarantees li:nth-child(2) { --sm-guarantee-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.2 5.2a3.6 3.6 0 0 0-5 5L5 15.4V19h3.6l5.2-5.2a3.6 3.6 0 0 0 5-5l-2.4 2.4-1.6-1.6 2.4-2.4z'/%3E%3C/svg%3E"); }
+            /* clipboard: ground settlement */
+            .product-guarantees li:nth-child(3) { --sm-guarantee-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 4.5h7v2h-7z'/%3E%3Cpath d='M10 3.5h4v2h-4z'/%3E%3Crect x='6.5' y='5.5' width='11' height='15' rx='1.4'/%3E%3Cpath d='M9.2 13.2l2 2 3.8-3.9'/%3E%3C/svg%3E"); }
+            /* clock: the terms link */
+            .product-guarantees > p { margin-top: 0.75rem; --sm-guarantee-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.3'/%3E%3Cpath d='M12 7.6V12l3.3 2'/%3E%3C/svg%3E"); }
+
+            /* Option 4A: a bolder price in the phone bar. The buttons and the
+               69px bar height are unchanged. */
+            #mobileBarFrom { font-size: 12px; font-weight: var(--sm-weight-body); color: var(--sm-color-text-muted); }
+            #mobileBarAmount { font-size: 20px; font-weight: 700; line-height: 1.1; }
+            .mobile-bar-vat { font-size: 12px; }
+        }
+        @media (max-width: 374px) {
+            #phoneColourSlot[hidden] { min-height: 927px; }
+        }
+
         /* Save Toast */
         .save-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px); z-index: 200; background: var(--color-stone); color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 8px 30px color-mix(in srgb, var(--sm-color-text) 20%, transparent); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; pointer-events: none; max-width: 420px; width: max-content; }
         .save-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
@@ -2298,6 +2457,8 @@
             var strip = document.getElementById('stoneColourOptions');
             var tile = input && input.closest ? input.closest('.colour-option') : null;
             if (!strip || !tile || !strip.contains(tile)) return;
+            // Phones under 768px wrap the swatches, so there is nothing to scroll.
+            if (strip.scrollWidth <= strip.clientWidth) return;
             var pad = 4;
             var pageX = window.scrollX;
             var pageY = window.scrollY;
