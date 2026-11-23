@@ -99,37 +99,8 @@ function colourWord(count) {
   return Number(count) === 1 ? "stone colour" : "stone colours";
 }
 
-// Per-colour surcharge overrides, keyed by stone_colours.slug. Mirrors the
-// authoritative pricing in functions/api/_quote-pricing.js — this copy is
-// display-only (the mobile listing strip); the actual quote is priced
-// server-side.
-const COLOUR_SURCHARGE_OVERRIDES = Object.freeze({
-  "crystal-white": Object.freeze({
-    "kerb-sets": 1050,
-    "cremation-memorials": 90,
-    "default": 500,
-  }),
-});
-
-export function premiumColourSurcharge(categorySlug, colourSlug) {
-  const key = String(colourSlug || "").trim().toLowerCase();
-  const override = key ? COLOUR_SURCHARGE_OVERRIDES[key] : undefined;
-  if (override) {
-    if (Object.hasOwn(override, categorySlug)) return override[categorySlug];
-    return override.default;
-  }
-  if (categorySlug === "kerb-sets") return 550;
-  if (categorySlug === "cremation-memorials") return 90;
-  return 200;
-}
-
 function colourTier(colour) {
   return colour.tier || (colour.is_premium ? "premium" : "standard");
-}
-
-function colourPriceLabel(colour, categorySlug) {
-  if (colourTier(colour) === "standard") return "Included";
-  return `+£${premiumColourSurcharge(categorySlug, colour.slug)}`;
 }
 
 function stoneInlineButton(colour, pressed) {
@@ -153,19 +124,18 @@ export function stoneInlineMarkup(colours) {
 
 // The lead box shows the default-selected colour (first in display order) so
 // the strip paints with no layout shift before the client's tap handler runs.
-export function stoneInlineLeadMarkup(colour, categorySlug) {
-  if (!colour) return { photoStyle: "", photoInner: "", name: "", price: "", slug: "" };
+export function stoneInlineLeadMarkup(colour) {
+  if (!colour) return { photoStyle: "", photoInner: "", name: "", slug: "" };
   const primary = safeHex(colour.hex_primary);
   const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
   const imageUrl = safeImageUrl(colour.image_url);
   const photoInner = imageUrl
-    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="80" height="80" decoding="async" onerror="this.remove()">`
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="70" height="70" decoding="async" onerror="this.remove()">`
     : "";
   return {
     photoStyle: `background:linear-gradient(145deg, ${primary}, ${secondary})`,
     photoInner,
     name: String(colour.name || "").slice(0, 80) || "Stone colour",
-    price: colourPriceLabel(colour, categorySlug),
     slug: safeSlug(colour.slug),
   };
 }
@@ -183,7 +153,7 @@ export function stoneBandMarkup(colours) {
       : "";
     return `<div class="stone-swatch" role="listitem"${slug ? ` data-colour="${slug}"` : ""}><span class="stone-swatch-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="stone-swatch-name">${name}</span></div>`;
   }).join("");
-  return `<div class="stone-band" id="stoneBand"><p class="stone-band-lead">Every design comes in all <span id="stoneColourCount">${list.length}</span> ${colourWord(list.length)}</p><div class="stone-swatches" id="stoneSwatches" role="list" aria-label="Stone colours">${swatches}</div><p class="stone-band-note">The From price is for a standard stone. Premium and natural stones cost a little more.</p></div>`;
+  return `<div class="stone-band" id="stoneBand"><p class="stone-band-lead">Every design comes in all <span id="stoneColourCount">${list.length}</span> ${colourWord(list.length)}</p><div class="stone-swatches" id="stoneSwatches" role="list" aria-label="Stone colours">${swatches}</div></div>`;
 }
 
 async function fetchCatalogue(env) {
@@ -218,14 +188,14 @@ export function listableProducts(products) {
   return out;
 }
 
-export function catalogueInjection(products, colours, categorySlug = "") {
+export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
   const cards = renderCards(visible, colours);
   const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
   return {
     grid,
     inline: stoneInlineMarkup(colours),
-    lead: stoneInlineLeadMarkup(colours[0], categorySlug),
+    lead: stoneInlineLeadMarkup(colours[0]),
     count: visible.length,
   };
 }
@@ -274,7 +244,7 @@ export async function onRequestGet({ request, env }) {
     if (filtered.length) products = filtered;
   }
   const visible = listableProducts(products);
-  const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours, requested);
+  const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours);
   const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
@@ -291,7 +261,6 @@ export async function onRequestGet({ request, env }) {
       },
     })
     .on("#listingStoneInlineLeadName", { element(el) { el.setInnerContent(lead.name); } })
-    .on("#listingStoneInlineLeadPrice", { element(el) { el.setInnerContent(lead.price); } })
     .on("#resultsCount", { element(el) { el.setInnerContent(String(count)); } })
     .on('.type-count[data-type-count="all"]', { element(el) { el.setInnerContent(String(counts.all)); } });
   for (const slug of Object.keys(counts)) {

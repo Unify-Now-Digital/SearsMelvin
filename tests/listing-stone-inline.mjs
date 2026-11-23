@@ -1,12 +1,13 @@
 // Mobile-only permanent stone colour strip on /memorials (<=767px). Desktop
 // and tablet (>=768px) keep main's #stoneBand inside #productsGrid untouched.
 // The strip's lead box (left) is a plain element (not a button) showing the
-// selected colour at a larger size — it does not open anything; aria-live
-// spans announce the selected colour's name and price. The right side scrolls
-// two rows of small swatch buttons.
+// selected colour at a larger size — it does not open anything; an aria-live
+// span announces the selected colour's name. There is no price line (Arin,
+// 22 Nov: removed so the enlarged colour square has room). The right side
+// scrolls two rows of small swatch buttons.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { premiumColourSurcharge, stoneInlineMarkup, stoneInlineLeadMarkup, catalogueInjection } from "../functions/memorials.js";
+import { stoneInlineMarkup, stoneInlineLeadMarkup, catalogueInjection } from "../functions/memorials.js";
 
 const html = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
 const server = readFileSync(new URL("../functions/memorials.js", import.meta.url), "utf8");
@@ -17,8 +18,9 @@ assert.match(html, /id="listingStoneInlineRow"/);
 assert.match(html, /id="listingStoneInlineLead"/);
 assert.match(html, /id="listingStoneInlineLeadPhoto"/);
 assert.match(html, /id="listingStoneInlineLeadName"/);
-assert.match(html, /id="listingStoneInlineLeadPrice"/);
-assert.match(html, /The From price is for a standard stone\. Premium and natural stones cost a little more\./);
+assert.doesNotMatch(html, /id="listingStoneInlineLeadPrice"/);
+assert.doesNotMatch(html, /listing-stone-inline-lead-price/);
+assert.doesNotMatch(html, /The From price is for a standard stone/);
 assert.match(html, /function setupListingInline/);
 assert.match(html, /function selectListingInlineSwatch/);
 assert.match(html, /function renderListingInlineLead/);
@@ -35,21 +37,21 @@ assert.ok(leadTagMatch, "lead box markup not found");
 assert.notEqual(leadTagMatch[1], "button");
 assert.doesNotMatch(html, /listing-stone-dock|listing-stone-panel|listing-stone-sheet|listing-stone-scrim|listing-stone-zoom|openListingPanel/);
 assert.match(html, /id="listingStoneInlineLeadName" aria-live="polite"/);
-assert.match(html, /id="listingStoneInlineLeadPrice" aria-live="polite"/);
 
 // Main's desktop/tablet band is untouched.
 assert.match(html, /id="stoneBand"/);
 assert.match(html, /Every design comes in all/);
 
 // ---- CSS: hidden by default, phones-only media query ----
-assert.match(html, /\.listing-stone-inline,\s*\n\s*\.listing-stone-inline-note \{ display: none; \}/);
+assert.match(html, /\.listing-stone-inline \{ display: none; \}/);
 const mobileCss = html.slice(html.indexOf("/* Mobile compact stone strip."), html.indexOf("</style>\n</head>"));
 assert.match(mobileCss, /@media \(max-width: 767px\)/);
 assert.match(mobileCss, /position:\s*sticky/);
 assert.match(mobileCss, /top:\s*var\(--header-height,\s*68px\)/);
-// Two scrolling rows of plain 44x44 swatches at the strip height (Arin
-// t2420u, 22 Nov follow-up), a fixed-width lead column with a 56px photo for
-// the selected colour, and no per-swatch name annotation.
+// Two scrolling rows of plain 44x44 swatches at the strip height, a
+// fixed-width lead column with a 70px photo for the selected colour (grown
+// into the space freed by dropping the price line), and no per-swatch name
+// annotation.
 assert.match(mobileCss, /height:\s*104px/);
 assert.match(mobileCss, /grid-template-rows:\s*44px 44px/);
 assert.match(mobileCss, /grid-auto-columns:\s*44px/);
@@ -72,8 +74,9 @@ const leadRule = mobileCss.slice(mobileCss.indexOf(".listing-stone-inline-lead {
 assert.match(leadRule, /flex:\s*0 0 88px/);
 assert.doesNotMatch(leadRule, /clip:/);
 const leadPhotoRule = mobileCss.slice(mobileCss.indexOf(".listing-stone-inline-lead-photo {"), mobileCss.indexOf(".listing-stone-inline-lead-meta {"));
-assert.match(leadPhotoRule, /width:\s*56px/);
-assert.match(leadPhotoRule, /height:\s*56px/);
+assert.match(leadPhotoRule, /width:\s*70px/);
+assert.match(leadPhotoRule, /height:\s*70px/);
+assert.doesNotMatch(html, /listing-stone-inline-lead-price \{/);
 assert.match(mobileCss, /-webkit-line-clamp:\s*2/);
 
 // At >=768px the band-hiding rule must not apply — only inside the 767 query.
@@ -100,38 +103,27 @@ assert.match(markup, /data-tier="premium"/);
 assert.match(markup, /data-slug="blue-pearl"[^>]*aria-pressed="true"/);
 assert.match(markup, /data-slug="black"[^>]*aria-pressed="false"/);
 
-const lead = stoneInlineLeadMarkup(colours[0], "");
+const lead = stoneInlineLeadMarkup(colours[0]);
 assert.equal(lead.name, "Blue Pearl");
 assert.equal(lead.slug, "blue-pearl");
-assert.equal(lead.price, "+£200");
-const standardLead = stoneInlineLeadMarkup(colours[1], "");
-assert.equal(standardLead.price, "Included");
-assert.deepEqual(stoneInlineLeadMarkup(null, ""), { photoStyle: "", photoInner: "", name: "", price: "", slug: "" });
+assert.equal(lead.price, undefined);
+assert.deepEqual(stoneInlineLeadMarkup(null), { photoStyle: "", photoInner: "", name: "", slug: "" });
 
-// Price rules: standard tier is Included; premium/natural follows category,
-// with Crystal White overriding the per-category amount.
-assert.equal(premiumColourSurcharge("", "bahama-blue"), 200);
-assert.equal(premiumColourSurcharge("kerb-sets", "bahama-blue"), 550);
-assert.equal(premiumColourSurcharge("cremation-memorials", "bahama-blue"), 90);
-assert.equal(premiumColourSurcharge("", "crystal-white"), 500);
-assert.equal(premiumColourSurcharge("kerb-sets", "crystal-white"), 1050);
-assert.equal(premiumColourSurcharge("cremation-memorials", "crystal-white"), 90);
-assert.equal(premiumColourSurcharge("lawn-headstones", "crystal-white"), 500);
-
-// catalogueInjection wires the lead/inline markup through, keyed off the
-// requested type (the single active filter), without touching the grid.
-const injected = catalogueInjection([], colours, "kerb-sets");
-assert.equal(injected.lead.price, "+£550");
+// catalogueInjection wires the lead/inline markup through without touching
+// the grid. There is no per-category price any more (the strip dropped it).
+const injected = catalogueInjection([], colours);
+assert.equal(injected.lead.price, undefined);
 assert.match(injected.inline, /data-slug="blue-pearl"/);
 assert.match(injected.grid, /id="stoneBand"/);
 
 // The swatch row is a plain group of buttons (no list role without items).
 assert.doesNotMatch(html, /id="listingStoneInlineRow"[^>]*role="list"/);
 
-// The From-price note sits with the cards, below the results line, so it is
-// not parked under the bottom bar at 320x568.
-const noteAt = html.indexOf('<p class="listing-stone-inline-note">');
-assert.ok(noteAt > html.indexOf('<div class="results-header">') && noteAt < html.indexOf('<div class="products-grid" id="productsGrid">'));
+// The From-price note is gone (Arin, 22 Nov) — it never ran under the
+// bottom bar at 320x568 because it no longer exists.
+assert.doesNotMatch(html, /listing-stone-inline-note/);
+assert.doesNotMatch(html, /stone-band-note/);
+assert.doesNotMatch(server, /stone-band-note/);
 
 // Phone card faces are held at the measured tallest card for each width band,
 // and the same value is the content-visibility reserve (no grow or shrink on paint).
