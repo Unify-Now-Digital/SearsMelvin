@@ -2037,15 +2037,33 @@
             container.innerHTML = html;
         }
 
+        // GTM's linker/url_passthrough can rewrite a tapped chip's href to an
+        // absolute URL (optionally with tracking params like &_gl=...) before
+        // this runs, so compare parsed pathname/searchParams, not raw strings.
+        // Returns '' for "/memorials" with no type, or null if href isn't a
+        // /memorials link at all.
+        function chipTypeFromHref(href, origin) {
+            try {
+                const url = new URL(href || '', origin);
+                if (url.pathname !== '/memorials' && url.pathname !== '/memorials/') return null;
+                return url.searchParams.get('type') || '';
+            } catch (e) {
+                return null;
+            }
+        }
+
         function markTypeLinks() {
             const type = state.filters.type.length === 1 ? state.filters.type[0] : '';
-            document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
-                const isCurrent = !!type && link.getAttribute('href') === '/memorials?type=' + type;
-                if (isCurrent) link.setAttribute('aria-current', 'page');
+            const origin = location.origin;
+            document.querySelectorAll('.type-browse-list a').forEach((link) => {
+                const chipType = chipTypeFromHref(link.getAttribute('href'), origin);
+                if (chipType !== null && chipType === type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
-            document.querySelectorAll('.type-browse-list a.type-all').forEach((link) => {
-                if (!type) link.setAttribute('aria-current', 'page');
+            document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
+                if (link.closest('.type-browse-list')) return;
+                const chipType = chipTypeFromHref(link.getAttribute('href'), origin);
+                if (chipType !== null && !!type && chipType === type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             // Narrow phones clip chip labels past the fade; keep the selected
