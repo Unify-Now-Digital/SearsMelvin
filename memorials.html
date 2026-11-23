@@ -2037,15 +2037,36 @@
             container.innerHTML = html;
         }
 
+        // GTM's linker/url_passthrough can rewrite a tapped chip's href to an
+        // absolute URL (optionally with tracking params like &_gl=...) before
+        // this runs, so compare parsed pathname/searchParams, not raw strings.
+        // Returns '' for "/memorials" with no type, or null if href isn't a
+        // /memorials link at all.
+        function chipTypeFromHref(href, base) {
+            try {
+                const url = new URL(href || '', base);
+                const stripWww = (h) => h.replace(/^www\./, '');
+                if (stripWww(url.hostname) !== stripWww(location.hostname)) return null;
+                if (url.pathname !== '/memorials' && url.pathname !== '/memorials/') return null;
+                return url.searchParams.get('type') || '';
+            } catch (e) {
+                return null;
+            }
+        }
+
         function markTypeLinks() {
             const type = state.filters.type.length === 1 ? state.filters.type[0] : '';
-            document.querySelectorAll('a[href^="/memorials?type="]').forEach((link) => {
-                const isCurrent = !!type && link.getAttribute('href') === '/memorials?type=' + type;
-                if (isCurrent) link.setAttribute('aria-current', 'page');
+            const origin = location.origin;
+            document.querySelectorAll('.type-browse-list a').forEach((link) => {
+                const chipType = chipTypeFromHref(link.getAttribute('href'), origin);
+                if (chipType !== null && chipType === type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
-            document.querySelectorAll('.type-browse-list a.type-all').forEach((link) => {
-                if (!type) link.setAttribute('aria-current', 'page');
+            document.querySelectorAll('a[href*="type="]').forEach((link) => {
+                if (link.closest('.type-browse-list')) return;
+                const chipType = chipTypeFromHref(link.getAttribute('href'), origin);
+                if (chipType === null) return;
+                if (!!type && chipType === type) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             // Narrow phones clip chip labels past the fade; keep the selected
@@ -2075,10 +2096,10 @@
             const link = event.target && event.target.closest ? event.target.closest('a') : null;
             if (!link || !link.closest('.type-browse-list')) return;
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            const type = chipTypeFromHref(link.getAttribute('href'), location.origin);
+            // Same slug shape the old regex allowed; anything else navigates normally.
+            if (type === null || !/^[a-z0-9-]{0,120}$/.test(type)) return;
             event.preventDefault();
-            const href = link.getAttribute('href') || '';
-            const match = href.match(/[?&]type=([a-z0-9-]{1,120})/);
-            const type = match ? match[1] : '';
             const current = state.filters.type.length === 1 ? state.filters.type[0] : '';
             if (current === type) return;
             document.querySelectorAll('input[data-filter="type"]').forEach(input => {
