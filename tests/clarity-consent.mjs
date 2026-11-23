@@ -217,7 +217,7 @@ const privacy = read("privacy.html");
 assert.match(privacy, /Microsoft Clarity/);
 assert.match(privacy, /session recordings and heatmaps/);
 assert.match(privacy, /only after you accept analytics cookies/);
-assert.match(privacy, /Form inputs and personal details are masked/);
+assert.match(privacy, /Form fields, and the parts of the site that show your quote or order details, are masked/);
 assert.match(privacy, /https:\/\/www\.microsoft\.com\/privacy\/privacystatement/);
 
 // --- CSP report-only carries Clarity hosts; enforced does not
