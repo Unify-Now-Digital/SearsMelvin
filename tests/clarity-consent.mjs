@@ -178,17 +178,25 @@ e.log.idleFn();
 await flush();
 assert.deepEqual(e.log.scripts, ["https://www.clarity.ms/tag/" + DUMMY]);
 
-// admin paths skipped
-e = makeEnv({ stored: "accepted", ready: "complete", path: "/admin" });
+// admin, partner, track and quote paths skip the loader (masking still runs)
+for (const path of ["/admin", "/admin.html", "/admin-products", "/partner", "/track", "/track.html", "/quote", "/quote.html"]) {
+  e = makeEnv({ stored: "accepted", ready: "complete", path });
+  e.run();
+  assert.equal(e.log.idleFn, undefined, path);
+  assert.equal(e.log.fetches.length, 0, path);
+  assert.equal(e.log.scripts.length, 0, path);
+}
+// other public pages still load
+e = makeEnv({ stored: "accepted", ready: "complete", path: "/memorials" });
 e.run();
-assert.equal(e.log.idleFn, undefined);
+assert.equal(typeof e.log.idleFn, "function");
 
 // --- HTML contract
 const pages = readdirSync(".").filter((f) => f.endsWith(".html") && read(f).includes("/cookie-consent.js"));
 assert.ok(pages.length >= 15);
 for (const p of pages) {
   const s = read(p);
-  assert.match(s, /<script src="\/cookie-consent\.js\?v=20261123a"><\/script>\s*\n\s*<script src="\/sm-clarity\.js\?v=20261123a" defer><\/script>/, p);
+  assert.match(s, /<script src="\/cookie-consent\.js\?v=20261123a"><\/script>\s*\n\s*<script src="\/sm-clarity\.js\?v=20261123b" defer><\/script>/, p);
 }
 const has = (f, re) => assert.match(read(f), re, f);
 has("contact.html", /id="contactForm"[^>]*data-clarity-mask="True"/);
@@ -198,7 +206,19 @@ has("index.html", /id="appointmentForm"[^>]*data-clarity-mask="True"/);
 has("index.html", /id="apptFormFields"[^>]*data-clarity-mask="True"/);
 has("memorials.html", /id="shortlistEnquiry"[^>]*data-clarity-mask="True"/);
 has("track.html", /id="portalLookupForm"[^>]*data-clarity-mask="True"/);
+has("track.html", /id="portalView"[^>]*data-clarity-mask="True"/);
+has("track.html", /id="orderView"[^>]*data-clarity-mask="True"/);
 has("quote.html", /id="emailLookup"[^>]*data-clarity-mask="True"/);
+has("quote.html", /id="quotesListView"[^>]*data-clarity-mask="True"/);
+has("quote.html", /id="singleQuoteView"[^>]*data-clarity-mask="True"/);
+has("memorial.html", /id="qsInscription"[^>]*data-clarity-mask="True"/);
+has("brochure.html", /id="brochureThanks"[^>]*data-clarity-mask="True"/);
+const privacy = read("privacy.html");
+assert.match(privacy, /Microsoft Clarity/);
+assert.match(privacy, /session recordings and heatmaps/);
+assert.match(privacy, /only after you accept analytics cookies/);
+assert.match(privacy, /Form inputs and personal details are masked/);
+assert.match(privacy, /https:\/\/www\.microsoft\.com\/privacy\/privacystatement/);
 
 // --- CSP report-only carries Clarity hosts; enforced does not
 const line = (n) => read("_headers").split("\n").find((l) => l.trim().startsWith(n + ":"));

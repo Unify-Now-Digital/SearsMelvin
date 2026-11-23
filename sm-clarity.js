@@ -8,7 +8,9 @@
 
   var MASK = 'data-clarity-mask';
   var ROOT_IDS = ['contactForm', 'quoteForm', 'brochureRequest', 'appointmentForm',
-    'apptFormFields', 'shortlistEnquiry', 'emailLookup', 'portalLookupForm'];
+    'apptFormFields', 'shortlistEnquiry', 'emailLookup', 'portalLookupForm',
+    'portalView', 'orderView', 'quotesListView', 'singleQuoteView',
+    'qsInscription', 'brochureThanks'];
 
   function mask(el) {
     if (el && el.setAttribute) el.setAttribute(MASK, 'True');
@@ -34,7 +36,7 @@
   else applyMasks();
 
   var path = (root.location && root.location.pathname) || '';
-  if (/^\/(admin|admin-products|partner)(\.html)?(\/|$)/.test(path)) return;
+  if (/^\/(admin|admin-products|partner|track|quote)(\.html)?(\/|$)/.test(path)) return;
 
   var waiting = false;
   var injected = false;
