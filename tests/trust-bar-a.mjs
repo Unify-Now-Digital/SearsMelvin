@@ -291,6 +291,8 @@ async function main() {
     if (focusState.outlineOffset !== "-2px") failures.push(`/memorials 390: focused row outline-offset is "${focusState.outlineOffset}", expected "-2px"`);
     if (focusState.afterDisplay !== "none") failures.push(`/memorials 390: trust bar ::after display is "${focusState.afterDisplay}" while row is focused, expected "none"`);
     await evalJson(`document.activeElement && document.activeElement.blur()`);
+    const afterBlur = await evalJson(FOCUS_MEASURE);
+    if (afterBlur.afterDisplay === "none") failures.push(`/memorials 390: trust bar ::after display is "none" after blur, expected the fade to come back`);
 
     // /memorials at 320: narrower phone, still one row, at least 2 full
     // labels visible plus a peek, no page scroll.
