@@ -990,12 +990,16 @@
            Option 1A: the colour picker is a labelled grid. The chosen colour
            stays large on top. Every group name and surcharge is visible, and
            the swatches wrap, so the strip never scrolls sideways.
-           The PR 302 slot gap is dropped. The body's bottom padding
+           The PR 302 150px bottom gap is dropped. The body's bottom padding
            (72px + safe area, under the 1024px rules) already clears the
-           69px price bar, so nothing ends up behind it. */
+           69px price bar, so nothing ends up behind it.
+           While the slot is still hidden (before the data fetch fills it),
+           it reserves the filled grid's height, so filling it does not push
+           the page down. Heights measured at 375-430px (770px) and 320px
+           (927px). Once filled, the slot sizes to its content. */
         @media (max-width: 767px) {
-            .phone-colour-slot,
-            #phoneColourSlot[hidden] { min-height: 0; padding-bottom: 0.5rem; }
+            .phone-colour-slot { min-height: 0; padding-bottom: 0.5rem; }
+            #phoneColourSlot[hidden] { min-height: 770px; padding-bottom: 0.5rem; }
             .phone-colour-slot .stone-colour-preview { gap: 0.85rem; margin: 0 0 0.85rem; padding: 0.6rem; }
             .phone-colour-slot .stone-colour-preview-frame { width: 96px; height: 96px; }
             .phone-colour-slot .colour-options {
@@ -1136,6 +1140,9 @@
             #mobileBarFrom { font-size: 12px; font-weight: var(--sm-weight-body); color: var(--sm-color-text-muted); }
             #mobileBarAmount { font-size: 20px; font-weight: 700; line-height: 1.1; }
             .mobile-bar-vat { font-size: 12px; }
+        }
+        @media (max-width: 374px) {
+            #phoneColourSlot[hidden] { min-height: 927px; }
         }
 
         /* Save Toast */

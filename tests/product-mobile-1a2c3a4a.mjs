@@ -64,11 +64,20 @@ const place = html.slice(html.indexOf("function placeStoneColourControls"), html
 assert.ok(place.indexOf("slot.appendChild(preview)") !== -1, "the preview moves into the phone slot");
 assert.ok(place.indexOf("slot.appendChild(preview)") < place.indexOf("slot.appendChild(options)"), "preview is placed before the options");
 
-// The PR 302 gap is gone on phones; 768px keeps its rule.
-const slot = rule(phone, /\.phone-colour-slot,\s*#phoneColourSlot\[hidden\]/);
-assert.ok(slot, "the phone block resets the slot");
-assert.match(slot, /min-height:\s*0/);
+// The PR 302 150px gap is gone on phones; 768px keeps its rule.
+const slot = rule(phone, /\.phone-colour-slot/);
+assert.ok(slot, "the phone block resets the filled slot");
+assert.match(slot, /min-height:\s*0;/);
 assert.match(slot, /padding-bottom:\s*0\.5rem/);
+// Before it is filled, the hidden slot reserves the grid's height (no CLS).
+const pending = rule(phone, /#phoneColourSlot\[hidden\]/);
+assert.ok(pending, "the phone block reserves the hidden slot");
+assert.match(pending, /min-height:\s*770px/);
+assert.doesNotMatch(pending, /min-height:\s*0/);
+const narrow = mediaBlocks(html, "@media (max-width: 374px)").map((b) => rule(b, /#phoneColourSlot\[hidden\]/)).find(Boolean);
+assert.ok(narrow, "a 374px block reserves the hidden slot on narrow phones");
+assert.match(narrow, /min-height:\s*927px/);
+assert.ok(html.indexOf("@media (max-width: 374px) {\n            #phoneColourSlot") > html.indexOf("Option 1A"), "the narrow reservation comes after the phone rule");
 assert.doesNotMatch(phone, /19rem/);
 assert.doesNotMatch(phone, /150px/);
 assert.ok(html.indexOf("Option 1A") > html.indexOf("min-height: 19rem; padding-bottom: calc(150px"), "the phone reset comes after the 768px rule it overrides");
