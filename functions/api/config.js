@@ -9,6 +9,13 @@ export function adsPhone(v) {
   return /^0\d{9,10}$/.test(d) && d !== "02038352548" ? d : "";
 }
 
+// Microsoft Clarity project id: a plain alphanumeric identifier, public by design.
+// Unset / PLACEHOLDER / anything else → "" → the site loads no Clarity.
+export function clarityProjectId(v) {
+  const id = publicValue(v, 32);
+  return /^[A-Za-z0-9]{8,16}$/.test(id) && id !== "PLACEHOLDER" ? id : "";
+}
+
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
@@ -25,7 +32,7 @@ export async function onRequestGet({ request, env }) {
     return hardenedJson({ ok: false, error: "Cross-origin request rejected" }, 403);
   }
 
-  // These three values are intentionally public browser identifiers. Secrets such
+  // These values are intentionally public browser identifiers. Secrets such
   // as Stripe's secret key and Google OAuth refresh tokens must never be added here.
   return hardenedJson({
     stripePublishableKey: publicValue(env.STRIPE_PUBLISHABLE_KEY, 256),
@@ -34,5 +41,6 @@ export async function onRequestGet({ request, env }) {
     // Ads-visitor phone (shown only to visitors with the 90-day sm_ad cookie).
     // Public by design. Unset / PLACEHOLDER / not a UK number → "" → the site keeps 020 3835 2548.
     adsPhone: adsPhone(env.SM_ADS_PHONE),
+    clarityProjectId: clarityProjectId(env.CLARITY_PROJECT_ID),
   });
 }

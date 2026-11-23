@@ -360,7 +360,7 @@
         <div class="login-card">
             <h2>Find your quotes and orders</h2>
             <p class="subtitle">Enter your email address and we'll send a secure link to view your quotes and track your orders.</p>
-            <form onsubmit="handleSendPortalLink(event)">
+            <form onsubmit="handleSendPortalLink(event)" id="portalLookupForm" data-clarity-mask="True">
                 <div class="login-field">
                     <label>Email address</label>
                     <input type="email" id="lookupEmail" required placeholder="you@example.com">
@@ -383,8 +383,8 @@
         <p id="errorMsg">Please check your link and try again.</p>
         <button class="retry-btn" onclick="retryLoad()">Try Again</button>
     </div>
-    <div id="portalView" style="display:none;"></div>
-    <div id="orderView" style="display:none;"></div>
+    <div id="portalView" data-clarity-mask="True" style="display:none;"></div>
+    <div id="orderView" data-clarity-mask="True" style="display:none;"></div>
 </main>
 
 <script>
@@ -805,7 +805,8 @@
         </div>
     </div>
 </div>
-<script src="/cookie-consent.js"></script>
+<script src="/cookie-consent.js?v=20261123a"></script>
+<script src="/sm-clarity.js?v=20261123b" defer></script>
 
 
 <script src="/site-globals.js?v=20261122k" defer></script>

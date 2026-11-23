@@ -565,7 +565,7 @@
                         </div>
                     </div>
                 </div>
-                <form class="sm-brochure-email sm-brochure-request" id="brochureRequest" data-brochure-request novalidate>
+                <form class="sm-brochure-email sm-brochure-request" id="brochureRequest" data-clarity-mask="True" data-brochure-request novalidate>
                     <p class="sm-brochure-request-title">Send me the brochure</p>
                     <div class="sm-brochure-field">
                         <label for="brochureName">Name</label>
@@ -585,7 +585,7 @@
                     <button type="submit">Send me the brochure</button>
                     <p class="sm-brochure-email-note">We use your name, email and phone to send the brochure and to reply about your memorial. See our <a href="/privacy" class="sm-form-privacy-link">privacy policy</a>.</p>
                 </form>
-                <div class="sm-brochure-thanks" data-brochure-thanks hidden>
+                <div class="sm-brochure-thanks" id="brochureThanks" data-brochure-thanks data-clarity-mask="True" hidden>
                     <p class="sm-brochure-thanks-title" data-brochure-thanks-title>Thank you.</p>
                     <p>Your brochure is ready. A copy is also on its way to your inbox.</p>
                     <p><a href="/assets/sears-melvin-brochure.pdf?v=10.1" data-brochure-link download>Download the brochure</a></p>
@@ -747,7 +747,8 @@
     </div>
 </div>
 <script src="/supabase-config"></script>
-<script src="/cookie-consent.js"></script>
+<script src="/cookie-consent.js?v=20261123a"></script>
+<script src="/sm-clarity.js?v=20261123b" defer></script>
 <script>
 
         // ==================== SITE SEARCH ====================
