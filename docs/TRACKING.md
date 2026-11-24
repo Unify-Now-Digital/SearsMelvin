@@ -5,7 +5,7 @@ form, a page template, a phone number, a link or anything pushed to `dataLayer`,
 this first. CI (`tests/tracking-contract.mjs`, `.github/workflows/tests.yml`) fails a PR
 that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM daily.
 
-- GTM container: **GTM-KRDX4BQ5** (live version 28, published 9 Nov 2026 at 23:40 Madrid, replaces v27; snapshot in `docs/gtm-snapshot.json`)
+- GTM container: **GTM-KRDX4BQ5** (live version 34, snapshot refreshed 24 Nov 2026 in Europe/Madrid from the live container, replacing the v28 snapshot; snapshot in `docs/gtm-snapshot.json`)
 - GA4: **G-RF3LYJMFVE** (property 527695823)
 - Google Ads: **AW-16866941615** (customer 417-417-3541, manager 527-130-1935)
 
@@ -33,7 +33,7 @@ that breaks it; `scripts/tracking-check.mjs` checks the live site and live GTM d
 | `view_item_list` | `memorials.html` grid, payload from `site-upgrades.js` | Once when the catalogue grid finishes rendering, and again after a filter or sort settles. 50ms debounce, so the first paint plus a `?type=` deep link is one event. | **Not wired in GTM yet.** Arin adds the tag. Must not trigger `request_quote` or `generate_lead`. |
 | `select_item` | `memorials.html` card click / auxclick | A memorial card tap, including middle-click and modified clicks. The handler does not call `preventDefault`. The same card is ignored for 700ms so click + auxclick cannot double count. | **Not wired in GTM yet.** |
 | `filter_select` | `memorials.html` type, price, clear | One event per control change (`filter_name`, `filter_value`, `selected`, `result_count`). `result_count` is the full number of matching memorials, not a page size. A repeated call for the same control collapses to one event. Landing on `?type=` does not count as a change. Sort updates `view_item_list` only. Colour is no longer sent. | **Not wired in GTM yet.** Colour never had a GTM tag. |
-| `whatsapp_click` `{link_location}` | `memorial-option-b.js` on product pages (one delegated listener) | One push per click on a WhatsApp link (`https://wa.me/442038352548`). `link_location` is `pdp_sticky` (phone/tablet bar), `pdp_not_ready` (phones), `pdp_choices` (Your choices card, 768px and up) or `pdp_desktop_bar` (desktop price bar, 1025px and up). | **Not wired in GTM yet.** Arin adds a GA4 event tag if wanted. Must not trigger `request_quote` or `generate_lead`. |
+| `whatsapp_click` `{link_location}` | `memorial-option-b.js` on product pages (one delegated listener) | One push per click on a WhatsApp link (`https://wa.me/442038352548`). `link_location` is `pdp_sticky` (phone/tablet bar), `pdp_not_ready` (phones), `pdp_choices` (Your choices card, 768px and up) or `pdp_desktop_bar` (desktop price bar, 1025px and up). | GA4 `whatsapp_click` (GTM v34). The tag parameter is `placement` (from a GTM variable). The site push still uses `link_location`. Must not trigger `request_quote` or `generate_lead`. |
 | `consent_update` | `cookie-consent.js` on every page | Accept, Reject, Accept all, Reject all, or Save choices | Consent mode stays advanced. Defaults are `denied`, and GTM still loads. Google sends cookieless pings until a grant. `consent_granted_by_click` fires when the click grants analytics or ads. |
 
 `sm_quote_submit` stays a single push on the confirmed quote response. When the open product matches `sessionStorage.sm_list_context` (written from the card, 12-hour tab life), that same object also gains `product_id`, `category`, `list_position`, `item_list_id` and `active_filter`. A direct product visit, or a card for a different memorial, leaves the event as `{event, form_id}` only. It does not push `sm_lead_submit` or a second `sm_quote_submit`. Contact `sm_lead_submit` is unchanged.
@@ -57,9 +57,9 @@ GA4 `generate_lead` also has a second tag: `gtm.formSubmit` on `/memorials*` **u
 (form_name=shortlist, value 400, beacon). Keep that tag. `/memorials` has no `<form>`, so the tag does not fire.
 The shortlist enquiry pushes `sm_lead_submit` with `form_id: 'shortlist'` only after `/api/submit` returns ok.
 
-## GTM tags (live v28, from `docs/gtm-snapshot.json`)
+## GTM tags (live v34, from `docs/gtm-snapshot.json`)
 
-v28 was published on 9 Nov 2026 at 23:40 Madrid and replaces v27.
+v34 is the live container as of the 24 Nov 2026 snapshot refresh (Europe/Madrid). It replaces the v28 snapshot. The only tag additions since v28 are the GA4 `whatsapp_click` event and one extra paused tag. Existing conversion tags, values and triggers are unchanged. v28 was published on 9 Nov 2026 at 23:40 Madrid and replaced v27.
 
 | Tag type | ID / label | Value | Trigger |
 |---|---|---|---|
@@ -74,6 +74,7 @@ v28 was published on 9 Nov 2026 at 23:40 Madrid and replaces v27.
 | GA4 event | brochure_download | | `brochure_download` (param `brochure_source` = {{DLV - source}}) |
 | GA4 event | finder_start | | page path contains `finder` |
 | GA4 event | share_shortlist | | click on `.shortlist-btn-*` |
+| GA4 event | whatsapp_click | | `whatsapp_click` (param `placement` = {{variable}}; GTM v34) |
 | Ads conversion | `_M8_CK2IrYkcEK-15Oo-` generate_lead | 400 | `sm_lead_submit` |
 | Ads conversion | `l5TiCLCIrYkcEK-15Oo-` request_quote | variable | `sm_quote_submit` |
 | Ads conversion | `MipOCNXwuLscEK-15Oo-` Chat start | 150 GBP | `sm_chat_submit` |
@@ -85,7 +86,7 @@ v28 was published on 9 Nov 2026 at 23:40 Madrid and replaces v27.
 
 The exact tag list with triggers and event params is `docs/gtm-snapshot.json`. That file does not store Google tag config params, variable source, or custom HTML source. Those are recorded here.
 
-### Staff and test traffic (v28)
+### Staff and test traffic (since v28)
 
 - Variable `JS - traffic_type` returns `internal` when the query has `sm_test=1` or `sm_internal=1`, or when the cookie `sm_internal` is `1`. Otherwise it returns nothing. `sm_test=1` does not set the cookie.
 - The GA4 config tag (`G-RF3LYJMFVE`) sends that value as `traffic_type` and sets `url_passthrough` to true.
