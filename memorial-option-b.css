@@ -2,7 +2,6 @@
 .pdp-b-step,
 .pdp-b-gallery-colour,
 .pdp-b-fact-chips,
-.pdp-b-choices,
 .pdp-b-tabs,
 .pdp-b-notready,
 .mobile-bar-stone,
@@ -14,19 +13,100 @@
    Size row. The quote payload still carries the catalogue size. */
 body.memorial-page .quote-config-row[hidden] { display: none; }
 
-/* 768px and wider: the page looks as it did before Option B. The tab panels
-   are plain wrappers there, and the phone-only blocks stay hidden. */
+/* "Your choices" card, every width. The total is copied from #priceTotal
+   by memorial-option-b.js; nothing is calculated here. */
+body.memorial-page .pdp-b-choices {
+    display: grid;
+    gap: var(--sm-space-4);
+    margin: var(--sm-space-5) 0;
+    padding: var(--sm-space-5);
+    border: 1px solid var(--sm-color-border-decorative);
+    border-radius: 2px;
+    background: var(--sm-color-bg-panel-quiet);
+}
+body.memorial-page .pdp-b-choices p { margin: 0; }
+body.memorial-page .pdp-b-total {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sm-space-3);
+    padding-top: var(--sm-space-4);
+    border-top: 1px solid var(--sm-color-border-decorative);
+}
+body.memorial-page .pdp-b-total > span:last-child { text-align: right; }
+body.memorial-page .pdp-b-total strong,
+body.memorial-page .pdp-b-total small { display: block; }
+body.memorial-page .pdp-b-save {
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--sm-color-link);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+body.memorial-page .pdp-b-note { color: var(--sm-color-text-muted); font-size: var(--sm-text-xs); }
+body.memorial-page #pdpBChoicesHeading { display: block; }
+body.memorial-page .pdp-b-choices > * { min-width: 0; }
+body.memorial-page .pdp-b-choices .btn-primary { order: 4; }
+body.memorial-page .pdp-b-choices-whatsapp { order: 5; }
+body.memorial-page .pdp-b-save { order: 6; }
+body.memorial-page .pdp-b-note { order: 7; margin: 0; }
+
+/* 768px and wider: the layout is the desktop one. The tab panels are plain
+   wrappers and the phone-only blocks stay hidden. The "Your choices" card
+   and the WhatsApp links are the only Option B parts shown here. */
 @media (min-width: 768px) {
     body.memorial-page .pdp-b-tab-panel,
     body.memorial-page .pdp-b-tab-panel[hidden] { display: block; }
     body.memorial-page #pdpBPanelPermits,
     body.memorial-page #pdpBPanelPermits[hidden],
     body.memorial-page .pdp-b-included-fallback { display: none; }
+
+    /* Desktop "Your choices" card, in the style of the guarantees box. */
+    body.memorial-page .pdp-b-choices {
+        margin: 1.5rem 0;
+        padding: 1.25rem;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        background: var(--sm-color-bg-surface);
+    }
+    body.memorial-page #pdpBChoicesHeading {
+        color: var(--sm-color-text-accent-strong);
+        font-size: var(--sm-text-xs);
+        font-weight: 500;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    body.memorial-page .pdp-b-choices .btn,
+    body.memorial-page .pdp-b-choices-whatsapp { width: 100%; justify-content: center; text-align: center; }
+    body.memorial-page .pdp-b-choices-whatsapp { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+
+    /* WhatsApp in the desktop sticky price bar (that bar shows at 1025px and up). */
+    body.memorial-page .price-whatsapp { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+    body.memorial-page .price-whatsapp svg.price-whatsapp-icon { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+}
+
+/* 768px to 1024px: the phone-style bar is the bar here, so it carries the
+   WhatsApp icon too. */
+@media (min-width: 768px) and (max-width: 1024px) {
+    body.memorial-page .mobile-bar-whatsapp {
+        display: grid;
+        place-items: center;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--sm-color-action-secondary-border);
+        border-radius: 50%;
+        color: var(--sm-color-action-secondary-text);
+    }
+    body.memorial-page .mobile-bar-whatsapp svg { width: 22px; height: 22px; fill: currentColor; }
+    body.memorial-page .mobile-bottom-bar .mobile-bar-actions { gap: var(--sm-space-2); }
 }
 
 @media (max-width: 767px) {
     body.memorial-page .pdp-b-desktop-only { display: none; }
     body.memorial-page .pdp-b-phone-only { display: inline; }
+    body.memorial-page .pdp-b-choices-whatsapp { display: none; }
     body.memorial-page .product-container { display: block; }
     body.memorial-page .product-gallery { width: 100%; }
     html body.memorial-page #galleryMain {
@@ -169,53 +249,28 @@ body.memorial-page .quote-config-row[hidden] { display: none; }
     body.memorial-page .personalisation-panel summary { min-height: 44px; padding-top: 0; padding-bottom: 0; }
     body.memorial-page .personalisation-title { display: block; }
 
-    body.memorial-page .pdp-b-choices {
-        display: grid;
-        gap: var(--sm-space-4);
-        margin: var(--sm-space-5) 0;
-        padding: var(--sm-space-5);
-        border: 1px solid var(--sm-color-border-decorative);
-        border-radius: 2px;
-        background: var(--sm-color-bg-panel-quiet);
-    }
-    body.memorial-page .pdp-b-choices p { margin: 0; }
-    body.memorial-page .pdp-b-total {
-        display: flex;
-        justify-content: space-between;
-        gap: var(--sm-space-3);
-        padding-top: var(--sm-space-4);
-        border-top: 1px solid var(--sm-color-border-decorative);
-    }
-    body.memorial-page .pdp-b-total > span:last-child { text-align: right; }
-    body.memorial-page .pdp-b-total strong,
-    body.memorial-page .pdp-b-total small { display: block; }
-    body.memorial-page .pdp-b-save {
-        min-height: 44px;
-        border: 0;
-        background: transparent;
-        color: var(--sm-color-link);
-        font: inherit;
-        text-decoration: underline;
-        cursor: pointer;
-    }
-    body.memorial-page .pdp-b-note { color: var(--sm-color-text-muted); font-size: var(--sm-text-xs); }
-
+    /* Four tabs fit 360-390px: each tab sizes to its label, with a gap, and
+       the row scrolls sideways if a larger font setting makes it wider. */
     body.memorial-page .pdp-b-tabs {
         display: flex;
+        gap: var(--sm-space-1);
         overflow-x: auto;
+        scrollbar-width: none;
         border-bottom: 1px solid var(--sm-color-border-decorative);
     }
+    body.memorial-page .pdp-b-tabs::-webkit-scrollbar { display: none; }
     body.memorial-page .pdp-b-tabs button {
-        flex: 1 1 0;
-        min-width: 0;
+        flex: 1 0 auto;
         min-height: 44px;
-        padding: var(--sm-space-2) var(--sm-space-1);
-        font-size: var(--sm-text-sm);
+        padding: var(--sm-space-2) 6px;
         border: 0;
         border-bottom: 2px solid transparent;
         background: transparent;
         color: var(--sm-color-text-muted);
         font: inherit;
+        font-size: var(--sm-text-xs);
+        letter-spacing: 0;
+        white-space: nowrap;
         cursor: pointer;
     }
     body.memorial-page .pdp-b-tabs button[aria-selected="true"] {
