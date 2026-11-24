@@ -10,7 +10,12 @@ assert.match(memorial, /href="\/memorial\.css\?v=[^"]+"/);
 assert.match(memorial, /<head>\s*<meta charset="UTF-8">\s*<meta name="viewport"[^>]*>\s*<!-- Consent Mode default/, "charset + viewport lead <head>, then consent defaults, then GTM");
 
 for (const file of readdirSync(root).filter((name) => name.endsWith(".html") && !/^admin.*\.html$/.test(name) && name !== "styleguide.html")) {
-  assert.doesNotMatch(readFileSync(new URL(file, root), "utf8"), /fonts\.googleapis\.com/, `${file} uses self-hosted fonts`);
+  const page = readFileSync(new URL(file, root), "utf8");
+  assert.doesNotMatch(page, /fonts\.googleapis\.com/, `${file} uses self-hosted fonts`);
+  // fonts.css must not block render: in Lighthouse's simulation the blocking font CSS + woff2
+  // files pushed the PDP LCP image from ~2.5 s to ~3.9 s.
+  const blocking = page.replace(/<noscript>[\s\S]*?<\/noscript>/g, "").match(/<link rel="stylesheet" href="\/fonts\.css/);
+  assert.equal(blocking, null, `${file}: load /fonts.css with rel=preload + onload, not a blocking stylesheet`);
 }
 
 const captured = {};

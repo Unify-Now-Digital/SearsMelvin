@@ -141,7 +141,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial Masons | Headstones &amp; Gravestones — Sears Melvin</title>
     <meta name="description" content="Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.">
-    <link rel="stylesheet" href="/fonts.css?v=a1ab19fb21">
+    <!-- Fonts load without blocking render (font-display: swap), as with the old Google Fonts link,
+         so the woff2 files do not compete with the LCP image. -->
+    <link rel="preload" as="style" href="/fonts.css?v=a1ab19fb21" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/fonts.css?v=a1ab19fb21"></noscript>
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
     <link rel="icon" href="/favicon.svg">
