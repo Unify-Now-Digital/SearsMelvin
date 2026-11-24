@@ -106,8 +106,8 @@ function absoluteImage(env, value) {
 
 function renderSrc(url, width) {
   if (!url.includes("/storage/v1/object/public/")) return url;
-  return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
-    `?width=${width}&quality=70&resize=contain`;
+  const path = new URL(url).pathname.split("/storage/v1/object/public/")[1];
+  return `/img/${path}?width=${width}&quality=70&resize=contain`;
 }
 
 function buildSchema(product, canonicalUrl, description, imageUrl) {

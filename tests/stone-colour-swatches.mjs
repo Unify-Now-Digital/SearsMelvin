@@ -16,7 +16,7 @@ const source = readFileSync(new URL("../data/stone-colour-swatches.js", import.m
 
 assert.equal(swatches.stoneColourImageUrl(BLACK), "");
 assert.equal(swatches.safeSwatchUrl(REAL), REAL);
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }), REAL.replace('/object/public/', '/render/image/public/') + '?width=144&quality=70&resize=contain');
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }), '/img/product-images/stone-colours/black.webp?width=144&quality=70&resize=contain');
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: 'https://example.com/black.webp' }), 'https://example.com/black.webp');
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }), "");
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "/images/black.webp" }), "/images/black.webp");

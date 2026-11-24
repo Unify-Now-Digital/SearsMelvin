@@ -1499,7 +1499,8 @@
         // Resized product images via Supabase image transforms (originals untouched).
         // Falls back to the original file if the render URL fails.
         function smRender(url, w) {
-            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/')) + '?width=' + w + '&quality=70&resize=contain';
+            var path = new URL(url).pathname.split(['','storage','v1','object','public',''].join('/'))[1];
+            return '/img/' + path + '?width=' + w + '&quality=70&resize=contain';
         }
         function smIsBucketImg(url) { return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(String(url || '')); }
         function smImgAttrs(url, sizes, escFn) {
