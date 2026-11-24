@@ -59,6 +59,12 @@
 /images/*
   Cache-Control: public, max-age=31536000, immutable
 
+/memorial.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/memorials.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /sm-logo.svg
   Cache-Control: public, max-age=31536000, immutable
 

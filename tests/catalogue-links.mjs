@@ -6,6 +6,7 @@ import { catalogueInjection, onRequestGet } from "../functions/memorials.js";
 import { CATEGORIES } from "../data/categories.js";
 
 const html = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+const css = readFileSync(new URL("../memorials.css", import.meta.url), "utf8");
 const server = readFileSync(new URL("../functions/memorials.js", import.meta.url), "utf8");
 
 assert.match(html, /<link rel="canonical" href="https:\/\/searsmelvin\.co\.uk\/memorials">/);
@@ -189,9 +190,9 @@ assert.equal(
   captured["head@append"].match(/imagesizes="([^"]+)"/)[1],
   firstImg.match(/sizes="([^"]+)"/)[1],
 );
-assert.match(html, /\.product-face \{[^}]*content-visibility:\s*auto/);
-assert.match(html, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
-assert.doesNotMatch(html, /\.product-card \{[^}]*content-visibility/);
+assert.match(css, /\.product-face \{[^}]*content-visibility:\s*auto/);
+assert.match(css, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
+assert.doesNotMatch(css, /\.product-card \{[^}]*content-visibility/);
 assert.match(server, /aria-label="\$\{escapeHtml\(cardAccessibleName\(productName, categoryName, colours\.length, price\)\)\}"/);
 assert.match(all.grid, /aria-label="Lawn 0, lawn-headstones, All 1 stone, From £1,000"/);
 assert.match(html, /function cardAccessibleName\(name, category, stoneCount, price\)/);

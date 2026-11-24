@@ -271,7 +271,7 @@ export async function onRequestGet({ request, env, params }) {
 
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
-    .on("head", { element(el) { el.append(preload, { html: true }); } })
+    .on('meta[name="viewport"]', { element(el) { el.after(preload, { html: true }); } })
     .on('meta[name="description"]', { element(el) { el.setAttribute("content", desc); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute("href", canonicalUrl); } })
     .on('meta[property="og:title"]', { element(el) { el.setAttribute("content", title); } })
