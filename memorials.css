@@ -885,7 +885,7 @@
                Chromium and WebKit). The same value is the content-visibility
                reserve, so cards neither grow nor shrink when they paint. */
             .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 114px); }
-            .product-face {
+        .product-face {
                 min-height: var(--sm-card-face);
                 contain-intrinsic-width: auto 175px;
                 contain-intrinsic-height: auto var(--sm-card-face);
@@ -910,6 +910,10 @@
             html body a.product-card .product-stones { margin-bottom: 0; line-height: 1.15; }
             html body a.product-card .product-price { line-height: 1.15; }
         }
+        .catalogue-more { grid-column: 1 / -1; display: flex; justify-content: center; position: relative; padding: 1rem 0; }
+        .catalogue-more[hidden] { display: none; }
+        .catalogue-more button { min-height: 48px; padding: 0.75rem 1.5rem; border: 1px solid var(--sm-color-border-control); border-radius: var(--sm-radius-sm); background: var(--sm-color-bg); color: var(--sm-color-text); font: 500 0.95rem var(--font-body); cursor: pointer; }
+        #catalogueSentinel { position: absolute; inset: auto 0 0; height: 1px; }
         /* Held info height per width band (22 Nov re-measure, all 147 cards,
            Chromium + WebKit, natural heights): the category is one line now,
            so the only thing that changes the panel is a two-line name. Up to

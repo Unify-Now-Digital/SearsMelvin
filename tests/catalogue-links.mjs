@@ -1,5 +1,4 @@
-// /memorials renders every matching design in the grid. There is no
-// "Show more memorials" button and no "More memorials" link list.
+// /memorials renders 24 matching designs initially, then progressive batches.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { catalogueInjection, onRequestGet } from "../functions/memorials.js";
@@ -13,13 +12,16 @@ assert.match(html, /<link rel="canonical" href="https:\/\/searsmelvin\.co\.uk\/m
 assert.doesNotMatch(html, /id="rangeLinks"|range-links|rangeLinksHtml|syncRangeLinks|More memorials/);
 assert.doesNotMatch(server, /rangeLinks|renderRangeLinks|More memorials|RANGE_TYPE_ORDER/);
 assert.match(html, /id="productsGrid"/);
-assert.doesNotMatch(html, /id="catalogueMore"|Show more memorials|showMoreMemorials|CATALOGUE_PAGE/);
+assert.match(html, /function showMoreDesigns\(\)/);
+assert.match(html, /Show more designs/);
+assert.match(html, /IntersectionObserver/);
 assert.match(html, /catalogueMatchCount/);
 assert.match(html, /filterSelectEvent\(change, catalogueMatchCount, meta\)/);
 assert.match(html, /function firstRowCount\(\)/);
 assert.match(html, /loading="eager" fetchpriority="high"/);
 assert.match(html, /loading="lazy"/);
-assert.doesNotMatch(server, /CARD_PAGE|catalogueMore|Show more/);
+assert.match(server, /INITIAL_CARD_COUNT = 24/);
+assert.match(server, /visible\.slice\(0, INITIAL_CARD_COUNT\)/);
 assert.match(html, /function applyUrlFilters\(\)/);
 assert.match(html, /safeSlug\(params\.get\('type'\)\)/);
 assert.match(html, /if \(!applyUrlFilters\(\)\) renderProducts\(\)/);
@@ -63,16 +65,17 @@ const all = catalogueInjection([...lawn, ...children], colours);
 assert.equal(all.links, undefined);
 assert.doesNotMatch(all.grid, /More memorials|range-links/);
 const hrefs = [...all.grid.matchAll(/href="\/memorials\/([a-z0-9-]+)"/g)].map((match) => match[1]);
-for (const item of [...lawn, ...children]) {
+for (const item of lawn.slice(0, 24)) {
   assert.equal(hrefs.filter((slug) => slug === item.slug).length, 1, item.slug);
 }
-assert.equal(hrefs.includes("lawn-headstones-24"), true);
-assert.equal(hrefs.includes("childrens-memorials-0"), true);
+assert.equal(hrefs.includes("lawn-headstones-24"), false);
+assert.equal(hrefs.includes("childrens-memorials-0"), false);
+assert.match(all.grid, /Show more designs/);
 assert.match(all.grid, /href="\/memorials\/lawn-headstones-0"/);
 assert.equal(all.count, 27);
 assert.equal(all.more, undefined);
 const images = cardImages(all.grid);
-assert.equal(images.length, 27);
+assert.equal(images.length, 24);
 for (const [index, tag] of images.entries()) {
   assert.match(tag, /width="800"/, index);
   assert.match(tag, /height="800"/, index);
@@ -166,8 +169,10 @@ const allResponse = await onRequestGet({
 });
 assert.equal(allResponse.status, 200);
 assert.match(captured["#productsGrid"], /href="\/memorials\/lawn-headstones-0"/);
-assert.match(captured["#productsGrid"], /lawn-headstones-24/);
-assert.doesNotMatch(captured["#productsGrid"], /More memorials|range-links|Show more/);
+assert.doesNotMatch(captured["#productsGrid"], /lawn-headstones-24/);
+assert.match(captured["#productsGrid"], /Show more designs/);
+assert.match(captured["#itemListJsonLd"], /lawn-headstones-24/);
+assert.match(captured["#itemListJsonLd"], /childrens-memorials-1/);
 assert.equal(captured["#resultsCount"], "27");
 assert.equal(captured['.type-count[data-type-count="all"]'], "27");
 assert.match(captured["#productsGrid"], /id="stoneBand"/);

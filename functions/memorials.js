@@ -3,6 +3,7 @@
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
+const INITIAL_CARD_COUNT = 24;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -204,14 +205,29 @@ export function listableProducts(products) {
 
 export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
-  const cards = renderCards(visible, colours);
-  const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  const cards = renderCards(visible.slice(0, INITIAL_CARD_COUNT), colours);
+  const more = visible.length > INITIAL_CARD_COUNT ? `<div class="catalogue-more" id="catalogueMore"><button type="button" id="catalogueMoreButton" onclick="showMoreDesigns()">Show more designs</button><span id="catalogueSentinel" aria-hidden="true"></span></div>` : "";
+  const grid = `${cards}${more}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
   return {
     grid,
     inline: stoneInlineMarkup(colours),
     lead: stoneInlineLeadMarkup(colours[0]),
     count: visible.length,
   };
+}
+
+function itemListJsonLd(products) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Memorial designs by Sears Melvin",
+    itemListElement: listableProducts(products).map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://searsmelvin.co.uk/memorials/${safeSlug(product.slug)}`,
+      name: String(product.name || "").slice(0, 120),
+    })),
+  });
 }
 
 function renderCards(products, colours) {
@@ -266,6 +282,7 @@ export async function onRequestGet({ request, env }) {
   // The canonical stays the link in the shell (/memorials), including when ?type= is set.
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
+    .on("#itemListJsonLd", { element(el) { el.setInnerContent(itemListJsonLd(visible), { html: false }); } })
     .on("#listingStoneInlineRow", { element(el) { el.setInnerContent(inline, { html: true }); } })
     .on("#listingStoneInlineLead", { element(el) { el.setAttribute("data-slug", lead.slug); } })
     .on("#listingStoneInlineLeadPhoto", {

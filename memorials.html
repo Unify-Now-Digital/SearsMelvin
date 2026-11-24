@@ -171,6 +171,7 @@
     <link rel="stylesheet" href="/memorials.css?v=20261124">
     
     <link rel="stylesheet" href="/chat-widget.css?v=11">
+    <script type="application/ld+json" id="itemListJsonLd">{"@context":"https://schema.org","@type":"ItemList","name":"Memorial designs by Sears Melvin","itemListElement":[]}</script>
 
     <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
@@ -787,6 +788,9 @@
         // ==================== RENDER PRODUCTS ====================
         // Every match stays in the page. The first row is eager. Later images are lazy.
         let catalogueMatchCount = 0;
+        let catalogueMatchedProducts = [];
+        let catalogueRenderedCount = 24;
+        const CATALOGUE_BATCH_SIZE = 24;
         // A chip click before the catalogue fetch must not wipe the server cards
         // or report a result_count of 0. The event is sent once the real total is known.
         let pendingFilterChange = null;
@@ -847,12 +851,34 @@
             return copy;
         }
 
-        function renderProducts() {
+        function progressiveControlsHtml(hasMore) {
+            return '<div class="catalogue-more" id="catalogueMore"' + (hasMore ? '' : ' hidden') + '><button type="button" id="catalogueMoreButton" onclick="showMoreDesigns()">Show more designs</button><span id="catalogueSentinel" aria-hidden="true"></span></div>';
+        }
+
+        function observeCatalogueSentinel() {
+            var sentinel = document.getElementById('catalogueSentinel');
+            if (!sentinel || !('IntersectionObserver' in window)) return;
+            if (window.catalogueMoreObserver) window.catalogueMoreObserver.disconnect();
+            window.catalogueMoreObserver = new IntersectionObserver(function (entries) {
+                if (entries.some(function (entry) { return entry.isIntersecting; })) showMoreDesigns();
+            }, { rootMargin: '500px 0px' });
+            window.catalogueMoreObserver.observe(sentinel);
+        }
+
+        function showMoreDesigns() {
+            if (catalogueRenderedCount >= catalogueMatchedProducts.length) return;
+            catalogueRenderedCount = Math.min(catalogueRenderedCount + CATALOGUE_BATCH_SIZE, catalogueMatchedProducts.length);
+            renderProducts(true);
+        }
+
+        function renderProducts(progressive) {
             if (!state.productsData.length) return;
             const grid = document.getElementById('productsGrid');
             const loading = document.getElementById('productsLoading');
             if (loading) loading.remove();
             const matched = sortedCatalogue();
+            if (!progressive) catalogueRenderedCount = CATALOGUE_BATCH_SIZE;
+            catalogueMatchedProducts = matched;
             catalogueMatchCount = matched.length;
             const noResults = document.getElementById('noResults');
             const nextSlugs = matched.map((product) => {
@@ -869,7 +895,7 @@
 
             let productsHTML = '';
             const eager = firstRowCount();
-            matched.forEach((product, index) => {
+            matched.slice(0, catalogueRenderedCount).forEach((product, index) => {
                 const id = safeId(product.id);
                 const slug = safeSlug(product.slug);
                 if (!id || !slug) return;
@@ -901,19 +927,24 @@
             const anchor = band || noResults;
             anchor.insertAdjacentHTML('beforebegin', productsHTML);
             }
+            var oldMore = document.getElementById('catalogueMore');
+            if (oldMore) oldMore.remove();
+            var moreAnchor = document.getElementById('stoneBand') || noResults;
+            moreAnchor.insertAdjacentHTML('beforebegin', progressiveControlsHtml(catalogueRenderedCount < matched.length));
+            observeCatalogueSentinel();
             const stoneBand = document.getElementById('stoneBand');
             if (stoneBand) stoneBand.hidden = matched.length === 0;
             noResults.style.display = matched.length === 0 ? 'block' : 'none';
             products = Array.from(document.querySelectorAll('.product-card[data-id]'));
             setMemorialCount(matched.length);
             tuneFirstRowImages(grid);
-            scheduleCatalogueTrack();
+            if (!progressive) scheduleCatalogueTrack();
         }
 
         // ==================== STRUCTURED DATA ====================
         function injectItemListJsonLd(productsData) {
             if (!Array.isArray(productsData) || productsData.length === 0) return;
-            var items = productsData.slice(0, 30).map(function (p, idx) {
+            var items = productsData.map(function (p, idx) {
                 return {
                     '@type': 'ListItem',
                     position: idx + 1,
@@ -1021,7 +1052,15 @@
             var queued = api.collapseFilterChanges(catalogueFilterQueue);
             catalogueFilterQueue = [];
             var meta = catalogueMetaNow();
-            var items = catalogueCards().map(function (el, i) { return catalogueCardPayload(el, i + 1); });
+            var items = catalogueMatchedProducts.map(function (product, i) {
+                return {
+                    item_id: String(product.id || ''),
+                    item_name: String(product.name || ''),
+                    item_category: String(product.product_categories && product.product_categories.name || ''),
+                    slug: String(product.slug || ''),
+                    index: i + 1
+                };
+            });
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push(api.viewItemListEvent(items, meta));
