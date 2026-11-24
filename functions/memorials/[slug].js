@@ -271,9 +271,12 @@ export async function onRequestGet({ request, env, params }) {
 
   return new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
-    // LCP image preload is the first child of <head> so the preload scanner finds it
-    // before the consent/GTM inline scripts and the stylesheet links.
-    .on("head", { element(el) { el.prepend(preload, { html: true }); } })
+    // LCP image preload goes straight after the viewport meta, which memorial.html keeps
+    // at the very top of <head>: the preload scanner finds it before the consent/GTM
+    // inline scripts and stylesheets, and imagesizes resolves against the phone
+    // viewport (before the viewport meta it picks the 1200w file and the img then
+    // downloads 800w as well).
+    .on('meta[name="viewport"]', { element(el) { el.after(preload, { html: true }); } })
     .on('meta[name="description"]', { element(el) { el.setAttribute("content", desc); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute("href", canonicalUrl); } })
     .on('meta[property="og:title"]', { element(el) { el.setAttribute("content", title); } })

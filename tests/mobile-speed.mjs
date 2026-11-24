@@ -7,6 +7,7 @@ import { onRequestGet as productPage } from "../functions/memorials/[slug].js";
 const root = new URL("..", import.meta.url);
 const memorial = readFileSync(new URL("memorial.html", root), "utf8");
 assert.match(memorial, /href="\/memorial\.css\?v=[^"]+"/);
+assert.match(memorial, /<head>\s*<meta charset="UTF-8">\s*<meta name="viewport"[^>]*>\s*<!-- Consent Mode default/, "charset + viewport lead <head>, then consent defaults, then GTM");
 
 for (const file of readdirSync(root).filter((name) => name.endsWith(".html") && !/^admin.*\.html$/.test(name) && name !== "styleguide.html")) {
   assert.doesNotMatch(readFileSync(new URL(file, root), "utf8"), /fonts\.googleapis\.com/, `${file} uses self-hosted fonts`);
@@ -15,8 +16,8 @@ for (const file of readdirSync(root).filter((name) => name.endsWith(".html") && 
 const captured = {};
 globalThis.HTMLRewriter = class {
   on(selector, handler) {
-    if (selector === "head") {
-      handler.element({ prepend(value, opts) { captured.headFirst = value; captured.headFirstHtml = opts && opts.html; } });
+    if (selector === 'meta[name="viewport"]') {
+      handler.element({ after(value, opts) { captured.headFirst = value; captured.headFirstHtml = opts && opts.html; } });
     }
     return this;
   }
@@ -36,7 +37,7 @@ await productPage({
 });
 globalThis.fetch = originalFetch;
 assert.equal(captured.headFirstHtml, true, "preload is inserted as HTML");
-assert.match(captured.headFirst, /^<link rel="preload" as="image"/, "LCP preload is the first child of <head>");
+assert.match(captured.headFirst, /^<link rel="preload" as="image"/, "LCP preload follows the viewport meta");
 assert.match(captured.headFirst, /fetchpriority="high"/);
 assert.match(captured.headFirst, /href="\/img\/product-images\/test\.webp\?width=800&amp;quality=70&amp;resize=contain"/);
 
