@@ -33,11 +33,15 @@ export async function onRequestGet({ request, env, params }) {
   const cached = cache && await cache.match(cacheKey);
   if (cached) return cached;
 
-  const response = await fetch(upstream, { cf: { cacheEverything: true, cacheTtl: 604800 } });
+  // Supabase picks the output format from Accept. Ask for WebP explicitly so the
+  // single edge cache entry is the small format every current phone browser supports.
+  const response = await fetch(upstream, { headers: { Accept: "image/webp,image/*;q=0.8" }, cf: { cacheEverything: true, cacheTtl: 604800 } });
   if (!response.ok) return notFound();
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", CACHE_CONTROL);
   headers.set("X-Content-Type-Options", "nosniff");
+  headers.delete("Set-Cookie");
+  headers.delete("Vary");
   const proxied = new Response(response.body, { status: response.status, headers });
   if (cache) await cache.put(cacheKey, proxied.clone());
   return proxied;

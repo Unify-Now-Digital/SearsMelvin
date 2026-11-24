@@ -142,7 +142,7 @@
     <title>Headstones, gravestones and memorials London | Sears Melvin</title>
     <meta name="description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs, fully personalised, with cemetery permit handling included.">
     <link rel="preload" href="/assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/fonts.css?v=20261124">
+    <link rel="stylesheet" href="/fonts.css?v=a1ab19fb21">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
     <link rel="icon" href="/favicon.svg">
@@ -166,7 +166,7 @@
     
     <!-- Supabase data loaded via REST API directly -->
     <link rel="stylesheet" href="/tokens.css">
-    <link rel="stylesheet" href="/memorials.css?v=20261124">
+    <link rel="stylesheet" href="/memorials.css?v=0014f084bb">
     
     <link rel="stylesheet" href="/chat-widget.css?v=11">
     <script type="application/ld+json" id="itemListJsonLd">{"@context":"https://schema.org","@type":"ItemList","name":"Memorial designs by Sears Melvin","itemListElement":[]}</script>
@@ -1054,8 +1054,8 @@
             var items = catalogueMatchedProducts.map(function (product, i) {
                 return {
                     item_id: String(product.id || ''),
-                    item_name: String(product.name || ''),
-                    item_category: String(product.product_categories && product.product_categories.name || ''),
+                    item_name: String(product.name || '').slice(0, 120),
+                    item_category: String(product.product_categories && product.product_categories.name || 'Memorial').slice(0, 120),
                     slug: String(product.slug || ''),
                     index: i + 1
                 };

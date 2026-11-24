@@ -49,9 +49,9 @@ function swatchImageUrl(value) {
   try {
     const url = new URL(safe);
     if (!url.hostname.endsWith(".supabase.co") || !url.pathname.startsWith("/storage/v1/object/public/")) return safe;
-    url.pathname = url.pathname.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-    url.search = "?width=144&quality=70&resize=contain";
-    return url.href;
+    // Same URL the client-side swatch helper builds, so SSR and client share one download.
+    const path = url.pathname.split("/storage/v1/object/public/")[1];
+    return `/img/${path}?width=144&quality=70&resize=contain`;
   } catch {
     return safe;
   }
