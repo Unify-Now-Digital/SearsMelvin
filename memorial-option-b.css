@@ -25,7 +25,10 @@
     body.memorial-page .pdp-b-phone-only { display: inline; }
     body.memorial-page .product-container { display: block; }
     body.memorial-page .product-gallery { width: 100%; }
-    body.memorial-page #galleryMain {
+    html body.memorial-page #galleryMain {
+        aspect-ratio: 1 / 1;
+        margin-bottom: 0;
+        box-shadow: none;
         position: relative;
         width: 100vw;
         max-width: none;
@@ -85,9 +88,9 @@
     body.memorial-page .pdp-b-fact-chips span {
         flex: 0 0 auto;
         padding: var(--sm-space-2) var(--sm-space-3);
-        border: 1px solid var(--sm-color-border-decorative);
+        border: 1px solid var(--sm-color-border-control);
         border-radius: 999px;
-        color: var(--sm-color-text-muted);
+        color: var(--sm-color-text);
         font-size: var(--sm-text-xs);
     }
     body.memorial-page .pdp-b-step {
@@ -115,27 +118,48 @@
     body.memorial-page #stoneColourGroup .pdp-b-step,
     body.memorial-page .pdp-b-extras-group .pdp-b-step { grid-column: 1 / -1; }
     body.memorial-page #stoneColourPreview { display: none; }
+    /* One sideways strip of every colour. Each group (and each open tier)
+       is a flex item holding a no-wrap row, so <details> needs no
+       display: contents (Chrome does not flatten <details> reliably). */
     body.memorial-page #stoneColourOptions {
         display: flex;
         flex-wrap: nowrap;
+        align-items: flex-start;
         gap: var(--sm-space-3);
         overflow-x: auto;
+        overscroll-behavior-x: contain;
         scroll-snap-type: x proximity;
         padding: var(--sm-space-3) 0 var(--sm-space-2);
         scrollbar-width: none;
     }
     body.memorial-page #stoneColourOptions::-webkit-scrollbar { display: none; }
-    body.memorial-page #stoneColourOptions .colour-group,
-    body.memorial-page #stoneColourOptions .colour-tier,
-    body.memorial-page #stoneColourOptions .colour-swatch-row { display: contents; }
+    body.memorial-page #stoneColourOptions > .colour-group,
+    body.memorial-page #stoneColourOptions > .colour-tier {
+        display: block;
+        flex: 0 0 auto;
+        width: max-content;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+    body.memorial-page #stoneColourOptions .colour-swatch-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: var(--sm-space-3);
+        width: max-content;
+        margin: 0;
+        padding: 0;
+    }
     body.memorial-page #stoneColourOptions .colour-group-label,
     body.memorial-page #stoneColourOptions .colour-tier > summary { display: none; }
     body.memorial-page #stoneColourOptions .colour-option {
-        flex: 0 0 76px;
-        min-width: 76px;
+        display: block;
+        flex: 0 0 72px;
+        width: 72px;
         min-height: 44px;
         scroll-snap-align: start;
     }
+    body.memorial-page #stoneColourOptions .colour-wrapper { width: 72px; }
     body.memorial-page #stoneColourOptions .colour-wrapper { min-height: 44px; }
     body.memorial-page .personalisation-panel summary { min-height: 72px; }
     body.memorial-page .personalisation-title { display: block; }
