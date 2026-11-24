@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 
 const root = new URL("..", import.meta.url);
-const memorial = readFileSync(new URL("memorial.html", root), "utf8");
+const memorial = readFileSync(new URL("memorial.css", root), "utf8") + "\n" + readFileSync(new URL("memorial.html", root), "utf8");
 const slug = readFileSync(new URL("functions/memorials/[slug].js", root), "utf8");
 
 assert.match(memorial, /nav#navbar \{ position: fixed;/);
@@ -35,7 +35,8 @@ assert.equal(adminProducts.includes('id="navbar"'), false);
 
 const pages = readdirSync(new URL(".", root)).filter((name) => name.endsWith(".html"));
 for (const name of pages) {
-  const html = readFileSync(new URL(name, root), "utf8");
+  let html = readFileSync(new URL(name, root), "utf8");
+  if (name === "memorial.html" || name === "memorials.html") html += "\n" + readFileSync(new URL(name.replace(/\.html$/, ".css"), root), "utf8");
   assert.doesNotMatch(html, /(^|\n)\s*nav \{/, `${name} still has a bare nav rule`);
   if (html.includes('class="mobile-bottom-nav"') && html.includes('id="navbar"')) {
     assert.match(html, /nav#navbar \{/, `${name} header rule is not scoped to #navbar`);

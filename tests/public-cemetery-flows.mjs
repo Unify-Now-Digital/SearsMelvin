@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [memorial, contact] = await Promise.all([
+const [memorialHtml, memorialCss, contact] = await Promise.all([
   readFile(new URL("../memorial.html", import.meta.url), "utf8"),
+  readFile(new URL("../memorial.css", import.meta.url), "utf8"),
   readFile(new URL("../contact.html", import.meta.url), "utf8"),
 ]);
+const memorial = memorialCss + "\n" + memorialHtml;
 
 assert.match(memorial, /new PlaceAutocompleteElement\(\{[\s\S]*includedRegionCodes: \['gb'\]/);
 assert.match(memorial, /includedPrimaryTypes: \['cemetery'\]/);

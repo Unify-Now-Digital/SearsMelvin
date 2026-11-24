@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), "utf8");
 const index = read("index.html");
 const upgrades = read("site-upgrades.css");
-const memorial = read("memorial.html");
+const memorial = read("memorial.css") + "\n" + read("memorial.html");
 const track = read("track.html");
 const contact = read("contact.html");
 const memorials = read("memorials.html");

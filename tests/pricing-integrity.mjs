@@ -287,7 +287,7 @@ function colourQuote(categorySlug, categoryName, basePrice, colour) {
 
 // The browser source must carry structured choices and must not expose a dead edit link.
 {
-  const html = await readFile(new URL("../memorial.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../memorial.css", import.meta.url), "utf8") + "\n" + await readFile(new URL("../memorial.html", import.meta.url), "utf8");
   assert.match(html, /infillType:\s*'none'/);
   assert.match(html, /infillPrice:\s*0/);
   assert.doesNotMatch(html, /state\.infillPrice = INFILL_PRICES\.chippings/);

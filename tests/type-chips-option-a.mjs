@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CATEGORIES } from "../data/categories.js";
 
-const html = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+const html = readFileSync(new URL("../memorials.css", import.meta.url), "utf8") + "\n" + readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
 
 const browse = html.match(/<nav class="type-browse"[\s\S]*?<\/nav>/);
 assert.ok(browse, "type chip row missing");
