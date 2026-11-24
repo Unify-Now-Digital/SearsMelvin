@@ -17,11 +17,25 @@
         }
     }
 
-    function stoneColourImageUrl(colour) {
-        return safeSwatchUrl(colour && colour.image_url);
+    function renderedSwatchUrl(value) {
+        var safe = safeSwatchUrl(value);
+        if (!safe || safe.startsWith('/')) return safe;
+        try {
+            var url = new URL(safe);
+            if (!url.hostname.endsWith('.supabase.co') || !url.pathname.startsWith('/storage/v1/object/public/')) return safe;
+            url.pathname = url.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+            url.search = '?width=144&quality=70&resize=contain';
+            return url.href;
+        } catch (e) {
+            return safe;
+        }
     }
 
-    var api = { stoneColourImageUrl: stoneColourImageUrl };
+    function stoneColourImageUrl(colour) {
+        return renderedSwatchUrl(colour && colour.image_url);
+    }
+
+    var api = { safeSwatchUrl: safeSwatchUrl, stoneColourImageUrl: stoneColourImageUrl };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     root.stoneColourImageUrl = stoneColourImageUrl;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

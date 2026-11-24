@@ -1229,7 +1229,7 @@
                     ? stoneColourImageUrl(c)
                     : safeImageUrl(c.image_url);
                 const photo = imageUrl
-                    ? '<img class="colour-swatch-photo" src="' + esc(imageUrl) + '" alt="" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                    ? '<img class="colour-swatch-photo" src="' + esc(imageUrl) + '" alt="" width="48" height="48" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
                     : '';
                 return '<label class="colour-option">'
                     + '<input type="radio" name="colour" value="' + esc(c.slug) + '" data-name="' + esc(c.name) + '" data-primary="' + primary + '" data-secondary="' + safeCssColour(c.hex_secondary) + '" data-highlight="' + highlight + '" data-price="' + price + '"' + (imageUrl ? ' data-image="' + esc(imageUrl) + '"' : '') + (c.slug === firstSlug ? ' checked' : '') + ' onchange="updateColour(this)">'
@@ -1539,6 +1539,9 @@
                 var img = document.createElement('img');
                 img.className = 'stone-colour-preview-photo';
                 img.alt = '';
+                img.width = 96;
+                img.height = 96;
+                img.loading = 'lazy';
                 img.decoding = 'async';
                 img.addEventListener('error', function () { img.remove(); });
                 img.src = url;

@@ -42,6 +42,20 @@ function safeImageUrl(value) {
   }
 }
 
+function swatchImageUrl(value) {
+  const safe = safeImageUrl(value);
+  if (!safe) return "";
+  try {
+    const url = new URL(safe);
+    if (!url.hostname.endsWith(".supabase.co") || !url.pathname.startsWith("/storage/v1/object/public/")) return safe;
+    url.pathname = url.pathname.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    url.search = "?width=144&quality=70&resize=contain";
+    return url.href;
+  } catch {
+    return safe;
+  }
+}
+
 const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
 
 function isBucketImage(url) {
@@ -108,9 +122,9 @@ function stoneInlineButton(colour, pressed) {
   const slug = safeSlug(colour.slug);
   const primary = safeHex(colour.hex_primary);
   const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-  const imageUrl = safeImageUrl(colour.image_url);
+  const imageUrl = swatchImageUrl(colour.image_url);
   const photo = imageUrl
-    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
     : "";
   const label = name || "Stone colour";
   const tier = escapeHtml(colourTier(colour));
@@ -128,9 +142,9 @@ export function stoneInlineLeadMarkup(colour) {
   if (!colour) return { photoStyle: "", photoInner: "", name: "", slug: "" };
   const primary = safeHex(colour.hex_primary);
   const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-  const imageUrl = safeImageUrl(colour.image_url);
+  const imageUrl = swatchImageUrl(colour.image_url);
   const photoInner = imageUrl
-    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="70" height="70" decoding="async" onerror="this.remove()">`
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="70" height="70" loading="lazy" decoding="async" onerror="this.remove()">`
     : "";
   return {
     photoStyle: `background:linear-gradient(145deg, ${primary}, ${secondary})`,
@@ -147,9 +161,9 @@ export function stoneBandMarkup(colours) {
     const slug = safeSlug(colour.slug);
     const primary = safeHex(colour.hex_primary);
     const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-    const imageUrl = safeImageUrl(colour.image_url);
+    const imageUrl = swatchImageUrl(colour.image_url);
     const photo = imageUrl
-      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
       : "";
     return `<div class="stone-swatch" role="listitem"${slug ? ` data-colour="${slug}"` : ""}><span class="stone-swatch-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="stone-swatch-name">${name}</span></div>`;
   }).join("");

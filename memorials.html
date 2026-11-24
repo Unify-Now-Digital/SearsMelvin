@@ -685,7 +685,7 @@
                     ? stoneColourImageUrl(colour)
                     : safeImageUrl(colour.image_url);
                 const photo = imageUrl
-                    ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="76" height="32" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                    ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="76" height="32" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
                     : '';
                 html += '<div class="stone-swatch" role="listitem"><span class="stone-swatch-chip' + (imageUrl ? ' has-photo' : '') + '" style="background: linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ');">' + photo + '</span><span class="stone-swatch-name">' + escapeHtml(colour.name) + '</span></div>';
             });
@@ -717,7 +717,7 @@
                 ? stoneColourImageUrl(colour)
                 : safeImageUrl(colour.image_url);
             const photo = imageUrl
-                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
+                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="44" height="44" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove(\'has-photo\');this.remove()">'
                 : '';
             const label = name || 'Stone colour';
             const tier = escapeHtml(listingColourTier(colour));
@@ -748,7 +748,7 @@
                 : safeImageUrl(colour.image_url);
             photo.style.background = 'linear-gradient(145deg, ' + primaryHex + ', ' + secondaryHex + ')';
             photo.innerHTML = imageUrl
-                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="70" height="70" decoding="async" onerror="this.remove()">'
+                ? '<img class="colour-swatch-photo" src="' + escapeHtml(imageUrl) + '" alt="" width="70" height="70" loading="lazy" decoding="async" onerror="this.remove()">'
                 : '';
             nameEl.textContent = name;
             lead.setAttribute('data-slug', listingInlineSelectedSlug);
