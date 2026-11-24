@@ -76,7 +76,7 @@ for (const f of execSync("git ls-files '*.html' '*.js'").toString().split("\n").
 // 4. Committed GTM snapshot still satisfies the contract (live drift is checked by scripts/tracking-check.mjs).
 const snap = JSON.parse(html("docs/gtm-snapshot.json"));
 assert.equal(snap.container, GTM_ID);
-assert.equal(snap.version, "28", "snapshot must match live GTM v28");
+assert.equal(snap.version, "34", "snapshot must match live GTM v34");
 assert.deepEqual(requiredTagProblems(snap), []);
 assert.deepEqual(driftProblems(snap, snap), []);
 const chatStart = snap.tags.find((tag) => tag.function === "__awct" && tag.id === "MipOCNXwuLscEK-15Oo-");
@@ -88,11 +88,18 @@ const clickToCall = snap.tags.find((tag) => tag.function === "__awct" && tag.id 
 assert.equal(clickToCall && clickToCall.value, "150", "click-to-call stays 150");
 const staffCookie = snap.tags.filter((tag) => tag.function === "__html" && tag.triggers.some((rule) => rule.includes("sm_internal=")));
 assert.equal(staffCookie.length, 1, "staff internal-cookie tag");
+const whatsapp = snap.tags.find((tag) => tag.function === "__gaawe" && tag.id === "whatsapp_click");
+assert.ok(whatsapp, "GA4 whatsapp_click tag is in the snapshot");
+assert.deepEqual(whatsapp.params, { placement: "{{variable}}" }, "GA4 whatsapp_click param is placement");
+assert.ok(whatsapp.triggers.some((rule) => rule.includes("whatsapp_click")), "whatsapp_click fires on the dataLayer event");
+assert.ok(!whatsapp.triggers.some((rule) => /request_quote|generate_lead|sm_lead_submit|sm_quote_submit/.test(rule)), "whatsapp_click must not fire lead or quote conversions");
 const trackingDoc = html("docs/TRACKING.md");
 assert.ok(trackingDoc.includes("sm_quote_submit"));
-assert.match(trackingDoc, /live version 28/);
+assert.match(trackingDoc, /live version 34/);
 assert.match(trackingDoc, /brochure_source/);
 assert.match(trackingDoc, /tag value 150/);
+assert.match(trackingDoc, /GA4 `whatsapp_click` \(GTM v34\)/);
+assert.doesNotMatch(trackingDoc, /whatsapp_click[\s\S]*Not wired in GTM yet/);
 assert.doesNotMatch(trackingDoc, /tag value 200/);
 assert.doesNotMatch(trackingDoc, /sends £200/);
 console.log("tracking-contract: ok");

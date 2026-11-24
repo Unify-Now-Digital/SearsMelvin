@@ -1,6 +1,6 @@
 {
   "container": "GTM-KRDX4BQ5",
-  "version": "28",
+  "version": "34",
   "tags": [
     {
       "function": "__awcc",
@@ -269,6 +269,17 @@
       ]
     },
     {
+      "function": "__gaawe",
+      "id": "whatsapp_click",
+      "value": null,
+      "params": {
+        "placement": "{{variable}}"
+      },
+      "triggers": [
+        "if _eq({{__e}},whatsapp_click)"
+      ]
+    },
+    {
       "function": "__gclidw",
       "id": null,
       "value": null,
@@ -338,6 +349,15 @@
       "params": {},
       "triggers": [
         "if _cn({{__u:PATH}},contact) && _eq({{__e}},gtm.formSubmit) && _re({{__v:gtm.triggers}},(^$|((^|,)245755202_11($|,))))"
+      ]
+    },
+    {
+      "function": "__paused",
+      "id": null,
+      "value": null,
+      "params": {},
+      "triggers": [
+        "if _eq({{__e}},gtm.js)"
       ]
     },
     {
