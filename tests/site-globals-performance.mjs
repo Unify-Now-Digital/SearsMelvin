@@ -29,3 +29,11 @@ for (const page of readdirSync(".").filter((name) => name.endsWith(".html"))) {
 }
 
 console.log("site-globals-performance: ok");
+
+// One placement pass collects the chat blockers once (liftClear used to
+// rescan every link and catalogue price up to ~17 times per pass).
+assert.match(globals, /function chatBlockers\(\) \{\s*if \(blockerCache\) return blockerCache;/, "blockers are cached within a pass");
+assert.match(globals, /blockerCache = null;\s*try \{\s*placeChatWidget\(\);\s*\} finally \{\s*blockerCache = null;/, "the cache never outlives one placement pass");
+const shown = globals.slice(globals.indexOf("function shownRect(el)"), globals.indexOf("function quoteLabel"));
+assert.ok(shown.indexOf("getBoundingClientRect()") < shown.indexOf("getComputedStyle(el)"), "off-screen elements skip computed style");
+console.log("site-globals-performance: cache ok");

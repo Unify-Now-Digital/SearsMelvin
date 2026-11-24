@@ -27,12 +27,15 @@
 
     function shownRect(el) {
         if (!el || !el.getBoundingClientRect) return null;
-        var cs;
-        try { cs = getComputedStyle(el); } catch (e) { return null; }
-        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+        // Cheap geometry test first: most catalogue cards are off-screen, so
+        // skip their computed style. Same result as checking style first
+        // (display:none has no box; visibility:hidden is still checked).
         var r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) return null;
         if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+        var cs;
+        try { cs = getComputedStyle(el); } catch (e) { return null; }
+        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
         if (el.closest && (el.closest(".hero-buttons") || el.closest(".still-questions"))) {
             return { top: r.top - 40, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height + 40 };
         }
@@ -65,7 +68,17 @@
     // to clear quote/brochure controls, so the fix is to list them here too.
     // .product-price covers the /memorials catalogue cards scrolling behind
     // the fixed bubble; shownRect already discards the ~140 off-screen ones.
+    // One placement pass reads the page once. liftClear() can ask for the
+    // blockers up to ~17 times per pass and nothing moves in between (all
+    // writes happen after the reads), so the list is cached for the pass.
+    var blockerCache = null;
     function chatBlockers() {
+        if (blockerCache) return blockerCache;
+        blockerCache = collectChatBlockers();
+        return blockerCache;
+    }
+
+    function collectChatBlockers() {
         var nodes = [];
         var chrome = [
             document.querySelector('.mobile-bottom-bar.is-visible'),
@@ -248,6 +261,15 @@
     function applyWidgetPosition() {
         if (placingChat) return;
         placingChat = true;
+        blockerCache = null;
+        try {
+            placeChatWidget();
+        } finally {
+            blockerCache = null;
+        }
+    }
+
+    function placeChatWidget() {
         var open = false;
         try {
             var hosts = document.querySelectorAll('chat-widget');
