@@ -882,6 +882,35 @@ function normaliseShortlistItems(rawItems) {
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE INTEGRATION
 // ═══════════════════════════════════════════════════════════════════
+
+// Apple Mail does not render WebP or AVIF. Supabase public objects of those
+// types are rewritten to the image render endpoint, which answers image/jpeg
+// when format=origin is set — even if the mail client asks for WebP.
+// format=jpeg is rejected with 400, and leaving format off lets the CDN
+// negotiate WebP again. Every other URL is returned unchanged.
+export function emailSafeImageUrl(url) {
+  if (typeof url !== "string") return "";
+  const input = url.trim();
+  if (!input) return "";
+  let parsed;
+  try {
+    parsed = new URL(input);
+  } catch {
+    return input;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return input;
+  const host = parsed.hostname;
+  if (host !== "supabase.co" && !host.endsWith(".supabase.co")) return input;
+  const publicPrefix = "/storage/v1/object/public/";
+  if (!parsed.pathname.startsWith(publicPrefix)) return input;
+  const objectPath = parsed.pathname.slice(publicPrefix.length);
+  if (!objectPath || !/\.(?:webp|avif)$/i.test(objectPath)) return input;
+  parsed.pathname = `/storage/v1/render/image/public/${objectPath}`;
+  parsed.search = "?width=800&quality=70&resize=contain&format=origin";
+  parsed.hash = "";
+  return parsed.href;
+}
+
 function quoteBusinessEmail({ name, email, phone, message, location, product, stoneHex, submittedAt }) {
   const addonItems = Array.isArray(product.addonLineItems) && product.addonLineItems.length > 0
     ? product.addonLineItems
@@ -897,7 +926,7 @@ function quoteBusinessEmail({ name, email, phone, message, location, product, st
 
   // Product image: must be a full absolute URL for email clients
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
-  const imageUrl = rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const imageUrl = emailSafeImageUrl(rawImage.startsWith('http') || rawImage.startsWith('data:') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "");
   const productUrl = productPageUrl(product);
   // `border="0"` + `border:0` stop Outlook drawing a blue frame around a linked
   // image, and the wrapping anchor sets its own colour so that when the client
@@ -1129,7 +1158,7 @@ function quoteCustomerEmail({ firstName, product, stoneHex, location }) {
   const grandTotal = totalPrice + permitFee;
 
   const rawImage = product.image && product.image.trim() ? product.image.trim() : "";
-  const imageUrl = rawImage.startsWith('http') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "";
+  const imageUrl = emailSafeImageUrl(rawImage.startsWith('http') ? rawImage : rawImage ? `${SITE_URL}${rawImage.startsWith('/') ? '' : '/'}${rawImage}` : "");
   const productUrl = productPageUrl(product);
   // `border="0"` + `border:0` stop Outlook drawing a blue frame around a linked
   // image, and the wrapping anchor sets its own colour so that when the client
