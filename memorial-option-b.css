@@ -105,8 +105,8 @@
     body.memorial-page .personalisation-panel,
     body.memorial-page .pdp-b-extras-group {
         margin: 0;
-        padding: var(--sm-space-5) 0;
-        border-top: 1px solid var(--sm-color-border-decorative);
+        padding: var(--sm-space-4) 0;
+        border-top: 1px solid var(--sm-color-border-control);
     }
     body.memorial-page #stoneColourGroup .option-header,
     body.memorial-page .pdp-b-extras-group .option-header {
@@ -124,6 +124,7 @@
     body.memorial-page #stoneColourOptions {
         display: flex;
         flex-wrap: nowrap;
+        justify-content: flex-start;
         align-items: flex-start;
         gap: var(--sm-space-3);
         overflow-x: auto;
@@ -161,7 +162,7 @@
     }
     body.memorial-page #stoneColourOptions .colour-wrapper { width: 72px; }
     body.memorial-page #stoneColourOptions .colour-wrapper { min-height: 44px; }
-    body.memorial-page .personalisation-panel summary { min-height: 72px; }
+    body.memorial-page .personalisation-panel summary { min-height: 44px; padding-top: 0; padding-bottom: 0; }
     body.memorial-page .personalisation-title { display: block; }
 
     body.memorial-page .pdp-b-choices {
@@ -201,9 +202,11 @@
         border-bottom: 1px solid var(--sm-color-border-decorative);
     }
     body.memorial-page .pdp-b-tabs button {
-        flex: 1 0 auto;
+        flex: 1 1 0;
+        min-width: 0;
         min-height: 44px;
-        padding: var(--sm-space-2) var(--sm-space-3);
+        padding: var(--sm-space-2) var(--sm-space-1);
+        font-size: var(--sm-text-sm);
         border: 0;
         border-bottom: 2px solid transparent;
         background: transparent;
@@ -230,8 +233,9 @@
         gap: var(--sm-space-1);
         min-height: 44px;
         padding: var(--sm-space-4);
-        border: 1px solid var(--sm-color-border-decorative);
+        border: 1px solid var(--sm-color-border-control);
         border-radius: 2px;
+        background: var(--sm-color-bg-surface);
         color: var(--sm-color-text);
         text-decoration: none;
     }
