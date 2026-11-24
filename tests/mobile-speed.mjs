@@ -9,14 +9,8 @@ const memorial = readFileSync(new URL("memorial.html", root), "utf8");
 assert.match(memorial, /href="\/memorial\.css\?v=[^"]+"/);
 assert.match(memorial, /<head>\s*<meta charset="UTF-8">\s*<meta name="viewport"[^>]*>\s*<!-- Consent Mode default/, "charset + viewport lead <head>, then consent defaults, then GTM");
 
-for (const file of readdirSync(root).filter((name) => name.endsWith(".html") && !/^admin.*\.html$/.test(name) && name !== "styleguide.html")) {
-  const page = readFileSync(new URL(file, root), "utf8");
-  assert.doesNotMatch(page, /fonts\.googleapis\.com/, `${file} uses self-hosted fonts`);
-  // fonts.css must not block render: in Lighthouse's simulation the blocking font CSS + woff2
-  // files pushed the PDP LCP image from ~2.5 s to ~3.9 s.
-  const blocking = page.replace(/<noscript>[\s\S]*?<\/noscript>/g, "").match(/<link rel="stylesheet" href="\/fonts\.css/);
-  assert.equal(blocking, null, `${file}: load /fonts.css with rel=preload + onload, not a blocking stylesheet`);
-}
+// Fonts stay on Google Fonts (async preload). Self-hosting them put ~100 KB of woff2 on the
+// site's own connection ahead of the LCP image in Lighthouse's simulation (PDP LCP ~2.5 s -> ~3.9 s).
 
 const captured = {};
 globalThis.HTMLRewriter = class {
@@ -61,7 +55,7 @@ const band = stoneBandMarkup([{ slug: "black", name: "Black", hex_primary: "#111
 assert.match(band, /src="\/img\/product-images\/stone-colours\/black\.webp\?width=144&amp;quality=70&amp;resize=contain"/, "SSR swatches use the same resized URL as the client");
 
 // Long-cached (immutable) stylesheets must be re-versioned whenever they change.
-for (const css of ["memorial.css", "memorials.css", "fonts.css"]) {
+for (const css of ["memorial.css", "memorials.css"]) {
   const v = createHash("sha256").update(readFileSync(new URL(css, root))).digest("hex").slice(0, 10);
   for (const file of readdirSync(root).filter((name) => name.endsWith(".html"))) {
     const html = readFileSync(new URL(file, root), "utf8");

@@ -59,18 +59,12 @@
 /images/*
   Cache-Control: public, max-age=31536000, immutable
 
-/assets/fonts/*
-  Cache-Control: public, max-age=31536000, immutable
-
 # Versioned with ?v=<sha256 prefix of the file>; tests/mobile-speed.mjs fails
 # if a file changes without its ?v= being updated on every page.
 /memorial.css
   Cache-Control: public, max-age=31536000, immutable
 
 /memorials.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/fonts.css
   Cache-Control: public, max-age=31536000, immutable
 
 /sm-logo.svg
