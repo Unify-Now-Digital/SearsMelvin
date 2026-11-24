@@ -39,7 +39,10 @@
     function whatsappMessage() {
         var url = canonicalPageUrl();
         var name = productNameForPrefill();
-        if (name) return "Hi, I'm interested in the " + name + " memorial: " + url;
+        if (name) {
+            var article = /^(the|a|an)\s+/i.test(name) ? "" : "the ";
+            return "Hi, I'm interested in " + article + name + " memorial: " + url;
+        }
         return "Hi, I'd like some help choosing a memorial: " + url;
     }
 

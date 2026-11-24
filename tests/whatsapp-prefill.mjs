@@ -8,7 +8,8 @@ const html = readFileSync("memorial.html", "utf8");
 
 assert.match(js, /442038352548/, "the WhatsApp number is unchanged");
 assert.match(js, /encodeURIComponent\(whatsappMessage\(\)\)/);
-assert.match(js, /Hi, I'm interested in the /);
+assert.match(js, /Hi, I'm interested in /);
+assert.match(js, /\^\(the\|a\|an\)\\s\+/i);
 assert.match(js, /Hi, I'd like some help choosing a memorial: /);
 assert.match(js, /parsed\.origin \+ parsed\.pathname/, "the page URL drops the query string");
 assert.equal((js.match(/'whatsapp_click'/g) || []).length, 1, "a single push site for whatsapp_click");
@@ -147,7 +148,7 @@ function textOf(href) {
     canonObs.cb();
   }
   nameObs.cb();
-  const expected = "Hi, I'm interested in the The Castell memorial: https://searsmelvin.co.uk/memorials/the-castell";
+  const expected = "Hi, I'm interested in The Castell memorial: https://searsmelvin.co.uk/memorials/the-castell";
   for (const link of links) assert.equal(textOf(link.href), expected);
 }
 
@@ -160,7 +161,7 @@ function textOf(href) {
   });
   assert.equal(
     textOf(links[0].href),
-    "Hi, I'm interested in the The York memorial: https://searsmelvin.co.uk/memorials/the-york"
+    "Hi, I'm interested in The York memorial: https://searsmelvin.co.uk/memorials/the-york"
   );
 }
 
@@ -174,7 +175,7 @@ function textOf(href) {
   });
   assert.equal(
     textOf(links[0].href),
-    "Hi, I'm interested in the The York memorial: https://searsmelvin.co.uk/memorials/the-york"
+    "Hi, I'm interested in The York memorial: https://searsmelvin.co.uk/memorials/the-york"
   );
 }
 
@@ -205,6 +206,28 @@ for (const name of ["Product not found", "This memorial is not listed", "Error l
     decodeURIComponent(href.slice("https://wa.me/442038352548?text=".length)),
     "Hi, I'm interested in the O'Connor & Son memorial: https://searsmelvin.co.uk/memorials/oconnor-son"
   );
+}
+
+
+// Name patterns: don't double a leading The/A/An; keep "the" for other names.
+const patterns = [
+  ["The Castell", "Hi, I'm interested in The Castell memorial: https://searsmelvin.co.uk/memorials/the-castell", "/memorials/the-castell"],
+  ["The Onyx Twin", "Hi, I'm interested in The Onyx Twin memorial: https://searsmelvin.co.uk/memorials/the-onyx-twin", "/memorials/the-onyx-twin"],
+  ["The Sacred Heart", "Hi, I'm interested in The Sacred Heart memorial: https://searsmelvin.co.uk/memorials/the-sacred-heart", "/memorials/the-sacred-heart"],
+  ["The Theydon", "Hi, I'm interested in The Theydon memorial: https://searsmelvin.co.uk/memorials/the-theydon", "/memorials/the-theydon"],
+  ["The Yellow Rose", "Hi, I'm interested in The Yellow Rose memorial: https://searsmelvin.co.uk/memorials/the-yellow-rose", "/memorials/the-yellow-rose"],
+  ["A Garden Seat", "Hi, I'm interested in A Garden Seat memorial: https://searsmelvin.co.uk/memorials/a-garden-seat", "/memorials/a-garden-seat"],
+  ["An English Lawn", "Hi, I'm interested in An English Lawn memorial: https://searsmelvin.co.uk/memorials/an-english-lawn", "/memorials/an-english-lawn"],
+  ["O'Connor & Son", "Hi, I'm interested in the O'Connor & Son memorial: https://searsmelvin.co.uk/memorials/oconnor-son", "/memorials/oconnor-son"],
+];
+for (const [name, expected, path] of patterns) {
+  const { links } = run({
+    productName: name,
+    canonical: "https://searsmelvin.co.uk" + path,
+    pathname: path,
+  });
+  assert.equal(textOf(links[0].href), expected, name);
+  assert.doesNotMatch(textOf(links[0].href), /\bthe The\b|\bthe A\b|\bthe An\b/);
 }
 
 console.log("whatsapp-prefill: ok");
