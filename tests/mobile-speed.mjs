@@ -40,6 +40,9 @@ assert.match(captured.headFirst, /^<link rel="preload" as="image"/, "LCP preload
 assert.match(captured.headFirst, /fetchpriority="high"/);
 assert.match(captured.headFirst, /href="\/img\/product-images\/test\.webp\?width=800&amp;quality=70&amp;resize=contain"/);
 
+const routes = JSON.parse(readFileSync(new URL("_routes.json", root), "utf8"));
+assert.ok(routes.include.includes("/img/*"), "_routes.json must send /img/* to the image proxy Function");
+
 const env = {};
 assert.equal((await imageProxy({ request: new Request("https://example.test/img/private/a.webp?width=96"), env, params: { path: ["private", "a.webp"] } })).status, 404);
 assert.equal((await imageProxy({ request: new Request("https://example.test/img/product-images/a.webp?width=96&url=https://evil.test"), env, params: { path: ["product-images", "a.webp"] } })).status, 404);
