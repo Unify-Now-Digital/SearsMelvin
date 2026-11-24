@@ -182,7 +182,6 @@
     <meta name="twitter:description" content="Hand-finished granite memorial with a 30-year fixing guarantee. Configure your memorial online.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
-    <link rel="preload" href="/assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/fonts.css?v=a1ab19fb21">
     <link rel="stylesheet" href="/tokens.css">
     <link rel="stylesheet" href="/memorial.css?v=dfa6f7022c">
@@ -1497,8 +1496,10 @@
         // Resized product images via Supabase image transforms (originals untouched).
         // Falls back to the original file if the render URL fails.
         function smRender(url, w) {
-            var path = new URL(url).pathname.split(['','storage','v1','object','public',''].join('/'))[1];
-            return '/img/' + path + '?width=' + w + '&quality=70&resize=contain';
+            // PDP gallery stays on the Supabase render host (its own connection, so the
+            // LCP image does not queue behind same-origin CSS/fonts). Must match the
+            // SSR preload in functions/memorials/[slug].js.
+            return url.replace(['','storage','v1','object','public',''].join('/'), ['','storage','v1','render','image','public',''].join('/')) + '?width=' + w + '&quality=70&resize=contain';
         }
         function smIsBucketImg(url) { return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(String(url || '')); }
         function smImgAttrs(url, sizes, escFn) {

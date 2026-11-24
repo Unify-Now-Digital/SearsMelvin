@@ -39,7 +39,7 @@ globalThis.fetch = originalFetch;
 assert.equal(captured.headFirstHtml, true, "preload is inserted as HTML");
 assert.match(captured.headFirst, /^<link rel="preload" as="image"/, "LCP preload follows the viewport meta");
 assert.match(captured.headFirst, /fetchpriority="high"/);
-assert.match(captured.headFirst, /href="\/img\/product-images\/test\.webp\?width=800&amp;quality=70&amp;resize=contain"/);
+assert.match(captured.headFirst, /href="https:\/\/bfwohzcugtwbhhxdqgme\.supabase\.co\/storage\/v1\/render\/image\/public\/product-images\/test\.webp\?width=800&amp;quality=70&amp;resize=contain"/);
 
 const routes = JSON.parse(readFileSync(new URL("_routes.json", root), "utf8"));
 assert.ok(routes.include.includes("/img/*"), "_routes.json must send /img/* to the image proxy Function");
