@@ -2,10 +2,52 @@
     'use strict';
 
     var phoneQuery = window.matchMedia('(max-width: 767px)');
+    var WA_NUMBER = '442038352548';
+    var WA_PLACEHOLDERS = {
+        '': true,
+        Memorial: true,
+        'Product not found': true,
+        'This memorial is not listed': true,
+        'Error loading product': true
+    };
 
     function text(id) {
         var element = document.getElementById(id);
         return element ? element.textContent.replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function canonicalPageUrl() {
+        var canon = document.querySelector('link[rel="canonical"]');
+        var href = canon && canon.getAttribute('href');
+        if (href) {
+            try {
+                var parsed = new URL(href, 'https://searsmelvin.co.uk');
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                    return parsed.origin + parsed.pathname;
+                }
+            } catch (e) { /* fall through */ }
+        }
+        var path = (window.location && window.location.pathname) || '/';
+        return 'https://searsmelvin.co.uk' + path;
+    }
+
+    function productNameForPrefill() {
+        var name = text('productName');
+        return WA_PLACEHOLDERS[name] ? '' : name;
+    }
+
+    function whatsappMessage() {
+        var url = canonicalPageUrl();
+        var name = productNameForPrefill();
+        if (name) return "Hi, I'm interested in the " + name + " memorial: " + url;
+        return "Hi, I'd like some help choosing a memorial: " + url;
+    }
+
+    function applyWhatsAppPrefill() {
+        var href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(whatsappMessage());
+        document.querySelectorAll('a[data-sm-whatsapp]').forEach(function (link) {
+            link.setAttribute('href', href);
+        });
     }
 
     function selectedExtras() {
@@ -31,6 +73,7 @@
         if (line) line.textContent = [text('productName'), colour, selectedExtras()].filter(Boolean).join(' · ');
         if (total) total.textContent = text('priceTotal') || '—';
         mirrorStone();
+        applyWhatsAppPrefill();
     }
 
     function mirrorStone() {
@@ -92,13 +135,22 @@
         if (event.target.id === 'inscriptionInput') mirrorChoices();
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function start() {
         setupTabs();
         ['selectedColourName', 'priceTotal', 'productName', 'addonsLabel'].forEach(function (id) {
             var element = document.getElementById(id);
             if (element) new MutationObserver(mirrorChoices).observe(element, { childList: true, subtree: true, characterData: true });
         });
-        new MutationObserver(mirrorChoices).observe(document.getElementById('addonsGrid'), { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'checked'] });
+        var addonsGrid = document.getElementById('addonsGrid');
+        if (addonsGrid) new MutationObserver(mirrorChoices).observe(addonsGrid, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'checked'] });
+        var canon = document.querySelector('link[rel="canonical"]');
+        if (canon) new MutationObserver(applyWhatsAppPrefill).observe(canon, { attributes: true, attributeFilter: ['href'] });
         mirrorChoices();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
 }());
