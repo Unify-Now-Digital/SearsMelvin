@@ -120,14 +120,9 @@ export function factsParagraph(product, sizes) {
   const stone = stonePhrase(product);
   const stoneBit = stone ? ` in ${stone}` : "";
   const priceBit = price ? ` from ${price}` : "";
-  const names = (Array.isArray(sizes) ? sizes : [])
-    .map((size) => String(size?.size_name || size?.dimensions || "").replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .slice(0, 4);
-  const sizeBit = names.length ? ` Sizes include ${names.join(", ")}.` : "";
   const features = visibleFeatures(product?.included_features).slice(0, 4);
   const featureBit = features.length ? ` Included: ${features.join(", ")}.` : "";
-  return `${name} is a ${type}${stoneBit}${priceBit}. ${PLACE} ${PERMITS}${sizeBit}${featureBit}`;
+  return `${name} is a ${type}${stoneBit}${priceBit}. ${PLACE} ${PERMITS}${featureBit}`;
 }
 
 if (typeof window !== "undefined") {

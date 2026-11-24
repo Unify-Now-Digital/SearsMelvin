@@ -1,0 +1,243 @@
+.pdp-b-phone-only,
+.pdp-b-step,
+.pdp-b-gallery-colour,
+.pdp-b-fact-chips,
+.pdp-b-choices,
+.pdp-b-tabs,
+.pdp-b-notready,
+.mobile-bar-stone,
+.mobile-bar-whatsapp {
+    display: none;
+}
+
+/* 768px and wider: the page looks as it did before Option B. The tab panels
+   are plain wrappers there, and the phone-only blocks stay hidden. */
+@media (min-width: 768px) {
+    body.memorial-page .pdp-b-tab-panel,
+    body.memorial-page .pdp-b-tab-panel[hidden] { display: block; }
+    body.memorial-page #pdpBPanelPermits,
+    body.memorial-page #pdpBPanelPermits[hidden],
+    body.memorial-page .pdp-b-included-fallback { display: none; }
+}
+
+@media (max-width: 767px) {
+    body.memorial-page .pdp-b-desktop-only { display: none; }
+    body.memorial-page .pdp-b-phone-only { display: inline; }
+    body.memorial-page .product-container { display: block; }
+    body.memorial-page .product-gallery { width: 100%; }
+    body.memorial-page #galleryMain {
+        position: relative;
+        width: 100vw;
+        max-width: none;
+        margin-left: calc(50% - 50vw);
+        border-radius: 0;
+    }
+    body.memorial-page .pdp-b-gallery-colour {
+        display: block;
+        position: absolute;
+        left: var(--sm-space-4);
+        bottom: var(--sm-space-4);
+        padding: var(--sm-space-2) var(--sm-space-3);
+        border-radius: 999px;
+        background: var(--sm-color-bg-inverse);
+        color: var(--sm-color-text-inverse);
+        font-size: var(--sm-text-xs);
+        line-height: 1.25;
+        pointer-events: none;
+    }
+    body.memorial-page #phoneColourSlot,
+    body.memorial-page #phoneColourSlot[hidden] {
+        display: none;
+        min-height: 0;
+        padding: 0;
+    }
+    body.memorial-page .product-info {
+        display: flex;
+        flex-direction: column;
+        padding-top: var(--sm-space-4);
+    }
+    body.memorial-page #productCategory { order: 1; }
+    body.memorial-page #productName { order: 2; }
+    body.memorial-page #productTitlePrice { order: 3; }
+    body.memorial-page #productLead { order: 4; }
+    body.memorial-page .pdp-b-fact-chips { order: 5; }
+    body.memorial-page #quoteIntro { display: none; }
+    body.memorial-page #stoneColourGroup { order: 6; }
+    body.memorial-page .personalisation-panel { order: 7; }
+    body.memorial-page .pdp-b-extras-group { order: 8; }
+    body.memorial-page #infillOptionGroup { order: 9; }
+    body.memorial-page .pdp-b-choices { order: 10; }
+    body.memorial-page .pdp-b-tabs { order: 11; }
+    body.memorial-page .pdp-b-tab-panel { order: 12; }
+    body.memorial-page .pdp-b-notready { order: 13; }
+    body.memorial-page #relatedDesigns { order: 14; }
+    body.memorial-page .trust-badges { display: none; }
+    body.memorial-page #priceSummary { display: none; }
+
+    body.memorial-page .pdp-b-fact-chips {
+        display: flex;
+        gap: var(--sm-space-2);
+        overflow-x: auto;
+        padding-bottom: var(--sm-space-3);
+        scrollbar-width: none;
+    }
+    body.memorial-page .pdp-b-fact-chips::-webkit-scrollbar { display: none; }
+    body.memorial-page .pdp-b-fact-chips span {
+        flex: 0 0 auto;
+        padding: var(--sm-space-2) var(--sm-space-3);
+        border: 1px solid var(--sm-color-border-decorative);
+        border-radius: 999px;
+        color: var(--sm-color-text-muted);
+        font-size: var(--sm-text-xs);
+    }
+    body.memorial-page .pdp-b-step {
+        display: block;
+        color: var(--sm-color-text-accent-strong);
+        font-size: var(--sm-text-xs);
+        font-weight: 500;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    body.memorial-page #stoneColourGroup,
+    body.memorial-page .personalisation-panel,
+    body.memorial-page .pdp-b-extras-group {
+        margin: 0;
+        padding: var(--sm-space-5) 0;
+        border-top: 1px solid var(--sm-color-border-decorative);
+    }
+    body.memorial-page #stoneColourGroup .option-header,
+    body.memorial-page .pdp-b-extras-group .option-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        row-gap: var(--sm-space-1);
+    }
+    body.memorial-page #stoneColourGroup .pdp-b-step,
+    body.memorial-page .pdp-b-extras-group .pdp-b-step { grid-column: 1 / -1; }
+    body.memorial-page #stoneColourPreview { display: none; }
+    body.memorial-page #stoneColourOptions {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: var(--sm-space-3);
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        padding: var(--sm-space-3) 0 var(--sm-space-2);
+        scrollbar-width: none;
+    }
+    body.memorial-page #stoneColourOptions::-webkit-scrollbar { display: none; }
+    body.memorial-page #stoneColourOptions .colour-group,
+    body.memorial-page #stoneColourOptions .colour-tier,
+    body.memorial-page #stoneColourOptions .colour-swatch-row { display: contents; }
+    body.memorial-page #stoneColourOptions .colour-group-label,
+    body.memorial-page #stoneColourOptions .colour-tier > summary { display: none; }
+    body.memorial-page #stoneColourOptions .colour-option {
+        flex: 0 0 76px;
+        min-width: 76px;
+        min-height: 44px;
+        scroll-snap-align: start;
+    }
+    body.memorial-page #stoneColourOptions .colour-wrapper { min-height: 44px; }
+    body.memorial-page .personalisation-panel summary { min-height: 72px; }
+    body.memorial-page .personalisation-title { display: block; }
+
+    body.memorial-page .pdp-b-choices {
+        display: grid;
+        gap: var(--sm-space-4);
+        margin: var(--sm-space-5) 0;
+        padding: var(--sm-space-5);
+        border: 1px solid var(--sm-color-border-decorative);
+        border-radius: 2px;
+        background: var(--sm-color-bg-panel-quiet);
+    }
+    body.memorial-page .pdp-b-choices p { margin: 0; }
+    body.memorial-page .pdp-b-total {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--sm-space-3);
+        padding-top: var(--sm-space-4);
+        border-top: 1px solid var(--sm-color-border-decorative);
+    }
+    body.memorial-page .pdp-b-total > span:last-child { text-align: right; }
+    body.memorial-page .pdp-b-total strong,
+    body.memorial-page .pdp-b-total small { display: block; }
+    body.memorial-page .pdp-b-save {
+        min-height: 44px;
+        border: 0;
+        background: transparent;
+        color: var(--sm-color-link);
+        font: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    body.memorial-page .pdp-b-note { color: var(--sm-color-text-muted); font-size: var(--sm-text-xs); }
+
+    body.memorial-page .pdp-b-tabs {
+        display: flex;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--sm-color-border-decorative);
+    }
+    body.memorial-page .pdp-b-tabs button {
+        flex: 1 0 auto;
+        min-height: 44px;
+        padding: var(--sm-space-2) var(--sm-space-3);
+        border: 0;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--sm-color-text-muted);
+        font: inherit;
+        cursor: pointer;
+    }
+    body.memorial-page .pdp-b-tabs button[aria-selected="true"] {
+        border-bottom-color: var(--sm-color-border-strong);
+        color: var(--sm-color-text);
+    }
+    body.memorial-page .pdp-b-tab-panel { padding: var(--sm-space-5) 0; }
+    body.memorial-page .pdp-b-tab-panel[hidden] { display: none; }
+    body.memorial-page #pdpBPanelIncluded #featuresSection { display: block; }
+    body.memorial-page #pdpBPanelIncluded #featuresSection[hidden] { display: none; }
+    body.memorial-page #pdpBPanelIncluded #featuresSection:not([hidden]) + .pdp-b-included-fallback { display: none; }
+    body.memorial-page .pdp-b-included-fallback { margin: 0; padding-left: var(--sm-space-5); }
+    body.memorial-page .product-guarantees { margin: 0; }
+
+    body.memorial-page .pdp-b-notready { display: block; padding: var(--sm-space-6) 0; }
+    body.memorial-page .pdp-b-link-cards { display: grid; gap: var(--sm-space-3); }
+    body.memorial-page .pdp-b-link-cards a {
+        display: grid;
+        gap: var(--sm-space-1);
+        min-height: 44px;
+        padding: var(--sm-space-4);
+        border: 1px solid var(--sm-color-border-decorative);
+        border-radius: 2px;
+        color: var(--sm-color-text);
+        text-decoration: none;
+    }
+    body.memorial-page .pdp-b-link-cards span,
+    body.memorial-page .pdp-b-credentials { color: var(--sm-color-text-muted); font-size: var(--sm-text-xs); }
+    body.memorial-page .pdp-b-credentials { margin-top: var(--sm-space-5); }
+
+    body.memorial-page .mobile-bottom-bar { display: none; gap: var(--sm-space-2); }
+    body.memorial-page .mobile-bottom-bar.is-visible { display: flex; }
+    body.memorial-page .mobile-bar-stone {
+        display: block;
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--sm-color-border-control);
+        border-radius: 50%;
+        background: var(--sm-color-bg-panel);
+    }
+    body.memorial-page .mobile-bar-whatsapp {
+        display: grid;
+        place-items: center;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--sm-color-action-secondary-border);
+        border-radius: 50%;
+        color: var(--sm-color-action-secondary-text);
+    }
+    body.memorial-page .mobile-bar-whatsapp svg { width: 22px; height: 22px; fill: currentColor; }
+    body.memorial-page .mobile-bottom-bar .mobile-bar-actions { gap: var(--sm-space-2); }
+    body.memorial-page .mobile-bottom-bar .btn { min-width: 44px; }
+    body.memorial-page .mobile-bar-vat { max-width: 120px; }
+}

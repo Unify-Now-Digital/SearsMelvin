@@ -42,6 +42,7 @@ assert.doesNotMatch(facts, /\bin in\b/);
 assert.match(facts, /in bahama blue granite/);
 assert.doesNotMatch(facts, /vase/i);
 assert.match(facts, /Greater London and surrounds/);
+assert.doesNotMatch(facts, /Sizes include/);
 
 for (const phrase of [
   "Shown in bahama blue granite",
