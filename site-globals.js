@@ -27,12 +27,15 @@
 
     function shownRect(el) {
         if (!el || !el.getBoundingClientRect) return null;
-        var cs;
-        try { cs = getComputedStyle(el); } catch (e) { return null; }
-        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
+        // Cheap geometry test first: most catalogue cards are off-screen, so
+        // skip their computed style. Same result as checking style first
+        // (display:none has no box; visibility:hidden is still checked).
         var r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) return null;
         if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+        var cs;
+        try { cs = getComputedStyle(el); } catch (e) { return null; }
+        if (cs.display === 'none' || cs.visibility === 'hidden') return null;
         if (el.closest && (el.closest(".hero-buttons") || el.closest(".still-questions"))) {
             return { top: r.top - 40, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height + 40 };
         }
@@ -65,7 +68,17 @@
     // to clear quote/brochure controls, so the fix is to list them here too.
     // .product-price covers the /memorials catalogue cards scrolling behind
     // the fixed bubble; shownRect already discards the ~140 off-screen ones.
+    // One placement pass reads the page once. liftClear() can ask for the
+    // blockers up to ~17 times per pass and nothing moves in between (all
+    // writes happen after the reads), so the list is cached for the pass.
+    var blockerCache = null;
     function chatBlockers() {
+        if (blockerCache) return blockerCache;
+        blockerCache = collectChatBlockers();
+        return blockerCache;
+    }
+
+    function collectChatBlockers() {
         var nodes = [];
         var chrome = [
             document.querySelector('.mobile-bottom-bar.is-visible'),
@@ -210,10 +223,9 @@
         }
     }
 
-    function pinChatHostOpen(el) {
+    function pinChatHostOpen(el, openBottom) {
         if (el.position !== 'bottom-right') el.position = 'bottom-right';
         if (el.classList && !el.classList.contains('sm-chat-open')) el.classList.add('sm-chat-open');
-        var openBottom = openChromeBottom();
         setRootVar('--sm-chat-open-bottom', openBottom + 'px');
         setImportant(el, 'position', 'fixed');
         setImportant(el, 'margin', '0');
@@ -249,6 +261,15 @@
     function applyWidgetPosition() {
         if (placingChat) return;
         placingChat = true;
+        blockerCache = null;
+        try {
+            placeChatWidget();
+        } finally {
+            blockerCache = null;
+        }
+    }
+
+    function placeChatWidget() {
         var open = false;
         try {
             var hosts = document.querySelectorAll('chat-widget');
@@ -258,12 +279,15 @@
                 var h;
                 for (h = 0; h < hosts.length; h++) {
                     if (hosts[h].active) open = true;
-                    if (phone && !hosts[h].active && hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
                 }
                 if (open && phone) {
+                    var openBottom = openChromeBottom();
                     // Do not re-apply the 0x0 closed pin, and do not change
                     // --sm-chat-bottom, so the bubble returns to the same spot.
-                    for (h = 0; h < hosts.length; h++) pinChatHostOpen(hosts[h]);
+                    for (h = 0; h < hosts.length; h++) {
+                        if (!hosts[h].active && hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
+                        pinChatHostOpen(hosts[h], openBottom);
+                    }
                 } else if (open) {
                     // The desktop card already works with the closed corner pin.
                     var closedBottom = parseFloat(document.documentElement.style.getPropertyValue('--sm-chat-bottom'));
@@ -271,13 +295,14 @@
                     for (h = 0; h < hosts.length; h++) pinChatHost(hosts[h], closedBottom);
                 } else {
                     var bottom = stackBottom(withPrompt);
-                    if (withPrompt && chatHits(bottom, true)) {
-                        for (h = 0; h < hosts.length; h++) {
-                            if (hosts[h].showPrompt !== false) hosts[h].showPrompt = false;
-                        }
+                    var hidePrompt = withPrompt && chatHits(bottom, true);
+                    if (hidePrompt) {
                         bottom = stackBottom(false);
                     }
-                    for (var p = 0; p < hosts.length; p++) pinChatHost(hosts[p], bottom);
+                    for (var p = 0; p < hosts.length; p++) {
+                        if ((phone || hidePrompt) && hosts[p].showPrompt !== false) hosts[p].showPrompt = false;
+                        pinChatHost(hosts[p], bottom);
+                    }
                 }
             }
         } catch (e) {}
@@ -326,51 +351,100 @@
     }
 
     function watchChatWidget() {
-        applyWidgetPosition();
-        var observer = new MutationObserver(function () {
-            applyWidgetPosition();
-        });
-        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-        window.addEventListener('resize', applyWidgetPosition);
-        var scrollQueued = false;
-        window.addEventListener('scroll', function () {
-            if (scrollQueued) return;
-            scrollQueued = true;
+        // Nothing below does any layout work until LeadConnector has put its
+        // chat host (or a legacy chat iframe) on the page. Before that, the old
+        // code re-measured the whole page on every DOM/class change, which
+        // starved phones while the catalogue grid was building.
+        var HOST_SELECTOR = 'chat-widget, lc-chat-widget, iframe[src*="leadconnector"], iframe[src*="msgsndr"], [data-widget-id="69ff236b0d119858db377c07"]';
+        var hostReady = false;
+        var framePending = false;
+        var watchedHosts = [];
+        var hostObserver = window.MutationObserver ? new MutationObserver(function () { schedulePosition(); }) : null;
+
+        // Every signal (mutation, resize, scroll, poll, click) shares one
+        // placement per animation frame.
+        function schedulePosition() {
+            if (!hostReady || framePending) return;
+            framePending = true;
             var run = function () {
-                scrollQueued = false;
+                framePending = false;
                 applyWidgetPosition();
             };
             if (window.requestAnimationFrame) window.requestAnimationFrame(run);
-            else run();
-        }, { passive: true });
-        // Reapply periodically for the first 10s — GHL widget often sets inline
-        // styles after our observer runs, so re-pin to win the last-write race.
-        var ticks = 0;
-        var poll = setInterval(function () {
-            applyWidgetPosition();
-            if (++ticks >= 20) clearInterval(poll);
-        }, 500);
-        // The widget's active flag is a property, not a light-DOM attribute,
-        // so the observer can miss an open or close. Watch that flag and
-        // only re-apply when it changes. While it is open,
-        // applyWidgetPosition keeps the open box and does not re-apply the
-        // zero-size closed pin. A click on the host also syncs immediately.
-        var lastChatOpen = null;
-        setInterval(function () {
-            var hosts = document.querySelectorAll('chat-widget');
-            var isOpen = false;
+            else setTimeout(run, 0);
+        }
+
+        // LeadConnector writes inline styles on its own host late, so watch
+        // style/class on the host itself (not on the whole page).
+        function watchHosts() {
+            if (!hostObserver) return;
+            var hosts = document.querySelectorAll('chat-widget, lc-chat-widget');
             for (var i = 0; i < hosts.length; i++) {
-                if (hosts[i].active) isOpen = true;
+                if (watchedHosts.indexOf(hosts[i]) !== -1) continue;
+                watchedHosts.push(hosts[i]);
+                hostObserver.observe(hosts[i], { attributes: true, attributeFilter: ['style', 'class'] });
             }
-            if (lastChatOpen === isOpen) return;
-            lastChatOpen = isOpen;
-            applyWidgetPosition();
-        }, 250);
+        }
+
+        function startHostPolls() {
+            // Reapply periodically for the first 10s after the host appears.
+            // GHL often sets inline styles after our observer runs, so re-pin
+            // to win the last-write race.
+            var ticks = 0;
+            var poll = setInterval(function () {
+                schedulePosition();
+                if (++ticks >= 20) clearInterval(poll);
+            }, 500);
+            // The widget's active flag is a property, not a light-DOM
+            // attribute, so the observer can miss an open or close. Watch that
+            // flag and only re-apply when it changes. While it is open,
+            // applyWidgetPosition keeps the open box and does not re-apply the
+            // zero-size closed pin.
+            var lastChatOpen = null;
+            setInterval(function () {
+                var hosts = document.querySelectorAll('chat-widget');
+                var isOpen = false;
+                for (var i = 0; i < hosts.length; i++) {
+                    if (hosts[i].active) isOpen = true;
+                }
+                if (lastChatOpen === isOpen) return;
+                lastChatOpen = isOpen;
+                schedulePosition();
+            }, 250);
+        }
+
+        function discoverHost() {
+            if (!document.querySelector(HOST_SELECTOR)) return false;
+            watchHosts();
+            if (!hostReady) {
+                hostReady = true;
+                startHostPolls();
+            }
+            schedulePosition();
+            return true;
+        }
+
+        var observer = new MutationObserver(function (records) {
+            if (!hostReady) {
+                discoverHost();
+                return;
+            }
+            for (var i = 0; i < records.length; i++) {
+                if (records[i].addedNodes && records[i].addedNodes.length) { watchHosts(); break; }
+            }
+            schedulePosition();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        discoverHost();
+        window.addEventListener('resize', schedulePosition);
+        window.addEventListener('scroll', schedulePosition, { passive: true });
+        // A click on the host also syncs straight away.
         document.addEventListener('click', function (ev) {
             var t = ev.target;
             if (!t || !t.closest || !t.closest('chat-widget')) return;
-            setTimeout(applyWidgetPosition, 0);
-            setTimeout(applyWidgetPosition, 100);
+            discoverHost();
+            setTimeout(schedulePosition, 0);
+            setTimeout(schedulePosition, 100);
         }, true);
     }
 
@@ -806,13 +880,17 @@
         syncTypeChips();
         ensureShortlistBadge();
         updateShortlistBadge();
-        ensureSkipLink();
-        ensureFooterDisclosures();
-        compactFooter();
         applyPublicResponsiveBaseline();
         keepMobileMenuStateAccessible();
         shapePhoneMenu();
         shapeInnerPhoneTrustBar();
+        var decorate = function () {
+            ensureSkipLink();
+            ensureFooterDisclosures();
+            compactFooter();
+        };
+        if (window.requestIdleCallback) window.requestIdleCallback(decorate, { timeout: 1200 });
+        else setTimeout(decorate, 200);
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });
