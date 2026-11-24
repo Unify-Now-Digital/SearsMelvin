@@ -223,6 +223,17 @@
         }
     }
 
+    // Legacy chat iframes/hosts and the corner heuristic. Same final styles as
+    // before; the write is skipped when already set so watching these nodes
+    // cannot loop on our own writes. Each pinned node is remembered so
+    // watchChatWidget can observe late third-party style/class rewrites.
+    var legacyPinned = [];
+    function pinLegacy(el, bottom) {
+        setImportant(el, 'bottom', bottom + 'px');
+        setImportant(el, 'right', '24px');
+        if (legacyPinned.indexOf(el) === -1) legacyPinned.push(el);
+    }
+
     function pinChatHostOpen(el, openBottom) {
         if (el.position !== 'bottom-right') el.position = 'bottom-right';
         if (el.classList && !el.classList.contains('sm-chat-open')) el.classList.add('sm-chat-open');
@@ -315,14 +326,12 @@
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
             if (!isChatWidgetEl(el) || (el.tagName && el.tagName.toLowerCase() === 'chat-widget')) continue;
-            el.style.setProperty('bottom', bottomLegacy + 'px', 'important');
-            el.style.setProperty('right', '24px', 'important');
+            pinLegacy(el, bottomLegacy);
         }
         var deeper = document.querySelectorAll('iframe[src*="leadconnector"], iframe[src*="msgsndr"], iframe[title*="hat"], lc-chat-widget, [data-widget-id="69ff236b0d119858db377c07"]');
         for (var j = 0; j < deeper.length; j++) {
             if (deeper[j].tagName && deeper[j].tagName.toLowerCase() === 'CHAT-WIDGET') continue;
-            deeper[j].style.setProperty('bottom', bottomLegacy + 'px', 'important');
-            deeper[j].style.setProperty('right', '24px', 'important');
+            pinLegacy(deeper[j], bottomLegacy);
         }
         finishPlacing();
         // Heuristic fallback: any small fixed element pinned to the bottom-right
@@ -345,8 +354,7 @@
             // Don't touch our own injected favourites badge or known nav elements
             if (node.id === 'shortlistNavBtn') continue;
             if (node.classList && (node.classList.contains('mobile-bottom-nav') || node.classList.contains('floating-actions') || node.classList.contains('cookie-consent'))) continue;
-            node.style.setProperty('bottom', bottomLegacy + 'px', 'important');
-            node.style.setProperty('right', '24px', 'important');
+            pinLegacy(node, bottomLegacy);
         }
     }
 
@@ -369,6 +377,7 @@
             var run = function () {
                 framePending = false;
                 applyWidgetPosition();
+                watchHosts();
             };
             if (window.requestAnimationFrame) window.requestAnimationFrame(run);
             else setTimeout(run, 0);
@@ -378,8 +387,12 @@
         // style/class on the host itself (not on the whole page).
         function watchHosts() {
             if (!hostObserver) return;
-            var hosts = document.querySelectorAll('chat-widget, lc-chat-widget');
-            for (var i = 0; i < hosts.length; i++) {
+            var found = document.querySelectorAll(HOST_SELECTOR);
+            var hosts = [];
+            var i;
+            for (i = 0; i < found.length; i++) hosts.push(found[i]);
+            for (i = 0; i < legacyPinned.length; i++) hosts.push(legacyPinned[i]);
+            for (i = 0; i < hosts.length; i++) {
                 if (watchedHosts.indexOf(hosts[i]) !== -1) continue;
                 watchedHosts.push(hosts[i]);
                 hostObserver.observe(hosts[i], { attributes: true, attributeFilter: ['style', 'class'] });
@@ -880,17 +893,15 @@
         syncTypeChips();
         ensureShortlistBadge();
         updateShortlistBadge();
+        // Kept synchronous: the skip link must be first in the focus order and
+        // the footer must have its final shape before first paint (no CLS).
+        ensureSkipLink();
+        ensureFooterDisclosures();
+        compactFooter();
         applyPublicResponsiveBaseline();
         keepMobileMenuStateAccessible();
         shapePhoneMenu();
         shapeInnerPhoneTrustBar();
-        var decorate = function () {
-            ensureSkipLink();
-            ensureFooterDisclosures();
-            compactFooter();
-        };
-        if (window.requestIdleCallback) window.requestIdleCallback(decorate, { timeout: 1200 });
-        else setTimeout(decorate, 200);
         window.addEventListener('storage', function (e) {
             if (e.key === SHORTLIST_KEY) updateShortlistBadge();
         });
