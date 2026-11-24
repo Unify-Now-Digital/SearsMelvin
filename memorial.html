@@ -244,6 +244,7 @@
     <link rel="stylesheet" href="/site-upgrades.css?v=20261122k">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
+    <link rel="stylesheet" href="/memorial-option-b.css">
 </head>
 <body class="has-mobile-bottom-bar memorial-page">
     <!-- Google Tag Manager (noscript) -->
@@ -322,6 +323,7 @@
                 <div class="gallery-main" id="galleryMain">
                     <img id="galleryMainImg" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%204%205%22%2F%3E" alt="Memorial" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:contain;">
                     <span class="gallery-badge" id="galleryBadge" style="display:none;"></span>
+                    <span class="pdp-b-gallery-colour" aria-live="polite">Chosen colour: <span id="pdpBChosenColour">Black Galaxy</span></span>
                 </div>
 
                 <div class="phone-colour-slot" id="phoneColourSlot" hidden></div>
@@ -366,6 +368,11 @@
                     <span id="productTitleFrom">From </span><span id="productTitleAmount"></span><span class="product-title-vat">, inc. VAT</span>
                 </p>
                 <p class="product-lead animate-in animate-delay-2" id="productLead">Hand-finished memorial, professionally installed.</p>
+                <div class="pdp-b-fact-chips" aria-label="Key facts">
+                    <span>Fixing included</span>
+                    <span>Greater London and surrounds</span>
+                    <span>30-year fixing guarantee</span>
+                </div>
                 <div class="product-quote-intro animate-in animate-delay-3" id="quoteIntro">
                     <button class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
                     <ul class="product-reassurance">
@@ -374,23 +381,34 @@
                         <li>10-year workmanship guarantee</li>
                     </ul>
                 </div>
-                <p class="product-description animate-in animate-delay-3" id="productDescription"></p>
-                <section class="product-facts" id="productFacts" aria-label="About this memorial"></section>
+                <div class="pdp-b-tabs" role="tablist" aria-label="Product information">
+                    <button type="button" role="tab" id="pdpBTabDetails" aria-selected="true" aria-controls="pdpBPanelDetails">Details</button>
+                    <button type="button" role="tab" id="pdpBTabIncluded" aria-selected="false" aria-controls="pdpBPanelIncluded" tabindex="-1">Included</button>
+                    <button type="button" role="tab" id="pdpBTabGuarantees" aria-selected="false" aria-controls="pdpBPanelGuarantees" tabindex="-1">Guarantees</button>
+                    <button type="button" role="tab" id="pdpBTabPermits" aria-selected="false" aria-controls="pdpBPanelPermits" tabindex="-1">Permits</button>
+                </div>
+                <div class="pdp-b-tab-panel" id="pdpBPanelDetails" role="tabpanel" aria-labelledby="pdpBTabDetails">
+                    <p class="product-description animate-in animate-delay-3" id="productDescription"></p>
+                    <section class="product-facts" id="productFacts" aria-label="About this memorial"></section>
+                </div>
                 <nav class="related-designs" id="relatedDesigns" aria-label="Related designs"></nav>
-                <section class="product-guarantees" aria-labelledby="guaranteesHeading">
-                    <h2 id="guaranteesHeading">Our guarantees</h2>
-                    <ul>
-                        <li><strong>Structural fixing – 30 years.</strong></li>
-                        <li><strong>Workmanship – 10 years.</strong></li>
-                        <li><strong>Ground settlement – 2 years.</strong></li>
-                    </ul>
-                    <p><a href="/terms">See our terms for full guarantee details.</a></p>
-                </section>
+                <div class="pdp-b-tab-panel" id="pdpBPanelGuarantees" role="tabpanel" aria-labelledby="pdpBTabGuarantees" hidden>
+                    <section class="product-guarantees" aria-labelledby="guaranteesHeading">
+                        <h2 id="guaranteesHeading">Our guarantees</h2>
+                        <ul>
+                            <li><strong>Structural fixing – 30 years.</strong></li>
+                            <li><strong>Workmanship – 10 years.</strong></li>
+                            <li><strong>Ground settlement – 2 years.</strong></li>
+                        </ul>
+                        <p><a href="/terms">See our terms for full guarantee details.</a></p>
+                    </section>
+                </div>
 
                 <!-- Stone Colour - Live Updates SVG -->
                 <div class="option-group" id="stoneColourGroup">
                     <div class="option-header">
-                        <span class="option-label" id="stoneColourLabel">Stone Colour</span>
+                        <span class="pdp-b-step">Step 1</span>
+                        <span class="option-label" id="stoneColourLabel"><span class="pdp-b-phone-only">Choose the stone</span><span class="pdp-b-desktop-only">Stone Colour</span></span>
                         <span class="option-value" id="selectedColourName">Black Galaxy</span>
                     </div>
                     <div id="stoneColourHome">
@@ -416,7 +434,7 @@
                      without it, or paste wording when they have it to hand. -->
                 <details class="personalisation-panel">
                     <summary>
-                        <span><span class="personalisation-title">Personalise this memorial</span><span class="personalisation-note">Optional — add inscription or lettering</span></span>
+                        <span><span class="pdp-b-step">Step 2</span><span class="personalisation-title"><span class="pdp-b-phone-only">Inscription (optional)</span><span class="pdp-b-desktop-only">Personalise this memorial</span></span><span class="personalisation-note">Optional — add inscription or lettering</span></span>
                     </summary>
                     <div class="personalisation-content">
                         <div class="option-group">
@@ -476,9 +494,10 @@
                 </details>
 
                 <!-- Add-ons -->
-                <div class="option-group">
+                <div class="option-group pdp-b-extras-group">
                     <div class="option-header">
-                        <span class="option-label">Optional Extras</span>
+                        <span class="pdp-b-step">Step 3</span>
+                        <span class="option-label"><span class="pdp-b-phone-only">Extras (optional)</span><span class="pdp-b-desktop-only">Optional Extras</span></span>
                     </div>
 
                     <!-- Fixed 2-column card grid — never reflows -->
@@ -631,6 +650,30 @@
                     </div>
                 </div>
 
+                <section class="pdp-b-choices" aria-labelledby="pdpBChoicesHeading">
+                    <span class="pdp-b-step" id="pdpBChoicesHeading">Your choices</span>
+                    <p id="pdpBChoicesLine"></p>
+                    <div class="pdp-b-total"><span>Guide total (installed)</span><span><strong id="pdpBTotal">—</strong><small>Inc. VAT</small></span></div>
+                    <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Request your quote</button>
+                    <button type="button" class="pdp-b-save" onclick="saveMemorial()">Save to shortlist</button>
+                    <p class="pdp-b-note">We’ll confirm what applies before you proceed.</p>
+                </section>
+                <div class="pdp-b-tab-panel" id="pdpBPanelPermits" role="tabpanel" aria-labelledby="pdpBTabPermits" hidden>
+                    <p><strong>We help with cemetery requirements</strong></p>
+                    <p>We’ll confirm what applies before you proceed.</p>
+                    <p>We help with cemetery permits.</p>
+                </div>
+                <section class="pdp-b-notready" aria-labelledby="pdpBNotReadyHeading">
+                    <h2 id="pdpBNotReadyHeading">Not ready to decide?</h2>
+                    <div class="pdp-b-link-cards">
+                        <a href="/contact"><strong>Visit our Finchley showroom</strong><span>NW11 6LB · Monday to Friday, 10am to 3pm</span></a>
+                        <a href="tel:+442038352548"><strong>Talk it through</strong><span>020 3835 2548</span></a>
+                        <a href="https://wa.me/442038352548" target="_blank" rel="noopener" data-sm-whatsapp="pdp_not_ready"><strong>Message us on WhatsApp</strong><span>Send us a message</span></a>
+                        <a href="/brochure"><strong>Request our brochure</strong><span>Designs and how our process works</span></a>
+                    </div>
+                    <p class="pdp-b-credentials">RQMF Registered · No. 2263<br>Structural fixing 30 years · Workmanship 10 years · Ground settlement 2 years</p>
+                </section>
+
                 <!-- Trust Badges -->
                 <div class="trust-badges">
                     <div class="trust-badge">
@@ -655,11 +698,16 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Features -->
-                <div class="features-section" id="featuresSection" hidden>
-                    <h2 class="features-title">What's Included</h2>
-                    <div class="features-grid" id="featuresGrid"></div>
+                <div class="pdp-b-tab-panel" id="pdpBPanelIncluded" role="tabpanel" aria-labelledby="pdpBTabIncluded" hidden>
+                    <div class="features-section" id="featuresSection" hidden>
+                        <h2 class="features-title">What's Included</h2>
+                        <div class="features-grid" id="featuresGrid"></div>
+                    </div>
+                    <ul class="pdp-b-included-fallback">
+                        <li>Installed across Greater London and surrounds</li>
+                        <li>30-year fixing guarantee</li>
+                        <li>10-year workmanship guarantee</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -712,12 +760,14 @@
 
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
+        <span class="mobile-bar-stone" id="mobileBarStone" aria-hidden="true"></span>
         <p class="mobile-bar-price" id="mobileBarPrice" hidden>
             <span class="mobile-bar-from"><span id="mobileBarFrom">From </span><span id="mobileBarAmount"></span></span>
-            <span class="mobile-bar-vat">Inc. VAT</span>
+            <span class="mobile-bar-vat"><span class="pdp-b-desktop-only">Inc. VAT</span><span class="pdp-b-phone-only"><span id="mobileBarColour">Black Galaxy</span> · Inc. VAT</span></span>
         </p>
         <div class="mobile-bar-actions">
             <a class="btn btn-secondary mobile-bar-call" href="tel:+442038352548"><span class="mobile-bar-call-label">Call</span><span class="mobile-bar-call-number"> 020 3835 2548</span></a>
+            <a class="mobile-bar-whatsapp" href="https://wa.me/442038352548" target="_blank" rel="noopener" aria-label="Message us on WhatsApp" data-sm-whatsapp="pdp_sticky"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.5 4.1 1.6 5.9L.2 24l6.4-1.7c1.7.9 3.6 1.4 5.5 1.4 6.5 0 11.8-5.3 11.8-11.8 0-3.2-1.2-6.1-3.4-8.4ZM12.1 21.7c-1.7 0-3.4-.5-4.9-1.3l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 1 1 8.3 4.6Zm5.4-7.3c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.7-.8-2.8-1.5-3.9-3.4-.3-.5.3-.5.8-1.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.5c.1.2 2.4 3.7 5.9 5.2 2.2.9 3 .9 4.1.7.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.3-.6-.4Z"/></svg></a>
             <button type="button" class="btn btn-primary" onclick="openQuoteModal()">Get a quote</button>
         </div>
     </div>
@@ -797,7 +847,7 @@
                 <h3>Your Configuration</h3>
                 <div class="quote-config-row"><span>Memorial</span><span id="qsProduct">—</span></div>
                 <div class="quote-config-row"><span>Stone</span><span id="qsColour">—</span></div>
-                <div class="quote-config-row"><span>Size</span><span id="qsSize">—</span></div>
+                <div class="quote-config-row" hidden><span>Size</span><span id="qsSize">—</span></div>
                 <div class="quote-config-row" id="qsFontRow" style="display:none"><span>Font</span><span id="qsFont">—</span></div>
                 <div class="quote-config-row" id="qsLetterColourRow" style="display:none"><span>Lettering</span><span id="qsLetterColour">—</span></div>
                 <div class="quote-config-row" id="qsInscriptionRow" style="display:none"><span>Inscription</span><span id="qsInscription" data-clarity-mask="True" style="max-width:60%;text-align:right;word-break:break-word;">—</span></div>
@@ -1324,8 +1374,15 @@
             var preview = document.getElementById('stoneColourPreview');
             var options = document.getElementById('stoneColourOptions');
             if (!slot || !home || !preview || !options) return;
-            var phone = window.matchMedia('(max-width: 768px)').matches;
-            if (phone) {
+            var guidedPhone = window.matchMedia('(max-width: 767px)').matches;
+            var legacyPhoneEdge = window.matchMedia('(min-width: 768px) and (max-width: 768px)').matches;
+            if (guidedPhone) {
+                options.querySelectorAll('details.colour-tier').forEach(function (details) { details.open = true; });
+                if (preview.parentElement !== home) home.appendChild(preview);
+                if (options.parentElement !== home) home.appendChild(options);
+                slot.hidden = true;
+                if (group) group.classList.remove('is-phone-moved');
+            } else if (legacyPhoneEdge) {
                 options.querySelectorAll('details.colour-tier').forEach(function (details) { details.open = true; });
                 if (preview.parentElement !== slot) slot.appendChild(preview);
                 if (options.parentElement !== slot) slot.appendChild(options);
@@ -2048,9 +2105,10 @@
             const overlay = document.getElementById('quoteOverlay');
             if (!bar) return;
             const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+            const isPhone = window.matchMedia('(max-width: 767px)').matches;
             const modalOpen = overlay && overlay.classList.contains('active');
             // The cookie card sits above the bar. The bar stays visible.
-            bar.classList.toggle('is-visible', Boolean(isMobile && mobileQuoteCtaEligible && !modalOpen));
+            bar.classList.toggle('is-visible', Boolean(isMobile && (isPhone || mobileQuoteCtaEligible) && !modalOpen));
         }
 
         function setupMobileQuoteBar() {
@@ -2707,5 +2765,6 @@
     <script src="/site-globals.js?v=20261122k" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261122a" defer></script>
+    <script src="/memorial-option-b.js" defer></script>
 </body>
 </html>
