@@ -41,6 +41,12 @@ Catalogue payloads are product id, product name, category name, 1-based visible 
 
 These pushes are not dropped on preview or localhost. The site has never excluded those hosts from `dataLayer`, and the committed GTM snapshot has no hostname exception. GTM and GA4 still decide what is collected. Do not add a site-side host gate for these events.
 
+## Microsoft Clarity
+
+`sm-clarity.js` mirrors event **names** into Clarity after analytics consent, once `/api/config` has supplied a project id and the tag stub exists. The names are `sm_quote_submit`, `sm_lead_submit`, `brochure_download`, `brochure_request`, `click_to_call`, `sm_chat_submit`, and `whatsapp_click`. The site does not push `click_to_call` (GTM fires that GA4 event from the `tel:` click), so a delegated click listener sends it, and the same listener sends `whatsapp_click` for `wa.me`, `api.whatsapp.com`, and `whatsapp:` links. Only the name is sent. Form fields, emails, phones, names, and click ids are not.
+
+Custom tags, same consent gate: `page_type` (from the pathname: `home`, `memorials_list`, `memorial_product`, `area_hub`, `area_borough`, `area_cemetery`, `brochure`, `about`, `faq`, `contact`, `other`); `paid_landing` = `yes` when the session's landing URL had `gclid`, `gbraid`, `wbraid`, or `utm_medium=cpc`; `landing_source` is `utm_source`, or `google_ads` when that landing URL had `gclid`. The derived paid flag and source are stored in `sessionStorage` for the session (`sm_clarity_landing`). Nothing is sent before consent. Consent, masking, and the excluded paths (`/admin`, `/admin-products`, `/partner`, `/track`, `/quote`) are unchanged.
+
 The GTM loader (and the chat loader) set `window.__smChatHook = true` before gtm.js can run. That disables the
 older GTM Custom HTML "GHL Chat Widget Listener" (fetch/XHR hook), which raced the widget
 and missed most chats. Do not remove the flag, or chats will be counted twice.
