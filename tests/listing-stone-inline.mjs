@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { stoneInlineMarkup, stoneInlineLeadMarkup, catalogueInjection } from "../functions/memorials.js";
 
 const html = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+const css = readFileSync(new URL("../memorials.css", import.meta.url), "utf8");
 const server = readFileSync(new URL("../functions/memorials.js", import.meta.url), "utf8");
 
 // ---- Markup ----
@@ -43,8 +44,8 @@ assert.match(html, /id="stoneBand"/);
 assert.match(html, /Every design comes in all/);
 
 // ---- CSS: hidden by default, phones-only media query ----
-assert.match(html, /\.listing-stone-inline \{ display: none; \}/);
-const mobileCss = html.slice(html.indexOf("/* Mobile compact stone strip."), html.indexOf("</style>\n</head>"));
+assert.match(css, /\.listing-stone-inline \{ display: none; \}/);
+const mobileCss = css.slice(css.indexOf("/* Mobile compact stone strip."));
 assert.match(mobileCss, /@media \(max-width: 767px\)/);
 assert.match(mobileCss, /position:\s*sticky/);
 assert.match(mobileCss, /top:\s*var\(--header-height,\s*68px\)/);
@@ -80,7 +81,7 @@ assert.doesNotMatch(html, /listing-stone-inline-lead-price \{/);
 assert.match(mobileCss, /-webkit-line-clamp:\s*2/);
 
 // At >=768px the band-hiding rule must not apply — only inside the 767 query.
-const before767 = html.slice(0, html.indexOf("@media (max-width: 767px)"));
+const before767 = css.slice(0, css.indexOf("@media (max-width: 767px)"));
 assert.doesNotMatch(before767, /\.products-grid > \.stone-band \{ display: none; \}/);
 
 // ---- Server markup ----
@@ -131,9 +132,9 @@ assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 5 \/ 12 \+ 
 assert.match(mobileCss, /min-height:\s*var\(--sm-card-face\)/);
 assert.match(mobileCss, /contain-intrinsic-height:\s*auto var\(--sm-card-face\)/);
 for (const [band, extra] of [["375px) and (max-width: 767px", 93]]) {
-  const at = html.indexOf("@media (min-width: " + band + ")");
+  const at = css.indexOf("@media (min-width: " + band + ")");
   assert.ok(at > -1, "missing card band " + band);
-  assert.match(html.slice(at, at + 200), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 5 / 12 \\+ " + extra + "px\\)"));
+  assert.match(css.slice(at, at + 200), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 5 / 12 \\+ " + extra + "px\\)"));
 }
 
 console.log("listing-stone-inline: ok");

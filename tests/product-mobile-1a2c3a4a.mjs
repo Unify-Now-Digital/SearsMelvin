@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const root = new URL("..", import.meta.url);
-const html = readFileSync(new URL("memorial.html", root), "utf8");
+const html = readFileSync(new URL("memorial.css", root), "utf8") + "\n" + readFileSync(new URL("memorial.html", root), "utf8");
 const optionBCss = readFileSync(new URL("memorial-option-b.css", root), "utf8");
 const globals = readFileSync(new URL("site-globals.js", root), "utf8");
 const slugFn = readFileSync(new URL("functions/memorials/[slug].js", root), "utf8");

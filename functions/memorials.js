@@ -3,6 +3,7 @@
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
 
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
+const INITIAL_CARD_COUNT = 24;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -42,6 +43,20 @@ function safeImageUrl(value) {
   }
 }
 
+function swatchImageUrl(value) {
+  const safe = safeImageUrl(value);
+  if (!safe) return "";
+  try {
+    const url = new URL(safe);
+    if (!url.hostname.endsWith(".supabase.co") || !url.pathname.startsWith("/storage/v1/object/public/")) return safe;
+    // Same URL the client-side swatch helper builds, so SSR and client share one download.
+    const path = url.pathname.split("/storage/v1/object/public/")[1];
+    return `/img/${path}?width=144&quality=70&resize=contain`;
+  } catch {
+    return safe;
+  }
+}
+
 const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
 
 function isBucketImage(url) {
@@ -49,8 +64,8 @@ function isBucketImage(url) {
 }
 
 function renderImageUrl(url, width) {
-  return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
-    `?width=${width}&quality=70&resize=contain`;
+  const path = new URL(url).pathname.split("/storage/v1/object/public/")[1];
+  return `/img/${path}?width=${width}&quality=70&resize=contain`;
 }
 
 function imageSources(url) {
@@ -108,9 +123,9 @@ function stoneInlineButton(colour, pressed) {
   const slug = safeSlug(colour.slug);
   const primary = safeHex(colour.hex_primary);
   const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-  const imageUrl = safeImageUrl(colour.image_url);
+  const imageUrl = swatchImageUrl(colour.image_url);
   const photo = imageUrl
-    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="44" height="44" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
     : "";
   const label = name || "Stone colour";
   const tier = escapeHtml(colourTier(colour));
@@ -128,9 +143,9 @@ export function stoneInlineLeadMarkup(colour) {
   if (!colour) return { photoStyle: "", photoInner: "", name: "", slug: "" };
   const primary = safeHex(colour.hex_primary);
   const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-  const imageUrl = safeImageUrl(colour.image_url);
+  const imageUrl = swatchImageUrl(colour.image_url);
   const photoInner = imageUrl
-    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="70" height="70" decoding="async" onerror="this.remove()">`
+    ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="70" height="70" loading="lazy" decoding="async" onerror="this.remove()">`
     : "";
   return {
     photoStyle: `background:linear-gradient(145deg, ${primary}, ${secondary})`,
@@ -147,9 +162,9 @@ export function stoneBandMarkup(colours) {
     const slug = safeSlug(colour.slug);
     const primary = safeHex(colour.hex_primary);
     const secondary = safeHex(colour.hex_secondary || colour.hex_primary);
-    const imageUrl = safeImageUrl(colour.image_url);
+    const imageUrl = swatchImageUrl(colour.image_url);
     const photo = imageUrl
-      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
+      ? `<img class="colour-swatch-photo" src="${escapeHtml(imageUrl)}" alt="" width="76" height="32" loading="lazy" decoding="async" onerror="this.parentElement.classList.remove('has-photo');this.remove()">`
       : "";
     return `<div class="stone-swatch" role="listitem"${slug ? ` data-colour="${slug}"` : ""}><span class="stone-swatch-chip${photo ? " has-photo" : ""}" style="background:linear-gradient(145deg, ${primary}, ${secondary})">${photo}</span><span class="stone-swatch-name">${name}</span></div>`;
   }).join("");
@@ -190,14 +205,29 @@ export function listableProducts(products) {
 
 export function catalogueInjection(products, colours) {
   const visible = listableProducts(products);
-  const cards = renderCards(visible, colours);
-  const grid = `${cards}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
+  const cards = renderCards(visible.slice(0, INITIAL_CARD_COUNT), colours);
+  const more = visible.length > INITIAL_CARD_COUNT ? `<div class="catalogue-more" id="catalogueMore"><button type="button" id="catalogueMoreButton" onclick="showMoreDesigns()">Show more designs</button><span id="catalogueSentinel" aria-hidden="true"></span></div>` : "";
+  const grid = `${cards}${more}${stoneBandMarkup(colours)}<div class="no-results" id="noResults" style="display: none;"><h3>No memorials found</h3><p>Try adjusting your filters to find the right memorial.</p><button type="button" onclick="clearAllFilters()">Clear all filters</button></div>`;
   return {
     grid,
     inline: stoneInlineMarkup(colours),
     lead: stoneInlineLeadMarkup(colours[0]),
     count: visible.length,
   };
+}
+
+function itemListJsonLd(products) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Memorial designs by Sears Melvin",
+    itemListElement: listableProducts(products).map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://searsmelvin.co.uk/memorials/${safeSlug(product.slug)}`,
+      name: String(product.name || "").slice(0, 120),
+    })),
+  });
 }
 
 function renderCards(products, colours) {
@@ -252,6 +282,7 @@ export async function onRequestGet({ request, env }) {
   // The canonical stays the link in the shell (/memorials), including when ?type= is set.
   let rewriter = new HTMLRewriter()
     .on("#productsGrid", { element(el) { el.setInnerContent(grid, { html: true }); } })
+    .on("#itemListJsonLd", { element(el) { el.setInnerContent(itemListJsonLd(visible), { html: false }); } })
     .on("#listingStoneInlineRow", { element(el) { el.setInnerContent(inline, { html: true }); } })
     .on("#listingStoneInlineLead", { element(el) { el.setAttribute("data-slug", lead.slug); } })
     .on("#listingStoneInlineLeadPhoto", {

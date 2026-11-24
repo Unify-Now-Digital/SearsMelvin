@@ -15,7 +15,9 @@ const REAL = "https://bfwohzcugtwbhhxdqgme.supabase.co/storage/v1/object/public/
 const source = readFileSync(new URL("../data/stone-colour-swatches.js", import.meta.url), "utf8");
 
 assert.equal(swatches.stoneColourImageUrl(BLACK), "");
-assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }), REAL);
+assert.equal(swatches.safeSwatchUrl(REAL), REAL);
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: REAL }), '/img/product-images/stone-colours/black.webp?width=144&quality=70&resize=contain');
+assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: 'https://example.com/black.webp' }), 'https://example.com/black.webp');
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "javascript:alert(1)" }), "");
 assert.equal(swatches.stoneColourImageUrl({ ...BLACK, image_url: "/images/black.webp" }), "/images/black.webp");
 assert.equal(swatches.isProductionHost, undefined);
@@ -29,11 +31,12 @@ assert.match(memorial, /stoneColourImageUrl\(c\)/);
 assert.doesNotMatch(memorial, /stoneColourImageUrl\(c,\s*location\.hostname\)/);
 
 const listing = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+const listingCss = readFileSync(new URL("../memorials.css", import.meta.url), "utf8");
 assert.match(listing, /src="\/data\/stone-colour-swatches\.js"/);
 assert.match(listing, /stoneColourImageUrl\(colour\)/);
 assert.doesNotMatch(listing, /stoneColourImageUrl\(colour,\s*location\.hostname\)/);
 assert.match(listing, /class="colour-swatch-photo"/);
-assert.match(listing, /object-fit:\s*cover/);
+assert.match(listingCss, /object-fit:\s*cover/);
 assert.match(listing, /classList\.remove\(\\'has-photo\\'\);this\.remove\(\)/);
 assert.match(listing, /linear-gradient\(145deg, ' \+ primaryHex \+ ', ' \+ secondaryHex \+ '\)/);
 assert.doesNotMatch(listing, /stone-colours\/black\.webp/, "preview URLs stay in the swatch module");
@@ -41,8 +44,8 @@ assert.match(memorial, /id="stoneColourPreview"/);
 assert.match(memorial, /role="radiogroup"/);
 assert.match(memorial, /aria-labelledby="stoneColourLabel"/);
 assert.match(memorial, /class="colour-swatch-photo"/);
-assert.match(memorial, /object-fit:\s*cover/);
-assert.match(memorial, /input:focus-visible \+ \.colour-wrapper \.colour-swatch/);
+assert.match(readFileSync(new URL("../memorial.css", import.meta.url), "utf8"), /object-fit:\s*cover/);
+assert.match(readFileSync(new URL("../memorial.css", import.meta.url), "utf8"), /input:focus-visible \+ \.colour-wrapper \.colour-swatch/);
 assert.match(memorial, /classList\.remove\(\\'has-photo\\'\);this\.remove\(\)/);
 assert.doesNotMatch(memorial, /stone-colours\/black\.webp/, "preview URLs stay in the swatch module");
 assert.match(memorial, /state\.colourPrice = parseInt\(input\.dataset\.price\) \|\| 0/);

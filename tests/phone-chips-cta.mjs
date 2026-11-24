@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), "utf8");
-const memorials = read("memorials.html");
+const memorials = read("memorials.css");
 const globals = read("site-globals.js");
 const upgrades = read("site-upgrades.css");
 

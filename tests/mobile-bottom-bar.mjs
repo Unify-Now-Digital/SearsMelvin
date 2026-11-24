@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const html = readFileSync("memorial.html", "utf8");
+const html = readFileSync("memorial.css", "utf8") + "\n" + readFileSync("memorial.html", "utf8");
 const css = readFileSync("site-upgrades.css", "utf8");
 
 const bars = html.match(/<div class="mobile-bottom-bar">[\s\S]*?<\/div>\s*<\/div>/g) || [];

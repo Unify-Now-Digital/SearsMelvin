@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const html = readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
+const html = readFileSync(new URL("../memorials.css", import.meta.url), "utf8") + "\n" + readFileSync(new URL("../memorials.html", import.meta.url), "utf8");
 const server = readFileSync(new URL("../functions/memorials.js", import.meta.url), "utf8");
 
 assert.doesNotMatch(html, /id="typeFilters"|id="colourFilters"|id="filtersShow"|id="filtersShowCount"|id="filtersSidebar"/);

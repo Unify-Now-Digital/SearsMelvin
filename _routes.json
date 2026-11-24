@@ -2,6 +2,7 @@
   "version": 1,
   "include": [
     "/api/*",
+    "/img/*",
     "/memorials",
     "/memorials/*",
     "/memorials.html",

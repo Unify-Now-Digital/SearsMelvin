@@ -8,8 +8,8 @@ const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), "utf
 const index = read("index.html");
 const upgrades = read("site-upgrades.css");
 const areas = read("functions/_area-pages.js");
-const memorial = read("memorial.html");
-const memorials = read("memorials.html");
+const memorial = read("memorial.css");
+const memorials = read("memorials.css");
 
 function rule(css, selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
