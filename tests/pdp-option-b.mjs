@@ -31,6 +31,8 @@ const waHandler = js.slice(js.indexOf("closest('a[data-sm-whatsapp]')"), js.inde
 assert.ok(waHandler.length > 0, "the WhatsApp click handler exists");
 assert.doesNotMatch(waHandler.split("});")[0], /preventDefault/, "the WhatsApp click is never blocked");
 
+assert.match(css, /\.quote-config-row\[hidden\] \{ display: none; \}/, "the quote Size row stays hidden");
+assert.match(html, /<div class="quote-config-row" hidden><span>Size<\/span>/);
 assert.doesNotMatch(factsParagraph({ name: "Test" }, [{ size_name: "Standard" }]), /Sizes include/);
 assert.match(clarity, /wa\.me/);
 assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/);

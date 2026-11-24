@@ -10,6 +10,10 @@
     display: none;
 }
 
+/* No dimensions on product pages (all widths): the quote summary hides its
+   Size row. The quote payload still carries the catalogue size. */
+body.memorial-page .quote-config-row[hidden] { display: none; }
+
 /* 768px and wider: the page looks as it did before Option B. The tab panels
    are plain wrappers there, and the phone-only blocks stay hidden. */
 @media (min-width: 768px) {
