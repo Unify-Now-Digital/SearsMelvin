@@ -37,7 +37,9 @@ assert.ok(phone, "a 767px block carries the phone product rules");
 
 // --- Option B (phones): compact, horizontally scrolling picker at home ---
 assert.match(optionBCss, /#stoneColourOptions\s*\{[\s\S]*flex-wrap:\s*nowrap;[\s\S]*overflow-x:\s*auto;/);
-assert.match(optionBCss, /#stoneColourOptions \.colour-tier,[\s\S]*\.colour-swatch-row \{ display: contents; \}/);
+// Option B (phones): each group/tier is one no-wrap row inside the strip.
+assert.match(optionBCss, /#stoneColourOptions \.colour-swatch-row \{[^}]*flex-wrap:\s*nowrap;/);
+assert.doesNotMatch(optionBCss, /display:\s*contents/, "no display: contents on <details> (Chrome does not flatten it)");
 assert.match(optionBCss, /#stoneColourPreview \{ display: none; \}/);
 assert.match(html, /function revealColourSwatch[\s\S]{0,700}if \(strip\.scrollWidth <= strip\.clientWidth\) return;/,
   "the sideways reveal is a no-op when the strip does not scroll");

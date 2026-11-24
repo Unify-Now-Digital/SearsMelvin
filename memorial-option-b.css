@@ -119,8 +119,8 @@
     body.memorial-page .pdp-b-extras-group .pdp-b-step { grid-column: 1 / -1; }
     body.memorial-page #stoneColourPreview { display: none; }
     /* One sideways strip of every colour. Each group (and each open tier)
-       is a flex item holding a no-wrap row, so <details> needs no
-       display: contents (Chrome does not flatten <details> reliably). */
+       is a flex item holding a no-wrap row. Flattening <details> is
+       unreliable in Chrome, so it is not used. */
     body.memorial-page #stoneColourOptions {
         display: flex;
         flex-wrap: nowrap;
