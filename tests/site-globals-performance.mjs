@@ -24,6 +24,8 @@ assert.match(watch, /applyWidgetPosition\(\);\s*watchHosts\(\);/, "each pass pic
 const legacy = globals.slice(globals.indexOf("function pinLegacy("), globals.indexOf("function pinChatHostOpen("));
 assert.match(legacy, /setImportant\(el, 'bottom', bottom \+ 'px'\);\s*setImportant\(el, 'right', '24px'\);/, "legacy writes are guarded so observing them cannot loop");
 assert.doesNotMatch(globals, /style\.setProperty\('bottom', bottomLegacy/, "no unguarded legacy writes remain");
+assert.match(watch, /list\[i\]\.isConnected/, "disconnected chat nodes are dropped from the watch lists");
+assert.match(watch, /hostObserver\.disconnect\(\);\s*watchedHosts = \[\];/, "the host observer is reset when a watched node leaves the document");
 
 const contact = readFileSync("contact.html", "utf8");
 assert.match(contact, /class="contact-form-wrapper" id="enquiry-form"/, "contact form paints without a delayed opacity animation");
@@ -32,7 +34,7 @@ assert.doesNotMatch(contact, /contact-form-wrapper animate-in/, "contact form is
 for (const page of readdirSync(".").filter((name) => name.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
   if (!html.includes("/site-globals.js")) continue;
-  assert.match(html, /\/site-globals\.js\?v=20261124b/, `${page}: shared script cache buster`);
+  assert.match(html, /\/site-globals\.js\?v=20261124c/, `${page}: shared script cache buster`);
 }
 
 console.log("site-globals-performance: ok");

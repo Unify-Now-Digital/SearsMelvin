@@ -385,13 +385,34 @@
 
         // LeadConnector writes inline styles on its own host late, so watch
         // style/class on the host itself (not on the whole page).
+        function liveNodes(list) {
+            var out = [];
+            for (var i = 0; i < list.length; i++) {
+                if (list[i] && list[i].isConnected) out.push(list[i]);
+            }
+            return out;
+        }
+
         function watchHosts() {
             if (!hostObserver) return;
+            var i;
+            var dropDead = false;
+            for (i = 0; i < watchedHosts.length; i++) {
+                if (!watchedHosts[i] || !watchedHosts[i].isConnected) { dropDead = true; break; }
+            }
+            // Drop replaced or removed chat nodes so the lists cannot grow
+            // without bound and so their observers do not keep them alive.
+            legacyPinned = liveNodes(legacyPinned);
+            if (dropDead) {
+                hostObserver.disconnect();
+                watchedHosts = [];
+            }
             var found = document.querySelectorAll(HOST_SELECTOR);
             var hosts = [];
-            var i;
             for (i = 0; i < found.length; i++) hosts.push(found[i]);
-            for (i = 0; i < legacyPinned.length; i++) hosts.push(legacyPinned[i]);
+            for (i = 0; i < legacyPinned.length; i++) {
+                if (hosts.indexOf(legacyPinned[i]) === -1) hosts.push(legacyPinned[i]);
+            }
             for (i = 0; i < hosts.length; i++) {
                 if (watchedHosts.indexOf(hosts[i]) !== -1) continue;
                 watchedHosts.push(hosts[i]);
