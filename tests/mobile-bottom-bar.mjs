@@ -12,7 +12,9 @@ const bar = bars[0];
 
 assert.match(bar, /id="mobileBarPrice" hidden/, "price starts hidden when there is no guide total");
 assert.match(bar, /id="mobileBarFrom">From <\/span><span id="mobileBarAmount"><\/span>/, "From is its own node so a chosen total can drop it");
-assert.match(bar, /class="mobile-bar-vat">Inc\. VAT</, "Inc. VAT sits under the price");
+// Option B (phones): the VAT line also mirrors the chosen colour on phones.
+assert.match(bar, /class="mobile-bar-vat">[\s\S]*Inc\. VAT/, "Inc. VAT sits under the price");
+assert.match(bar, /id="mobileBarColour"/, "phone VAT line has the mirrored colour name");
 assert.doesNotMatch(bar, /£\d/, "the bar does not hard-code a price");
 
 const call = bar.match(/<a class="btn btn-secondary mobile-bar-call" href="tel:\+442038352548">([\s\S]*?)<\/a>/);
@@ -22,6 +24,8 @@ assert.match(callText, /Call/, "the call control says Call");
 assert.ok(callText.includes("020 3835 2548"), "the showroom number stays in the tel link");
 assert.match(call[1], /<span class="mobile-bar-call-number">\s*020 3835 2548<\/span>/, "the number is one text node");
 
+assert.match(bar, /class="mobile-bar-whatsapp"[\s\S]*data-sm-whatsapp="pdp_sticky"/,
+  "Option B (phones): WhatsApp sits in the sticky actions");
 const quoteAt = bar.indexOf('onclick="openQuoteModal()">Get a quote</button>');
 assert.ok(quoteAt > bar.indexOf("mobile-bar-call"), "Get a quote follows Call and still opens the quote form");
 assert.match(bar, /<button type="button" class="btn btn-primary" onclick="openQuoteModal\(\)">Get a quote<\/button>/);
@@ -60,8 +64,9 @@ assert.match(html.slice(html.indexOf("function formatGbp"), html.indexOf("functi
 const sync = html.slice(html.indexOf("function syncMobileQuoteBar"), html.indexOf("function setupMobileQuoteBar"));
 assert.doesNotMatch(sync, /cookieVisible/, "the phone bar stays visible while the cookie card shows");
 assert.match(sync, /max-width: 1024px/);
-assert.match(sync, /mobileQuoteCtaEligible && !modalOpen\)/);
-assert.match(html, /getElementById\('quoteIntro'\)/, "the bar still waits for the intro quote button to scroll away");
+assert.match(sync, /\(isPhone \|\| mobileQuoteCtaEligible\) && !modalOpen\)/,
+  "Option B (phones): always visible on phones, while tablets retain intro eligibility");
+assert.match(html, /getElementById\('quoteIntro'\)/, "tablet eligibility still observes the intro quote button");
 
 assert.match(html, /@media \(max-width: 1024px\)[\s\S]*\.mobile-bottom-bar\.is-visible \{ display: flex; \}/);
 assert.doesNotMatch(html, /@media \(min-width: 769px\)[\s\S]{0,400}\.mobile-bottom-bar\.is-visible/);

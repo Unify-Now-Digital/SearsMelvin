@@ -173,6 +173,7 @@ const PUBLIC_ROOT = new Set([
   "track.html", "styleguide.html", "accreditations.css", "chat-widget.css",
   "components.css", "site-upgrades.css", "styleguide.css", "tokens.css",
   "site-config.js", "site-globals.js", "site-upgrades.js", "cookie-consent.js", "sm-clarity.js", "cookie-consent.css", "product-copy.js", "favicon.svg",
+  "memorial-option-b.css", "memorial-option-b.js",
   "favicon.ico", "favicon-48.png",
   "sm-logo.svg", "robots.txt", "_headers", "_redirects", "_routes.json",
 ]);
