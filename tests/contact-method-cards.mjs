@@ -60,7 +60,7 @@ for (const m of html.matchAll(/([^{}]*\.contact-method[^{}]*)\{([^}]*)\}/g)) {
 assert.match(ruleFor(upgrades, "html body .contact-method-content p"), /overflow-wrap:\s*break-word[^}]*word-break:\s*normal[^}]*hyphens:\s*none/);
 
 // (c) Visible email breaks only at <wbr> after @ and the dots.
-assert.ok(html.includes("<p>info@<wbr>searsmelvin.<wbr>co.uk</p>"), "visible email must carry <wbr> at @ and .");
+assert.ok(html.includes("<p>info@<wbr>searsmelvin.<wbr>co.<wbr>uk</p>"), "visible email must carry <wbr> at @ and every .");
 
 // (d) Links and visible phone unchanged.
 assert.ok(html.includes('<a href="tel:+442038352548" class="contact-method">'), "tel link unchanged");
