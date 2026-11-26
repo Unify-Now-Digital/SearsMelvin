@@ -97,7 +97,7 @@
             var box = shownRect(control);
             if (box) nodes.push(box);
         }
-        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #message, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .still-questions a, #listingStoneInline, #phoneColourSlot, .hero h1' + (window.innerWidth <= 767 ? ', .product-price' : ''));
+        var extras = document.querySelectorAll('#brochureRequestStatus, .sm-brochure-field-error, #enquiryType, #phone, .contact-method, .form-textarea, .form-submit, .sm-brochure-request button[type="submit"], .type-browse-list a, .area-chips a, .area-chips span, .area-actions a, a.sm-btn, a.sm-brochure-link, .hero-buttons a, .hero-image-label, .timeline-calculator, .category-card, .site-trust-item, .still-questions a, #listingStoneInline, #phoneColourSlot, .hero h1' + (window.innerWidth <= 767 ? ', .product-price' : ''));
         for (i = 0; i < extras.length; i++) {
             var extra = shownRect(extras[i]);
             if (extra) nodes.push(extra);
@@ -480,6 +480,71 @@
             setTimeout(schedulePosition, 0);
             setTimeout(schedulePosition, 100);
         }, true);
+    }
+
+    // The home brochure button is fixed. Raise it while it covers a caption,
+    // the install date, or a category card's price line.
+    function placeBrochureFab() {
+        var fab = document.querySelector('.sm-brochure-fab');
+        if (!fab) return;
+        var base = window.innerWidth <= 768 ? 86 : 24;
+        var targets = document.querySelectorAll('.hero-image-label, .timeline-calculator, .category-info');
+        var bottom = base;
+        var guard = 0;
+        while (guard < 5) {
+            fab.style.setProperty('bottom', bottom + 'px', 'important');
+            var fr = fab.getBoundingClientRect();
+            var next = bottom;
+            for (var i = 0; i < targets.length; i++) {
+                var el = targets[i];
+                var shown = shownRect(el);
+                if (!shown) continue;
+                var overlaps = fr.left < shown.right && fr.right > shown.left && fr.top < shown.bottom && fr.bottom > shown.top;
+                if (!overlaps) continue;
+                var needed = Math.ceil(window.innerHeight - shown.top + 8);
+                if (needed > next) next = needed;
+            }
+            if (next === bottom || next > window.innerHeight * 0.72) break;
+            bottom = next;
+            guard++;
+        }
+        fab.style.setProperty('bottom', bottom + 'px', 'important');
+    }
+
+    // The chat widget pulls Roboto from fonts.bunny.net as a render-blocking
+    // stylesheet. Park those sheets until the page is idle so they are not
+    // part of the first long tasks. The widget itself still starts at 1s.
+    function delayBunnyFonts() {
+        function park(link) {
+            if (!link || !link.getAttribute) return;
+            var href = link.getAttribute('href') || '';
+            if (href.indexOf('fonts.bunny.net') === -1) return;
+            if (link.getAttribute('data-sm-bunny')) return;
+            link.setAttribute('data-sm-bunny', '1');
+            link.media = 'print';
+            var apply = function () { link.media = 'all'; };
+            if (window.requestIdleCallback) requestIdleCallback(apply, { timeout: 4000 });
+            else setTimeout(apply, 3000);
+        }
+        function scan(root) {
+            if (!root || !root.querySelectorAll) return;
+            var links = root.querySelectorAll('link[href*="fonts.bunny.net"]');
+            for (var i = 0; i < links.length; i++) park(links[i]);
+        }
+        scan(document);
+        if (!window.MutationObserver || !document.documentElement) return;
+        new MutationObserver(function (records) {
+            for (var i = 0; i < records.length; i++) {
+                var nodes = records[i].addedNodes;
+                if (!nodes) continue;
+                for (var j = 0; j < nodes.length; j++) {
+                    var node = nodes[j];
+                    if (!node || node.nodeType !== 1) continue;
+                    if (node.tagName === 'LINK') park(node);
+                    else scan(node);
+                }
+            }
+        }).observe(document.documentElement, { childList: true, subtree: true });
     }
 
     function readShortlist() {
@@ -911,6 +976,21 @@
 
     function init() {
         watchChatWidget();
+        delayBunnyFonts();
+        placeBrochureFab();
+        var fabFrame = false;
+        function scheduleFab() {
+            if (fabFrame) return;
+            fabFrame = true;
+            var run = function () {
+                fabFrame = false;
+                placeBrochureFab();
+            };
+            if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+            else setTimeout(run, 0);
+        }
+        window.addEventListener('scroll', scheduleFab, { passive: true });
+        window.addEventListener('resize', scheduleFab);
         syncTypeChips();
         ensureShortlistBadge();
         updateShortlistBadge();

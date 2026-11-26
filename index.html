@@ -139,6 +139,14 @@
     <!-- End Google Tag Manager + LeadConnector -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Preload the mobile LCP file (600w). The srcset still offers 480w and 900w. -->
+    <link rel="preload" as="image"
+          href="/images/installed/gioiosa-family-kerb-set-600w.webp"
+          imagesrcset="/images/installed/gioiosa-family-kerb-set-480w.webp 480w,
+                       /images/installed/gioiosa-family-kerb-set-600w.webp 600w,
+                       /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
+          imagesizes="(max-width: 768px) 260px, (max-width: 1024px) 400px, 640px"
+          fetchpriority="high">
     <title>Memorial Masons | Headstones &amp; Gravestones — Sears Melvin</title>
     <meta name="description" content="Memorial masons crafting headstones, gravestones and kerb sets. Permit handling, cemetery liaison, and installation across Greater London and surrounds.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,14 +160,6 @@
     <link rel="canonical" href="https://searsmelvin.co.uk/">
     <meta name="theme-color" content="#FBF9F5">
     
-    <!-- Preload LCP hero image so the fetch starts before the parser hits the <img> tag -->
-    <link rel="preload" as="image"
-          href="/images/installed/gioiosa-family-kerb-set-480w.webp"
-          imagesrcset="/images/installed/gioiosa-family-kerb-set-480w.webp 480w,
-                       /images/installed/gioiosa-family-kerb-set-600w.webp 600w,
-                       /images/installed/gioiosa-family-kerb-set-900w.webp 900w"
-          imagesizes="(max-width: 768px) 260px, (max-width: 1024px) 400px, 640px"
-          fetchpriority="high">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
@@ -720,7 +720,7 @@
       }]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261126a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261126b">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 </head>
@@ -844,7 +844,7 @@
                 <div class="hero-image" id="heroImage">
                     <img src="/images/installed/gioiosa-family-kerb-set-600w.webp"
                          alt="Recently installed kerb-set memorial for the Gioiosa family"
-                         loading="eager" fetchpriority="high" decoding="async"
+                         loading="eager" fetchpriority="high"
                          width="1086" height="1448"
                          srcset="/images/installed/gioiosa-family-kerb-set-480w.webp 480w,
                                  /images/installed/gioiosa-family-kerb-set-600w.webp 600w,

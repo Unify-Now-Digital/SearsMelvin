@@ -155,14 +155,14 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
-    <meta property="og:title" content="Contact Sears Melvin — Memorial Masons">
+    <meta property="og:title" content="Contact Sears Melvin — Memorial Masons | Request a Quote">
     <meta property="og:description" content="Contact Sears Melvin for a headstone quote, design advice or permit help across Greater London and surrounds. We reply within one working day.">
     <meta property="og:url" content="https://searsmelvin.co.uk/contact">
     <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Contact Sears Melvin — Memorial Masons">
+    <meta name="twitter:title" content="Contact Sears Melvin — Memorial Masons | Request a Quote">
     <meta name="twitter:description" content="Contact Sears Melvin for a headstone quote, design advice or permit help across Greater London and surrounds. We reply within one working day.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
@@ -571,7 +571,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261126a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261126b">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
     <style id="sm-contact-form-compact">
@@ -583,8 +583,10 @@
                 padding: 0.08rem 0.75rem 1.15rem;
             }
             html body #enquiry-form.contact-form-wrapper {
-                /* Extra padding-right leaves a gutter for the closed chat bubble. */
-                padding: 0.15rem 4.75rem 0.55rem 0.7rem;
+                /* Extra padding-right leaves a gutter for the closed chat bubble.
+                   6.5rem clears the round button on a 320px screen, where it
+                   was covering the Phone field. */
+                padding: 0.15rem 6.5rem 0.55rem 0.7rem;
             }
             html body #contactForm .form-header {
                 margin-bottom: 0.25rem;
@@ -791,7 +793,7 @@
                     <div class="form-group">
                         <label for="enquiryType">Enquiry type <span class="required">*</span></label>
                         <select id="enquiryType" name="enquiry_type" class="form-select" required onchange="selectEnquiryType(this.value)">
-                            <option value="" disabled selected>Choose an enquiry type…</option>
+                            <option value="" disabled selected>Choose type…</option>
                             <option value="new-memorial">New Memorial — Headstone or kerb set</option>
                             <option value="renovation">Renovation — Clean, repair, restore</option>
                             <option value="additional">Additional Work — Inscription, letters</option>
@@ -805,22 +807,22 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="firstName">First name <span class="required">*</span></label>
-                                <input type="text" id="firstName" name="first_name" class="form-input" placeholder="Your first name" autocomplete="given-name" required>
+                                <input type="text" id="firstName" name="first_name" class="form-input" placeholder="First name" autocomplete="given-name" required>
                             </div>
                             <div class="form-group">
                                 <label for="lastName">Last name <span class="required">*</span></label>
-                                <input type="text" id="lastName" name="last_name" class="form-input" placeholder="Your last name" autocomplete="family-name" required>
+                                <input type="text" id="lastName" name="last_name" class="form-input" placeholder="Last name" autocomplete="family-name" required>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="email">Email <span class="required">*</span></label>
-                                <input type="email" id="email" name="email" class="form-input" placeholder="your@email.com" autocomplete="email" inputmode="email" required>
+                                <input type="email" id="email" name="email" class="form-input" placeholder="Email" autocomplete="email" inputmode="email" required>
                             </div>
                             <div class="form-group">
                                 <label for="phone">Phone</label>
-                                <input type="tel" id="phone" name="phone" class="form-input" placeholder="07123 456 789" autocomplete="tel" inputmode="tel">
+                                <input type="tel" id="phone" name="phone" class="form-input" placeholder="Phone" autocomplete="tel" inputmode="tel">
                             </div>
                         </div>
 

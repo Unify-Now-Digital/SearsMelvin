@@ -155,14 +155,14 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Sears Melvin Memorials">
-    <meta property="og:title" content="Headstones, gravestones and memorials London">
+    <meta property="og:title" content="Headstones, gravestones and memorials London | Sears Melvin">
     <meta property="og:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
     <meta property="og:url" content="https://searsmelvin.co.uk/memorials">
     <meta property="og:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     <meta property="og:locale" content="en_GB">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Headstones, gravestones and memorials London">
+    <meta name="twitter:title" content="Headstones, gravestones and memorials London | Sears Melvin">
     <meta name="twitter:description" content="Browse our range of London headstones, gravestones and kerb sets. Granite, marble and slate designs with cemetery permit handling included.">
     <meta name="twitter:image" content="https://searsmelvin.co.uk/images/brand/share-card.jpg">
     
@@ -220,7 +220,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261126a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261126b">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -578,12 +578,18 @@
 
                 state.productsData = productsData;
 
+                // Yield between the heavy steps so one catalogue paint is not
+                // a single multi-second task on a phone.
+                const yieldThread = () => new Promise((resolve) => { setTimeout(resolve, 0); });
+                await yieldThread();
                 renderFilters();
                 renderTypeCounts();
+                await yieldThread();
                 renderStoneBand();
                 setupListingInline();
                 fillListingInlineRow();
                 initListingInlineLead();
+                await yieldThread();
                 if (!applyUrlFilters()) renderProducts();
                 if (pendingFilterChange) {
                     var queuedChange = pendingFilterChange;
@@ -592,7 +598,9 @@
                 }
                 markTypeLinks();
                 updatePriceSortButton();
-                injectItemListJsonLd(productsData);
+                const paintListJsonLd = () => injectItemListJsonLd(productsData);
+                if (window.requestIdleCallback) requestIdleCallback(paintListJsonLd, { timeout: 2000 });
+                else setTimeout(paintListJsonLd, 1);
                 loadShortlistFromStorage();
             } catch (error) {
                 console.error('Error loading data:', error);

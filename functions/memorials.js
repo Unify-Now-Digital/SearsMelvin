@@ -79,14 +79,20 @@ function imageAttributes(url) {
   return `src="${src}" srcset="${srcset}" sizes="${sizes}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
 }
 
-function imagePreload(url) {
+function imagePreload(url, high) {
   if (!url) return "";
+  const priority = high ? ' fetchpriority="high"' : "";
   if (!isBucketImage(url)) {
-    return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
+    return `<link rel="preload" as="image" href="${escapeHtml(url)}"${priority}>`;
   }
-  // Same src, srcset and sizes as the first card, so the browser fetches one file.
+  // Same src, srcset and sizes as the card, so the browser fetches one file.
   const { src, srcset, sizes } = imageSources(url);
-  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
+  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}"${priority}>`;
+}
+
+function imagePreloads(products) {
+  // First screen is two cards on a phone and up to four on a wide desktop.
+  return products.slice(0, 4).map((product, index) => imagePreload(safeImageUrl(product.image_url), index === 0)).join("");
 }
 
 export function typeCounts(products) {
@@ -275,7 +281,7 @@ export async function onRequestGet({ request, env }) {
   }
   const visible = listableProducts(products);
   const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours);
-  const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
+  const preload = imagePreloads(visible);
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";

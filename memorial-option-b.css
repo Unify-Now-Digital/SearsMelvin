@@ -328,3 +328,16 @@ body.memorial-page .pdp-b-note { order: 7; margin: 0; }
     body.memorial-page .mobile-bottom-bar .btn { min-width: 44px; }
     body.memorial-page .mobile-bar-vat { max-width: 120px; }
 }
+
+/* 320px: "Greater London and surrounds" was cut to "Greater London and s". */
+@media (max-width: 359px) {
+    body.memorial-page .pdp-b-fact-chips {
+        display: flex;
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+    body.memorial-page .pdp-b-fact-chips span {
+        flex: 0 1 auto;
+        white-space: normal;
+    }
+}

@@ -294,12 +294,19 @@ async function main() {
     const afterBlur = await evalJson(FOCUS_MEASURE);
     if (afterBlur.afterDisplay === "none") failures.push(`/memorials 390: trust bar ::after display is "none" after blur, expected the fade to come back`);
 
-    // /memorials at 320: narrower phone, still one row, at least 2 full
-    // labels visible plus a peek, no page scroll.
+    // /memorials at 320: the short labels wrap onto two rows so none are
+    // cut mid-word ("Permit help" was painting as "Pern"). All four sit
+    // inside the row. 390px still uses the single scrolling row above.
     row = await resize(320, true);
-    if (Math.abs(row.barHeight - 30) > 2) failures.push(`/memorials 320: bar height ${row.barHeight}, expected ~30`);
-    if (fullyVisibleCount(row) < 2) failures.push(`/memorials 320: only ${fullyVisibleCount(row)} items fully visible, expected >=2`);
-    if (peekingCount(row) < 1) failures.push(`/memorials 320: no item peeks past the visible row`);
+    if (row.barHeight < 44) failures.push(`/memorials 320: bar height ${row.barHeight}, expected a wrapped row taller than 44`);
+    if (fullyVisibleCount(row) < 4) failures.push(`/memorials 320: only ${fullyVisibleCount(row)} items fully visible, expected 4`);
+    for (const label of ["30-year guarantee", "Fixing included", "Permit help", "1-day reply"]) {
+      const item = row.items.find((it) => it.text === label);
+      if (!item) failures.push(`/memorials 320: missing short label "${label}"`);
+      else if (item.right > row.windowRight + 1 || item.left < row.windowLeft - 1) {
+        failures.push(`/memorials 320: "${label}" is clipped (${item.left}–${item.right} outside ${row.windowLeft}–${row.windowRight})`);
+      }
+    }
     if (row.docScrollWidth > row.docClientWidth + 1) failures.push(`/memorials 320: page scrolls sideways (${row.docScrollWidth} > ${row.docClientWidth})`);
 
     // Same tab, resize up to 1280: full sentences must come back, no

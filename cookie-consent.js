@@ -51,6 +51,10 @@
 
   var banner = doc.getElementById('cookieConsent');
   if (!banner) return;
+  // Bind after the parser task. The strip is already reserved in CSS, and
+  // the head script has already applied a stored choice to consent mode.
+  // Tests without requestIdleCallback still run this immediately.
+  var bootCookie = function () {
   var scrim = doc.getElementById('cookieScrim');
   var analyticsSwitch = doc.getElementById('cookieAnalytics');
   var adsSwitch = doc.getElementById('cookieAds');
@@ -366,4 +370,7 @@
     hide();
   }
   if (root.location && root.location.hash === '#cookie-settings') openManage('footer');
+  };
+  if (typeof root.requestIdleCallback === 'function') root.requestIdleCallback(bootCookie, { timeout: 50 });
+  else bootCookie();
 })(typeof globalThis !== 'undefined' ? globalThis : this);
