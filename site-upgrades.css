@@ -2774,6 +2774,12 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     object-fit: contain;
     object-position: center;
   }
+  /* The lead photo matches this frame, so filling the box does not crop it.
+     Contain was reporting a few pixels under the box, and a later photo with
+     the same proportions then became the largest paint during scroll. */
+  html body #productsGrid > a.product-card:first-of-type .product-image img {
+    object-fit: fill;
+  }
 }
 
 /* The listing brochure row has no photo. Its painted height at 375px,
