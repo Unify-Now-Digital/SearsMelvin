@@ -2756,17 +2756,6 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
    A later 4:5 rule was winning, so cards grew when they scrolled into view.
    Lock the box, and paint every card up front so content-visibility cannot
    substitute a shorter placeholder. */
-html body #productsGrid .product-image {
-  position: relative;
-}
-html body #productsGrid .product-image img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-}
 @media (max-width: 767px) {
   /* Phone cards only. Desktop keeps content-visibility so off-screen
      photos do not compete with the first-screen LCP image. */
@@ -2778,7 +2767,16 @@ html body #productsGrid .product-image img {
     min-height: var(--sm-card-face, 280px);
   }
   html body #productsGrid .product-image {
+    position: relative;
     aspect-ratio: 6 / 5;
+  }
+  html body #productsGrid .product-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
   }
 }
 

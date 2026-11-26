@@ -980,7 +980,6 @@
         // part of the home page's first long tasks.
         window.addEventListener('load', function () {
             delayBunnyFonts();
-            placeBrochureFab();
         });
         var fabFrame = false;
         function scheduleFab() {
