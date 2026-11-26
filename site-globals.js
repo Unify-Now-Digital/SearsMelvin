@@ -976,8 +976,12 @@
 
     function init() {
         watchChatWidget();
-        delayBunnyFonts();
-        placeBrochureFab();
+        // After load, so the observer and the brochure measurement are not
+        // part of the home page's first long tasks.
+        window.addEventListener('load', function () {
+            delayBunnyFonts();
+            placeBrochureFab();
+        });
         var fabFrame = false;
         function scheduleFab() {
             if (fabFrame) return;

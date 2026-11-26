@@ -329,15 +329,29 @@ body.memorial-page .pdp-b-note { order: 7; margin: 0; }
     body.memorial-page .mobile-bar-vat { max-width: 120px; }
 }
 
-/* 320px: "Greater London and surrounds" was cut to "Greater London and s". */
-@media (max-width: 359px) {
-    body.memorial-page .pdp-b-fact-chips {
-        display: flex;
-        flex-wrap: wrap;
-        overflow-x: visible;
+/* 320px: the long chip was still a sideways scroller. !important beats the
+   phone row's overflow-x:auto and flex:0 0 auto. */
+@media (max-width: 390px) {
+    /* A square photo plus the title pushed the wrapped chips under the bar. */
+    html body.memorial-page #galleryMain {
+        aspect-ratio: 16 / 9 !important;
+        height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
     }
-    body.memorial-page .pdp-b-fact-chips span {
-        flex: 0 1 auto;
-        white-space: normal;
+    html body.memorial-page .pdp-b-fact-chips {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-bottom: 0.5rem;
+    }
+    html body.memorial-page .pdp-b-fact-chips span {
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
+        white-space: normal !important;
     }
 }

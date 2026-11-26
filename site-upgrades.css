@@ -2756,12 +2756,6 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
    A later 4:5 rule was winning, so cards grew when they scrolled into view.
    Lock the box, and paint every card up front so content-visibility cannot
    substitute a shorter placeholder. */
-html body #productsGrid .product-face {
-  content-visibility: visible;
-  contain-intrinsic-size: none;
-  animation: none;
-  opacity: 1;
-}
 html body #productsGrid .product-image {
   position: relative;
 }
@@ -2774,11 +2768,37 @@ html body #productsGrid .product-image img {
   object-position: center;
 }
 @media (max-width: 767px) {
+  /* Phone cards only. Desktop keeps content-visibility so off-screen
+     photos do not compete with the first-screen LCP image. */
   html body #productsGrid .product-face {
-    min-height: 0;
+    content-visibility: visible;
+    contain-intrinsic-size: none;
+    animation: none;
+    opacity: 1;
+    min-height: var(--sm-card-face, 280px);
   }
   html body #productsGrid .product-image {
     aspect-ratio: 6 / 5;
+  }
+}
+
+/* The listing brochure row was the node that moved (font wrap, then
+   again on scroll). Hold a box at least as tall as the stacked phone
+   layout so it cannot grow. */
+html body .sm-brochure-cta {
+  box-sizing: border-box;
+  min-height: 6.75rem;
+}
+@media (max-width: 767px) {
+  html body .sm-brochure-cta {
+    min-height: 12.5rem;
+    align-items: flex-start;
+  }
+  html body .sm-brochure-cta p {
+    min-height: 4.75rem;
+  }
+  html body .sm-brochure-cta .sm-brochure-link {
+    min-height: 44px;
   }
 }
 
@@ -2795,14 +2815,16 @@ html body #productsGrid .product-image img {
     padding-top: 0.65rem;
   }
   html body.memorial-page .product-gallery,
+  html body.memorial-page #galleryMain,
   html body.memorial-page .gallery-main {
     min-height: 0;
-    height: 260px;
-    max-height: 260px;
+    height: 220px;
+    max-height: 220px;
     aspect-ratio: auto;
     width: 100%;
     overflow: hidden;
   }
+  html body.memorial-page #galleryMain img,
   html body.memorial-page .gallery-main img {
     position: absolute;
     inset: 0;
@@ -2814,6 +2836,15 @@ html body #productsGrid .product-image img {
   html body.memorial-page .product-info h1 {
     font-size: 2rem;
     margin-bottom: 0.35rem;
+  }
+  /* 1024px is outside the 600–1023 title-price rule, and the sticky bar
+     stays hidden until the quote button leaves the screen. Show the same
+     figure under the title while that bar is hidden. */
+  html body.memorial-page #productTitlePrice:not([hidden]) {
+    display: block;
+  }
+  html body.memorial-page:has(.mobile-bottom-bar.is-visible) #productTitlePrice {
+    display: none !important;
   }
 }
 
