@@ -234,8 +234,10 @@ footer .footer-copy, footer .footer-legal { color: var(--sm-color-text-inverse-m
 @media (max-width: 480px) { .sm-brochure-dl { flex-wrap: wrap; row-gap: 0.15rem; } }
 /* Contact cards: long email must not overflow the card */
 .contact-method, .contact-method > div { min-width: 0; }
-.contact-method p { overflow-wrap: normal; }
-@media (max-width: 480px) { .contact-method { flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 1rem; } .contact-method p { font-size: 0.8rem; } }
+.contact-method p { overflow-wrap: break-word; word-break: normal; hyphens: none; }
+/* Phones: the cards are still two columns, so keep the stacked, centred layout
+   contact.html uses at <=1024px (icon above the text). */
+@media (max-width: 480px) { .contact-method { flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; padding: 0.85rem 0.75rem; } .contact-method p { font-size: 0.8rem; } }
 
 /* Home hero: brochure as a refined secondary CTA card (thumb · label/size · download icon) */
 .hero-brochure { margin-top: 1.1rem; }
@@ -404,7 +406,8 @@ html body .page-header p { font-size: var(--sm-text-body); max-width: var(--sm-m
 /* Contact */
 html body .form-group label { font-size: 0.875rem; letter-spacing: 0.04em; }
 html body .contact-method-content h4 { font-size: 1rem; }
-html body .contact-method-content p { font-size: 1rem; overflow-wrap: anywhere; }
+/* Wrap at spaces, or at the <wbr> after @ and the dots in the email. Never mid-word. */
+html body .contact-method-content p { font-size: 1rem; overflow-wrap: break-word; word-break: normal; hyphens: none; }
 html body .contact-method-content small { font-size: 0.9375rem; }
 html body .reassurance h4 { font-size: 1rem; color: var(--sm-color-success); }
 html body .reassurance p, html body .form-footer, html body .form-footer a { font-size: var(--sm-text-small); line-height: 1.6; }
