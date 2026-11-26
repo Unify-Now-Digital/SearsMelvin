@@ -45,8 +45,7 @@
     <!-- Google Tag Manager — loads at page start (async), straight after the
          consent defaults above. It used to wait for the first scroll/tap or 3s
          idle (#67), which lost the paid visits that bounced before that, so
-         GA4 saw only ~24% of Ads clicks. The LeadConnector chat below stays
-         deferred. -->
+         GA4 saw only ~24% of Ads clicks. -->
     <script>
       (function(){
         // Claim the chat hook flag before GTM can run, so GTM's legacy
@@ -72,73 +71,11 @@
       document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
-    <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
-         long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
-         scroll events during measurement and idle for ~3s, so the previous
-         shared loader caused the chat widget to mount inside the LCP window
-         and inflate the metric. Real users still get chat as soon as they
-         tap or type. -->
-    <script>
-      (function(){
-        var loaded = false;
-        // Tracking contract: docs/TRACKING.md (sm_chat_submit / ghl_chat_submission).
-        // One chat per tab visit. A Turnstile retry can land many seconds later,
-        // so a short debounce double-counts. Email and phone are still refreshed
-        // on window.__smChatEmail and window.__smChatPhone (same sanitising as
-        // clickIntentBody). The dataLayer events stay free of personal details.
-        // GTM's older fetch-hook listener (tag "GHL Chat Widget Listener") races
-        // the widget and missed most chats, so claim its guard flag here (the
-        // GTM loader above also sets it before gtm.js runs). GA4
-        // "ghl_chat_submission" and Ads "Chat start" trigger on sm_chat_submit.
-        window.__smChatHook = true;
-        var chatCounted = false;
-        var CHAT_VISIT_KEY = 'sm_chat_counted';
-        function chatSubmitted(data){
-          try {
-            var contact = data && (data.contact || data) || {};
-            var nested = contact.contact && typeof contact.contact === 'object' ? contact.contact : {};
-            var email = typeof contact.email === 'string' ? contact.email : nested.email;
-            var phone = typeof contact.phone === 'string' ? contact.phone : nested.phone;
-            email = typeof email === 'string' ? email.trim().toLowerCase().slice(0, 200) : '';
-            phone = typeof phone === 'string' ? phone.trim().replace(/[^\d+]/g, '').slice(0, 20) : '';
-            if (email) window.__smChatEmail = email; else delete window.__smChatEmail;
-            if (phone) window.__smChatPhone = phone; else delete window.__smChatPhone;
-          } catch (e) {}
-          try {
-            var counted = chatCounted;
-            if (!counted) {
-              try { counted = sessionStorage.getItem(CHAT_VISIT_KEY) === '1'; } catch (e) {}
-            }
-            if (counted) return true; // later attempts in this tab: globals only
-            chatCounted = true;
-            try { sessionStorage.setItem(CHAT_VISIT_KEY, '1'); } catch (e) {}
-            window.dataLayer = window.dataLayer || [];
-            // No personal details in the event (docs/TRACKING.md golden rule 2).
-            window.dataLayer.push({ event: 'sm_chat_submit' });
-            window.dataLayer.push({ event: 'ghl_chat_submission' });
-            try { if (window.SMUpgrades && window.SMUpgrades.clickIntent) window.SMUpgrades.clickIntent('chat', data && (data.contact || data)); } catch (e) {}
-          } catch (e) {}
-          return true; // never block the chat
-        }
-        function hookChat(){
-          var cw = window.leadConnector && window.leadConnector.chatWidget;
-          if (!cw || cw.__smHooked || typeof cw.registerBeforeSubmit !== 'function') return;
-          cw.__smHooked = true;
-          cw.registerBeforeSubmit(chatSubmitted);
-        }
-        window.addEventListener('LC_chatWidgetLoaded', hookChat);
-        function load(){
-          if (loaded) return; loaded = true;
-          var lc = document.createElement('script');
-          lc.src = 'https://widgets.leadconnectorhq.com/loader.js';
-          lc.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
-          lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
-          document.body.appendChild(lc);
-        }
-        setTimeout(load, 1000);
-      })();
-    </script>
-    <!-- End Google Tag Manager + LeadConnector -->
+    <!-- Product pages load no chat widget: the bubble floated over the
+         price just above the sticky bottom bar (Arin, Nov 2026). The GTM block
+         above still sets window.__smChatHook so GTM's legacy chat listener
+         stays claimed. docs/TRACKING.md rule 6; tests/tracking-guard.mjs. -->
+    <!-- End Google Tag Manager -->
     <title>Memorial | Sears Melvin Memorials</title>
     <meta name="description" content="Hand-finished granite memorial with a 30-year fixing guarantee. Configure your memorial online.">
     <!-- Supabase data loaded via REST API directly -->

@@ -7,7 +7,8 @@
 //   node scripts/tracking-check.mjs --json             # machine-readable result
 //
 // Checks: GTM-KRDX4BQ5 on every sitemap page; phone format "020 3835 2548"
-// (never "+44 20 3835 2548"); chat hook on every page; sm_lead_submit on /contact
+// (never "+44 20 3835 2548"); chat hook on every page except product pages
+// (no chat widget there, __smChatHook still set); sm_lead_submit on /contact
 // and sm_quote_submit on a product page; required tags/labels in the live
 // gtm.js; and GTM drift against the committed docs/gtm-snapshot.json.
 // Needs Node 18+ (global fetch). No dependencies, no writes except --update-snapshot.
@@ -95,12 +96,21 @@ export function driftProblems(committed, live) {
 }
 
 // ---- page checks ---------------------------------------------------------
+// Product detail pages (memorial.html, served as /memorials/<slug>) load no
+// chat widget (docs/TRACKING.md rule 6). The catalogue /memorials keeps it.
+export function isProductPage(path) {
+  return /^\/?memorial(\.html)?$/.test(path) || /^\/memorials\/(?!type\/)[^/]+\/?$/.test(path);
+}
+
 export function pageProblems(path, html) {
   const out = [];
   if (!html.includes(GTM_ID)) out.push(`${path}: GTM ${GTM_ID} missing`);
   if (html.includes(BAD_PHONE)) out.push(`${path}: phone shown as "${BAD_PHONE}" (must be "${PHONE}")`);
   if (!html.includes(PHONE)) out.push(`${path}: phone "${PHONE}" not found`);
-  if (!/registerBeforeSubmit\(chatSubmitted\)/.test(html)) out.push(`${path}: chat beforeSubmit hook missing`);
+  if (isProductPage(path)) {
+    if (html.includes("widgets.leadconnectorhq.com/loader.js")) out.push(`${path}: product page must not load the chat widget`);
+    if (!/window\.__smChatHook = true;/.test(html)) out.push(`${path}: __smChatHook flag missing`);
+  } else if (!/registerBeforeSubmit\(chatSubmitted\)/.test(html)) out.push(`${path}: chat beforeSubmit hook missing`);
   for (const m of html.matchAll(/<a[^>]*href="tel:[^"]+"[^>]*>([\s\S]*?)<\/a>/g)) {
     if (!m[1].replace(/<[^>]+>/g, "").includes(PHONE)) { out.push(`${path}: tel: link without visible "${PHONE}"`); break; }
   }
