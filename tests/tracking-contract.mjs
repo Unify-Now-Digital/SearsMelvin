@@ -9,7 +9,7 @@ const publicPages = execSync("git ls-files '*.html'").toString().split("\n").fil
   .filter((f) => !["404.html", "admin.html", "admin-products.html", "styleguide.html"].includes(f));
 
 // Product detail pages are the only pages without the chat widget.
-for (const p of ["memorial.html", "/memorial.html", "/memorials/the-castell"]) assert.ok(isProductPage(p), `${p} is a product page`);
+for (const p of ["memorial.html", "/memorial.html", "/memorial", "memorial", "/memorials/the-castell"]) assert.ok(isProductPage(p), `${p} is a product page`);
 for (const p of ["memorials.html", "/memorials", "/memorials/", "/memorials/type/headstones", "/", "/contact", "index.html"]) assert.ok(!isProductPage(p), `${p} keeps the chat`);
 assert.deepEqual(pageProblems("/memorials/x", "GTM-KRDX4BQ5 020 3835 2548 window.__smChatHook = true; widgets.leadconnectorhq.com/loader.js"),
   ["/memorials/x: product page must not load the chat widget"]);

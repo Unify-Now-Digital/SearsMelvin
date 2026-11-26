@@ -96,8 +96,11 @@ export function driftProblems(committed, live) {
 }
 
 // ---- page checks ---------------------------------------------------------
-// Product detail pages (memorial.html, served as /memorials/<slug>) load no
-// chat widget (docs/TRACKING.md rule 6). The catalogue /memorials keeps it.
+// Product detail pages load no chat widget (docs/TRACKING.md rule 6).
+// /memorials/:slug is a 200 rewrite to /memorial, which serves memorial.html
+// (see _redirects). Bare /memorial also serves that template ("Product not
+// found"), so /memorial and memorial.html must both count as product pages.
+// The catalogue /memorials and /memorials/type/* keep the chat.
 export function isProductPage(path) {
   return /^\/?memorial(\.html)?$/.test(path) || /^\/memorials\/(?!type\/)[^/]+\/?$/.test(path);
 }
