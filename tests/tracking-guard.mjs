@@ -10,6 +10,11 @@ const read = (f) => readFileSync(f, "utf8");
 const skip = new Set(["404.html", "admin.html", "admin-products.html", "styleguide.html"]);
 const pages = execSync("git ls-files '*.html'").toString().split("\n").filter((f) => f && !skip.has(f));
 assert.ok(pages.length >= 13, "expected the public pages to be found"); // 13 after the 6 area pages were removed (Oct 2026)
+// Public pages that deliberately ship without the LeadConnector chat. Keep this
+// to product detail pages; the catalogue (memorials.html) keeps the chat.
+const NO_CHAT_PAGES = new Set(["memorial.html"]);
+assert.ok(pages.includes("memorial.html") && pages.includes("memorials.html"), "product and catalogue pages must both be guarded");
+let chatPages = 0;
 
 for (const f of pages) {
   const s = read(f);
@@ -29,6 +34,14 @@ for (const f of pages) {
   const gtmBlock = s.slice(s.lastIndexOf("<script>", iGtm), s.indexOf("</script>", iGtm));
   assert.doesNotMatch(gtmBlock, /requestIdleCallback|addEventListener|setTimeout/, `${f}: GTM loader must not be deferred`);
   assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
+  // Product detail pages (memorial.html, also served as /memorials/<slug>)
+  // do not load the LeadConnector chat: the bubble covered the price above the
+  // sticky bottom bar. GTM, consent and __smChatHook above still apply.
+  if (NO_CHAT_PAGES.has(f)) {
+    assert.ok(!s.includes("widgets.leadconnectorhq.com/loader.js"), `${f}: product pages must not load the LeadConnector chat`);
+    assert.doesNotMatch(s, /widgets\.leadconnectorhq\.com|data-widget-id/, `${f}: no LeadConnector widget on product pages`);
+    continue;
+  }
   // LeadConnector chat starts loading after 1 second. It is not loaded
   // at parse time, on the first interaction, or after 10 seconds.
   const iLc = s.indexOf("widgets.leadconnectorhq.com/loader.js");
@@ -39,7 +52,9 @@ for (const f of pages) {
   assert.doesNotMatch(lcBlock, /setTimeout\(load, 10000\)/, `${f}: LeadConnector 10s wait must stay gone`);
   assert.doesNotMatch(lcBlock, /pointerdown|touchstart/, `${f}: LeadConnector must not wait for interaction`);
   assert.doesNotMatch(lcBlock, /'scroll'/, `${f}: LeadConnector must not load on scroll`);
+  chatPages++;
 }
+assert.equal(chatPages, pages.length - NO_CHAT_PAGES.size, "every other public page keeps the LeadConnector chat");
 
 // gclid / gbraid / wbraid capture and attribution on submit.
 const up = read("site-upgrades.js");

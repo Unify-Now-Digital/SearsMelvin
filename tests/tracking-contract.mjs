@@ -2,11 +2,19 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { pageProblems, parseGtm, requiredTagProblems, driftProblems, GTM_ID } from "../scripts/tracking-check.mjs";
+import { pageProblems, isProductPage, parseGtm, requiredTagProblems, driftProblems, GTM_ID } from "../scripts/tracking-check.mjs";
 
 const html = (f) => readFileSync(f, "utf8");
 const publicPages = execSync("git ls-files '*.html'").toString().split("\n").filter(Boolean)
   .filter((f) => !["404.html", "admin.html", "admin-products.html", "styleguide.html"].includes(f));
+
+// Product detail pages are the only pages without the chat widget.
+for (const p of ["memorial.html", "/memorial.html", "/memorial", "memorial", "/memorials/the-castell"]) assert.ok(isProductPage(p), `${p} is a product page`);
+for (const p of ["memorials.html", "/memorials", "/memorials/", "/memorials/type/headstones", "/", "/contact", "index.html"]) assert.ok(!isProductPage(p), `${p} keeps the chat`);
+assert.deepEqual(pageProblems("/memorials/x", "GTM-KRDX4BQ5 020 3835 2548 window.__smChatHook = true; widgets.leadconnectorhq.com/loader.js"),
+  ["/memorials/x: product page must not load the chat widget"]);
+assert.deepEqual(pageProblems("/memorials", "GTM-KRDX4BQ5 020 3835 2548 window.__smChatHook = true;"),
+  ["/memorials: chat beforeSubmit hook missing"]);
 
 // 1. Every public page: GTM, chat hook, phone format, tel links show the number, no internal UTMs.
 for (const f of publicPages) {

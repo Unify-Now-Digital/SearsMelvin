@@ -60,5 +60,7 @@ for (const name of pages) {
   assert.doesNotMatch(block, /setTimeout\(load, 10000\)|pointerdown|touchstart/, `${name}: chat must not wait for interaction or 10 seconds`);
   assert.doesNotMatch(block, /matchMedia|innerWidth|max-width:\s*768/, `${name}: chat loader must not be skipped by viewport`);
 }
-assert.ok(navPages >= 12, "expected the public pages with a bottom nav");
+// memorial.html (product pages) has a bottom nav but no chat (docs/TRACKING.md rule 6).
+assert.ok(!readFileSync("memorial.html", "utf8").includes("widgets.leadconnectorhq.com/loader.js"), "memorial.html must not load the chat");
+assert.ok(navPages >= 11, "expected the public pages with a bottom nav");
 console.log(`chat-widget-mobile: ok (${navPages} bottom-nav pages)`);
