@@ -168,7 +168,7 @@
     
     <!-- Supabase data loaded via REST API directly -->
     <link rel="stylesheet" href="/tokens.css">
-    <link rel="stylesheet" href="/memorials.css?v=0014f084bb">
+    <link rel="stylesheet" href="/memorials.css?v=e2b5a41e4e">
     
     <link rel="stylesheet" href="/chat-widget.css?v=11">
     <script type="application/ld+json" id="itemListJsonLd">{"@context":"https://schema.org","@type":"ItemList","name":"Memorial designs by Sears Melvin","itemListElement":[]}</script>
@@ -220,7 +220,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261126b">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261126c">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -491,14 +491,14 @@
         function smImgAttrs(url, sizes, escFn) {
             var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
             if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
-            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 520, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
                 + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
         }
         function smSetImg(img, url, sizes) {
             if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
             img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
             img.sizes = sizes;
-            img.srcset = [400, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+            img.srcset = [400, 520, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
             img.src = smRender(url, 800);
         }
 
@@ -865,13 +865,14 @@
         }
 
         function observeCatalogueSentinel() {
-            var sentinel = document.getElementById('catalogueSentinel');
-            if (!sentinel || !('IntersectionObserver' in window)) return;
-            if (window.catalogueMoreObserver) window.catalogueMoreObserver.disconnect();
-            window.catalogueMoreObserver = new IntersectionObserver(function (entries) {
-                if (entries.some(function (entry) { return entry.isIntersecting; })) showMoreDesigns();
-            }, { rootMargin: '500px 0px' });
-            window.catalogueMoreObserver.observe(sentinel);
+            // The next batch is loaded by the Show more button only. An
+            // IntersectionObserver insert while the brochure row was on screen
+            // moved that row, and the move was counted as layout shift. A click
+            // is user input, so the same insert from the button is not.
+            if (window.catalogueMoreObserver) {
+                window.catalogueMoreObserver.disconnect();
+                window.catalogueMoreObserver = null;
+            }
         }
 
         function showMoreDesigns() {
@@ -922,7 +923,7 @@
                         ? ' loading="eager" fetchpriority="low" decoding="async"'
                         : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge" aria-hidden="true">Popular</span>';

@@ -2752,23 +2752,19 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
   }
 }
 
-/* Catalogue cards. The phone reserve in memorials.css assumes a 6:5 photo.
-   A later 4:5 rule was winning, so cards grew when they scrolled into view.
-   Lock the box, and paint every card up front so content-visibility cannot
-   substitute a shorter placeholder. */
+/* Catalogue cards. Phone frames match the lead photo (800×869) so that
+   photo fills the box and a later picture cannot paint a larger area.
+   Off-screen cards keep content-visibility, so their files do not compete
+   with the preloaded lead image. The box is locked before the file arrives. */
 @media (max-width: 767px) {
-  /* Phone cards only. Desktop keeps content-visibility so off-screen
-     photos do not compete with the first-screen LCP image. */
   html body #productsGrid .product-face {
-    content-visibility: visible;
-    contain-intrinsic-size: none;
     animation: none;
     opacity: 1;
     min-height: var(--sm-card-face, 280px);
   }
   html body #productsGrid .product-image {
     position: relative;
-    aspect-ratio: 6 / 5;
+    aspect-ratio: 800 / 869;
   }
   html body #productsGrid .product-image img {
     position: absolute;
@@ -2780,20 +2776,27 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
   }
 }
 
-/* The listing brochure row was the node that moved (font wrap, then
-   again on scroll). Hold a box at least as tall as the stacked phone
-   layout so it cannot grow. */
+/* The listing brochure row has no photo. Its painted height at 375px,
+   after Cormorant and DM Sans, is 206px. Hold 212px from the first
+   paint so the font swap cannot grow it, and do not skip the row when
+   it is off screen (that second layout was the scroll shift). */
 html body .sm-brochure-cta {
   box-sizing: border-box;
   min-height: 6.75rem;
+  content-visibility: visible;
 }
 @media (max-width: 767px) {
   html body .sm-brochure-cta {
-    min-height: 12.5rem;
+    min-height: 212px;
     align-items: flex-start;
   }
   html body .sm-brochure-cta p {
-    min-height: 4.75rem;
+    min-height: 106px;
+    line-height: 1.45;
+  }
+  html body .sm-brochure-cta p strong {
+    line-height: 1.2;
+    min-height: 1.2em;
   }
   html body .sm-brochure-cta .sm-brochure-link {
     min-height: 44px;

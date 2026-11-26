@@ -78,11 +78,11 @@ assert.doesNotMatch(outsideHover, /\.contact-method:hover/, "card hover must be 
 assert.doesNotMatch(html, /\.contact-method:(focus|visited|active)[^{]*\{[^}]*var\(--color-(accent|stone)\)/,
   "focus/visited must not darken a card");
 
-// Cache buster: every page linking site-upgrades.css agrees on 20261126b.
+// Cache buster: every page linking site-upgrades.css agrees on 20261126c.
 const root = new URL("../", import.meta.url);
 for (const f of readdirSync(root).filter((n) => n.endsWith(".html"))) {
   for (const m of read(f).matchAll(/site-upgrades\.css\?v=([\w]+)/g)) {
-    assert.equal(m[1], "20261126b", `${f}: site-upgrades.css buster`);
+    assert.equal(m[1], "20261126c", `${f}: site-upgrades.css buster`);
   }
 }
 

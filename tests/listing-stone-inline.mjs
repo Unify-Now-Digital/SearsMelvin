@@ -128,13 +128,13 @@ assert.doesNotMatch(server, /stone-band-note/);
 
 // Phone card faces are held at the measured tallest card for each width band,
 // and the same value is the content-visibility reserve (no grow or shrink on paint).
-assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 5 \/ 12 \+ 114px\)/);
+assert.match(mobileCss, /--sm-card-face:\s*calc\(\(100vw - 40px\) \* 869 \/ 1600 \+ 114px\)/);
 assert.match(mobileCss, /min-height:\s*var\(--sm-card-face\)/);
 assert.match(mobileCss, /contain-intrinsic-height:\s*auto var\(--sm-card-face\)/);
 for (const [band, extra] of [["375px) and (max-width: 767px", 93]]) {
   const at = css.indexOf("@media (min-width: " + band + ")");
   assert.ok(at > -1, "missing card band " + band);
-  assert.match(css.slice(at, at + 200), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 5 / 12 \\+ " + extra + "px\\)"));
+  assert.match(css.slice(at, at + 220), new RegExp("--sm-card-face: calc\\(\\(100vw - 40px\\) \\* 869 / 1600 \\+ " + extra + "px\\)"));
 }
 
 console.log("listing-stone-inline: ok");
