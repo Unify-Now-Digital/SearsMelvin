@@ -228,15 +228,16 @@ try {
   });
   assert.equal(unsignedWebhook.status, 503);
 
-  // `cemeteries` is shared between tenants. Every server-side read of it must be
-  // scoped to SM_ORG_ID, or a free-typed cemetery name can attach another
-  // tenant's cemetery (and permit fee) to a Sears Melvin quote.
+  // Cemetery name matching is the shared Mason function. It is not a direct
+  // read of the six Sears Melvin rows, and it does not guess with limit=1.
   const submitSource = readFileSync(new URL("../functions/api/submit.js", import.meta.url), "utf8");
-  const cemeteryReads = submitSource.match(/rest\/v1\/cemeteries\?[^`]*/g) || [];
-  assert.ok(cemeteryReads.length > 0, "expected at least one cemeteries read to check");
-  for (const read of cemeteryReads) {
-    assert.ok(read.includes("${orgFilter}"), `unscoped cemeteries read: ${read.slice(0, 90)}`);
-  }
+  const lookupStart = submitSource.indexOf("export async function lookupCemeteryIdByName");
+  const lookupEnd = submitSource.indexOf("export async function upsertPerson");
+  assert.ok(lookupStart >= 0 && lookupEnd > lookupStart, "lookupCemeteryIdByName was not found");
+  const lookup = submitSource.slice(lookupStart, lookupEnd);
+  assert.match(lookup, /rpc\/match_web_enquiry_cemetery/);
+  assert.doesNotMatch(lookup, /organization_id=eq/);
+  assert.doesNotMatch(lookup, /rest\/v1\/cemeteries/);
 
   console.log("security smoke tests passed");
 } finally {

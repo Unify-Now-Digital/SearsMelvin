@@ -15,10 +15,10 @@ Earlier Cloudflare/Supabase/GitHub sweep: **2026-08-26**.
 | # | Severity | Area | Finding | Status |
 |---|----------|------|---------|--------|
 | 1 | **High** | Supabase RLS | `cemeteries_public_read` is granted to `authenticated`, but the public site uses the **anon** key. Every browser-side cemetery query returns `[]`. | Fix written, **not applied** — `migrations/2026-08-26-fix-public-cemetery-read-and-audit-log.sql` |
-| 2 | Medium | Worker code | `lookupCemeteryIdByName` searched all tenants' cemeteries | **Fixed** — org filter added, asserted in `tests/security-smoke.mjs` |
+| 2 | Medium | Worker code | `lookupCemeteryIdByName` searched only the Sears Melvin cemetery rows, and the name had to contain the typed text | **Superseded 21 Nov 2026** — contact lookup calls `match_web_enquiry_cemetery`. The Mason migration is not applied and this Worker is not deployed. |
 | 3 | Medium | Supabase | `activity_log_write` is SECURITY DEFINER, callable by any signed-in user, and inserts the caller-supplied `p_user_id` without consulting `auth.uid()` — audit-log entries can be attributed to anyone | Fix written, **not applied** — same migration |
 | 4 | Medium | Cloudflare | Worker `sears-melvin-form` was live, orphaned, and sent off-brand copy (phone `01268 208 559`, "South London & Beyond", ClickUp) | **Done** — deleted 2026-08-26, confirmed absent from `workers_list` |
-| 5 | Medium | Supabase | `create_quote` RPC resolves the cemetery without an org filter (same class as #2) | Open — see note 3 in the migration |
+| 5 | Medium | Supabase | `create_quote` resolved a cemetery by asking whether the stored name contained the typed text, and kept one row when several matched | **Superseded 21 Nov 2026** — `create_quote` calls `match_web_enquiry_cemetery`. Migration `20261121150000` is not applied. |
 | 6 | Low | Headers | CSP is `Report-Only` with **no** `report-uri`/`report-to`, so it collects nothing and can never graduate to enforced | Open |
 | 7 | Low | Headers | `X-Robots-Tag: noindex` was on `/partner*` only | **Fixed** — added to `/admin*` and `/track*` |
 | 8 | Low | Worker code | Customer confirmation email was sent to an empty address on phone-only submissions (Resend 400, swallowed) | **Fixed** |
