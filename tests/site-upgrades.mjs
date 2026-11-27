@@ -117,6 +117,7 @@ console.log("call-tracking numbers: ok");
 // Personal details stay off the dataLayer event. Chat email/phone for GTM
 // enhanced conversions are window.__smChatEmail / window.__smChatPhone.
 for (const f of execSync("git grep -l 'LeadConnector chat' -- '*.html'").toString().split("\n").filter(Boolean)) {
+  assert.notEqual(f, "contact.html", "contact.html must not load the chat hook");
   const html = readFileSync(f, "utf8");
   assert.match(html, /registerBeforeSubmit\(chatSubmitted\)/, `${f} hooks chat submit`);
   assert.match(html, /window\.__smChatHook = true;/, `${f} disables the GTM fetch hook`);

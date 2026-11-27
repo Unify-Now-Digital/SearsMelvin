@@ -429,11 +429,6 @@ html body .contact-method-content small { font-size: 0.9375rem; }
 html body .reassurance h4 { font-size: 1rem; color: var(--sm-color-success); }
 html body .reassurance p, html body .form-footer, html body .form-footer a { font-size: var(--sm-text-small); line-height: 1.6; }
 html body .form-submit { background: var(--sm-accent-aa); }
-@media (max-width: 430px) {
-  /* The chat bubble sits on the right, just above the nav. Keep the
-     send button's icon clear of it without moving the bubble. */
-  html body .form-submit { width: calc(100% - 4.75rem); }
-}
 
 /* Brochure */
 html body .sm-brochure-email-note, html body .sm-brochure-email-note a { font-size: 0.9375rem; color: var(--sm-color-text-muted); }

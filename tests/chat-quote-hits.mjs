@@ -13,10 +13,10 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const WIDTHS = (process.env.CHAT_HIT_WIDTHS || "360,390,414,768,1280,1440").split(",").map((n) => Number(n.trim())).filter(Boolean);
 const HEIGHTS = { 360: 800, 390: 844, 414: 896, 768: 1024, 1280: 900, 1440: 900 };
 const PAGES = [
-  // Product pages (memorial.html) load no chat widget (docs/TRACKING.md rule 6).
+  // Product pages (memorial.html) and /contact load no chat widget
+  // (docs/TRACKING.md rule 6).
   ["home", "/"],
   ["memorials", "/memorials.html"],
-  ["contact", "/contact.html"],
 ];
 const TYPES = {
   ".html": "text/html; charset=utf-8",
