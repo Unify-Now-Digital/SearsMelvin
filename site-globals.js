@@ -183,6 +183,7 @@
     }
 
     var placingChat = false;
+    var chatOpenNoted = false;
 
     var CHAT_OPEN_Z = 2000;
 
@@ -317,6 +318,10 @@
                 }
             }
         } catch (e) {}
+        if (open && !chatOpenNoted) {
+            chatOpenNoted = true;
+            try { if (window.__smQueueChatOpen) window.__smQueueChatOpen(); } catch (e) {}
+        }
         if (open) {
             finishPlacing();
             return;

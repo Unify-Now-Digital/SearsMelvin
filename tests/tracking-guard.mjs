@@ -25,8 +25,10 @@ for (const f of pages) {
   assert.ok(/<script[^>]+src="\/site-upgrades\.js[^"]*"/.test(s), `${f}: site-upgrades.js (gclid/attribution capture) missing`);
   assert.ok(/gtag\('consent', 'default', \{[\s\S]*?ad_storage:\s*'denied'[\s\S]*?analytics_storage:\s*'denied'[\s\S]*?ad_user_data:\s*'denied'[\s\S]*?ad_personalization:\s*'denied'/.test(s),
     `${f}: consent mode defaults changed or missing`);
-  // Consent defaults come first. gtm.js waits for LCP, idle, or the first
-  // interaction, with a 3.5s cap. The chat-hook flag is set before the URL.
+  // Consent defaults come first. A click-id landing inserts gtm.js at once.
+  // Every other visit waits for the first idle after load, or a 3.5s cap
+  // from navigation. A key, scroll, or tap does not wait. The chat-hook
+  // flag and the Clarity queue are set before the URL.
   const iConsent = s.indexOf("gtag('consent', 'default'");
   const iGtm = s.indexOf("googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5");
   assert.ok(iConsent > -1 && iGtm > iConsent, `${f}: consent defaults must come before the GTM loader`);
@@ -35,9 +37,19 @@ for (const f of pages) {
   const gtmBlock = s.slice(s.lastIndexOf("<script>", iGtm), s.indexOf("</script>", iGtm));
   assert.match(gtmBlock, /function loadGtm\(\)/, `${f}: GTM insert must stay inside loadGtm`);
   assert.match(gtmBlock, /var GTM_WAIT_MS = 3500;/, `${f}: GTM hard timeout is 3.5s`);
-  assert.match(gtmBlock, /requestIdleCallback\(start, \{ timeout: GTM_WAIT_MS \}\)/, `${f}: GTM must load on idle with that cap`);
+  assert.match(gtmBlock, /function idleAfterLoad\(\)/, `${f}: plain visits wait for load`);
+  assert.match(gtmBlock, /window\.addEventListener\('load', idleAfterLoad\)/, `${f}: idle is armed from the load event`);
+  assert.match(gtmBlock, /requestIdleCallback\(function \(\) \{ start\(\); \}\)/, `${f}: the post-load idle must not carry the 3.5s timeout`);
+  assert.match(gtmBlock, /setTimeout\(start, capLeft\)/, `${f}: the 3.5s cap is a separate timer`);
+  assert.match(gtmBlock, /performance\.timeOrigin/, `${f}: the cap is measured from navigation`);
+  assert.doesNotMatch(gtmBlock, /largest-contentful-paint/, `${f}: LCP must not insert gtm.js`);
+  assert.match(gtmBlock, /function gtmScriptPresent\(\)/, `${f}: a second gtm.js tag must be refused`);
+  assert.doesNotMatch(gtmBlock, /gtag\('consent', 'default'/, `${f}: the loader must not push consent defaults again`);
+  assert.match(gtmBlock, /window\.clarity = window\.clarity \|\| function/, `${f}: Clarity queue must exist before insert`);
+  assert.ok(gtmBlock.indexOf("window.clarity = window.clarity") < gtmBlock.indexOf("function loadGtm"), `${f}: Clarity queue is installed before loadGtm`);
+  assert.match(gtmBlock, /window\.__smQueueChatOpen = function/, `${f}: chat open before insert must be queued`);
   const clickIdAt = gtmBlock.search(/\/\[\?&\]\(\?:gclid\|gbraid\|wbraid\)=\/i\.test\(location\.search/);
-  const idleAt = gtmBlock.indexOf("requestIdleCallback(start");
+  const idleAt = gtmBlock.indexOf("function idleAfterLoad");
   assert.ok(clickIdAt > -1 && clickIdAt < idleAt, `${f}: a gclid/gbraid/wbraid landing must call loadGtm before the idle timer`);
   assert.ok(gtmBlock.indexOf("loadGtm();", clickIdAt) > clickIdAt && gtmBlock.indexOf("loadGtm();", clickIdAt) < idleAt, `${f}: click-id landing must call loadGtm immediately`);
   assert.match(gtmBlock, /function fillMissingClickCookies\(\)/, `${f}: click-id cookie fill missing`);
@@ -50,7 +62,6 @@ for (const f of pages) {
   assert.match(gtmBlock, /Max-Age=7776000/, `${f}: click cookie lifetime must be 90 days`);
   const loadFn = gtmBlock.slice(gtmBlock.indexOf("function loadGtm"), gtmBlock.indexOf("function adsGranted"));
   assert.doesNotMatch(loadFn, /cookieConsent/, `${f}: loadGtm must not read the cookie choice`);
-  assert.match(gtmBlock, /largest-contentful-paint/, `${f}: GTM must also load after LCP`);
   assert.match(gtmBlock, /pointerdown/, `${f}: GTM must load on pointerdown`);
   assert.match(gtmBlock, /keydown/, `${f}: GTM must load on keydown`);
   assert.match(gtmBlock, /'scroll'/, `${f}: GTM must load on scroll`);

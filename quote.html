@@ -40,23 +40,33 @@
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager — inserted after LCP, idle, or the first
-         interaction, whichever is first, with a 3.5s cap so it always loads.
-         Consent defaults above stay first. __smChatHook is set here, before
-         gtm.js. A tel: tap before gtm.load is queued and pushed once when
-         GTM is ready; the call itself is not delayed. A form submit is still
-         held for 300ms. On a click-id landing, a missing Google click cookie
-         is filled only when ads consent is already granted. docs/TRACKING.md. -->
+    <!-- Google Tag Manager — a click-id landing inserts gtm.js at once.
+         Every other visit waits for the first idle after the load event,
+         unless a key, scroll, tap, or tel: happens first. A 3.5s cap from
+         navigation always inserts it. Consent defaults above stay first
+         and are not pushed again. __smChatHook and the Clarity queue are
+         set here, before gtm.js. A tel: tap before gtm.load is queued and
+         pushed once when GTM is ready, including if the page is hidden;
+         the call itself is not delayed. A chat open before insert is
+         queued the same way. A form submit is still held for 300ms. On a
+         click-id landing, a missing Google click cookie is filled only
+         when ads consent is already granted. docs/TRACKING.md. -->
     <script>
       (function () {
         // Set before gtm.js is inserted, including when that insert is deferred.
         // docs/TRACKING.md. The legacy GHL chat listener stays claimed.
         window.__smChatHook = true;
+        // Same queue the Clarity snippet uses. It must exist before gtm.js
+        // is inserted. sm-clarity.js still decides when the tag script loads.
+        window.clarity = window.clarity || function () {
+          (window.clarity.q = window.clarity.q || []).push(arguments);
+        };
         window.dataLayer = window.dataLayer || [];
         var started = false;
         var HOLD_MS = 300;
         var GTM_WAIT_MS = 3500;
         var telQueue = [];
+        var chatOpenQueue = [];
         var flushing = false;
         function hasGtmLoad() {
           var dl = window.dataLayer || [];
@@ -97,9 +107,19 @@
             flushing = false;
           }
         }
+        function flushChatOpen() {
+          if (!gtmReady() || !chatOpenQueue.length) return;
+          var batch = chatOpenQueue.splice(0, chatOpenQueue.length);
+          for (var i = 0; i < batch.length; i++) {
+            if (batch[i].pushed) continue;
+            batch[i].pushed = true;
+            window.dataLayer.push({ event: 'sm_chat_open' });
+          }
+        }
         function markReady() {
           window.__smGtmReady = true;
           flushTelQueue();
+          flushChatOpen();
         }
         function armReadyWatch() {
           var dl = window.dataLayer = window.dataLayer || [];
@@ -118,8 +138,21 @@
           dl.push = wrapped;
         }
         armReadyWatch();
+        function gtmScriptPresent() {
+          try {
+            var nodes = document.getElementsByTagName('script');
+            for (var i = 0; i < nodes.length; i++) {
+              var node = nodes[i];
+              var src = (node && node.src) || '';
+              if (!src && node && node.getAttribute) src = node.getAttribute('src') || '';
+              if (src.indexOf('googletagmanager.com/gtm.js') !== -1) return true;
+            }
+          } catch (err) {}
+          return false;
+        }
         function loadGtm() {
           if (started) return;
+          if (gtmScriptPresent()) { started = true; return; }
           started = true;
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
@@ -130,6 +163,13 @@
           var f = document.getElementsByTagName('script')[0];
           f.parentNode.insertBefore(gtm, f);
         }
+        // A chat panel opened before gtm.js has loaded. Insert immediately
+        // and deliver one sm_chat_open when the container is ready.
+        window.__smQueueChatOpen = function () {
+          loadGtm();
+          if (gtmReady() || chatOpenQueue.length) return;
+          chatOpenQueue.push({ pushed: false });
+        };
         function adsGranted() {
           try {
             var raw = localStorage.getItem('cookieConsent');
@@ -206,16 +246,21 @@
         for (var n = 0; n < interactEvents.length; n++) {
           window.addEventListener(interactEvents[n], onInteract, { passive: true, capture: true });
         }
+        // No click id: first idle after load. The cap is from navigation,
+        // not from load, and not from the first LCP entry.
+        function idleAfterLoad() {
+          if (started) return;
+          if (window.requestIdleCallback) requestIdleCallback(function () { start(); });
+          else start();
+        }
+        if (document.readyState === 'complete') idleAfterLoad();
+        else window.addEventListener('load', idleAfterLoad);
+        var capLeft = GTM_WAIT_MS;
         try {
-          if (window.PerformanceObserver) {
-            var lcp = new PerformanceObserver(function (list, obs) {
-              if (list.getEntries().length) { obs.disconnect(); start(); }
-            });
-            lcp.observe({ type: 'largest-contentful-paint', buffered: true });
-          }
-        } catch (e) {}
-        if (window.requestIdleCallback) requestIdleCallback(start, { timeout: GTM_WAIT_MS });
-        else setTimeout(start, GTM_WAIT_MS);
+          var origin = window.performance && performance.timeOrigin;
+          if (typeof origin === 'number') capLeft = Math.max(0, GTM_WAIT_MS - (Date.now() - origin));
+        } catch (err) {}
+        setTimeout(start, capLeft);
         function goOnce(navigate) {
           loadGtm();
           var left = false;
@@ -247,6 +292,12 @@
           flushTelQueue();
         }
         document.addEventListener('click', onTelClick, true);
+        function onPageHide() {
+          flushTelQueue();
+          flushChatOpen();
+        }
+        document.addEventListener('visibilitychange', onPageHide);
+        window.addEventListener('pagehide', onPageHide);
         document.addEventListener('submit', function (e) {
           if (gtmReady()) return;
           var form = e.target;
@@ -1555,7 +1606,7 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261127c" defer></script>
+    <script src="/site-globals.js?v=20261127e" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/site-upgrades.js?v=20261127c" defer></script>
 </body>
