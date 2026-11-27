@@ -36,6 +36,11 @@ for (const f of pages) {
   assert.match(gtmBlock, /function loadGtm\(\)/, `${f}: GTM insert must stay inside loadGtm`);
   assert.match(gtmBlock, /var GTM_WAIT_MS = 3500;/, `${f}: GTM hard timeout is 3.5s`);
   assert.match(gtmBlock, /requestIdleCallback\(start, \{ timeout: GTM_WAIT_MS \}\)/, `${f}: GTM must load on idle with that cap`);
+  const clickIdAt = gtmBlock.search(/\/\[\?&\]\(\?:gclid\|gbraid\|wbraid\)=\/i\.test\(location\.search/);
+  const idleAt = gtmBlock.indexOf("requestIdleCallback(start");
+  assert.ok(clickIdAt > -1 && clickIdAt < idleAt, `${f}: a gclid/gbraid/wbraid landing must call loadGtm before the idle timer`);
+  assert.ok(gtmBlock.indexOf("loadGtm();", clickIdAt) > clickIdAt && gtmBlock.indexOf("loadGtm();", clickIdAt) < idleAt, `${f}: click-id landing must call loadGtm immediately`);
+  assert.doesNotMatch(gtmBlock, /_gcl_aw\s*=/, `${f}: the page must not write _gcl_aw`);
   assert.match(gtmBlock, /largest-contentful-paint/, `${f}: GTM must also load after LCP`);
   assert.match(gtmBlock, /pointerdown/, `${f}: GTM must load on pointerdown`);
   assert.match(gtmBlock, /keydown/, `${f}: GTM must load on keydown`);

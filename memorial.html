@@ -71,6 +71,9 @@
           var f = document.getElementsByTagName('script')[0];
           f.parentNode.insertBefore(gtm, f);
         }
+        // A paid landing still needs the conversion linker at once. Every other
+        // visit keeps the deferral below. This does not write _gcl_aw.
+        if (/[?&](?:gclid|gbraid|wbraid)=/i.test(location.search || '')) loadGtm();
         var interactEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
         var armed = false;
         function onInteract(e) {
