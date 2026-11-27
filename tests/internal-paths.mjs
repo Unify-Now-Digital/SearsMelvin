@@ -171,7 +171,7 @@ const PUBLIC_ROOT = new Set([
   "care-guide.html", "contact.html", "faq.html", "index.html", "memorial.html",
   "memorials.html", "privacy.html", "quote.html", "resources.html", "terms.html",
   "track.html", "styleguide.html", "accreditations.css", "chat-widget.css",
-  "components.css", "memorial.css", "memorials.css", "site-upgrades.css", "styleguide.css", "tokens.css",
+  "components.css", "memorial.css", "memorials.css", "memorials-upgrades.css", "site-upgrades.css", "styleguide.css", "tokens.css",
   "site-config.js", "site-globals.js", "site-upgrades.js", "cookie-consent.js", "sm-clarity.js", "cookie-consent.css", "product-copy.js", "favicon.svg",
   "memorial-option-b.css", "memorial-option-b.js",
   "favicon.ico", "favicon-48.png",

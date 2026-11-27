@@ -384,6 +384,68 @@
     
     <!-- Supabase data loaded via REST API directly -->
     <link rel="stylesheet" href="/tokens.css">
+    <style id="sm-critical">
+ /* First-screen layout only. memorials.css and memorials-upgrades.css stay
+ render-blocking and still contain these rules, so this block cannot
+ paint a different page. */
+ .logo { display: flex; align-items: center; gap: 0.75rem }
+ .nav-links { display: flex; gap: 2rem; align-items: center }
+ .mobile-menu-btn { display: none; flex-direction: column; gap: 5px; padding: 5px }
+ .page-header { padding: 0.85rem 2rem 1rem }
+ .catalogue { padding: 3rem 2rem }
+ .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem }
+ .product-card { overflow: hidden; display: block; position: relative }
+ .product-face { min-height: 395px }
+ @media (min-width: 768px) {
+ .product-face { min-height: 590px } }
+ @media (min-width: 1024px) {
+ .product-face { min-height: 520px } }
+ @media (min-width: 1280px) {
+ .product-face { min-height: 547px } }
+ .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden }
+ @media (max-width: 1200px) {
+ .products-grid { grid-template-columns: repeat(2, 1fr) } }
+ @media (min-width: 1024px) {
+ .products-grid { grid-template-columns: repeat(3, 1fr) } }
+ @media (min-width: 1280px) {
+ .products-grid { grid-template-columns: repeat(4, 1fr) } }
+ @media (max-width: 900px) {
+ .nav-links { display: none }
+ .logo { gap: 0.5rem }
+ .mobile-menu-btn { display: flex } }
+ @media (max-width: 768px) {
+ .page-header { padding: 0.85rem 1rem 1rem }
+ .catalogue { padding: 1.25rem 0.75rem 2rem } }
+ @media (max-width: 600px) {
+ .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem } }
+ .site-trust-bar { padding: 0.85rem 2rem 0.7rem; margin-top: 60px }
+ .site-trust-row { margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem }
+ .site-trust-item { display: flex; align-items: center; gap: 0.6rem; position: relative; padding: 0.15rem 0 }
+ @media (max-width: 768px) {
+ .site-trust-bar { padding: 0.45rem 0.75rem 0.4rem; margin-top: 56px }
+ .site-trust-row { grid-template-columns: repeat(4, 1fr); gap: 0.25rem }
+ .site-trust-item { gap: 0.3rem; flex-direction: column; padding: 0 } }
+ @media (max-width: 480px) {
+ .site-trust-bar { padding: 0.6rem 1rem }
+ .site-trust-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 0.75rem }
+ .site-trust-item { flex-direction: row; gap: 0.45rem } }
+ @media (max-width: 400px) {
+ .catalogue { padding-top: 0.45rem } }
+ @media (max-width: 767px) {
+ .catalogue { padding-top: 0.15rem }
+ .product-face {
+ min-height: var(--sm-card-face) } }
+ @media (max-width: 1440px) {
+ .nav-links { gap: 1.1rem !important } }
+ @media (max-width: 1280px) {
+ .nav-links { gap: 0.6rem !important } }
+ #navbar {
+ box-sizing: border-box;
+ height: var(--header-height);
+ min-height: var(--header-height);
+ max-height: var(--header-height) }
+ .site-trust-bar { margin-top: calc(var(--header-height) + var(--sm-cookie-stack, 0px)) }
+</style>
     <link rel="stylesheet" href="/memorials.css?v=e2b5a41e4e">
     
     <style>html body::after{content:"";display:block;height:16px;clear:both}</style>
@@ -438,7 +500,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b">
+    <link rel="stylesheet" href="/memorials-upgrades.css?v=20261127f">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
