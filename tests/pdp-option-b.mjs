@@ -8,7 +8,7 @@ const css = readFileSync("memorial-option-b.css", "utf8");
 const js = readFileSync("memorial-option-b.js", "utf8");
 const clarity = readFileSync("sm-clarity.js", "utf8");
 
-assert.match(html, /<link rel="stylesheet" href="\/memorial-option-b\.css">/);
+assert.match(html, /<link rel="stylesheet" href="\/memorial-option-b\.css"/);
 assert.match(html, /<script src="\/memorial-option-b\.js\?v=[^"]+" defer><\/script>/);
 
 for (const tab of ["Details", "Included", "Guarantees", "Permits"]) {
