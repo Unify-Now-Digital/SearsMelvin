@@ -4,6 +4,8 @@
  * A provider id means the message was accepted for sending. It does not mean
  * delivered, received, or opened. This module never reads delivery events.
  */
+// Loaded for the greeting only. Called when the email is built, after both modules have finished loading.
+import { splitName } from "./submit.js";
 const SITE = "https://searsmelvin.co.uk";
 const LOGO = `${SITE}/images/brand/logo/sears-melvin-stacked-ink.png`;
 const COVER = `${SITE}/assets/sears-melvin-brochure-cover.jpg?v=10.1`;
@@ -64,12 +66,38 @@ export function cleanLabel(value, max = 120) {
   return s.slice(0, max);
 }
 
-/** An all-lowercase given name is capitalised. Anything with capitals is left as typed. */
+function greetingText(name) {
+  return String(name ?? "")
+    .replace(/\p{Cc}/gu, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** An all-lowercase given name is capitalised. Anything with capitals is left as typed.
+ *  Unicode letters stay. Control characters and tags are removed; the mailer escapes the rest. */
 export function greetingName(name) {
-  const token = String(name || "").trim().split(/\s+/)[0] || "";
-  if (!/^[A-Za-z][A-Za-z'’-]{0,40}$/.test(token)) return "";
-  if (token !== token.toLowerCase()) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1);
+  const token = greetingText(name).split(" ")[0] || "";
+  if (!/^[\p{L}\p{M}'’.-]+$/u.test(token) || !/\p{L}/u.test(token)) return "";
+  if (token !== token.toLocaleLowerCase("en-GB")) return token;
+  const chars = [...token];
+  chars[0] = chars[0].toLocaleUpperCase("en-GB");
+  return chars.join("");
+}
+
+// Words used after "Thank you,". A title kept as the given name stays with the surname.
+export function thanksName(name) {
+  const parsed = splitName(name);
+  if (parsed.title && parsed.first_name === parsed.title && parsed.last_name && parsed.last_name !== "-") {
+    return `${parsed.title} ${parsed.last_name}`;
+  }
+  if (parsed.joint) {
+    if (!parsed.first_name) return "";
+    const rest = [parsed.first_name, parsed.last_name && parsed.last_name !== "-" ? parsed.last_name : ""].filter(Boolean).join(" ");
+    return [parsed.title, rest].filter(Boolean).join(" ");
+  }
+  return greetingName(parsed.first_name);
 }
 
 export function brochureSourceLabel(source, productName) {
@@ -266,7 +294,7 @@ function emailCell(email) {
 }
 
 export function familyBrochureEmail({ firstName, source } = {}) {
-  const hello = greetingName(firstName) || greetingName(String(firstName || "").split(" ")[0]);
+  const hello = thanksName(firstName);
   const links = brochureEmailLinks(source);
   const greeting = hello ? `Hello ${hello},` : "Hello,";
   const pdfHref = links.pdf;
@@ -490,7 +518,7 @@ function photoBlock(urls) {
 export function familyEnquiryEmail({
   name, email, phone, message, enquiryTypeLabel, location, graveNumber, contactPref, photoCount, shortlistItems,
 } = {}) {
-  const hello = greetingName(name);
+  const hello = thanksName(name);
   const title = hello ? `Thank you, ${hello}.` : "Thank you.";
   const prefs = { email: "Email", phone: "Phone call", appointment: "Appointment" };
   const fields = [

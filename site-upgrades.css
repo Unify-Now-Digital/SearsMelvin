@@ -342,6 +342,23 @@ body.sm-fab-hidden .sm-brochure-fab { display: none; }
 
 /* Mobile bottom nav labels (all pages). Enquire stays sentence case.
    Its icon well is square, so it does not read as a second chat bubble. */
+html body .mobile-bottom-nav .mobile-nav-item svg {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  aspect-ratio: 1;
+  flex: 0 0 22px;
+  display: block;
+}
+html body .mobile-nav-item.primary .nav-icon-bg {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  aspect-ratio: 1;
+  flex: 0 0 44px;
+}
 html body .mobile-nav-item span { font-size: 0.75rem; letter-spacing: 0.01em; }
 html body .mobile-nav-item.primary span { text-transform: none; letter-spacing: 0; }
 html body .mobile-nav-item.primary .nav-icon-bg { border-radius: var(--sm-radius-sm); }
@@ -621,10 +638,10 @@ body.memorial-page .footer-contact a {
   font-family: "Cormorant Fallback";
   font-style: normal;
   font-weight: 100 900;
-  src: local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times New Roman");
-  size-adjust: 95%;
-  ascent-override: 95%;
-  descent-override: 22%;
+  src: local("Times New Roman"), local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times");
+  size-adjust: 88.9%;
+  ascent-override: 103.57%;
+  descent-override: 32.06%;
   line-gap-override: 0%;
 }
 
@@ -2590,7 +2607,10 @@ html body .mobile-menu-btn {
   height: 44px;
   min-width: 44px;
   min-height: 44px;
+  flex: 0 0 44px;
+  aspect-ratio: 1;
   padding: 0;
+  box-sizing: border-box;
 }
 html body .sm-brochure-link {
   text-transform: none;
@@ -2653,6 +2673,17 @@ html body :is(.form-group, .appt-group, .login-field, .quote-form-group) :is(inp
   }
   html body .mobile-bottom-nav-inner {
     grid-template-columns: 1fr 1fr 1.1fr 1fr auto;
+  }
+  /* The phone column is as wide as the full number. A fixed minimum
+     keeps a web-font swap from resizing it, without clipping the text. */
+  html body .mobile-bottom-nav a[href^="tel:"] {
+    min-width: 4.85rem;
+    overflow: visible;
+  }
+  html body .mobile-bottom-nav a[href^="tel:"] span {
+    overflow: visible;
+    max-width: none;
+    height: auto;
   }
   html body .mobile-nav-item {
     min-width: 44px;
@@ -2727,6 +2758,11 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
     margin-bottom: 0;
+  }
+  /* The single Name field takes the whole row. Its height is one field,
+     the same as the old first-name and last-name pair sitting side by side. */
+  html body .contact-form-wrapper .form-row.full {
+    grid-template-columns: minmax(0, 1fr);
   }
   html body textarea#message {
     min-height: 2.75rem;
@@ -2927,5 +2963,23 @@ html body a.category-card .guide-price-note {
   }
   html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar::after {
     display: none !important;
+  }
+}
+
+/* The phone nav covers the bottom of the screen. The extra page below
+   the form is the nav, the iOS toolbar's largest return (69px) and a
+   small gap, so a scroll can lift Send Message clear of both. Focusing
+   the form uses the same nav clearance plus 16px. None of this moves
+   the button on first view. */
+@media (max-width: 768px) {
+  html:has(#contactForm) {
+    scroll-padding-bottom: calc(79px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+  html body:has(#contactForm) {
+    padding-bottom: calc(79px + 69px + env(safe-area-inset-bottom, 0px));
+  }
+  html body:has(#contactForm) #contactForm,
+  html body:has(#contactForm) .form-submit {
+    scroll-margin-bottom: calc(79px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 }

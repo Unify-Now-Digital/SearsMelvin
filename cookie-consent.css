@@ -1,9 +1,11 @@
 @font-face {
   font-family: "DM Sans Fallback";
-  src: local("Arial");
-  size-adjust: 100.6%;
-  ascent-override: 93%;
-  descent-override: 24%;
+  font-style: normal;
+  font-weight: 100 900;
+  src: local("Arial"), local("Liberation Sans"), local("Nimbus Sans"), local("Helvetica");
+  size-adjust: 104.88%;
+  ascent-override: 94.9%;
+  descent-override: 29.66%;
   line-gap-override: 0%;
 }
 
@@ -314,11 +316,18 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
 }
 
 /* In the document, under the header. A fixed strip stayed on screen and
-   covered whatever scrolled under it, including Send Message. */
+   covered whatever scrolled under it, including Send Message. The phone
+   top matches the header height the script writes, so that write does
+   not move the strip. */
 html body #cookieConsent.sm-cookie:not(.is-manage) {
   position: absolute;
   height: var(--sm-cookie-stack, 61px);
   overflow: hidden;
+}
+@media (max-width: 768px) {
+  html body #cookieConsent.sm-cookie:not(.is-manage) {
+    top: 68px;
+  }
 }
 
 html body #cookieConsent:not(.is-manage) .sm-cookie-choice {

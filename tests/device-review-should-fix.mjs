@@ -23,6 +23,8 @@ assert.doesNotMatch(upgrades, /@media \(max-width: 900px\) and \(min-width: 600p
 assert.match(upgrades, /html body \.sm-brochure-link \{[^}]*text-transform:\s*none/);
 assert.match(upgrades, /white-space:\s*nowrap/);
 assert.match(upgrades, /grid-template-columns:\s*1fr 1fr 1\.1fr 1fr auto/);
+assert.match(upgrades, /scroll-margin-bottom:\s*calc\(79px \+ env\(safe-area-inset-bottom, 0px\) \+ 16px\)/);
+assert.doesNotMatch(upgrades, /html body \.mobile-nav-item span \{[^}]*overflow:\s*hidden/);
 
 assert.match(track, /sears-melvin-stacked-ink\.svg/);
 assert.match(track, /sears-melvin-stacked-ink-no-rules\.svg/);
@@ -30,10 +32,32 @@ assert.match(track, /\.track-header \{[^}]*background:\s*var\(--sm-color-bg\)/);
 assert.match(track, /Send my portal link/);
 assert.doesNotMatch(track, /Sears Melvin <span>Memorials<\/span>/);
 
-assert.match(contact, />First name </);
+assert.match(contact, /id="contactName"/);
+assert.match(contact, /name="name"/);
+assert.match(contact, /autocomplete="name"/);
+assert.match(contact, /maxlength="120"/);
+assert.match(contact, /placeholder="Your name"/);
+assert.match(contact, />Name </);
+assert.doesNotMatch(contact, />First name </);
+assert.doesNotMatch(contact, />Last name </);
 assert.match(contact, />Enquiry type </);
 assert.doesNotMatch(contact, />First Name </);
+assert.match(upgrades, /html body \.contact-form-wrapper \.form-row\.full \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
 assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
+assert.match(contact, /<form id="contactForm" aria-labelledby="contactFormTitle"/);
+assert.match(contact, /<h3 id="contactFormTitle">Send us a message<\/h3>/);
+assert.doesNotMatch(upgrades, /padding-top:\s*100vh/);
+assert.doesNotMatch(upgrades, /@media \(max-width: 480px\) and \(max-height: 567px\)/);
+const phoneForm = upgrades.slice(upgrades.indexOf("html body .contact-form-wrapper {\n    padding-top: 0.25rem;"));
+const phoneFormBlock = phoneForm.slice(0, phoneForm.indexOf("/* The phone nav covers"));
+assert.match(phoneFormBlock, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+assert.match(phoneFormBlock, /padding-bottom:\s*0\.65rem/);
+assert.match(upgrades, /padding-bottom:\s*calc\(79px \+ 69px \+ env\(safe-area-inset-bottom, 0px\)\)/);
+const cookieCss = read("cookie-consent.css");
+const cookieJs = read("cookie-consent.js");
+assert.doesNotMatch(cookieCss, /--sm-cookie-stack:\s*76px/);
+assert.doesNotMatch(cookieJs, /return 76/);
+assert.match(cookieJs, /return 108/);
 
 assert.match(memorials, /<h1>Headstones, gravestones and memorials<\/h1>/);
 assert.match(memorials, /<p>Browse our memorials\. Each piece is made to your specification\.<\/p>/);
