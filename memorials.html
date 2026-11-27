@@ -480,6 +480,16 @@
         html body a.product-card h3.product-name { font-size: 1.125rem; line-height: 1.15; margin: 0 0 2px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
         html body a.product-card .product-category { display: block; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sm-color-text-accent-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         html body a.product-card .product-price { font-size: 0.75rem; line-height: 1.15; }
+        .product-actions { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 5; opacity: 1; }
+        .product-action { width: 44px; height: 44px; border-radius: 50%; background: var(--sm-color-bg); border: 1px solid var(--sm-color-border-decorative); display: flex; align-items: center; justify-content: center; }
+        .product-action svg { width: 18px; height: 18px; stroke: var(--sm-color-text-muted); fill: none; stroke-width: 2; }
+        .type-browse-list a[aria-current="page"] { background: var(--sm-color-text); color: var(--sm-color-bg); }
+        .product-card { background: var(--sm-color-bg-surface, var(--sm-color-bg)); overflow: hidden; border-radius: 8px; }
+      }
+      @media (max-width: 375px) {
+        html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar { height: auto !important; min-height: 30px !important; max-height: none !important; padding: 6px 10px !important; }
+        html body:not(.memorial-page):not(:has(.hero)) .site-trust-row { flex-wrap: wrap !important; align-content: center !important; height: auto !important; overflow: visible !important; row-gap: 4px !important; }
+        html body:not(.memorial-page):not(:has(.hero)) .site-trust-item { flex: 1 1 46% !important; min-width: 0 !important; white-space: normal !important; }
       }
       @media (max-width: 430px) {
         html body #navbar .logo img { width: 185px; height: 46px; max-height: calc(var(--header-height) - 7px); }
