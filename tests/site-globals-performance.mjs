@@ -37,7 +37,7 @@ assert.doesNotMatch(contact, /contact-form-wrapper animate-in/, "contact form is
 for (const page of readdirSync(".").filter((name) => name.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
   if (!html.includes("/site-globals.js")) continue;
-  assert.match(html, /\/site-globals\.js\?v=20261127c/, `${page}: shared script cache buster`);
+  assert.match(html, /\/site-globals\.js\?v=20261127e/, `${page}: shared script cache buster`);
 }
 
 console.log("site-globals-performance: ok");

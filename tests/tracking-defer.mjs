@@ -96,10 +96,15 @@ function assertImmediate(search) {
   assert.equal(booted.scripts.length, 1, `${search}: gtm.js must be inserted before the idle timer`);
   assert.match(booted.scripts[0].src, /gtm\.js\?id=GTM-KRDX4BQ5/);
   assert.equal(booted.context.window.__smChatHook, true, `${search}: __smChatHook is set`);
-  const idle = booted.timers.find((timer) => timer.idle);
-  assert.ok(idle, `${search}: the deferral is still armed for other visits`);
-  idle.fn();
-  assert.equal(booted.scripts.length, 1, `${search}: the idle timer must not insert a second gtm.js`);
+  assert.equal(typeof booted.context.window.clarity, "function", `${search}: Clarity queue exists before insert`);
+  const load = booted.listeners.find((entry) => entry.type === "load" && entry.target === "window");
+  assert.ok(load, `${search}: load is still listened for`);
+  load.fn();
+  assert.equal(booted.timers.some((timer) => timer.idle), false, `${search}: idle is not armed once gtm.js is in`);
+  const cap = booted.timers.find((timer) => !timer.idle && timer.ms === 3500);
+  assert.ok(cap, `${search}: the 3.5s cap is still armed`);
+  cap.fn();
+  assert.equal(booted.scripts.length, 1, `${search}: the cap must not insert a second gtm.js`);
 }
 
 for (const search of ["?gclid=test", "?gbraid=Br.1", "?wbraid=Wb.1", "?GCLID=MixedCase", "?utm_source=google&wbraid=Wide.1"]) {
@@ -109,10 +114,18 @@ for (const search of ["?gclid=test", "?gbraid=Br.1", "?wbraid=Wb.1", "?GCLID=Mix
 for (const search of ["", "?utm_medium=cpc", "?xgclid=1", "?foo=gclid"]) {
   const booted = boot(search);
   assert.equal(booted.scripts.length, 0, `${search || "(plain)"}: gtm.js stays deferred`);
+  assert.equal(booted.timers.some((timer) => timer.idle), false, `${search || "(plain)"}: idle waits for load`);
+  const cap = booted.timers.find((timer) => !timer.idle && timer.ms === 3500);
+  assert.ok(cap, `${search || "(plain)"}: the 3.5s cap is armed from navigation`);
+  const load = booted.listeners.find((entry) => entry.type === "load" && entry.target === "window");
+  assert.ok(load, `${search || "(plain)"}: load listener is armed`);
+  load.fn();
   const idle = booted.timers.find((timer) => timer.idle);
-  assert.ok(idle && idle.ms === 3500, `${search || "(plain)"}: idle cap is 3.5s`);
+  assert.ok(idle && idle.ms == null, `${search || "(plain)"}: post-load idle has no forced timeout`);
   idle.fn();
-  assert.equal(booted.scripts.length, 1, `${search || "(plain)"}: idle still inserts gtm.js`);
+  assert.equal(booted.scripts.length, 1, `${search || "(plain)"}: idle after load inserts gtm.js`);
+  cap.fn();
+  assert.equal(booted.scripts.length, 1, `${search || "(plain)"}: the cap does not insert a second gtm.js`);
 }
 
 const paid = boot("?gclid=EarlyGclid_1");
