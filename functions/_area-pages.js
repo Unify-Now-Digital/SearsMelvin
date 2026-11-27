@@ -598,12 +598,15 @@ async function fetchProducts(env) {
       `${base}/rest/v1/products?organization_id=eq.${org}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=name,slug,image_url,product_categories(name,slug)&order=display_order.asc&limit=24`,
       { headers: supabaseKeyHeaders(publishableKey(env || {})) },
     );
-    if (!response.ok) return [];
+    if (!response.ok) return { ok: false, rows: [] };
     const rows = await response.json();
-    if (!Array.isArray(rows)) return [];
-    return rows.filter((product) => safeSlug(product.slug) && productImageUrl(product)).slice(0, 6);
+    if (!Array.isArray(rows)) return { ok: false, rows: [] };
+    return {
+      ok: true,
+      rows: rows.filter((product) => safeSlug(product.slug) && productImageUrl(product)).slice(0, 6),
+    };
   } catch {
-    return [];
+    return { ok: false, rows: [] };
   }
 }
 
@@ -646,12 +649,17 @@ export async function handleAreaRequest({ request, env, waitUntil }) {
   let html;
   try {
     const model = pageModel(resolved.kind, resolved.borough, resolved.cemetery);
-    html = renderAreaPage(shellHtml, model, products);
+    html = renderAreaPage(shellHtml, model, products.rows);
   } catch {
     return unavailable();
   }
+  // A failed product read still renders the page, with an empty list. That
+  // 200 is not stored: the next request has to try Supabase again.
   return storeHtml(request, new Response(request.method === "HEAD" ? null : html, {
     status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": products.ok ? "public, max-age=3600" : "no-store",
+    },
   }), waitUntil);
 }
