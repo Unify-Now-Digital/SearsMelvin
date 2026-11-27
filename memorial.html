@@ -331,24 +331,7 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap"></noscript>
     <link rel="stylesheet" href="/tokens.css">
-    <style id="sm-pdp-critical">
-      /* Tablet and phone: the gallery box is known before the big sheets,
-         so the photo can paint without waiting for them. Desktop keeps
-         those sheets render-blocking. */
-      @media (max-width: 768px) {
-        html body.memorial-page .gallery-main { position: relative; aspect-ratio: 4 / 3; height: auto; overflow: hidden; background: var(--sm-color-bg); }
-        html body.memorial-page .gallery-main img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-      }
-      @media (min-width: 769px) and (max-width: 1024px) {
-        html body.memorial-page .product-gallery,
-        html body.memorial-page #galleryMain,
-        html body.memorial-page .gallery-main { height: 220px; min-height: 220px; max-height: 220px; aspect-ratio: auto; overflow: hidden; background: var(--sm-color-bg); }
-        html body.memorial-page .gallery-main img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-      }
-    </style>
-    <link rel="stylesheet" href="/memorial.css?v=dfa6f7022c" media="(min-width: 1025px)">
-    <link rel="stylesheet" href="/memorial.css?v=dfa6f7022c" media="print" onload="this.onload=null;this.media='all'">
-    <noscript><link rel="stylesheet" href="/memorial.css?v=dfa6f7022c"></noscript>
+    <link rel="stylesheet" href="/memorial.css?v=dfa6f7022c">
     
     <style>html body::after{content:"";display:block;height:16px;clear:both}</style>
     <link rel="stylesheet" href="/chat-widget.css?v=11" media="print" onload="this.onload=null;this.media='all'">
@@ -407,14 +390,10 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b" media="(min-width: 1025px)">
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b" media="print" onload="this.onload=null;this.media='all'">
-    <noscript><link rel="stylesheet" href="/site-upgrades.css?v=20261127b"></noscript>
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
-    <link rel="stylesheet" href="/memorial-option-b.css" media="(min-width: 1025px)">
-    <link rel="stylesheet" href="/memorial-option-b.css" media="print" onload="this.onload=null;this.media='all'">
-    <noscript><link rel="stylesheet" href="/memorial-option-b.css"></noscript>
+    <link rel="stylesheet" href="/memorial-option-b.css">
 </head>
 <body class="has-mobile-bottom-bar memorial-page">
     <!-- Google Tag Manager (noscript) -->
