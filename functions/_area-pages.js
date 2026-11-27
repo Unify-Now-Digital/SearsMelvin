@@ -10,7 +10,7 @@
 
 import areaData from "../data/boroughs.cjs";
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
-import { cachedHtml, storeHtml } from "./_html-cache.js";
+import { cachedHtml, storeHtml, HTML_CACHE_GENERATION } from "./_html-cache.js";
 
 const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
@@ -660,6 +660,7 @@ export async function handleAreaRequest({ request, env, waitUntil }) {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": products.ok ? "public, max-age=3600" : "no-store",
+      "X-SM-HTML": HTML_CACHE_GENERATION,
     },
   }), waitUntil);
 }

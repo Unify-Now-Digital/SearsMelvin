@@ -14,7 +14,7 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
 import { legacySlugStatus } from "../_legacy-slugs.js";
-import { cachedHtml, storeHtml } from "../_html-cache.js";
+import { cachedHtml, storeHtml, HTML_CACHE_GENERATION } from "../_html-cache.js";
 import { factsParagraph, productDescription, productTitle, SHARE_IMAGE } from "../../product-copy.js";
 
 const BASE = "https://searsmelvin.co.uk";
@@ -323,6 +323,7 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": catalogueOk ? "public, max-age=300, stale-while-revalidate=3600" : "no-store",
+        "X-SM-HTML": HTML_CACHE_GENERATION,
       },
     }));
   return storeHtml(request, response, waitUntil);
