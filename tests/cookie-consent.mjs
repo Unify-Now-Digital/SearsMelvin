@@ -57,7 +57,7 @@ assert.match(css, /body:has\(\.quote-overlay\.active\) #cookieConsent\.sm-cookie
 assert.match(css, /body:has\(\.quote-overlay\.active\) #cookieScrim\.sm-cookie-scrim/);
 assert.doesNotMatch(read("cookie-consent.js"), /quote-overlay/, "hiding the card must not change the consent script");
 assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
-assert.match(css, /@media \(max-width: 768px\) \{[\s\S]*top: 68px/);
+assert.match(css, /@media \(max-width: 768px\) \{[\s\S]*transform: translateY\(68px\)/);
 assert.match(css, /#cookieConsent:not\(\.is-manage\) \.sm-cookie-btn \{[\s\S]*height: var\(--sm-target-min\)/);
 assert.doesNotMatch(css, /bottom:\s*140px/);
 const cookieJs = read("cookie-consent.js");

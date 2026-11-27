@@ -125,10 +125,12 @@
     doc.documentElement.style.setProperty('--sm-cookie-stack', (open ? stackHeight() : 0) + 'px');
     if (!open) {
       banner.style.top = '';
+      banner.style.transform = '';
       return;
     }
-    var header = root.innerWidth <= 768 ? 68 : 80;
-    banner.style.top = header + 'px';
+    /* The strip's offset is a transform in CSS. Writing top on scroll
+       moved it in layout. Leave that to the stylesheet. */
+    banner.style.top = '';
   }
 
   var offsetQueued = false;

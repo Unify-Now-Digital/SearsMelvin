@@ -23,7 +23,7 @@ function edgeCache() {
 
 // Bump when the cached HTML's image markup changes. Older entries lack the
 // header, so they are rebuilt instead of keeping a 1200w preload.
-export const HTML_CACHE_GENERATION = "gallery-sizes-3";
+export const HTML_CACHE_GENERATION = "gallery-sizes-4";
 
 export async function cachedHtml(request) {
   const cache = edgeCache();
