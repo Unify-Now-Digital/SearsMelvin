@@ -329,6 +329,50 @@ body.memorial-page .pdp-b-note { order: 7; margin: 0; }
     body.memorial-page .mobile-bar-vat { max-width: 120px; }
 }
 
+/* Tablet. The gallery intro and the guarantees block were changing height
+   as the page scrolled. The frame is reserved up front. The intro only
+   fades: a transform on this box was enough to move the column under it.
+   Thumb changes fade and slide; they do not animate width or height. */
+@media (min-width: 768px) and (max-width: 1024px) {
+    html body.memorial-page .product-gallery,
+    html body.memorial-page #galleryMain,
+    html body.memorial-page .gallery-main {
+        height: 220px;
+        min-height: 220px;
+        max-height: 220px;
+        aspect-ratio: auto;
+        overflow: hidden;
+    }
+    html body.memorial-page #galleryMain img,
+    html body.memorial-page .gallery-main img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    html body.memorial-page .product-gallery.animate-in {
+        animation-name: smGalleryFade;
+        animation-duration: 0.6s;
+        animation-timing-function: ease;
+        animation-fill-mode: forwards;
+        opacity: 0;
+    }
+    html body.memorial-page #pdpBPanelGuarantees,
+    html body.memorial-page #pdpBPanelGuarantees[hidden],
+    html body.memorial-page .product-guarantees {
+        min-height: 11rem;
+        box-sizing: border-box;
+    }
+}
+@keyframes smGalleryFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+body.memorial-page .gallery-thumb {
+    transition-property: transform, opacity;
+}
+
 /* 320px: the long chip was still a sideways scroller. !important beats the
    phone row's overflow-x:auto and flex:0 0 auto. */
 @media (max-width: 390px) {

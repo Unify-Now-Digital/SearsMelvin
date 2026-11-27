@@ -384,7 +384,51 @@
     
     <!-- Supabase data loaded via REST API directly -->
     <link rel="stylesheet" href="/tokens.css">
-    <link rel="stylesheet" href="/memorials.css?v=e2b5a41e4e">
+    <style id="sm-critical">
+      /* First screen only. The rest of memorials.css and site-upgrades.css
+         load after this so they do not sit in front of the lead card image.
+         Values match those files, so applying them does not move the card. */
+      @font-face { font-family: "Cormorant Fallback"; font-style: normal; font-weight: 100 900; src: local("Times New Roman"), local("Liberation Serif"), local("Noto Serif"), local("Georgia"), local("Times"); size-adjust: 88.9%; ascent-override: 103.57%; descent-override: 32.06%; line-gap-override: 0%; }
+      :root { --header-height: 80px; }
+      @media (max-width: 768px) { :root { --header-height: 68px; } }
+      @media (max-width: 767px) { :root { --header-height: 58px; } }
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; background: var(--sm-color-bg); color: var(--sm-color-text); font-family: var(--sm-font-body); }
+      body:has(#navbar) { display: flow-root; }
+      #navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; box-sizing: border-box; display: flex; align-items: center; height: var(--header-height); min-height: var(--header-height); max-height: var(--header-height); overflow: hidden; background: var(--sm-color-bg); }
+      .site-trust-bar { margin-top: calc(var(--header-height) + var(--sm-cookie-stack, 0px)); }
+      .mobile-nav { display: none; }
+      .listing-stone-inline { display: none; }
+      .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+      .product-card { display: block; color: inherit; text-decoration: none; }
+      .product-image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--sm-color-bg); }
+      .product-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+      @media (max-width: 1200px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (min-width: 1024px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
+      @media (min-width: 1280px) { .products-grid { grid-template-columns: repeat(4, 1fr); } }
+      @media (max-width: 900px) { .nav-links { display: none; } }
+      @media (max-width: 767px) {
+        html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar { height: 30px; min-height: 30px; max-height: 30px; overflow: hidden; box-sizing: border-box; padding: 0 12px; }
+        html body:has(.catalogue) header.page-header { padding: 0.2rem 0.75rem; }
+        html body:has(.catalogue) header.page-header .breadcrumb { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        html body:has(.catalogue) header.page-header h1 { font-family: var(--sm-font-display); font-size: 1.35rem; line-height: 1.1; margin: 0 0 0.15rem; }
+        html body:has(.catalogue) header.page-header > p:not(.page-header-phone-line) { display: none; }
+        html body:has(.catalogue) header.page-header .page-header-phone-line { display: block; font-size: 13px; line-height: 1.25; margin: 0 auto; }
+        .catalogue { padding: 0.15rem 0.75rem 2rem; }
+        .listing-stone-inline { display: flex; box-sizing: border-box; height: 104px; min-height: 104px; max-height: 104px; overflow: hidden; }
+        .catalogue-toolbar, .type-browse, .type-browse-list { height: 56px; min-height: 56px; max-height: 56px; overflow: hidden; }
+        .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; row-gap: 10px; --sm-card-face: calc((100vw - 40px) * 869 / 1600 + 114px); }
+        .products-grid > .stone-band { display: none; }
+        html body .product-image { aspect-ratio: 800 / 869; }
+        html body #productsGrid > a.product-card:first-of-type .product-image img { object-fit: fill; }
+        .product-face { min-height: var(--sm-card-face, 280px); animation: none; opacity: 1; }
+      }
+      @media (min-width: 375px) and (max-width: 767px) {
+        .products-grid { --sm-card-face: calc((100vw - 40px) * 869 / 1600 + 93px); }
+      }
+    </style>
+    <link rel="stylesheet" href="/memorials.css?v=e2b5a41e4e" media="print" onload="this.onload=null;this.media='all'">
+    <noscript><link rel="stylesheet" href="/memorials.css?v=e2b5a41e4e"></noscript>
     
     <style>html body::after{content:"";display:block;height:16px;clear:both}</style>
     <link rel="stylesheet" href="/chat-widget.css?v=11" media="print" onload="this.onload=null;this.media='all'">
@@ -438,7 +482,8 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261127b" media="print" onload="this.onload=null;this.media='all'">
+    <noscript><link rel="stylesheet" href="/site-upgrades.css?v=20261127b"></noscript>
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
 
@@ -699,8 +744,10 @@
         // resize=contain is required — without it, Supabase keeps the source
         // height and only changes the width, producing a distorted canvas.
         // Falls back to original via onerror if not available.
-        // Resized product images via Supabase image transforms (originals untouched).
-        // Falls back to the original file if the render URL fails.
+        // Same widths as functions/memorials.js. 360w matches the phone card
+        // (about 186 CSS px at 1.75x). The WebP bytes come from /img/.
+        var SM_CARD_WIDTHS = [240, 360, 520, 800, 1200];
+        var SM_CARD_SRC = 360;
         function smRender(url, w) {
             var path = new URL(url).pathname.split(['','storage','v1','object','public',''].join('/'))[1];
             return '/img/' + path + '?width=' + w + '&quality=70&resize=contain';
@@ -709,15 +756,15 @@
         function smImgAttrs(url, sizes, escFn) {
             var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
             if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
-            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 520, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+            return 'src="' + e(smRender(url, SM_CARD_SRC)) + '" srcset="' + SM_CARD_WIDTHS.map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
                 + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
         }
         function smSetImg(img, url, sizes) {
             if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
             img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
             img.sizes = sizes;
-            img.srcset = [400, 520, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
-            img.src = smRender(url, 800);
+            img.srcset = SM_CARD_WIDTHS.map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+            img.src = smRender(url, SM_CARD_SRC);
         }
 
         function supabaseImgUrl(url, width) {

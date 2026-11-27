@@ -57,9 +57,12 @@ function swatchImageUrl(value) {
   }
 }
 
-// Phone cards are about (100vw - 40px) / 2. At 375px and a 3x screen that is
-// ~500 device pixels, so the srcset's 520w file is the one to preload.
-// 50vw was selecting the 800w file.
+// Phone cards are (100vw - 40px) / 2. Lighthouse mobile is 412 CSS px at
+// 1.75x, about 326 device pixels, so 360w is the file the first card paints.
+// The src and the preload href are that file. A href of 800w was a second
+// download the card never used. Wider slots still come from srcset.
+const CARD_WIDTHS = [240, 360, 520, 800, 1200];
+const CARD_SRC_WIDTH = 360;
 const IMAGE_SIZES = "(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
 
 function isBucketImage(url) {
@@ -72,8 +75,8 @@ function renderImageUrl(url, width) {
 }
 
 function imageSources(url) {
-  const srcset = [400, 520, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
-  return { src: escapeHtml(renderImageUrl(url, 800)), srcset, sizes: IMAGE_SIZES };
+  const srcset = CARD_WIDTHS.map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  return { src: escapeHtml(renderImageUrl(url, CARD_SRC_WIDTH)), srcset, sizes: IMAGE_SIZES };
 }
 
 function imageAttributes(url) {
@@ -324,7 +327,13 @@ export async function onRequestGet({ request, env }) {
       element(el) { el.setInnerContent(value); },
     });
   }
-  if (preload) rewriter = rewriter.on("head", { element(el) { el.append(preload, { html: true }); } });
+  // Straight after the viewport meta, before the stylesheets. The preload
+  // scanner then starts the first-card image before it sees the CSS.
+  if (preload) {
+    rewriter = rewriter.on('meta[name="viewport"]', {
+      element(el) { el.after(preload, { html: true }); },
+    });
+  }
   if (!typeName) {
     rewriter = rewriter.on(".type-browse-list a.type-all", {
       element(el) { el.setAttribute("aria-current", "page"); },
