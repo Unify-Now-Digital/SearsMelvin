@@ -79,14 +79,10 @@ assert.equal(images.length, 24);
 for (const [index, tag] of images.entries()) {
   assert.match(tag, /width="800"/, index);
   assert.match(tag, /height="800"/, index);
-  if (index === 0) {
+  if (index < 2) {
     assert.match(tag, /loading="eager"/, index);
     assert.match(tag, /fetchpriority="high"/, index);
     assert.doesNotMatch(tag, /decoding="async"/, index);
-  } else if (index < 2) {
-    assert.match(tag, /loading="eager"/, index);
-    assert.match(tag, /decoding="async"/, index);
-    assert.match(tag, /fetchpriority="low"/, index);
   } else {
     assert.match(tag, /loading="lazy"/, index);
     assert.match(tag, /decoding="async"/, index);
@@ -104,7 +100,8 @@ assert.match(childImages[0], /loading="eager"/);
 assert.match(childImages[0], /fetchpriority="high"/);
 assert.doesNotMatch(childImages[0], /decoding="async"/);
 assert.match(childImages[1], /loading="eager"/);
-assert.match(childImages[1], /fetchpriority="low"/);
+assert.match(childImages[1], /fetchpriority="high"/);
+assert.doesNotMatch(childImages[1], /decoding="async"/);
 assert.doesNotMatch(onlyChildren.grid, /lawn-headstones|More memorials/);
 
 const captured = {};
@@ -195,6 +192,14 @@ assert.equal(
   captured["head@append"].match(/imagesizes="([^"]+)"/)[1],
   firstImg.match(/sizes="([^"]+)"/)[1],
 );
+const preloadLinks = captured["head@append"].split("<link").slice(1);
+assert.equal(preloadLinks.length, 3, "lead preload plus two wide-only preloads");
+assert.doesNotMatch(preloadLinks[0], /media=/);
+assert.match(preloadLinks[1], /media="\(min-width: 1280px\)"/);
+assert.match(preloadLinks[1], /lawn-headstones-2/);
+assert.match(preloadLinks[2], /media="\(min-width: 1280px\)"/);
+assert.match(preloadLinks[2], /lawn-headstones-3/);
+assert.doesNotMatch(captured["head@append"], /lawn-headstones-1\.jpg/);
 assert.match(css, /\.product-face \{[^}]*content-visibility:\s*auto/);
 assert.match(css, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
 assert.doesNotMatch(css, /\.product-card \{[^}]*content-visibility/);

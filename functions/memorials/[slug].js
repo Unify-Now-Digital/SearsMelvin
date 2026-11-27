@@ -14,6 +14,7 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
 import { legacySlugStatus } from "../_legacy-slugs.js";
+import { cachedHtml, storeHtml } from "../_html-cache.js";
 import { factsParagraph, productDescription, productTitle, SHARE_IMAGE } from "../../product-copy.js";
 
 const BASE = "https://searsmelvin.co.uk";
@@ -215,11 +216,13 @@ function moved(request, pathname) {
   });
 }
 
-export async function onRequestGet({ request, env, params }) {
+export async function onRequestGet({ request, env, params, waitUntil }) {
   const slug = params && params.slug;
   const shellUrl = new URL("/memorial.html", request.url);
-  const shell = await env.ASSETS.fetch(shellUrl);
-  if (!slug) return shell;
+  if (!slug) return env.ASSETS.fetch(shellUrl);
+
+  const hit = await cachedHtml(request);
+  if (hit) return hit;
 
   const product = await fetchProduct(env, slug);
   if (product === NOT_FOUND) {
@@ -240,12 +243,16 @@ export async function onRequestGet({ request, env, params }) {
       },
     });
   }
-  if (!product) return shell;
+  // Supabase was unreachable. Serve the shell and do not cache it.
+  if (!product) return env.ASSETS.fetch(shellUrl);
 
-  const [sizes, related] = await Promise.all([
-    fetchSizes(env, product.id),
-    fetchRelated(env, product),
-  ]);
+  // Shell read overlaps the sizes and related reads. Those two are not
+  // awaited here: the facts and related blocks are later in the document,
+  // so the head can flush while they are still in flight.
+  const shellPromise = env.ASSETS.fetch(shellUrl);
+  const sizesPromise = fetchSizes(env, product.id);
+  const relatedPromise = fetchRelated(env, product);
+  const shell = await shellPromise;
 
   const canonicalUrl = `${BASE}/memorials/${encodeURIComponent(product.slug)}`;
   const title = productTitle(product);
@@ -271,7 +278,7 @@ export async function onRequestGet({ request, env, params }) {
     ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high">`
     : `<link rel="preload" as="image" href="${escapeHtml(lcp)}" fetchpriority="high">`;
 
-  return new HTMLRewriter()
+  const response = new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
     // LCP image preload goes straight after the viewport meta, which memorial.html keeps
     // at the very top of <head>: the preload scanner finds it before the consent/GTM
@@ -294,9 +301,9 @@ export async function onRequestGet({ request, env, params }) {
     .on("#productCategory", { element(el) { el.setInnerContent(categoryName, { html: false }); } })
     .on("#productLead", { element(el) { el.setInnerContent(lead, { html: false }); } })
     .on("#productDescription", { element(el) { el.setInnerContent(longDescription, { html: false }); } })
-    .on("#productFacts", { element(el) { el.setInnerContent(factsHtml(product, sizes), { html: true }); } })
+    .on("#productFacts", { async element(el) { el.setInnerContent(factsHtml(product, await sizesPromise), { html: true }); } })
     .on("#breadcrumb", { element(el) { el.setInnerContent(breadcrumbHtml(product), { html: true }); } })
-    .on("#relatedDesigns", { element(el) { el.setInnerContent(relatedHtml(related, product), { html: true }); } })
+    .on("#relatedDesigns", { async element(el) { el.setInnerContent(relatedHtml(await relatedPromise, product), { html: true }); } })
     .on("#priceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#mobilePriceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#galleryMainImg", {
@@ -316,4 +323,5 @@ export async function onRequestGet({ request, env, params }) {
         "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
       },
     }));
+  return storeHtml(request, response, waitUntil);
 }

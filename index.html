@@ -1837,7 +1837,7 @@
             const card = ({ image, customer, cemetery }) =>
                 '<article class="install-card" aria-roledescription="slide">'
                 +   '<div class="install-image">'
-                +     '<img ' + imgAttrs(image) + ' alt="' + esc(customer) + ' memorial" loading="lazy" decoding="async" draggable="false" width="320" height="240">'
+                +     '<img ' + imgAttrs(image) + ' alt="' + esc(customer) + ' memorial" loading="lazy" fetchpriority="low" decoding="async" draggable="false" width="320" height="240">'
                 +   '</div>'
                 +   '<div class="install-info">'
                 +     '<p class="install-customer">' + esc(customer) + '</p>'

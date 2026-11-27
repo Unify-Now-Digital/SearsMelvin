@@ -912,7 +912,8 @@
         }
 
         // ==================== RENDER PRODUCTS ====================
-        // Every match stays in the page. The first row is eager. Later images are lazy.
+        // Every match stays in the page. The first row is eager and high
+        // priority. Later images stay lazy.
         let catalogueMatchCount = 0;
         let catalogueMatchedProducts = [];
         let catalogueRenderedCount = 24;
@@ -936,11 +937,12 @@
                 if (!img.getAttribute('width')) img.setAttribute('width', '800');
                 if (!img.getAttribute('height')) img.setAttribute('height', '800');
                 // Do not rewrite an image that already has the right priority.
-                // Touching loading or decoding on the first photo restarts its decode.
-                const high = index === 0;
-                const eagerLoad = index < eager;
-                const wantLoading = eagerLoad ? 'eager' : 'lazy';
-                const wantPriority = high ? 'high' : eagerLoad ? 'low' : '';
+                // Touching loading or decoding on a first-row photo restarts its decode.
+                // Every card in the first row is high. fetchpriority=low on the
+                // other cards in that row was leaving them behind the lead photo.
+                const high = index < eager;
+                const wantLoading = high ? 'eager' : 'lazy';
+                const wantPriority = high ? 'high' : '';
                 if (img.getAttribute('loading') !== wantLoading) img.loading = wantLoading;
                 if (wantPriority) {
                     if (img.getAttribute('fetchpriority') !== wantPriority) img.setAttribute('fetchpriority', wantPriority);
@@ -1034,11 +1036,9 @@
                 const imageUrl = safeImageUrl(product.image_url);
                 const productName = String(product.name || '').slice(0, 120);
                 const saved = state.shortlist.some(item => item.id === id);
-                const imgPriority = index === 0
+                const imgPriority = index < eager
                     ? ' loading="eager" fetchpriority="high"'
-                    : index < eager
-                        ? ' loading="eager" fetchpriority="low" decoding="async"'
-                        : ' loading="lazy" decoding="async"';
+                    : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
                     ? '<img ' + smImgAttrs(imageUrl, '(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
                     : '';
