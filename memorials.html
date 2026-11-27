@@ -699,8 +699,10 @@
         // resize=contain is required — without it, Supabase keeps the source
         // height and only changes the width, producing a distorted canvas.
         // Falls back to original via onerror if not available.
-        // Resized product images via Supabase image transforms (originals untouched).
-        // Falls back to the original file if the render URL fails.
+        // Same widths as functions/memorials.js. 360w matches the phone card
+        // (about 186 CSS px at 1.75x). The WebP bytes come from /img/.
+        var SM_CARD_WIDTHS = [240, 360, 520, 800, 1200];
+        var SM_CARD_SRC = 360;
         function smRender(url, w) {
             var path = new URL(url).pathname.split(['','storage','v1','object','public',''].join('/'))[1];
             return '/img/' + path + '?width=' + w + '&quality=70&resize=contain';
@@ -709,15 +711,15 @@
         function smImgAttrs(url, sizes, escFn) {
             var e = escFn || function(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
             if (!smIsBucketImg(url)) return 'src="' + e(url) + '"';
-            return 'src="' + e(smRender(url, 800)) + '" srcset="' + [400, 520, 800, 1200].map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
+            return 'src="' + e(smRender(url, SM_CARD_SRC)) + '" srcset="' + SM_CARD_WIDTHS.map(function(w) { return e(smRender(url, w)) + ' ' + w + 'w'; }).join(', ')
                 + '" sizes="' + e(sizes) + '" data-fallback="' + e(url) + '" onerror="this.onerror=null;this.removeAttribute(\'srcset\');this.src=this.dataset.fallback"';
         }
         function smSetImg(img, url, sizes) {
             if (!smIsBucketImg(url)) { img.removeAttribute('srcset'); img.src = url; return; }
             img.onerror = function() { img.onerror = null; img.removeAttribute('srcset'); img.src = url; };
             img.sizes = sizes;
-            img.srcset = [400, 520, 800, 1200].map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
-            img.src = smRender(url, 800);
+            img.srcset = SM_CARD_WIDTHS.map(function(w) { return smRender(url, w) + ' ' + w + 'w'; }).join(', ');
+            img.src = smRender(url, SM_CARD_SRC);
         }
 
         function supabaseImgUrl(url, width) {
@@ -1141,7 +1143,7 @@
                     ? ' loading="eager" fetchpriority="high"'
                     : ' loading="lazy" decoding="async"';
                 const productImage = imageUrl
-                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
+                    ? '<img ' + smImgAttrs(imageUrl, '(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 80px) / 2), (max-width: 1279px) 33vw, 25vw', escapeHtml) + ' width="800" height="800" alt=""' + imgPriority + '>'
                     : '';
                 let badge = '';
                 if (product.is_featured && index === 0) badge = '<span class="product-badge" aria-hidden="true">Popular</span>';

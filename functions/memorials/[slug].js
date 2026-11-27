@@ -14,7 +14,7 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
 import { legacySlugStatus } from "../_legacy-slugs.js";
-import { cachedHtml, storeHtml } from "../_html-cache.js";
+import { cachedHtml, storeHtml, HTML_CACHE_GENERATION } from "../_html-cache.js";
 import { factsParagraph, productDescription, productTitle, SHARE_IMAGE } from "../../product-copy.js";
 
 const BASE = "https://searsmelvin.co.uk";
@@ -273,8 +273,11 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
     ? `From £${price.toLocaleString("en-GB")}`
     : "Guide price on request";
   const { productLd, breadcrumbLd } = buildSchema(product, canonicalUrl, desc, imageUrl);
+  // 50vw at 820px and 2x is 820 device pixels and selects the 1200w file.
+  // The 769–1024 frame is 220px tall, so a 400px slot (800w at 2x) is enough.
+  const gallerySizes = "(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw";
   const preload = srcset
-    ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high">`
+    ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="${gallerySizes}" fetchpriority="high">`
     : `<link rel="preload" as="image" href="${escapeHtml(lcp)}" fetchpriority="high">`;
 
   const response = new HTMLRewriter()
@@ -311,7 +314,7 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
         el.setAttribute("alt", product.name || "Memorial");
         if (srcset) {
           el.setAttribute("srcset", srcset);
-          el.setAttribute("sizes", "(max-width: 768px) 100vw, 50vw");
+          el.setAttribute("sizes", "(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw");
         }
       },
     })
@@ -320,6 +323,7 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": catalogueOk ? "public, max-age=300, stale-while-revalidate=3600" : "no-store",
+        "X-SM-HTML": HTML_CACHE_GENERATION,
       },
     }));
   return storeHtml(request, response, waitUntil);

@@ -21,11 +21,18 @@ function edgeCache() {
   }
 }
 
+// Bump when the cached HTML's image markup changes. Older entries lack the
+// header, so they are rebuilt instead of keeping a 1200w preload.
+export const HTML_CACHE_GENERATION = "gallery-sizes-3";
+
 export async function cachedHtml(request) {
   const cache = edgeCache();
   if (!cache) return null;
   try {
-    return (await cache.match(htmlCacheRequest(request))) || null;
+    const hit = await cache.match(htmlCacheRequest(request));
+    if (!hit) return null;
+    if (hit.headers.get("X-SM-HTML") !== HTML_CACHE_GENERATION) return null;
+    return hit;
   } catch {
     return null;
   }

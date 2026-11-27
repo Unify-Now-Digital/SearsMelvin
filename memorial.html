@@ -1674,7 +1674,7 @@
             }
 
             if (images.length > 0) {
-                smSetImg(mainImg, images[0], '(max-width: 768px) 100vw, 50vw');
+                smSetImg(mainImg, images[0], '(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw');
                 mainImg.alt = product.name;
             }
 
@@ -1728,7 +1728,7 @@
         }
 
         function switchGalleryImage(url, thumb) {
-            smSetImg(document.getElementById('galleryMainImg'), url, '(max-width: 768px) 100vw, 50vw');
+            smSetImg(document.getElementById('galleryMainImg'), url, '(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw');
             document.querySelectorAll('.gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
             thumb.classList.add('active');
         }

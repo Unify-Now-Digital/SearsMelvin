@@ -329,6 +329,51 @@ body.memorial-page .pdp-b-note { order: 7; margin: 0; }
     body.memorial-page .mobile-bar-vat { max-width: 120px; }
 }
 
+/* Tablet from 769px, the same edge as site-upgrades.css. At 768px the
+   phone layout (max-width: 768px) is still in force: a 4:3 photo, the
+   thumbs, the colour summary and the sticky bar. A 220px clip there
+   hides that photo. From 769 the short frame is the production one.
+   The intro only fades. Thumb changes are transform and opacity. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    html body.memorial-page .product-gallery,
+    html body.memorial-page #galleryMain,
+    html body.memorial-page .gallery-main {
+        height: 220px;
+        min-height: 220px;
+        max-height: 220px;
+        aspect-ratio: auto;
+        overflow: hidden;
+    }
+    html body.memorial-page #galleryMain img,
+    html body.memorial-page .gallery-main img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    html body.memorial-page .product-gallery.animate-in {
+        animation-name: smGalleryFade;
+        animation-duration: 0.6s;
+        animation-timing-function: ease;
+        animation-fill-mode: forwards;
+        opacity: 0;
+    }
+    html body.memorial-page #pdpBPanelGuarantees,
+    html body.memorial-page #pdpBPanelGuarantees[hidden],
+    html body.memorial-page .product-guarantees {
+        min-height: 11rem;
+        box-sizing: border-box;
+    }
+}
+@keyframes smGalleryFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+body.memorial-page .gallery-thumb {
+    transition-property: transform, opacity;
+}
+
 /* 320px: the long chip was still a sideways scroller. !important beats the
    phone row's overflow-x:auto and flex:0 0 auto. */
 @media (max-width: 390px) {

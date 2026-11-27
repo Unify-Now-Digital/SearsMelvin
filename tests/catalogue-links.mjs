@@ -125,6 +125,7 @@ globalThis.HTMLRewriter = class extends Original {
       setAttribute(name, value) { captured[`${selector}@${name}`] = value; },
       removeAttribute() { captured[selector] = "visible"; },
       append(value) { captured[`${selector}@append`] = value; },
+      after(value) { captured[`${selector}@after`] = value; },
     });
     return super.on(selector, handler);
   }
@@ -178,28 +179,33 @@ assert.match(captured["#productsGrid"], /Every design comes in all/);
 assert.doesNotMatch(captured["#productsGrid"], /Compare the stones|product-colour-dot/);
 assert.equal(captured["#catalogueMore"], undefined);
 assert.equal(captured["#rangeLinks"], undefined);
-assert.match(captured["head@append"], /rel="preload" as="image"/);
-assert.match(captured["head@append"], /fetchpriority="high"/);
-assert.match(captured["head@append"], /lawn-headstones-0/);
-assert.match(captured["head@append"], /imagesrcset="[^"]*width=400[^"]* 400w, [^"]*width=520[^"]* 520w, [^"]*width=800[^"]* 800w, [^"]*width=1200[^"]* 1200w"/);
-assert.match(captured["head@append"], /imagesizes="\(max-width: 767px\) calc\(\(100vw - 40px\) \/ 2\), \(max-width: 1023px\) 50vw, \(max-width: 1279px\) 33vw, 25vw"/);
-assert.match(captured["head@append"], /href="[^"]*width=800&amp;quality=70/);
+const leadPreload = captured['meta[name="viewport"]@after'];
+assert.match(leadPreload, /rel="preload" as="image"/);
+assert.match(leadPreload, /fetchpriority="high"/);
+assert.match(leadPreload, /lawn-headstones-0/);
+assert.match(leadPreload, /imagesrcset="[^"]*width=240[^"]* 240w, [^"]*width=360[^"]* 360w, [^"]*width=520[^"]* 520w, [^"]*width=800[^"]* 800w, [^"]*width=1200[^"]* 1200w"/);
+assert.match(leadPreload, /imagesizes="\(max-width: 767px\) calc\(\(100vw - 40px\) \/ 2\), \(max-width: 1023px\) calc\(\(100vw - 80px\) \/ 2\), \(max-width: 1279px\) 33vw, 25vw"/);
+assert.match(leadPreload, /href="[^"]*width=360&amp;quality=70/);
 const firstImg = cardImages(captured["#productsGrid"])[0];
-const preloadSrcset = captured["head@append"].match(/imagesrcset="([^"]+)"/)[1];
+const preloadSrcset = leadPreload.match(/imagesrcset="([^"]+)"/)[1];
 const imgSrcset = firstImg.match(/srcset="([^"]+)"/)[1];
 assert.equal(preloadSrcset, imgSrcset);
 assert.equal(
-  captured["head@append"].match(/imagesizes="([^"]+)"/)[1],
+  leadPreload.match(/imagesizes="([^"]+)"/)[1],
   firstImg.match(/sizes="([^"]+)"/)[1],
 );
-const preloadLinks = captured["head@append"].split("<link").slice(1);
+assert.match(firstImg, /src="[^"]*width=360&amp;quality=70/);
+assert.match(firstImg, /loading="eager"/);
+assert.match(firstImg, /fetchpriority="high"/);
+assert.doesNotMatch(firstImg, /loading="lazy"/);
+const preloadLinks = leadPreload.split("<link").slice(1);
 assert.equal(preloadLinks.length, 3, "lead preload plus two wide-only preloads");
 assert.doesNotMatch(preloadLinks[0], /media=/);
 assert.match(preloadLinks[1], /media="\(min-width: 1280px\)"/);
 assert.match(preloadLinks[1], /lawn-headstones-2/);
 assert.match(preloadLinks[2], /media="\(min-width: 1280px\)"/);
 assert.match(preloadLinks[2], /lawn-headstones-3/);
-assert.doesNotMatch(captured["head@append"], /lawn-headstones-1\.jpg/);
+assert.doesNotMatch(leadPreload, /lawn-headstones-1\.jpg/);
 assert.match(css, /\.product-face \{[^}]*content-visibility:\s*auto/);
 assert.match(css, /nth-child\(-n \+ 4\) \.product-face \{[^}]*content-visibility:\s*visible/);
 assert.doesNotMatch(css, /\.product-card \{[^}]*content-visibility/);
