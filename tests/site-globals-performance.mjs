@@ -16,7 +16,10 @@ assert.doesNotMatch(watch, /setInterval\(function \(\) \{\s*applyWidgetPosition/
 assert.match(watch, /function startHostPolls\(\)/, "polls start only once the host exists");
 assert.match(watch, /if \(\+\+ticks >= 20\) clearInterval\(poll\);/, "the 10 second re-pin window is kept");
 const init = globals.slice(globals.indexOf("function init()"));
-assert.doesNotMatch(init, /requestIdleCallback/, "skip link and footer are built synchronously (focus order, no CLS)");
+assert.doesNotMatch(init.slice(0, init.indexOf("\n    delayBunnyFonts();")), /requestIdleCallback|delayBunnyFonts\(\)/, "skip link and footer are built synchronously (focus order, no CLS)");
+assert.match(globals, /delayBunnyFonts\(\);\s*if \(document\.readyState === 'loading'\)/, "bunny sheets are parked as soon as this script evaluates");
+assert.match(globals, /link\.media = 'print'/, "bunny Roboto starts as a non-blocking print sheet");
+assert.match(globals, /link\.addEventListener\('load', apply\)/, "bunny Roboto swaps to screen on load");
 assert.match(init, /ensureSkipLink\(\);\s*ensureFooterDisclosures\(\);\s*compactFooter\(\);/, "skip link and footer run in init");
 assert.match(watch, /querySelectorAll\(HOST_SELECTOR\)/, "legacy chat iframes and widget-id hosts are watched too");
 assert.match(watch, /legacyPinned/, "nodes pinned by the legacy/heuristic paths are watched for late rewrites");
@@ -34,7 +37,7 @@ assert.doesNotMatch(contact, /contact-form-wrapper animate-in/, "contact form is
 for (const page of readdirSync(".").filter((name) => name.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
   if (!html.includes("/site-globals.js")) continue;
-  assert.match(html, /\/site-globals\.js\?v=20261124c/, `${page}: shared script cache buster`);
+  assert.match(html, /\/site-globals\.js\?v=20261127c/, `${page}: shared script cache buster`);
 }
 
 console.log("site-globals-performance: ok");

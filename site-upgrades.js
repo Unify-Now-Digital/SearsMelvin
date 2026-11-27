@@ -720,6 +720,9 @@
 
     // Capture on every page load so the landing page records the click,
     // then persist for 90 days (localStorage) for later form submits.
+    // This call below runs when the script evaluates. It must stay synchronous:
+    // sm_attr, the sm_ad cookie, and the _gcl_aw read must not wait for LCP,
+    // idle, or gtm.js (docs/TRACKING.md).
     function storedAttribution() {
         var stored = null, storedLast = null, storedLp = null, now = Date.now();
         var fresh = readAttribution(location.search);

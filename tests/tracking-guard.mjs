@@ -25,16 +25,34 @@ for (const f of pages) {
   assert.ok(/<script[^>]+src="\/site-upgrades\.js[^"]*"/.test(s), `${f}: site-upgrades.js (gclid/attribution capture) missing`);
   assert.ok(/gtag\('consent', 'default', \{[\s\S]*?ad_storage:\s*'denied'[\s\S]*?analytics_storage:\s*'denied'[\s\S]*?ad_user_data:\s*'denied'[\s\S]*?ad_personalization:\s*'denied'/.test(s),
     `${f}: consent mode defaults changed or missing`);
-  // GTM loads at page start (not on first scroll/tap/idle), and only after the
-  // consent defaults; the chat-hook flag is claimed before gtm.js can run.
+  // Consent defaults come first. gtm.js waits for LCP, idle, or the first
+  // interaction, with a 3.5s cap. The chat-hook flag is set before the URL.
   const iConsent = s.indexOf("gtag('consent', 'default'");
   const iGtm = s.indexOf("googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5");
   assert.ok(iConsent > -1 && iGtm > iConsent, `${f}: consent defaults must come before the GTM loader`);
   const head = s.slice(0, s.indexOf("</head>"));
   assert.ok(iGtm > -1 && iGtm < head.length, `${f}: GTM loader must be in <head>`);
   const gtmBlock = s.slice(s.lastIndexOf("<script>", iGtm), s.indexOf("</script>", iGtm));
-  assert.doesNotMatch(gtmBlock, /requestIdleCallback|addEventListener|setTimeout/, `${f}: GTM loader must not be deferred`);
+  assert.match(gtmBlock, /function loadGtm\(\)/, `${f}: GTM insert must stay inside loadGtm`);
+  assert.match(gtmBlock, /var GTM_WAIT_MS = 3500;/, `${f}: GTM hard timeout is 3.5s`);
+  assert.match(gtmBlock, /requestIdleCallback\(start, \{ timeout: GTM_WAIT_MS \}\)/, `${f}: GTM must load on idle with that cap`);
+  const clickIdAt = gtmBlock.search(/\/\[\?&\]\(\?:gclid\|gbraid\|wbraid\)=\/i\.test\(location\.search/);
+  const idleAt = gtmBlock.indexOf("requestIdleCallback(start");
+  assert.ok(clickIdAt > -1 && clickIdAt < idleAt, `${f}: a gclid/gbraid/wbraid landing must call loadGtm before the idle timer`);
+  assert.ok(gtmBlock.indexOf("loadGtm();", clickIdAt) > clickIdAt && gtmBlock.indexOf("loadGtm();", clickIdAt) < idleAt, `${f}: click-id landing must call loadGtm immediately`);
+  assert.doesNotMatch(gtmBlock, /_gcl_aw\s*=/, `${f}: the page must not write _gcl_aw`);
+  assert.match(gtmBlock, /largest-contentful-paint/, `${f}: GTM must also load after LCP`);
+  assert.match(gtmBlock, /pointerdown/, `${f}: GTM must load on pointerdown`);
+  assert.match(gtmBlock, /keydown/, `${f}: GTM must load on keydown`);
+  assert.match(gtmBlock, /'scroll'/, `${f}: GTM must load on scroll`);
+  assert.match(gtmBlock, /touchstart/, `${f}: GTM must load on touchstart`);
+  assert.match(gtmBlock, /event: 'gtm\.linkClick'/, `${f}: early tel tap must queue gtm.linkClick`);
+  assert.match(gtmBlock, /event: 'gtm\.formSubmit'/, `${f}: early form submit must queue gtm.formSubmit`);
+  assert.match(gtmBlock, /eventTimeout: HOLD_MS/, `${f}: tel/form navigation must wait on eventTimeout`);
+  assert.match(gtmBlock, /var HOLD_MS = 300;/, `${f}: hold before navigation is 300ms`);
+  assert.doesNotMatch(gtmBlock, /cookieConsent/, `${f}: GTM loader must not wait for a cookie choice`);
   assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
+  assert.ok(gtmBlock.indexOf("window.dataLayer = window.dataLayer || []") < gtmBlock.indexOf("function loadGtm"), `${f}: dataLayer must exist before gtm.js is inserted`);
   // Product detail pages (memorial.html, also served as /memorials/<slug>)
   // do not load the LeadConnector chat: the bubble covered the price above the
   // sticky bottom bar. /contact does not load it either: the launcher covered
@@ -45,16 +63,21 @@ for (const f of pages) {
     assert.doesNotMatch(s, /widgets\.leadconnectorhq\.com|data-widget-id/, `${f}: no LeadConnector widget on this page`);
     continue;
   }
-  // LeadConnector chat starts loading after 1 second. It is not loaded
-  // at parse time, on the first interaction, or after 10 seconds.
+  // LeadConnector chat loads after first paint and idle (3.5s cap), or on the
+  // first interaction. It is not loaded at parse time and not after 10 seconds.
   const iLc = s.indexOf("widgets.leadconnectorhq.com/loader.js");
   assert.ok(iLc > -1, `${f}: LeadConnector loader missing`);
   const lcBlock = s.slice(s.lastIndexOf("<script>", iLc), s.indexOf("</script>", iLc));
-  assert.match(lcBlock, /function load\(\)\{\s*if \(loaded\) return; loaded = true;[\s\S]*widgets\.leadconnectorhq\.com\/loader\.js/, `${f}: LeadConnector chat must stay behind the deferred load()`);
-  assert.match(lcBlock, /setTimeout\(load, 1000\)/, `${f}: LeadConnector must start loading at 1 second`);
+  assert.match(lcBlock, /function load\(\)\{[\s\S]*widgets\.leadconnectorhq\.com\/loader\.js/, `${f}: LeadConnector chat must stay behind load()`);
+  assert.match(lcBlock, /data-widget-id', '69ff236b0d119858db377c07'/, `${f}: chat widget id changed`);
+  assert.match(lcBlock, /afterFirstPaint\(function \(\) \{\s*if \(window\.requestIdleCallback\) requestIdleCallback\(load, \{ timeout: 3500 \}\)/, `${f}: chat idle load must follow first paint, with a 3.5s cap`);
+  assert.match(lcBlock, /pointerdown/, `${f}: chat must load on pointerdown`);
+  assert.match(lcBlock, /keydown/, `${f}: chat must load on keydown`);
+  assert.match(lcBlock, /touchstart/, `${f}: chat must load on touchstart`);
+  assert.match(lcBlock, /'scroll'/, `${f}: chat must load on scroll`);
+  assert.doesNotMatch(lcBlock, /setTimeout\(load, 1000\)/, `${f}: chat must not start at 1 second`);
   assert.doesNotMatch(lcBlock, /setTimeout\(load, 10000\)/, `${f}: LeadConnector 10s wait must stay gone`);
-  assert.doesNotMatch(lcBlock, /pointerdown|touchstart/, `${f}: LeadConnector must not wait for interaction`);
-  assert.doesNotMatch(lcBlock, /'scroll'/, `${f}: LeadConnector must not load on scroll`);
+  assert.match(lcBlock, /window\.__smChatHook = true/, `${f}: chat loader must still set __smChatHook before the widget mounts`);
   chatPages++;
 }
 assert.equal(chatPages, pages.length - NO_CHAT_PAGES.size, "every other public page keeps the LeadConnector chat");
@@ -64,6 +87,10 @@ const up = read("site-upgrades.js");
 assert.match(up, /CLICK_KEYS = \['gclid', 'gbraid', 'wbraid'\]/, "site-upgrades.js: click-ID capture missing");
 assert.match(up, /sm_attr/, "site-upgrades.js: sm_attr store missing");
 assert.match(up, /getAttribution/, "site-upgrades.js: getAttribution missing");
+const captureCall = up.indexOf("\n    storedAttribution();\n    api.getAttribution = storedAttribution;");
+const initAt = up.indexOf("\n    function init() {");
+assert.ok(captureCall > -1 && initAt > captureCall, "gclid capture must run when site-upgrades.js evaluates, before init");
+assert.doesNotMatch(up.slice(captureCall, captureCall + 80), /requestIdleCallback|setTimeout/, "gclid capture must not be deferred");
 assert.match(up, /event: 'brochure_download'/, "site-upgrades.js: brochure_download push missing");
 for (const f of ["contact.html", "memorial.html"]) assert.match(read(f), /attribution:\s*.*getAttribution\(\)/, `${f}: attribution not sent with the form`);
 
