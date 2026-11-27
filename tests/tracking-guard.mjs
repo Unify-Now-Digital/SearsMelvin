@@ -40,17 +40,33 @@ for (const f of pages) {
   const idleAt = gtmBlock.indexOf("requestIdleCallback(start");
   assert.ok(clickIdAt > -1 && clickIdAt < idleAt, `${f}: a gclid/gbraid/wbraid landing must call loadGtm before the idle timer`);
   assert.ok(gtmBlock.indexOf("loadGtm();", clickIdAt) > clickIdAt && gtmBlock.indexOf("loadGtm();", clickIdAt) < idleAt, `${f}: click-id landing must call loadGtm immediately`);
-  assert.doesNotMatch(gtmBlock, /_gcl_aw\s*=/, `${f}: the page must not write _gcl_aw`);
+  assert.match(gtmBlock, /function fillMissingClickCookies\(\)/, `${f}: click-id cookie fill missing`);
+  assert.match(gtmBlock, /if \(!adsGranted\(\)\) return;/, `${f}: click cookies require ads consent`);
+  assert.match(gtmBlock, /if \(!id \|\| cookieHas\(name\)\) return;/, `${f}: an existing click cookie must be left alone`);
+  assert.match(gtmBlock, /writeGclCookie\('_gcl_aw', clickIdToken\(queryValue\('gclid'\)\)\)/, `${f}: _gcl_aw is filled from gclid only`);
+  assert.match(gtmBlock, /writeGclCookie\('_gcl_gb', clickIdToken\(queryValue\('wbraid'\)\)\)/, `${f}: wbraid fills _gcl_gb in the same GCL format`);
+  assert.doesNotMatch(gtmBlock, /writeGclCookie\([^)]*gbraid/, `${f}: gbraid must not be copied into a GCL cookie`);
+  assert.match(gtmBlock, /name \+ '=GCL\.' \+ seconds \+ '\.' \+ id/, `${f}: click cookie value must be GCL.<seconds>.<id>`);
+  assert.match(gtmBlock, /Max-Age=7776000/, `${f}: click cookie lifetime must be 90 days`);
+  const loadFn = gtmBlock.slice(gtmBlock.indexOf("function loadGtm"), gtmBlock.indexOf("function adsGranted"));
+  assert.doesNotMatch(loadFn, /cookieConsent/, `${f}: loadGtm must not read the cookie choice`);
   assert.match(gtmBlock, /largest-contentful-paint/, `${f}: GTM must also load after LCP`);
   assert.match(gtmBlock, /pointerdown/, `${f}: GTM must load on pointerdown`);
   assert.match(gtmBlock, /keydown/, `${f}: GTM must load on keydown`);
   assert.match(gtmBlock, /'scroll'/, `${f}: GTM must load on scroll`);
   assert.match(gtmBlock, /touchstart/, `${f}: GTM must load on touchstart`);
+  assert.match(gtmBlock, /function flushTelQueue\(\)/, `${f}: tel taps must be flushed from a queue`);
   assert.match(gtmBlock, /event: 'gtm\.linkClick'/, `${f}: early tel tap must queue gtm.linkClick`);
+  assert.match(gtmBlock, /arguments\[i\]\.event === 'gtm\.load'/, `${f}: the tel queue must flush on gtm.load`);
   assert.match(gtmBlock, /event: 'gtm\.formSubmit'/, `${f}: early form submit must queue gtm.formSubmit`);
-  assert.match(gtmBlock, /eventTimeout: HOLD_MS/, `${f}: tel/form navigation must wait on eventTimeout`);
-  assert.match(gtmBlock, /var HOLD_MS = 300;/, `${f}: hold before navigation is 300ms`);
-  assert.doesNotMatch(gtmBlock, /cookieConsent/, `${f}: GTM loader must not wait for a cookie choice`);
+  assert.match(gtmBlock, /eventTimeout: HOLD_MS/, `${f}: form navigation must wait on eventTimeout`);
+  assert.match(gtmBlock, /var HOLD_MS = 300;/, `${f}: hold before a native submit is 300ms`);
+  const telFn = gtmBlock.slice(gtmBlock.indexOf("function onTelClick"), gtmBlock.indexOf("document.addEventListener('submit'"));
+  assert.ok(telFn.length > 40, `${f}: tel click handler missing`);
+  assert.match(telFn, /telQueue\.push/, `${f}: a tel tap before ready must be queued`);
+  assert.doesNotMatch(telFn, /preventDefault/, `${f}: a tel tap must not be cancelled`);
+  assert.doesNotMatch(telFn, /HOLD_MS/, `${f}: a tel tap must not wait`);
+  assert.doesNotMatch(gtmBlock, /Array\.prototype\.push/, `${f}: GTM ready must not be the push-wrapper check`);
   assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
   assert.ok(gtmBlock.indexOf("window.dataLayer = window.dataLayer || []") < gtmBlock.indexOf("function loadGtm"), `${f}: dataLayer must exist before gtm.js is inserted`);
   // Product detail pages (memorial.html, also served as /memorials/<slug>)
@@ -63,14 +79,16 @@ for (const f of pages) {
     assert.doesNotMatch(s, /widgets\.leadconnectorhq\.com|data-widget-id/, `${f}: no LeadConnector widget on this page`);
     continue;
   }
-  // LeadConnector chat loads after first paint and idle (3.5s cap), or on the
-  // first interaction. It is not loaded at parse time and not after 10 seconds.
+  // LeadConnector chat loads on the first interaction only. It is not loaded
+  // at parse time, not on idle, and not after 1 or 10 seconds.
   const iLc = s.indexOf("widgets.leadconnectorhq.com/loader.js");
   assert.ok(iLc > -1, `${f}: LeadConnector loader missing`);
   const lcBlock = s.slice(s.lastIndexOf("<script>", iLc), s.indexOf("</script>", iLc));
   assert.match(lcBlock, /function load\(\)\{[\s\S]*widgets\.leadconnectorhq\.com\/loader\.js/, `${f}: LeadConnector chat must stay behind load()`);
   assert.match(lcBlock, /data-widget-id', '69ff236b0d119858db377c07'/, `${f}: chat widget id changed`);
-  assert.match(lcBlock, /afterFirstPaint\(function \(\) \{\s*if \(window\.requestIdleCallback\) requestIdleCallback\(load, \{ timeout: 3500 \}\)/, `${f}: chat idle load must follow first paint, with a 3.5s cap`);
+  assert.doesNotMatch(lcBlock, /requestIdleCallback\(\s*load/, `${f}: chat must not load on idle`);
+  assert.doesNotMatch(lcBlock, /afterFirstPaint/, `${f}: chat must not wait for first paint`);
+  assert.doesNotMatch(lcBlock, /setTimeout\(\s*load/, `${f}: chat must not load on a timer`);
   assert.match(lcBlock, /pointerdown/, `${f}: chat must load on pointerdown`);
   assert.match(lcBlock, /keydown/, `${f}: chat must load on keydown`);
   assert.match(lcBlock, /touchstart/, `${f}: chat must load on touchstart`);
@@ -91,6 +109,7 @@ const captureCall = up.indexOf("\n    storedAttribution();\n    api.getAttributi
 const initAt = up.indexOf("\n    function init() {");
 assert.ok(captureCall > -1 && initAt > captureCall, "gclid capture must run when site-upgrades.js evaluates, before init");
 assert.doesNotMatch(up.slice(captureCall, captureCall + 80), /requestIdleCallback|setTimeout/, "gclid capture must not be deferred");
+assert.doesNotMatch(up, /_gcl_aw\s*=/, "site-upgrades must not write _gcl_aw; sm_attr stays the store");
 assert.match(up, /event: 'brochure_download'/, "site-upgrades.js: brochure_download push missing");
 for (const f of ["contact.html", "memorial.html"]) assert.match(read(f), /attribution:\s*.*getAttribution\(\)/, `${f}: attribution not sent with the form`);
 

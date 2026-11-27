@@ -201,7 +201,22 @@ async function main() {
       await send("Emulation.setDeviceMetricsOverride", {
         width, height, deviceScaleFactor: 1, mobile: width <= 768,
       });
-      await evalJson(`document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 16, clientY: 16 }))`);
+      // The loader starts on a real interaction. A scripted PointerEvent is
+      // untrusted and must not mount the widget. Shift does not activate a control.
+      await send("Input.dispatchKeyEvent", {
+        type: "keyDown",
+        key: "Shift",
+        code: "ShiftLeft",
+        windowsVirtualKeyCode: 16,
+        nativeVirtualKeyCode: 16,
+      });
+      await send("Input.dispatchKeyEvent", {
+        type: "keyUp",
+        key: "Shift",
+        code: "ShiftLeft",
+        windowsVirtualKeyCode: 16,
+        nativeVirtualKeyCode: 16,
+      });
       const appeared = await evalJson(`new Promise((resolve) => {
         const start = Date.now();
         (function tick() {

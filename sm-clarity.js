@@ -1,5 +1,7 @@
 /* Microsoft Clarity, loaded only after analytics consent.
-   Masking runs always and makes no network request.
+   The tag script waits for window load plus a real idle, or the first
+   pointer, key, scroll, or touch, whichever is first. It has no forced
+   idle timeout. Masking runs always and makes no network request.
    The project id is read at runtime from /api/config (clarityProjectId).
    It is never stored in this file, the DOM, storage or logs.
    After consent, enquiry event names and a few custom tags are sent.
@@ -41,6 +43,7 @@
   if (/^\/(admin|admin-products|partner|track|quote)(\.html)?(\/|$)/.test(path)) return;
 
   var waiting = false;
+  var fetching = false;
   var injected = false;
   var latest = null;
   var pending = [];
@@ -87,28 +90,64 @@
   }
 
   function fetchAndLoad() {
+    if (injected || fetching) return;
     if (typeof root.fetch !== 'function') return;
+    fetching = true;
     try {
       root.fetch('/api/config', { credentials: 'same-origin' })
         .then(function (res) { return res && res.ok ? res.json() : null; })
         .then(function (cfg) {
+          fetching = false;
           var id = cfg && typeof cfg.clarityProjectId === 'string' ? cfg.clarityProjectId : '';
           if (!id || !latest || !latest.analytics) return;
           inject(id);
           sendConsent(latest);
           flushEvents();
         })
-        .then(null, function () {});
-    } catch (e) {}
+        .then(null, function () { fetching = false; });
+    } catch (e) { fetching = false; }
+  }
+
+  var interactEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+  var interactArmed = false;
+
+  function disarmInteract() {
+    if (!interactArmed || typeof root.removeEventListener !== 'function') {
+      interactArmed = false;
+      return;
+    }
+    interactArmed = false;
+    for (var i = 0; i < interactEvents.length; i++) {
+      root.removeEventListener(interactEvents[i], onInteract, true);
+    }
+  }
+
+  function onInteract(e) {
+    if (e && e.isTrusted === false) return;
+    if (!latest || !latest.analytics || injected) return;
+    beginLoad();
+  }
+
+  function armInteract() {
+    if (interactArmed) return;
+    interactArmed = true;
+    for (var i = 0; i < interactEvents.length; i++) {
+      root.addEventListener(interactEvents[i], onInteract, true);
+    }
+  }
+
+  function beginLoad() {
+    disarmInteract();
+    waiting = false;
+    fetchAndLoad();
   }
 
   function kickIdle() {
-    function run() {
-      waiting = false;
-      fetchAndLoad();
-    }
+    function run() { beginLoad(); }
+    // A real idle after load. No timeout, so a busy main thread is not
+    // forced to start Clarity. The first interaction can start it sooner.
     if (typeof root.requestIdleCallback === 'function') {
-      root.requestIdleCallback(run, { timeout: 3000 });
+      root.requestIdleCallback(run);
     } else {
       root.setTimeout(run, 1);
     }
@@ -117,6 +156,7 @@
   function schedule() {
     if (injected || waiting) return;
     waiting = true;
+    armInteract();
     if (doc.readyState === 'complete') kickIdle();
     else root.addEventListener('load', function onLoad() {
       if (typeof root.removeEventListener === 'function') root.removeEventListener('load', onLoad);

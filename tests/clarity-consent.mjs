@@ -123,7 +123,7 @@ e.run();
 await flush();
 assert.equal(e.log.fetches.length, 0, "waits for load");
 e.fire("load");
-assert.equal(e.log.idleOpts.timeout, 3000);
+assert.equal(e.log.idleOpts, undefined, "clarity waits for a real idle, with no forced timeout");
 assert.equal(e.log.fetches.length, 0, "waits for idle");
 e.log.idleFn();
 assert.equal(e.log.fetches[0][0], "/api/config");
@@ -134,6 +134,24 @@ assert.equal(typeof e.root.clarity, "function");
 const q = Array.from(e.root.clarity.q[0]);
 assert.equal(q[0], "consentv2");
 assert.deepEqual(JSON.parse(JSON.stringify(q[1])), { ad_Storage: "denied", analytics_Storage: "granted" });
+
+// first interaction starts Clarity without waiting for load or idle
+e = makeEnv({ stored: store(true, false) });
+e.run();
+assert.equal(e.log.fetches.length, 0);
+const early = (e.listeners.pointerdown || []).slice();
+assert.ok(early.length >= 1, "interaction can start Clarity");
+early.forEach((fn) => fn({ isTrusted: false }));
+assert.equal(e.log.fetches.length, 0, "an untrusted interaction does not start Clarity");
+early.forEach((fn) => fn({}));
+assert.equal(e.log.fetches.length, 1, "the first interaction fetches the project id");
+await flush();
+assert.deepEqual(e.log.scripts, ["https://www.clarity.ms/tag/" + DUMMY]);
+e.fire("load");
+if (typeof e.log.idleFn === "function") e.log.idleFn();
+await flush();
+assert.equal(e.log.fetches.length, 1, "load plus idle does not fetch Clarity again");
+assert.equal(e.log.scripts.length, 1);
 
 // inject once; later events do not re-inject; later reject sends denied
 e.fire("sm-cookie-consent", { analytics: true, ads: true });
@@ -200,7 +218,7 @@ const pages = readdirSync(".").filter((f) => f.endsWith(".html") && read(f).incl
 assert.ok(pages.length >= 15);
 for (const p of pages) {
   const s = read(p);
-  assert.match(s, /<script src="\/cookie-consent\.js\?v=20261123a"><\/script>\s*\n\s*<script src="\/sm-clarity\.js\?v=20261124a" defer><\/script>/, p);
+  assert.match(s, /<script src="\/cookie-consent\.js\?v=20261123a"><\/script>\s*\n\s*<script src="\/sm-clarity\.js\?v=20261127d" defer><\/script>/, p);
 }
 const has = (f, re) => assert.match(read(f), re, f);
 has("contact.html", /id="contactForm"[^>]*data-clarity-mask="True"/);
