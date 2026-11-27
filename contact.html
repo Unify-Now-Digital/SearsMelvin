@@ -607,6 +607,9 @@
                 gap: 0.4rem;
                 margin-bottom: 0;
             }
+            html body #contactForm .form-row.full {
+                grid-template-columns: minmax(0, 1fr);
+            }
             html body #contactForm :is(.form-input, .form-select),
             html body #contactForm :is(input, select):not([type="file"]):not([type="hidden"]) {
                 box-sizing: border-box;
