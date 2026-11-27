@@ -40,23 +40,110 @@
       }
     } catch (_e) {}
     </script>
-    <!-- Google Tag Manager — loads at page start (async), straight after the
-         consent defaults above. It used to wait for the first scroll/tap or 3s
-         idle (#67), which lost the paid visits that bounced before that, so
-         GA4 saw only ~24% of Ads clicks. The LeadConnector chat below stays
-         deferred. -->
+    <!-- Google Tag Manager — inserted after LCP, idle, or the first
+         interaction, whichever is first, with a 3.5s cap so it always loads.
+         Consent defaults above stay first. __smChatHook is set here, before
+         gtm.js. A tel: tap or form submit before the script is ready is
+         queued and given 300ms. docs/TRACKING.md. -->
     <script>
-      (function(){
-        // Claim the chat hook flag before GTM can run, so GTM's legacy
-        // "GHL Chat Widget Listener" never double counts chats (docs/TRACKING.md).
+      (function () {
+        // Set before gtm.js is inserted, including when that insert is deferred.
+        // docs/TRACKING.md. The legacy GHL chat listener stays claimed.
         window.__smChatHook = true;
         window.dataLayer = window.dataLayer || [];
-        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var f = document.getElementsByTagName('script')[0];
-        var gtm = document.createElement('script');
-        gtm.async = true;
-        gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-        f.parentNode.insertBefore(gtm, f);
+        var started = false;
+        var HOLD_MS = 300;
+        var GTM_WAIT_MS = 3500;
+        function gtmReady() {
+          return !!(window.__smGtmReady || (window.dataLayer && window.dataLayer.push !== Array.prototype.push));
+        }
+        function loadGtm() {
+          if (started) return;
+          started = true;
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+          var gtm = document.createElement('script');
+          gtm.async = true;
+          gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
+          gtm.onload = function () { window.__smGtmReady = true; };
+          var f = document.getElementsByTagName('script')[0];
+          f.parentNode.insertBefore(gtm, f);
+        }
+        var interactEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+        var armed = false;
+        function onInteract(e) {
+          if (e && e.isTrusted === false) return;
+          start();
+        }
+        function start() {
+          if (armed) return;
+          armed = true;
+          for (var i = 0; i < interactEvents.length; i++) {
+            window.removeEventListener(interactEvents[i], onInteract, true);
+          }
+          loadGtm();
+        }
+        for (var n = 0; n < interactEvents.length; n++) {
+          window.addEventListener(interactEvents[n], onInteract, { passive: true, capture: true });
+        }
+        try {
+          if (window.PerformanceObserver) {
+            var lcp = new PerformanceObserver(function (list, obs) {
+              if (list.getEntries().length) { obs.disconnect(); start(); }
+            });
+            lcp.observe({ type: 'largest-contentful-paint', buffered: true });
+          }
+        } catch (e) {}
+        if (window.requestIdleCallback) requestIdleCallback(start, { timeout: GTM_WAIT_MS });
+        else setTimeout(start, GTM_WAIT_MS);
+        function goOnce(navigate) {
+          loadGtm();
+          var left = false;
+          function go() {
+            if (left) return;
+            left = true;
+            navigate();
+          }
+          setTimeout(go, HOLD_MS);
+          return go;
+        }
+        document.addEventListener('click', function (e) {
+          if (gtmReady()) return;
+          if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          var node = e.target;
+          if (node && node.nodeType === 3) node = node.parentNode;
+          var a = node && node.closest ? node.closest('a[href]') : null;
+          if (!a) return;
+          var href = a.getAttribute('href') || '';
+          if (href.slice(0, 4).toLowerCase() !== 'tel:') return;
+          e.preventDefault();
+          var go = goOnce(function () { window.location.href = a.href; });
+          window.dataLayer.push({
+            event: 'gtm.linkClick',
+            'gtm.element': a,
+            'gtm.elementUrl': a.href,
+            'gtm.elementId': a.id || '',
+            'gtm.triggers': '',
+            eventCallback: go,
+            eventTimeout: HOLD_MS
+          });
+        }, true);
+        document.addEventListener('submit', function (e) {
+          if (gtmReady()) return;
+          var form = e.target;
+          if (!form || !form.tagName || form.tagName !== 'FORM') return;
+          var nativeSubmit = !e.defaultPrevented;
+          if (nativeSubmit) e.preventDefault();
+          var go = goOnce(function () { if (nativeSubmit) form.submit(); });
+          window.dataLayer.push({
+            event: 'gtm.formSubmit',
+            'gtm.element': form,
+            'gtm.elementId': form.id || '',
+            'gtm.triggers': '',
+            eventCallback: go,
+            eventTimeout: HOLD_MS
+          });
+        }, false);
       })();
     </script>
     <script>
@@ -70,12 +157,9 @@
       document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
-    <!-- LeadConnector chat — deferred separately with NO scroll trigger and a
-         long 10s fallback. Synthetic perf tools (Lighthouse, PSI) synthesise
-         scroll events during measurement and idle for ~3s, so the previous
-         shared loader caused the chat widget to mount inside the LCP window
-         and inflate the metric. Real users still get chat as soon as they
-         tap or type. -->
+    <!-- LeadConnector chat — after first paint and idle (3.5s cap), or the
+         first pointer, key, scroll, or touch, whichever is first. Widget
+         69ff236b0d119858db377c07. /contact does not include this loader. -->
     <script>
       (function(){
         var loaded = false;
@@ -126,14 +210,42 @@
         }
         window.addEventListener('LC_chatWidgetLoaded', hookChat);
         function load(){
-          if (loaded) return; loaded = true;
+          if (loaded) return;
+          if (!document.body) { document.addEventListener('DOMContentLoaded', load); return; }
+          loaded = true;
           var lc = document.createElement('script');
           lc.src = 'https://widgets.leadconnectorhq.com/loader.js';
           lc.setAttribute('data-resources-url', 'https://widgets.leadconnectorhq.com/chat-widget/loader.js');
           lc.setAttribute('data-widget-id', '69ff236b0d119858db377c07');
           document.body.appendChild(lc);
         }
-        setTimeout(load, 1000);
+        var chatEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+        function onChatInteract(e) {
+          if (e && e.isTrusted === false) return;
+          load();
+        }
+        for (var ci = 0; ci < chatEvents.length; ci++) {
+          window.addEventListener(chatEvents[ci], onChatInteract, { passive: true, capture: true });
+        }
+        function afterFirstPaint(fn) {
+          var ran = false;
+          function once() { if (ran) return; ran = true; fn(); }
+          try {
+            if (window.PerformanceObserver) {
+              var paints = new PerformanceObserver(function (list, obs) {
+                if (list.getEntries().length) { obs.disconnect(); once(); }
+              });
+              paints.observe({ type: 'paint', buffered: true });
+            }
+          } catch (e) {}
+          var raf = window.requestAnimationFrame;
+          if (typeof raf === 'function') raf(function () { raf(once); });
+          else setTimeout(once, 0);
+        }
+        afterFirstPaint(function () {
+          if (window.requestIdleCallback) requestIdleCallback(load, { timeout: 3500 });
+          else setTimeout(load, 3500);
+        });
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -408,7 +520,9 @@
         .about-accred-logo img { display:block; height:72px; width:auto; }
         @media (max-width: 768px) { .about-steps { grid-template-columns:repeat(2,minmax(0,1fr)); } .about-accred { grid-template-columns:1fr; } }
 </style>
-    <link rel="stylesheet" href="/chat-widget.css?v=11">
+    <style>html body::after{content:"";display:block;height:16px;clear:both}</style>
+    <link rel="stylesheet" href="/chat-widget.css?v=11" media="print" onload="this.onload=null;this.media='all'">
+    <noscript><link rel="stylesheet" href="/chat-widget.css?v=11"></noscript>
 
     <!-- Structured data: Business. Showroom coordinates from https://api.postcodes.io/postcodes/NW116LB, rounded to 5 decimal places. -->
     <script type="application/ld+json">
@@ -862,9 +976,9 @@
 
     </script>
 
-    <script src="/site-globals.js?v=20261124c" defer></script>
+    <script src="/site-globals.js?v=20261127c" defer></script>
     <script src="/site-config.js" defer></script>
     <script src="/data/team.js" defer></script>
-    <script src="/site-upgrades.js?v=20261122a" defer></script>
+    <script src="/site-upgrades.js?v=20261127c" defer></script>
 </body>
 </html>

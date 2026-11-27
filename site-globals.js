@@ -511,9 +511,10 @@
         fab.style.setProperty('bottom', bottom + 'px', 'important');
     }
 
-    // The chat widget pulls Roboto from fonts.bunny.net as a render-blocking
-    // stylesheet. Park those sheets until the page is idle so they are not
-    // part of the first long tasks. The widget itself still starts at 1s.
+    // The chat widget pulls Roboto from fonts.bunny.net. Park those sheets
+    // as print (non-blocking) the moment they appear, then swap to screen on
+    // load or idle. The observer starts with this script, before the deferred
+    // chat loader can inject the link.
     function delayBunnyFonts() {
         function park(link) {
             if (!link || !link.getAttribute) return;
@@ -522,7 +523,11 @@
             if (link.getAttribute('data-sm-bunny')) return;
             link.setAttribute('data-sm-bunny', '1');
             link.media = 'print';
-            var apply = function () { link.media = 'all'; };
+            var apply = function () {
+                if (link.media === 'all') return;
+                link.media = 'all';
+            };
+            link.addEventListener('load', apply);
             if (window.requestIdleCallback) requestIdleCallback(apply, { timeout: 4000 });
             else setTimeout(apply, 3000);
         }
@@ -976,11 +981,6 @@
 
     function init() {
         watchChatWidget();
-        // After load, so the observer and the brochure measurement are not
-        // part of the home page's first long tasks.
-        window.addEventListener('load', function () {
-            delayBunnyFonts();
-        });
         var fabFrame = false;
         function scheduleFab() {
             if (fabFrame) return;
@@ -1011,6 +1011,7 @@
         });
     }
 
+    delayBunnyFonts();
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
