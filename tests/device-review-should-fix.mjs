@@ -44,7 +44,7 @@ assert.match(contact, />Enquiry type </);
 assert.doesNotMatch(contact, />First Name </);
 assert.match(upgrades, /html body \.contact-form-wrapper \.form-row\.full \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
 assert.match(contact, /\.form-group label \{[^}]*text-transform:\s*none/);
-assert.match(contact, /<form id="contactForm" aria-labelledby="contactFormTitle">/);
+assert.match(contact, /<form id="contactForm" aria-labelledby="contactFormTitle"/);
 assert.match(contact, /<h3 id="contactFormTitle">Send us a message<\/h3>/);
 assert.doesNotMatch(upgrades, /padding-top:\s*100vh/);
 assert.doesNotMatch(upgrades, /@media \(max-width: 480px\) and \(max-height: 567px\)/);
