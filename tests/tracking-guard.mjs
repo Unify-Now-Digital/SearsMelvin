@@ -10,9 +10,10 @@ const read = (f) => readFileSync(f, "utf8");
 const skip = new Set(["404.html", "admin.html", "admin-products.html", "styleguide.html"]);
 const pages = execSync("git ls-files '*.html'").toString().split("\n").filter((f) => f && !skip.has(f));
 assert.ok(pages.length >= 13, "expected the public pages to be found"); // 13 after the 6 area pages were removed (Oct 2026)
-// Public pages that deliberately ship without the LeadConnector chat. Keep this
-// to product detail pages; the catalogue (memorials.html) keeps the chat.
-const NO_CHAT_PAGES = new Set(["memorial.html"]);
+// Public pages that deliberately ship without the LeadConnector chat.
+// Product detail pages, and the contact page. The catalogue (memorials.html)
+// and every other public page keep the chat.
+const NO_CHAT_PAGES = new Set(["memorial.html", "contact.html"]);
 assert.ok(pages.includes("memorial.html") && pages.includes("memorials.html"), "product and catalogue pages must both be guarded");
 let chatPages = 0;
 
@@ -36,10 +37,12 @@ for (const f of pages) {
   assert.ok(gtmBlock.indexOf("window.__smChatHook = true") > -1 && gtmBlock.indexOf("window.__smChatHook = true") < gtmBlock.indexOf("gtm.js?id="), `${f}: __smChatHook must be set before gtm.js is injected`);
   // Product detail pages (memorial.html, also served as /memorials/<slug>)
   // do not load the LeadConnector chat: the bubble covered the price above the
-  // sticky bottom bar. GTM, consent and __smChatHook above still apply.
+  // sticky bottom bar. /contact does not load it either: the launcher covered
+  // the Phone field and Send Message. GTM, consent and __smChatHook above
+  // still apply.
   if (NO_CHAT_PAGES.has(f)) {
-    assert.ok(!s.includes("widgets.leadconnectorhq.com/loader.js"), `${f}: product pages must not load the LeadConnector chat`);
-    assert.doesNotMatch(s, /widgets\.leadconnectorhq\.com|data-widget-id/, `${f}: no LeadConnector widget on product pages`);
+    assert.ok(!s.includes("widgets.leadconnectorhq.com/loader.js"), `${f}: this page must not load the LeadConnector chat`);
+    assert.doesNotMatch(s, /widgets\.leadconnectorhq\.com|data-widget-id/, `${f}: no LeadConnector widget on this page`);
     continue;
   }
   // LeadConnector chat starts loading after 1 second. It is not loaded
