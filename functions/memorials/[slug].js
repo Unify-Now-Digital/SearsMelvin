@@ -275,6 +275,8 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
   const { productLd, breadcrumbLd } = buildSchema(product, canonicalUrl, desc, imageUrl);
   // 50vw at 820px and 2x is 820 device pixels and selects the 1200w file.
   // The 769–1024 frame is 220px tall, so a 400px slot (800w at 2x) is enough.
+  // At 768 the phone layout shows a ~704px photo, so 100vw is the slot.
+  // 769–1024 stays 400px: that short frame is sharp at 800w and 2x.
   const gallerySizes = "(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw";
   const preload = srcset
     ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="${gallerySizes}" fetchpriority="high">`

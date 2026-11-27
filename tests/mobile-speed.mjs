@@ -38,6 +38,12 @@ globalThis.fetch = originalFetch;
 assert.equal(captured.headFirstHtml, true, "preload is inserted as HTML");
 assert.match(captured.headFirst, /^<link rel="preload" as="image"/, "LCP preload follows the viewport meta");
 assert.match(captured.headFirst, /fetchpriority="high"/);
+assert.match(captured.headFirst, /imagesizes="\(max-width: 768px\) 100vw, \(max-width: 1024px\) 400px, 50vw"/, "768px uses the full phone photo slot; 769–1024 stays 400px");
+assert.equal(memorial.match(/\(max-width: 768px\) 100vw, \(max-width: 1024px\) 400px, 50vw/g).length, 2, "both gallery size strings include 768px at 100vw");
+const optionB = readFileSync(new URL("memorial-option-b.css", root), "utf8");
+assert.match(optionB, /@media \(min-width: 769px\) and \(max-width: 1024px\) \{[^}]*#productTitlePrice:not\(\[hidden\]\)/, "the reserved title-price box starts at 769px");
+assert.match(optionB, /@media \(min-width: 768px\) and \(max-width: 768px\) \{[^}]*#productTitlePrice \{[^}]*display:\s*none !important/, "768px keeps the title price out of flow in every bar state");
+assert.doesNotMatch(optionB, /@media \(max-width: 768px\)[\s\S]{0,800}#productTitlePrice/, "the phone block does not reserve a title-price box");
 assert.match(captured.headFirst, /href="https:\/\/bfwohzcugtwbhhxdqgme\.supabase\.co\/storage\/v1\/render\/image\/public\/product-images\/test\.webp\?width=800&amp;quality=70&amp;resize=contain"/);
 
 const routes = JSON.parse(readFileSync(new URL("_routes.json", root), "utf8"));

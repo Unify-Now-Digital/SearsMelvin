@@ -321,12 +321,15 @@ body:has(.quote-overlay.active) #cookieScrim.sm-cookie-scrim {
    not move the strip. */
 html body #cookieConsent.sm-cookie:not(.is-manage) {
   position: absolute;
+  top: 0;
+  transform: translateY(80px);
   height: var(--sm-cookie-stack, 61px);
   overflow: hidden;
 }
 @media (max-width: 768px) {
   html body #cookieConsent.sm-cookie:not(.is-manage) {
-    top: 68px;
+    top: 0;
+    transform: translateY(68px);
   }
 }
 
@@ -435,7 +438,8 @@ html body #cookieConsent:not(.is-manage) .sm-cookie-manage {
    buttons underneath, across the full width. */
 @media (max-width: 768px) {
   html body #cookieConsent.sm-cookie:not(.is-manage) {
-    top: 68px;
+    top: 0;
+    transform: translateY(68px);
     padding: 8px 12px;
   }
 
