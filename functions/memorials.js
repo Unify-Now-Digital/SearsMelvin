@@ -63,7 +63,9 @@ function swatchImageUrl(value) {
 // download the card never used. Wider slots still come from srcset.
 const CARD_WIDTHS = [240, 360, 520, 800, 1200];
 const CARD_SRC_WIDTH = 360;
-const IMAGE_SIZES = "(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+// 50vw at 820px and 2x is 820 device pixels, which jumps to the 1200w
+// file. The card is half the content width, so the slot stays under 800.
+const IMAGE_SIZES = "(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 80px) / 2), (max-width: 1279px) 33vw, 25vw";
 
 function isBucketImage(url) {
   return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url);

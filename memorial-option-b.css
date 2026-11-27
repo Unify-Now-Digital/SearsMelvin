@@ -329,11 +329,12 @@ body.memorial-page .pdp-b-note { order: 7; margin: 0; }
     body.memorial-page .mobile-bar-vat { max-width: 120px; }
 }
 
-/* Tablet. The gallery intro and the guarantees block were changing height
-   as the page scrolled. The frame is reserved up front. The intro only
-   fades: a transform on this box was enough to move the column under it.
-   Thumb changes fade and slide; they do not animate width or height. */
-@media (min-width: 768px) and (max-width: 1024px) {
+/* Tablet from 769px, the same edge as site-upgrades.css. At 768px the
+   phone layout (max-width: 768px) is still in force: a 4:3 photo, the
+   thumbs, the colour summary and the sticky bar. A 220px clip there
+   hides that photo. From 769 the short frame is the production one.
+   The intro only fades. Thumb changes are transform and opacity. */
+@media (min-width: 769px) and (max-width: 1024px) {
     html body.memorial-page .product-gallery,
     html body.memorial-page #galleryMain,
     html body.memorial-page .gallery-main {

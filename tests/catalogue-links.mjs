@@ -184,7 +184,7 @@ assert.match(leadPreload, /rel="preload" as="image"/);
 assert.match(leadPreload, /fetchpriority="high"/);
 assert.match(leadPreload, /lawn-headstones-0/);
 assert.match(leadPreload, /imagesrcset="[^"]*width=240[^"]* 240w, [^"]*width=360[^"]* 360w, [^"]*width=520[^"]* 520w, [^"]*width=800[^"]* 800w, [^"]*width=1200[^"]* 1200w"/);
-assert.match(leadPreload, /imagesizes="\(max-width: 767px\) calc\(\(100vw - 40px\) \/ 2\), \(max-width: 1023px\) 50vw, \(max-width: 1279px\) 33vw, 25vw"/);
+assert.match(leadPreload, /imagesizes="\(max-width: 767px\) calc\(\(100vw - 40px\) \/ 2\), \(max-width: 1023px\) calc\(\(100vw - 80px\) \/ 2\), \(max-width: 1279px\) 33vw, 25vw"/);
 assert.match(leadPreload, /href="[^"]*width=360&amp;quality=70/);
 const firstImg = cardImages(captured["#productsGrid"])[0];
 const preloadSrcset = leadPreload.match(/imagesrcset="([^"]+)"/)[1];
