@@ -213,10 +213,12 @@ const htmlPages = [
 ];
 for (const page of htmlPages) {
   const html = readFileSync(page, "utf8");
+  const logic = page === "index.html" ? readFileSync("home.js", "utf8") : html;
   assert.equal(html.includes("eyJhbGci"), false, `${page} still has the anon JWT`);
+  assert.equal(logic.includes("eyJhbGci"), false, `${page} logic still has the anon JWT`);
   assert.match(html, /<script src="\/supabase-config"><\/script>/, page);
-  assert.match(html, /window\.SM_SUPABASE\.url/, page);
-  assert.doesNotMatch(html, /Authorization': 'Bearer ' \+ SUPABASE/);
+  assert.match(logic, /window\.SM_SUPABASE\.url/, page);
+  assert.doesNotMatch(logic, /Authorization': 'Bearer ' \+ SUPABASE/);
 }
 
 function walk(dir, out = []) {

@@ -94,7 +94,8 @@ assert.match(home, /rel="preload" as="image"/);
 assert.match(home, /gioiosa-family-kerb-set-600w\.webp/);
 assert.match(home, /<link rel="preload" as="image"[\s\S]*?gioiosa-family-kerb-set-600w\.webp/);
 assert.doesNotMatch(home, /rel="preload"[^>]*smith-family-memorial/);
-assert.match(home, /loading="lazy" fetchpriority="low"/);
+assert.match(home, /src="\/home\.js\?v=20261127f" defer/);
+assert.match(readFileSync(new URL("../home.js", import.meta.url), "utf8"), /loading="lazy" fetchpriority="low"/);
 assert.match(home, /share-card\.jpg/);
 assert.match(home, /href="\/favicon\.ico" sizes="48x48"/);
 assert.match(home, /href="\/favicon-48\.png"/);
@@ -104,7 +105,7 @@ assert.match(home, /"logo": "https:\/\/searsmelvin\.co\.uk\/images\/brand\/logo\
 const slots = [...home.matchAll(/<option value="(\d{2}:\d{2})"/g)].map((match) => match[1]);
 assert.deepEqual(slots, ["10:00", "10:30", "11:00", "11:30", "12:00", "13:00", "13:30", "14:00", "14:30"]);
 assert.doesNotMatch(home, /value="09:00"|value="09:30"|value="15:00"|value="15:30"|value="16:00"|value="16:30"/);
-assert.match(home, /apptDateIsWeekday/);
+assert.match(readFileSync(new URL("../home.js", import.meta.url), "utf8"), /apptDateIsWeekday/);
 
 const aboutMeta = readFileSync(new URL("../about.html", import.meta.url), "utf8");
 assert.match(aboutMeta, /memorial masons in London/);

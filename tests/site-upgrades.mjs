@@ -83,7 +83,7 @@ assert.doesNotMatch(upgradesSource, /sendBeacon\('\/api\/click-intent', new Blob
 // Expired first touch is replaced by any fresh UTMs.
 assert.deepEqual(up.attributionFields(up.mergeAttribution(rec, { utm_source: "bing" }, t0 + up.ATTR_TTL_MS)), { utm_source: "bing" });
 // Every public form sends the stored attribution.
-for (const f of ["contact.html", "memorial.html", "memorials.html", "index.html"]) {
+for (const f of ["contact.html", "memorial.html", "memorials.html", "home.js"]) {
   assert.match(readFileSync(f, "utf8"), /attribution: \(window\.SMUpgrades && window\.SMUpgrades\.getAttribution\)/, `${f} sends attribution`);
 }
 assert.match(readFileSync("site-upgrades.js", "utf8"), /fillMissingUtm\(storedAttribution\(\), sessionUtm\(\)\)/, "brochure form fills missing UTMs from the session store");

@@ -6,7 +6,7 @@ import {
   fillOnlyCustomFields,
 } from "../functions/api/submit.js";
 
-const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const index = await readFile(new URL("../home.js", import.meta.url), "utf8");
 const appointment = index.slice(index.indexOf("async function submitAppointment()"), index.indexOf("// ==================== SUPABASE CONFIG"));
 assert.match(appointment, /event:\s*'sm_lead_submit'/);
 assert.ok(appointment.indexOf("event: 'sm_lead_submit'") < appointment.indexOf("apptFormFields').style.display = 'none'"));
