@@ -2855,14 +2855,21 @@ html body .sm-brochure-cta {
   }
 }
 
-/* Home: the caption and the install date were sitting in the brochure,
-   chat and bottom-nav band. Lift the caption inside the photo, and give
-   the process block room to scroll clear of that band. */
+/* Home: lifting the caption 9.5rem put it on the price badge and the
+   photo clipped it. Keep it inside the photo, under the badge, at its
+   final height so the font swap cannot move it. The photo box is unchanged. */
 @media (max-width: 414px) {
   html body .hero-image-label {
-    bottom: 9.5rem;
+    top: auto;
+    bottom: 3.25rem;
     left: 0.4rem;
     right: 0.4rem;
+    height: 3.7rem;
+    min-height: 3.7rem;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    line-height: 1.25;
   }
   html body .process {
     padding-top: 2.25rem;
