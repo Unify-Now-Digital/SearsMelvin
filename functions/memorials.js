@@ -57,7 +57,10 @@ function swatchImageUrl(value) {
   }
 }
 
-const IMAGE_SIZES = "(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+// Phone cards are about (100vw - 40px) / 2. At 375px and a 3x screen that is
+// ~500 device pixels, so the srcset's 520w file is the one to preload.
+// 50vw was selecting the 800w file.
+const IMAGE_SIZES = "(max-width: 767px) calc((100vw - 40px) / 2), (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
 
 function isBucketImage(url) {
   return new RegExp('/' + ['storage','v1','object','public','product-images'].join('/') + '/[^?]+$').test(url);
@@ -69,7 +72,7 @@ function renderImageUrl(url, width) {
 }
 
 function imageSources(url) {
-  const srcset = [400, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
+  const srcset = [400, 520, 800, 1200].map((width) => `${escapeHtml(renderImageUrl(url, width))} ${width}w`).join(", ");
   return { src: escapeHtml(renderImageUrl(url, 800)), srcset, sizes: IMAGE_SIZES };
 }
 
@@ -84,7 +87,8 @@ function imagePreload(url) {
   if (!isBucketImage(url)) {
     return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
   }
-  // Same src, srcset and sizes as the first card, so the browser fetches one file.
+  // One file, the same src/srcset/sizes as the first card. Extra preloads
+  // were competing with the real first-screen LCP image.
   const { src, srcset, sizes } = imageSources(url);
   return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
 }

@@ -181,7 +181,7 @@
 
     <!-- Product schema injected dynamically once product loads (see syncSocialMeta) -->
     <script type="application/ld+json" id="productJsonLd"></script>
-    <link rel="stylesheet" href="/site-upgrades.css?v=20261126a">
+    <link rel="stylesheet" href="/site-upgrades.css?v=20261126e">
     <link rel="stylesheet" href="/cookie-consent.css">
     <link rel="stylesheet" href="/accreditations.css?v=20261121a">
     <link rel="stylesheet" href="/memorial-option-b.css">
@@ -1823,7 +1823,9 @@
         function titlePriceInRange() {
             var phone = window.matchMedia('(max-width: 599px)').matches;
             var tablet = window.matchMedia('(min-width: 600px) and (max-width: 1023px)').matches;
-            return phone || tablet;
+            // 1024px is the review width. The 600–1023 rule above stays.
+            var fold = window.matchMedia('(min-width: 1024px) and (max-width: 1024px)').matches;
+            return phone || tablet || fold;
         }
 
         function paintMobileBar(total) {

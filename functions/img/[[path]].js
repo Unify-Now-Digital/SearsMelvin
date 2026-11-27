@@ -35,7 +35,14 @@ export async function onRequestGet({ request, env, params }) {
 
   // Supabase picks the output format from Accept. Ask for WebP explicitly so the
   // single edge cache entry is the small format every current phone browser supports.
-  const response = await fetch(upstream, { headers: { Accept: "image/webp,image/*;q=0.8" }, cf: { cacheEverything: true, cacheTtl: 604800 } });
+  // A cold Supabase render occasionally 404s the first try (seen on
+  // the-dorchester.webp during the 26 Nov audit) and then succeeds.
+  // One retry keeps the card from flashing a broken image. The bare path
+  // without ?width= is still 404: this route only serves a sized image.
+  let response = await fetch(upstream, { headers: { Accept: "image/webp,image/*;q=0.8" }, cf: { cacheEverything: true, cacheTtl: 604800 } });
+  if (!response.ok) {
+    response = await fetch(upstream, { headers: { Accept: "image/webp,image/*;q=0.8" }, cf: { cacheEverything: true, cacheTtl: 604800 } });
+  }
   if (!response.ok) return notFound();
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", CACHE_CONTROL);

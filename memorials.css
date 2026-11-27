@@ -872,19 +872,18 @@
             /* Hide the desktop/tablet stone band inside the grid; the strip
                above replaces it on phones. */
             .products-grid > .stone-band { display: none; }
-            /* Tighter mobile cards. `html body .product-image` is needed to
-               beat site-upgrades.css's `html body .product-image` 4:5 well. */
+            /* Phone cards. The lead photo is 800×869 (The Castell). The frame
+               matches it so that photo paints the full box. A 6:5 frame made a
+               later landscape photo the largest paint once it scrolled in.
+               `html body .product-image` beats site-upgrades.css's 4:5 rule. */
             .products-grid { row-gap: 10px; }
-            html body .product-image { aspect-ratio: 6 / 5; }
+            html body .product-image { aspect-ratio: 800 / 869; }
             html body .product-image img { object-fit: contain; }
-            /* main reserves 395px per card for content-visibility; match the
-               shorter card so unrendered cards do not leave gaps. */
-            /* Every card face is held at the tallest painted card for this
-               width: the 6:5 photo ((100vw - 40px) / 2 * 5 / 6) plus the
-               tallest info panel for the band (measured on all 147 cards in
-               Chromium and WebKit). The same value is the content-visibility
-               reserve, so cards neither grow nor shrink when they paint. */
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 114px); }
+            /* Face height is that photo plus the tallest info panel for the
+               band (measured on all 147 cards). The same value is the
+               content-visibility reserve, so cards neither grow nor shrink
+               when they paint. */
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 869 / 1600 + 114px); }
         .product-face {
                 min-height: var(--sm-card-face);
                 contain-intrinsic-width: auto 175px;
@@ -922,7 +921,7 @@
            line (92.5px -> +93px). The band starts at 375px so the 364-374
            edge keeps the safe, taller reserve. */
         @media (min-width: 375px) and (max-width: 767px) {
-            .products-grid { --sm-card-face: calc((100vw - 40px) * 5 / 12 + 93px); }
+            .products-grid { --sm-card-face: calc((100vw - 40px) * 869 / 1600 + 93px); }
         }
         /* Narrowest phones: tighter tracking so more of a long category
            label ("Churchyard memorials") shows before the ellipsis. */

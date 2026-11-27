@@ -2736,3 +2736,196 @@ html body :is(.faq, .testimonials, .care-guide, .grief-resources, .appointment-s
     margin-top: 0;
   }
 }
+
+/* Audit 26 Nov: font stacks on each page drop the metric-matched fallbacks,
+   so Cormorant and DM Sans swap the FAQ (and other) first screen. Put the
+   fallbacks back after those page styles. */
+:root {
+  --font-display: "Cormorant Garamond", "Cormorant Fallback", Georgia, "Times New Roman", serif;
+  --font-body: "DM Sans", "DM Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+@media (min-width: 1024px) {
+  /* Desktop FAQ title is one line once Cormorant is in. Hold that line so
+     the Georgia fallback cannot add a second line and shift the list. */
+  html body .page-header h1 {
+    min-height: 1.2em;
+  }
+}
+
+/* Catalogue cards. Phone frames match the lead photo (800×869) so that
+   photo fills the box and a later picture cannot paint a larger area.
+   Off-screen cards keep content-visibility, so their files do not compete
+   with the preloaded lead image. The box is locked before the file arrives. */
+@media (max-width: 767px) {
+  html body #productsGrid .product-face {
+    animation: none;
+    opacity: 1;
+    min-height: var(--sm-card-face, 280px);
+  }
+  html body #productsGrid .product-image {
+    position: relative;
+    aspect-ratio: 800 / 869;
+  }
+  html body #productsGrid .product-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+  /* The lead photo matches this frame, so filling the box does not crop it.
+     Contain was reporting a few pixels under the box, and a later photo with
+     the same proportions then became the largest paint during scroll. */
+  html body #productsGrid > a.product-card:first-of-type .product-image img {
+    object-fit: fill;
+  }
+}
+
+/* The listing brochure row has no photo. Its painted height at 375px,
+   after Cormorant and DM Sans, is 206px. Hold 212px from the first
+   paint so the font swap cannot grow it, and do not skip the row when
+   it is off screen (that second layout was the scroll shift). */
+html body .sm-brochure-cta {
+  box-sizing: border-box;
+  min-height: 6.75rem;
+  content-visibility: visible;
+}
+@media (max-width: 767px) {
+  html body .sm-brochure-cta {
+    min-height: 212px;
+    align-items: flex-start;
+  }
+  html body .sm-brochure-cta p {
+    min-height: 106px;
+    line-height: 1.45;
+  }
+  html body .sm-brochure-cta p strong {
+    line-height: 1.2;
+    min-height: 1.2em;
+  }
+  html body .sm-brochure-cta .sm-brochure-link {
+    min-height: 44px;
+  }
+}
+
+/* 769–1024 product pages. At 768 the title sits above a 4:3 photo.
+   From 769 the photo is a full-width 4:5 and the title falls below a
+   768px-tall screen. Shorten only this band. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Header, cookie strip, trust row and breadcrumb already use most of a
+     768px-tall screen. A fixed short frame keeps the title above the price bar.
+     min-height: 0 stops the grid from growing to the photo's own height. */
+  /* The breadcrumb's header offset is already provided by the trust bar
+     above it. Keeping both pushes the title below a 768px screen. */
+  html body.memorial-page .breadcrumb-bar {
+    padding-top: 0.65rem;
+  }
+  html body.memorial-page .product-gallery,
+  html body.memorial-page #galleryMain,
+  html body.memorial-page .gallery-main {
+    min-height: 0;
+    height: 220px;
+    max-height: 220px;
+    aspect-ratio: auto;
+    width: 100%;
+    overflow: hidden;
+  }
+  html body.memorial-page #galleryMain img,
+  html body.memorial-page .gallery-main img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+  html body.memorial-page .product-info h1 {
+    font-size: 2rem;
+    margin-bottom: 0.35rem;
+  }
+  /* 1024px is outside the 600–1023 title-price rule, and the sticky bar
+     stays hidden until the quote button leaves the screen. Show the same
+     figure under the title while that bar is hidden. */
+  html body.memorial-page #productTitlePrice:not([hidden]) {
+    display: block;
+  }
+  html body.memorial-page:has(.mobile-bottom-bar.is-visible) #productTitlePrice {
+    display: none !important;
+  }
+}
+
+/* Home: lifting the caption 9.5rem put it on the price badge and the
+   photo clipped it. Keep it inside the photo, under the badge, at its
+   final height so the font swap cannot move it. The photo box is unchanged. */
+@media (max-width: 414px) {
+  html body .hero-image-label {
+    top: auto;
+    bottom: 3.25rem;
+    left: 0.4rem;
+    right: 0.4rem;
+    height: 3.7rem;
+    min-height: 3.7rem;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    line-height: 1.25;
+  }
+  html body .process {
+    padding-top: 2.25rem;
+    padding-bottom: calc(8.5rem + env(safe-area-inset-bottom));
+  }
+  html body .timeline-calculator {
+    padding: 1.15rem 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* Home category cards. The permit line was clipped at the card edge, and
+   the fixed brochure button sat on the price. Keep the full sentence inside
+   the card. */
+html body a.category-card .category-info {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 1.35rem;
+}
+html body a.category-card .guide-price-note {
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  line-height: 1.35;
+  margin-top: 0.35rem;
+}
+@media (min-width: 1025px) {
+  html body .categories {
+    padding-bottom: 8rem;
+  }
+}
+
+/* Inner-page trust row. At 320–375 the one-line scroller cuts "Permit help"
+   down to "Pern". Wrap the short labels onto two rows so each one is whole.
+   390px and up keeps the single 30px row. */
+@media (max-width: 375px) {
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar {
+    height: auto !important;
+    min-height: 30px !important;
+    max-height: none !important;
+    padding: 6px 10px !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-row {
+    flex-wrap: wrap !important;
+    align-content: center !important;
+    height: auto !important;
+    overflow: visible !important;
+    row-gap: 4px !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-item {
+    flex: 1 1 46% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+  }
+  html body:not(.memorial-page):not(:has(.hero)) .site-trust-bar::after {
+    display: none !important;
+  }
+}
