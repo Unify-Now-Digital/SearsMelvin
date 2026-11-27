@@ -82,15 +82,34 @@ function imageAttributes(url) {
   return `src="${src}" srcset="${srcset}" sizes="${sizes}" data-fallback="${escapeHtml(url)}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback"`;
 }
 
-function imagePreload(url) {
+function imagePreload(url, media) {
   if (!url) return "";
+  const mediaAttr = media ? ` media="${media}"` : "";
   if (!isBucketImage(url)) {
-    return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high">`;
+    return `<link rel="preload" as="image" href="${escapeHtml(url)}" fetchpriority="high"${mediaAttr}>`;
   }
-  // One file, the same src/srcset/sizes as the first card. Extra preloads
-  // were competing with the real first-screen LCP image.
+  // Same src/srcset/sizes as the card. A preload of a wider file was
+  // downloaded as well as the file the card actually used.
   const { src, srcset, sizes } = imageSources(url);
-  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
+  return `<link rel="preload" as="image" href="${src}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high"${mediaAttr}>`;
+}
+
+// Phone first screen is two cards. At 1280px and up the first row is four
+// cards, and the third and fourth are below the phone fold (the bottom nav
+// covers the next row). Preload those two only on a wide screen.
+const WIDE_CARD_PRELOAD = "(min-width: 1280px)";
+
+export function cataloguePreloads(products) {
+  const visible = listableProducts(products);
+  const parts = [];
+  const lead = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
+  if (lead) parts.push(lead);
+  for (const index of [2, 3]) {
+    const url = visible[index] ? safeImageUrl(visible[index].image_url) : "";
+    const link = url ? imagePreload(url, WIDE_CARD_PRELOAD) : "";
+    if (link) parts.push(link);
+  }
+  return parts.join("");
 }
 
 export function typeCounts(products) {
@@ -248,13 +267,13 @@ function renderCards(products, colours) {
     const productName = String(product.name || "").slice(0, 120);
     const imageUrl = safeImageUrl(product.image_url);
     const priceRange = price < 1000 ? "under-1000" : price >= 3000 ? "over-3000" : price < 1500 ? "1000-1500" : price < 2000 ? "1500-2000" : "2000-3000";
-    // Only the first photo is high priority, and it is not decoding="async":
-    // async decode was holding the largest paint until after the file had arrived.
-    const priority = index === 0
+    // The phone's first row (two cards) is high priority and is not
+    // decoding="async": async decode was holding the largest paint until
+    // after the file had arrived. Wider rows are preloaded with a media
+    // query and promoted by tuneFirstRowImages once the viewport is known.
+    const priority = index < NARROW_FIRST_ROW
       ? ' loading="eager" fetchpriority="high"'
-      : index < NARROW_FIRST_ROW
-        ? ' loading="eager" fetchpriority="low" decoding="async"'
-        : ' loading="lazy" decoding="async"';
+      : ' loading="lazy" decoding="async"';
     const image = imageUrl ? `<img ${imageAttributes(imageUrl)} width="800" height="800" alt=""${priority}>` : "";
     const badge = product.is_featured ? `<span class="product-badge" aria-hidden="true">${index === 0 ? "Popular" : "Best Value"}</span>` : "";
     return `<a href="/memorials/${slug}" class="product-card" data-id="${id}" data-type="${categorySlug}" data-colours="${colourSlugs}" data-price="${priceRange}" data-price-value="${price}" data-name="${escapeHtml(productName)}" data-image="${escapeHtml(imageUrl)}" data-slug="${slug}" aria-label="${escapeHtml(cardAccessibleName(productName, categoryName, colours.length, price))}"><div class="product-face"><div class="product-actions"><button class="product-action save-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleSave(this)" title="Save ${escapeHtml(productName)}" aria-label="Save ${escapeHtml(productName)}"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="product-image">${image}${badge}</div><div class="product-info" aria-hidden="true"><span class="product-category">${escapeHtml(categoryName)}</span><h3 class="product-name">${escapeHtml(productName)}</h3><div class="product-meta"><div class="product-colours">${colourDots}</div></div><p class="product-price">From <strong>£${price.toLocaleString("en-GB")}</strong></p></div></div></a>`;
@@ -279,7 +298,7 @@ export async function onRequestGet({ request, env }) {
   }
   const visible = listableProducts(products);
   const { grid, inline, lead, count } = catalogueInjection(products, catalogue.colours);
-  const preload = visible[0] ? imagePreload(safeImageUrl(visible[0].image_url)) : "";
+  const preload = cataloguePreloads(visible);
   const typeName = requested && products !== catalogue.products
     ? String(products.find((product) => product.product_categories?.name)?.product_categories.name || "").replace(/\s+/g, " ").trim()
     : "";

@@ -10,6 +10,7 @@
 
 import areaData from "../data/boroughs.cjs";
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "./api/_supabase-keys.js";
+import { cachedHtml, storeHtml } from "./_html-cache.js";
 
 const BASE = "https://searsmelvin.co.uk";
 const SM_ORG_ID = "3770972d-1bbd-417b-b413-297e844db285";
@@ -597,12 +598,15 @@ async function fetchProducts(env) {
       `${base}/rest/v1/products?organization_id=eq.${org}&is_active=eq.true&is_listed=eq.true&category_id=not.is.null&select=name,slug,image_url,product_categories(name,slug)&order=display_order.asc&limit=24`,
       { headers: supabaseKeyHeaders(publishableKey(env || {})) },
     );
-    if (!response.ok) return [];
+    if (!response.ok) return { ok: false, rows: [] };
     const rows = await response.json();
-    if (!Array.isArray(rows)) return [];
-    return rows.filter((product) => safeSlug(product.slug) && productImageUrl(product)).slice(0, 6);
+    if (!Array.isArray(rows)) return { ok: false, rows: [] };
+    return {
+      ok: true,
+      rows: rows.filter((product) => safeSlug(product.slug) && productImageUrl(product)).slice(0, 6),
+    };
   } catch {
-    return [];
+    return { ok: false, rows: [] };
   }
 }
 
@@ -613,7 +617,7 @@ function unavailable() {
   });
 }
 
-export async function handleAreaRequest({ request, env }) {
+export async function handleAreaRequest({ request, env, waitUntil }) {
   const url = new URL(request.url);
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method Not Allowed", {
@@ -628,7 +632,12 @@ export async function handleAreaRequest({ request, env }) {
       headers: { Location: resolved.redirect + url.search, "Cache-Control": "public, max-age=3600" },
     });
   }
+  if (request.method === "GET") {
+    const hit = await cachedHtml(request);
+    if (hit) return hit;
+  }
   let shellHtml = "";
+  const productsPromise = fetchProducts(env);
   try {
     const shell = await env.ASSETS.fetch(new URL("/about.html", url));
     if (!shell.ok) return unavailable();
@@ -636,16 +645,21 @@ export async function handleAreaRequest({ request, env }) {
   } catch {
     return unavailable();
   }
-  const products = await fetchProducts(env);
+  const products = await productsPromise;
   let html;
   try {
     const model = pageModel(resolved.kind, resolved.borough, resolved.cemetery);
-    html = renderAreaPage(shellHtml, model, products);
+    html = renderAreaPage(shellHtml, model, products.rows);
   } catch {
     return unavailable();
   }
-  return new Response(request.method === "HEAD" ? null : html, {
+  // A failed product read still renders the page, with an empty list. That
+  // 200 is not stored: the next request has to try Supabase again.
+  return storeHtml(request, new Response(request.method === "HEAD" ? null : html, {
     status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
-  });
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": products.ok ? "public, max-age=3600" : "no-store",
+    },
+  }), waitUntil);
 }

@@ -14,6 +14,7 @@
 
 import { publishableKey, publicSupabaseUrl, supabaseKeyHeaders } from "../api/_supabase-keys.js";
 import { legacySlugStatus } from "../_legacy-slugs.js";
+import { cachedHtml, storeHtml } from "../_html-cache.js";
 import { factsParagraph, productDescription, productTitle, SHARE_IMAGE } from "../../product-copy.js";
 
 const BASE = "https://searsmelvin.co.uk";
@@ -56,35 +57,32 @@ async function fetchProduct(env, slug) {
   }
 }
 
-async function fetchSizes(env, productId) {
+async function readList(env, path) {
   try {
-    const res = await catalogueFetch(
-      env,
-      `/rest/v1/product_sizes?product_id=eq.${encodeURIComponent(productId)}&select=size_name,dimensions&order=display_order.asc`,
-    );
-    if (!res.ok) return [];
+    const res = await catalogueFetch(env, path);
+    if (!res.ok) return { ok: false, rows: [] };
     const rows = await res.json();
-    return Array.isArray(rows) ? rows : [];
+    return Array.isArray(rows) ? { ok: true, rows } : { ok: false, rows: [] };
   } catch {
-    return [];
+    return { ok: false, rows: [] };
   }
+}
+
+async function fetchSizes(env, productId) {
+  return readList(
+    env,
+    `/rest/v1/product_sizes?product_id=eq.${encodeURIComponent(productId)}&select=size_name,dimensions&order=display_order.asc`,
+  );
 }
 
 async function fetchRelated(env, product) {
   const categoryId = product.category_id;
-  if (!categoryId) return [];
+  if (!categoryId) return { ok: true, rows: [] };
   const org = encodeURIComponent(env.SM_ORG_ID || SM_ORG_ID);
-  try {
-    const res = await catalogueFetch(
-      env,
-      `/rest/v1/products?organization_id=eq.${org}&category_id=eq.${encodeURIComponent(categoryId)}&slug=neq.${encodeURIComponent(product.slug)}&is_active=eq.true&is_listed=eq.true&select=name,slug&order=display_order.asc&limit=8`,
-    );
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return Array.isArray(rows) ? rows : [];
-  } catch {
-    return [];
-  }
+  return readList(
+    env,
+    `/rest/v1/products?organization_id=eq.${org}&category_id=eq.${encodeURIComponent(categoryId)}&slug=neq.${encodeURIComponent(product.slug)}&is_active=eq.true&is_listed=eq.true&select=name,slug&order=display_order.asc&limit=8`,
+  );
 }
 
 function absoluteImage(env, value) {
@@ -215,11 +213,13 @@ function moved(request, pathname) {
   });
 }
 
-export async function onRequestGet({ request, env, params }) {
+export async function onRequestGet({ request, env, params, waitUntil }) {
   const slug = params && params.slug;
   const shellUrl = new URL("/memorial.html", request.url);
-  const shell = await env.ASSETS.fetch(shellUrl);
-  if (!slug) return shell;
+  if (!slug) return env.ASSETS.fetch(shellUrl);
+
+  const hit = await cachedHtml(request);
+  if (hit) return hit;
 
   const product = await fetchProduct(env, slug);
   if (product === NOT_FOUND) {
@@ -240,12 +240,18 @@ export async function onRequestGet({ request, env, params }) {
       },
     });
   }
-  if (!product) return shell;
+  // Supabase was unreachable. Serve the shell and do not cache it.
+  if (!product) return env.ASSETS.fetch(shellUrl);
 
-  const [sizes, related] = await Promise.all([
+  // Shell, sizes and related overlap. A failed sizes or related read still
+  // renders (empty list), but that 200 must not be stored: the header is
+  // chosen only after both reads have settled.
+  const [shell, sizes, related] = await Promise.all([
+    env.ASSETS.fetch(shellUrl),
     fetchSizes(env, product.id),
     fetchRelated(env, product),
   ]);
+  const catalogueOk = sizes.ok && related.ok;
 
   const canonicalUrl = `${BASE}/memorials/${encodeURIComponent(product.slug)}`;
   const title = productTitle(product);
@@ -271,7 +277,7 @@ export async function onRequestGet({ request, env, params }) {
     ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high">`
     : `<link rel="preload" as="image" href="${escapeHtml(lcp)}" fetchpriority="high">`;
 
-  return new HTMLRewriter()
+  const response = new HTMLRewriter()
     .on("title", { element(el) { el.setInnerContent(title); } })
     // LCP image preload goes straight after the viewport meta, which memorial.html keeps
     // at the very top of <head>: the preload scanner finds it before the consent/GTM
@@ -294,9 +300,9 @@ export async function onRequestGet({ request, env, params }) {
     .on("#productCategory", { element(el) { el.setInnerContent(categoryName, { html: false }); } })
     .on("#productLead", { element(el) { el.setInnerContent(lead, { html: false }); } })
     .on("#productDescription", { element(el) { el.setInnerContent(longDescription, { html: false }); } })
-    .on("#productFacts", { element(el) { el.setInnerContent(factsHtml(product, sizes), { html: true }); } })
+    .on("#productFacts", { element(el) { el.setInnerContent(factsHtml(product, sizes.rows), { html: true }); } })
     .on("#breadcrumb", { element(el) { el.setInnerContent(breadcrumbHtml(product), { html: true }); } })
-    .on("#relatedDesigns", { element(el) { el.setInnerContent(relatedHtml(related, product), { html: true }); } })
+    .on("#relatedDesigns", { element(el) { el.setInnerContent(relatedHtml(related.rows, product), { html: true }); } })
     .on("#priceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#mobilePriceTotal", { element(el) { el.setInnerContent(displayedPrice, { html: false }); } })
     .on("#galleryMainImg", {
@@ -313,7 +319,8 @@ export async function onRequestGet({ request, env, params }) {
       status: shell.status,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+        "Cache-Control": catalogueOk ? "public, max-age=300, stale-while-revalidate=3600" : "no-store",
       },
     }));
+  return storeHtml(request, response, waitUntil);
 }
