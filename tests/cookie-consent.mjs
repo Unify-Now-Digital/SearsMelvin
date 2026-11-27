@@ -103,7 +103,9 @@ for (const name of pages) {
     const gtmAt = html.indexOf("googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5");
     const blockStart = html.lastIndexOf("<script>", gtmAt);
     const block = html.slice(blockStart, html.indexOf("</script>", gtmAt));
-    assert.doesNotMatch(block, /cookieConsent/, `${name}: GTM loader waits on the cookie choice`);
+    const loadFn = block.slice(block.indexOf("function loadGtm"), block.indexOf("function adsGranted"));
+    assert.doesNotMatch(loadFn, /cookieConsent/, `${name}: GTM loader waits on the cookie choice`);
+    assert.match(block, /if \(clickIdLanding\) \{\s*fillMissingClickCookies\(\);\s*loadGtm\(\);/, `${name}: click-id GTM load must not be inside the consent check`);
     assert.ok(html.indexOf("gtag('consent', 'default'") < gtmAt, `${name}: defaults must come before GTM`);
     assert.ok(html.indexOf("ads_data_redaction") < gtmAt, `${name}: redaction must come before GTM`);
   }

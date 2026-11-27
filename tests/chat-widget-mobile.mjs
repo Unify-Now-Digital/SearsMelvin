@@ -56,9 +56,11 @@ for (const name of pages) {
   const loaderAt = html.indexOf("widgets.leadconnectorhq.com/loader.js");
   assert.ok(loaderAt > -1, `${name}: chat loader missing`);
   const block = html.slice(html.lastIndexOf("<script>", loaderAt), html.indexOf("</script>", loaderAt));
-  assert.match(block, /requestIdleCallback\(load, \{ timeout: 3500 \}\)/, `${name}: chat must load on idle with a 3.5s cap`);
-  assert.match(block, /pointerdown/, `${name}: chat must also load on the first pointer`);
-  assert.match(block, /touchstart/, `${name}: chat must also load on the first touch`);
+  assert.doesNotMatch(block, /requestIdleCallback\(\s*load|afterFirstPaint|setTimeout\(\s*load/, `${name}: chat must load only on the first interaction`);
+  assert.match(block, /pointerdown/, `${name}: chat must load on the first pointer`);
+  assert.match(block, /keydown/, `${name}: chat must load on the first key`);
+  assert.match(block, /'scroll'/, `${name}: chat must load on the first scroll`);
+  assert.match(block, /touchstart/, `${name}: chat must load on the first touch`);
   assert.doesNotMatch(block, /setTimeout\(load, 1000\)|setTimeout\(load, 10000\)/, `${name}: chat must not use the 1s or 10s timer`);
   assert.doesNotMatch(block, /matchMedia|innerWidth|max-width:\s*768/, `${name}: chat loader must not be skipped by viewport`);
 }

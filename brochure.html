@@ -43,8 +43,10 @@
     <!-- Google Tag Manager — inserted after LCP, idle, or the first
          interaction, whichever is first, with a 3.5s cap so it always loads.
          Consent defaults above stay first. __smChatHook is set here, before
-         gtm.js. A tel: tap or form submit before the script is ready is
-         queued and given 300ms. docs/TRACKING.md. -->
+         gtm.js. A tel: tap before gtm.load is queued and pushed once when
+         GTM is ready; the call itself is not delayed. A form submit is still
+         held for 300ms. On a click-id landing, a missing Google click cookie
+         is filled only when ads consent is already granted. docs/TRACKING.md. -->
     <script>
       (function () {
         // Set before gtm.js is inserted, including when that insert is deferred.
@@ -54,9 +56,68 @@
         var started = false;
         var HOLD_MS = 300;
         var GTM_WAIT_MS = 3500;
-        function gtmReady() {
-          return !!(window.__smGtmReady || (window.dataLayer && window.dataLayer.push !== Array.prototype.push));
+        var telQueue = [];
+        var flushing = false;
+        function hasGtmLoad() {
+          var dl = window.dataLayer || [];
+          for (var i = 0; i < dl.length; i++) {
+            if (dl[i] && dl[i].event === 'gtm.load') return true;
+          }
+          return false;
         }
+        function gtmReady() {
+          // Ready means the container's gtm.load event, or the flag set when
+          // that event or the gtm.js load handler has run. The replaced
+          // dataLayer.push is earlier than either, and a tel tap in that gap
+          // used to be dropped.
+          if (window.__smGtmReady || hasGtmLoad()) {
+            window.__smGtmReady = true;
+            return true;
+          }
+          return false;
+        }
+        function flushTelQueue() {
+          if (flushing || !gtmReady() || !telQueue.length) return;
+          flushing = true;
+          var batch = telQueue.splice(0, telQueue.length);
+          try {
+            for (var i = 0; i < batch.length; i++) {
+              var item = batch[i];
+              if (item.pushed) continue;
+              item.pushed = true;
+              window.dataLayer.push({
+                event: 'gtm.linkClick',
+                'gtm.element': item.element,
+                'gtm.elementUrl': item.elementUrl,
+                'gtm.elementId': item.elementId,
+                'gtm.triggers': ''
+              });
+            }
+          } finally {
+            flushing = false;
+          }
+        }
+        function markReady() {
+          window.__smGtmReady = true;
+          flushTelQueue();
+        }
+        function armReadyWatch() {
+          var dl = window.dataLayer = window.dataLayer || [];
+          if (dl.push && dl.push.__smTelWatch) return;
+          var orig = dl.push;
+          var wrapped = function () {
+            var result = orig.apply(this, arguments);
+            try {
+              for (var i = 0; i < arguments.length; i++) {
+                if (arguments[i] && arguments[i].event === 'gtm.load') markReady();
+              }
+            } catch (err) {}
+            return result;
+          };
+          wrapped.__smTelWatch = true;
+          dl.push = wrapped;
+        }
+        armReadyWatch();
         function loadGtm() {
           if (started) return;
           started = true;
@@ -65,13 +126,69 @@
           var gtm = document.createElement('script');
           gtm.async = true;
           gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-KRDX4BQ5';
-          gtm.onload = function () { window.__smGtmReady = true; };
+          gtm.onload = markReady;
           var f = document.getElementsByTagName('script')[0];
           f.parentNode.insertBefore(gtm, f);
         }
-        // A paid landing still needs the conversion linker at once. Every other
-        // visit keeps the deferral below. This does not write _gcl_aw.
-        if (/[?&](?:gclid|gbraid|wbraid)=/i.test(location.search || '')) loadGtm();
+        function adsGranted() {
+          try {
+            var raw = localStorage.getItem('cookieConsent');
+            if (raw === 'accepted') return true;
+            if (!raw || raw.charAt(0) !== '{') return false;
+            var parsed = JSON.parse(raw);
+            return !!(parsed && parsed.ads === true);
+          } catch (err) { return false; }
+        }
+        function cookieHas(name) {
+          var parts = String(document.cookie || '').split(';');
+          var prefix = name + '=';
+          for (var i = 0; i < parts.length; i++) {
+            if (parts[i].trim().slice(0, prefix.length) === prefix) return true;
+          }
+          return false;
+        }
+        function queryValue(name) {
+          var search = String(location.search || '');
+          var re = new RegExp('[?&]' + name + '=([^&#]*)', 'i');
+          var found = re.exec(search);
+          if (!found) return '';
+          var value = found[1];
+          try { value = decodeURIComponent(value.replace(/\+/g, ' ')); } catch (err) { return ''; }
+          return value;
+        }
+        function clickIdToken(value) {
+          // The live linker only stores ids matching /^[\w-]+$/.
+          return /^[\w-]{1,200}$/.test(value) ? value : '';
+        }
+        function writeGclCookie(name, id) {
+          if (!id || cookieHas(name)) return;
+          var seconds = Math.floor(Date.now() / 1000);
+          var host = String(location.hostname || '').toLowerCase();
+          var suffix = '.searsmelvin.co.uk';
+          var domain = '';
+          if (host === 'searsmelvin.co.uk' || (host.length > suffix.length && host.slice(-suffix.length) === suffix)) {
+            domain = ';Domain=.searsmelvin.co.uk';
+          }
+          var secure = location.protocol === 'https:' ? ';Secure' : '';
+          document.cookie = name + '=GCL.' + seconds + '.' + id + ';Path=/;Max-Age=7776000;SameSite=Lax' + domain + secure;
+        }
+        function fillMissingClickCookies() {
+          if (!adsGranted()) return;
+          // Live linker (gtm.js Es): gclid -> _gcl_aw and wbraid -> _gcl_gb,
+          // both "GCL.<unix seconds>.<id>", and only when ad_storage is granted.
+          // gbraid is stored in _gcl_ag with a different container, so it is
+          // not written here. sm_attr is not touched.
+          writeGclCookie('_gcl_aw', clickIdToken(queryValue('gclid')));
+          writeGclCookie('_gcl_gb', clickIdToken(queryValue('wbraid')));
+        }
+        // A paid landing still needs the conversion linker at once. The cookie
+        // fill above only runs when ads consent is already stored and the
+        // Google cookie is missing. Every other visit keeps the deferral.
+        var clickIdLanding = /[?&](?:gclid|gbraid|wbraid)=/i.test(location.search || '');
+        if (clickIdLanding) {
+          fillMissingClickCookies();
+          loadGtm();
+        }
         var interactEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
         var armed = false;
         function onInteract(e) {
@@ -110,8 +227,7 @@
           setTimeout(go, HOLD_MS);
           return go;
         }
-        document.addEventListener('click', function (e) {
-          if (gtmReady()) return;
+        function onTelClick(e) {
           if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
           var node = e.target;
           if (node && node.nodeType === 3) node = node.parentNode;
@@ -119,18 +235,18 @@
           if (!a) return;
           var href = a.getAttribute('href') || '';
           if (href.slice(0, 4).toLowerCase() !== 'tel:') return;
-          e.preventDefault();
-          var go = goOnce(function () { window.location.href = a.href; });
-          window.dataLayer.push({
-            event: 'gtm.linkClick',
-            'gtm.element': a,
-            'gtm.elementUrl': a.href,
-            'gtm.elementId': a.id || '',
-            'gtm.triggers': '',
-            eventCallback: go,
-            eventTimeout: HOLD_MS
+          if (gtmReady()) return;
+          // Do not cancel the click and do not wait. The dialler opens now.
+          loadGtm();
+          telQueue.push({
+            element: a,
+            elementUrl: a.href || href,
+            elementId: a.id || '',
+            pushed: false
           });
-        }, true);
+          flushTelQueue();
+        }
+        document.addEventListener('click', onTelClick, true);
         document.addEventListener('submit', function (e) {
           if (gtmReady()) return;
           var form = e.target;
@@ -160,9 +276,10 @@
       document.documentElement.setAttribute('data-sm-cookie', open ? 'open' : 'closed');
     })();
     </script>
-    <!-- LeadConnector chat — after first paint and idle (3.5s cap), or the
-         first pointer, key, scroll, or touch, whichever is first. Widget
-         69ff236b0d119858db377c07. /contact does not include this loader. -->
+    <!-- LeadConnector chat — the loader starts on the first pointer, key,
+         scroll, or touch. It does not start on idle. Widget
+         69ff236b0d119858db377c07. /contact and product pages do not include
+         this loader. __smChatHook is set in this script and before gtm.js. -->
     <script>
       (function(){
         var loaded = false;
@@ -225,30 +342,14 @@
         var chatEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
         function onChatInteract(e) {
           if (e && e.isTrusted === false) return;
+          for (var i = 0; i < chatEvents.length; i++) {
+            window.removeEventListener(chatEvents[i], onChatInteract, true);
+          }
           load();
         }
         for (var ci = 0; ci < chatEvents.length; ci++) {
           window.addEventListener(chatEvents[ci], onChatInteract, { passive: true, capture: true });
         }
-        function afterFirstPaint(fn) {
-          var ran = false;
-          function once() { if (ran) return; ran = true; fn(); }
-          try {
-            if (window.PerformanceObserver) {
-              var paints = new PerformanceObserver(function (list, obs) {
-                if (list.getEntries().length) { obs.disconnect(); once(); }
-              });
-              paints.observe({ type: 'paint', buffered: true });
-            }
-          } catch (e) {}
-          var raf = window.requestAnimationFrame;
-          if (typeof raf === 'function') raf(function () { raf(once); });
-          else setTimeout(once, 0);
-        }
-        afterFirstPaint(function () {
-          if (window.requestIdleCallback) requestIdleCallback(load, { timeout: 3500 });
-          else setTimeout(load, 3500);
-        });
       })();
     </script>
     <!-- End Google Tag Manager + LeadConnector -->
@@ -865,7 +966,7 @@
 </div>
 <script src="/supabase-config"></script>
 <script src="/cookie-consent.js?v=20261123a"></script>
-<script src="/sm-clarity.js?v=20261124a" defer></script>
+<script src="/sm-clarity.js?v=20261127d" defer></script>
 <script>
 
         // ==================== SITE SEARCH ====================
