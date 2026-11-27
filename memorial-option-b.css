@@ -404,9 +404,16 @@ body.memorial-page .gallery-thumb {
         transform: translateY(0);
     }
 }
-/* Keep the in-flow price box only where hiding it would move the photo.
-   At 768px the phone layout is in force and live removes that line, so a
-   reserved box is a blank gap above the photo. */
+/* At 768px the phone layout is in force. The guide price stays in the
+   bottom bar. The title line is out of the flow in every bar state, so
+   showing the bar cannot move the photo. */
+@media (min-width: 768px) and (max-width: 768px) {
+    html body.memorial-page #productTitlePrice {
+        display: none !important;
+    }
+}
+/* Keep the in-flow price box only from 769px, where hiding it would
+   move the photo. */
 @media (min-width: 769px) and (max-width: 1024px) {
     html body.memorial-page:has(.mobile-bottom-bar.is-visible) .product-title-price:not([hidden]),
     html body.memorial-page:has(.mobile-bottom-bar.is-visible) #productTitlePrice:not([hidden]) {
