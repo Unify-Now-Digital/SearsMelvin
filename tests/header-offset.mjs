@@ -225,6 +225,7 @@ async function main() {
           });
           await evalJson(`document.documentElement.style.zoom = ${JSON.stringify(String(zoom))}`);
           await evalJson(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
+          await evalJson(`new Promise((resolve) => setTimeout(resolve, 100))`);
           const row = await evalJson(MEASURE);
           const where = `${path} ${width}px zoom ${zoom}`;
           // True phones (<=767) got a further step down from 68 to 58, with
