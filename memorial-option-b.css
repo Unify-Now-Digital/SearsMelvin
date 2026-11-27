@@ -403,6 +403,11 @@ body.memorial-page .gallery-thumb {
         pointer-events: auto;
         transform: translateY(0);
     }
+}
+/* Keep the in-flow price box only where hiding it would move the photo.
+   At 768px the phone layout is in force and live removes that line, so a
+   reserved box is a blank gap above the photo. */
+@media (min-width: 769px) and (max-width: 1024px) {
     html body.memorial-page:has(.mobile-bottom-bar.is-visible) .product-title-price:not([hidden]),
     html body.memorial-page:has(.mobile-bottom-bar.is-visible) #productTitlePrice:not([hidden]) {
         display: block !important;

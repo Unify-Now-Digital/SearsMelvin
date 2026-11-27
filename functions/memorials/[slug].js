@@ -275,9 +275,9 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
   const { productLd, breadcrumbLd } = buildSchema(product, canonicalUrl, desc, imageUrl);
   // 50vw at 820px and 2x is 820 device pixels and selects the 1200w file.
   // The 769–1024 frame is 220px tall, so a 400px slot (800w at 2x) is enough.
-  // 768px at 2x with 100vw is 1536 device pixels and selects 1200w.
-  // From 768 up the slot is 400px, so that screen takes the 800w file.
-  const gallerySizes = "(max-width: 767px) 100vw, (max-width: 1024px) 400px, 50vw";
+  // At 768 the phone layout shows a ~704px photo, so 100vw is the slot.
+  // 769–1024 stays 400px: that short frame is sharp at 800w and 2x.
+  const gallerySizes = "(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw";
   const preload = srcset
     ? `<link rel="preload" as="image" href="${escapeHtml(lcp)}" imagesrcset="${escapeHtml(srcset)}" imagesizes="${gallerySizes}" fetchpriority="high">`
     : `<link rel="preload" as="image" href="${escapeHtml(lcp)}" fetchpriority="high">`;
@@ -316,7 +316,7 @@ export async function onRequestGet({ request, env, params, waitUntil }) {
         el.setAttribute("alt", product.name || "Memorial");
         if (srcset) {
           el.setAttribute("srcset", srcset);
-          el.setAttribute("sizes", "(max-width: 767px) 100vw, (max-width: 1024px) 400px, 50vw");
+          el.setAttribute("sizes", "(max-width: 768px) 100vw, (max-width: 1024px) 400px, 50vw");
         }
       },
     })
